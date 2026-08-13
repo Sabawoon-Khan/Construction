@@ -2221,3 +2221,95 @@ label:has(+ div.relative > button[aria-required='true'])::after {
     content: ' *';
     color: hsl(var(--destructive));
 }
+
+/* Print — vouchers, reports, and list exports */
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 10mm 12mm;
+    }
+
+    html,
+    body {
+        background: #fff !important;
+        color: #111 !important;
+        height: auto !important;
+        overflow: visible !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    [data-sidebar='sidebar'],
+    [data-slot='sidebar'],
+    [data-sidebar='trigger'],
+    header[data-tour],
+    [data-sonner-toaster] {
+        display: none !important;
+    }
+
+    .group\\/sidebar-wrapper,
+    [data-slot='sidebar-inset'] {
+        display: block !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #fff !important;
+    }
+
+    /* Voucher pages: hide everything except the voucher sheet */
+    .voucher-print-page > *:not(.voucher-sheet) {
+        display: none !important;
+    }
+
+    .voucher-print-page {
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+
+    .voucher-sheet {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        color: #111 !important;
+        break-inside: avoid;
+    }
+
+    .voucher-sheet table {
+        break-inside: auto;
+    }
+
+    .voucher-sheet tr {
+        break-inside: avoid;
+    }
+
+    /* Report pages */
+    .print-document {
+        padding: 0 !important;
+        gap: 1rem !important;
+    }
+
+    .print-document .rounded-xl {
+        break-inside: avoid;
+        border-color: #ccc !important;
+        background: #fff !important;
+        box-shadow: none !important;
+    }
+
+    .print-document table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .print-document th,
+    .print-document td {
+        border-bottom: 1px solid #ddd;
+        padding: 0.35rem 0.5rem;
+    }
+}

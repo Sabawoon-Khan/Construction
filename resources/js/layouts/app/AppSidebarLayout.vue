@@ -32,7 +32,7 @@ const isSidebarRight = computed(() => sidebarSide.value === 'right');
 
 <template>
     <AppShell variant="sidebar">
-        <AppSidebar :class="isSidebarRight ? 'order-2' : 'order-1'" />
+        <AppSidebar :class="[isSidebarRight ? 'order-2' : 'order-1', 'print:hidden']" />
         <AppContent
             variant="sidebar"
             :class="[
@@ -40,9 +40,9 @@ const isSidebarRight = computed(() => sidebarSide.value === 'right');
                 isSidebarRight ? 'order-1' : 'order-2',
             ]"
         >
-            <OfflineBanner :enabled="offlineEnabled" />
-            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
-            <div class="flex flex-1 flex-col space-y-6 px-6 pt-6 pb-12 md:px-8">
+            <OfflineBanner class="print:hidden" :enabled="offlineEnabled" />
+            <AppSidebarHeader class="print:hidden" :breadcrumbs="breadcrumbs" />
+            <div class="flex flex-1 flex-col space-y-6 px-6 pt-6 pb-12 md:px-8 print:p-0 print:pt-0">
                 <OfflineConflictPanel v-if="offlineEnabled" />
                 <slot />
             </div>

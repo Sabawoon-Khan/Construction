@@ -63,7 +63,7 @@ class UnitController extends Controller implements HasMiddleware
                 ->findOrFail($data['project_id']);
 
             $building = Building::query()->firstOrCreate(
-                ['project_id' => $project->id, 'name' => $data['building_name'] ?: 'Main Building'],
+                ['project_id' => $project->id, 'name' => 'Main Building'],
                 ['floor_count' => 0]
             );
 
@@ -76,7 +76,7 @@ class UnitController extends Controller implements HasMiddleware
                 'project_id' => $project->id,
                 'floor_id' => $floor->id,
                 'unit_no' => $data['unit_no'],
-                'type' => $data['type'] ?? 'apartment',
+                'type' => 'apartment',
                 'area' => $data['area'] ?? null,
                 'bedrooms' => $data['bedrooms'] ?? null,
                 'list_price' => $data['list_price'] ?? 0,
@@ -111,7 +111,6 @@ class UnitController extends Controller implements HasMiddleware
         return Inertia::render('Units/Form', [
             'item' => [
                 ...$unit->toArray(),
-                'building_name' => $unit->floor?->building?->name,
                 'floor_number' => $unit->floor?->number,
             ],
             ...$this->formOptions($request),
@@ -124,7 +123,6 @@ class UnitController extends Controller implements HasMiddleware
 
         $unit->update([
             'unit_no' => $data['unit_no'],
-            'type' => $data['type'] ?? $unit->type,
             'area' => $data['area'] ?? null,
             'bedrooms' => $data['bedrooms'] ?? null,
             'list_price' => $data['list_price'] ?? 0,
@@ -152,10 +150,8 @@ class UnitController extends Controller implements HasMiddleware
     {
         return $request->validate([
             'project_id' => 'required|exists:projects,id',
-            'building_name' => 'nullable|string|max:255',
             'floor_number' => 'nullable|integer|min:0',
             'unit_no' => 'required|string|max:50',
-            'type' => 'nullable|string|max:50',
             'area' => 'nullable|numeric|min:0',
             'bedrooms' => 'nullable|integer|min:0',
             'list_price' => 'nullable|numeric|min:0',

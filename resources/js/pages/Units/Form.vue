@@ -18,9 +18,7 @@ defineOptions({ layout: { breadcrumbs: [{ title: 'Dashboard', href: '/dashboard'
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="grid gap-2"><Label>Project</Label><select name="project_id" required class="h-9 rounded-md border px-3 text-sm" :value="item?.project_id ?? ''"><option value="" disabled>Select</option><option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option></select><InputError :message="errors.project_id" /></div>
         <div class="grid gap-2"><Label>Unit No</Label><Input name="unit_no" required :default-value="item?.unit_no ?? ''" /><InputError :message="errors.unit_no" /></div>
-        <div class="grid gap-2"><Label>Building Name</Label><Input name="building_name" :default-value="item?.building_name ?? 'Main Building'" /></div>
         <div class="grid gap-2"><Label>Floor Number</Label><Input name="floor_number" type="number" :default-value="item?.floor_number ?? 1" /></div>
-        <div class="grid gap-2"><Label>Type</Label><Input name="type" :default-value="item?.type ?? 'apartment'" /></div>
         <div class="grid gap-2"><Label>Area (m2)</Label><Input name="area" type="number" step="0.01" :default-value="item?.area ?? ''" /></div>
         <div class="grid gap-2"><Label>Bedrooms</Label><Input name="bedrooms" type="number" :default-value="item?.bedrooms ?? ''" /></div>
         <div class="grid gap-2"><Label>Sale price</Label><Input name="list_price" type="number" step="0.01" :default-value="item?.list_price ?? 0" /></div>

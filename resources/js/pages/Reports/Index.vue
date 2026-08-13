@@ -79,7 +79,7 @@ function printReport() {
 <template>
     <Head title="Reports" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:p-0">
+    <div class="print-document flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-4 print:p-0">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between print:hidden">
             <Heading
                 title="Reports & Analytics"
@@ -101,6 +101,11 @@ function printReport() {
                 <Button variant="outline" @click="exportCsv">Excel/CSV</Button>
                 <Button @click="printReport">Print / PDF</Button>
             </div>
+        </div>
+
+        <div class="hidden print:mb-4 print:block">
+            <h1 class="text-xl font-semibold">Reports & Analytics</h1>
+            <p class="text-sm text-slate-600">{{ filters.from }} — {{ filters.to }}</p>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

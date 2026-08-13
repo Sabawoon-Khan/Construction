@@ -68,7 +68,7 @@ function payAllRemaining() {
 
 <template>
     <Head :title="`Sale ${sale.sale_no}`" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-0 print:p-0">
+    <div class="voucher-print-page flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-0 print:p-0">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
@@ -165,35 +165,29 @@ function payAllRemaining() {
             </table>
         </div>
 
-        <div class="space-y-3">
-            <div class="flex items-center justify-between print:hidden">
-                <h3 class="text-sm font-semibold tracking-tight">Sale statement preview</h3>
-                <Button size="sm" @click="printPage"><Printer class="size-4" /> Print</Button>
-            </div>
-            <PrintableVoucher
-                kind="statement"
-                title="Customer Sale Statement"
-                :document-no="sale.sale_no"
-                :date="sale.contract_date"
-                party-label="Customer"
-                :party-name="sale.customer?.name"
-                :amount="remaining_amount"
-                :currency="sale.currency || 'USD'"
-                :project-name="sale.project?.name"
-                :description="sale.notes || sale.terms"
-                :status="sale.status"
-                :fields="[
-                    { label: 'Unit', value: sale.unit?.unit_no },
-                    { label: 'Sale price', value: money(sale.unit?.list_price, sale.currency || 'USD') },
-                    { label: 'Discount', value: money(sale.discount, sale.currency || 'USD') },
-                ]"
-                :lines="statementLines"
-                :totals="[
-                    { label: 'Total due', value: money(total_price, sale.currency || 'USD') },
-                    { label: 'Paid to date', value: money(paid_amount, sale.currency || 'USD') },
-                    { label: 'Balance due', value: money(remaining_amount, sale.currency || 'USD') },
-                ]"
-            />
-        </div>
+        <PrintableVoucher
+            kind="statement"
+            title="Customer Sale Statement"
+            :document-no="sale.sale_no"
+            :date="sale.contract_date"
+            party-label="Customer"
+            :party-name="sale.customer?.name"
+            :amount="remaining_amount"
+            :currency="sale.currency || 'USD'"
+            :project-name="sale.project?.name"
+            :description="sale.notes || sale.terms"
+            :status="sale.status"
+            :fields="[
+                { label: 'Unit', value: sale.unit?.unit_no },
+                { label: 'Sale price', value: money(sale.unit?.list_price, sale.currency || 'USD') },
+                { label: 'Discount', value: money(sale.discount, sale.currency || 'USD') },
+            ]"
+            :lines="statementLines"
+            :totals="[
+                { label: 'Total due', value: money(total_price, sale.currency || 'USD') },
+                { label: 'Paid to date', value: money(paid_amount, sale.currency || 'USD') },
+                { label: 'Balance due', value: money(remaining_amount, sale.currency || 'USD') },
+            ]"
+        />
     </div>
 </template>

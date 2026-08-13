@@ -32,10 +32,10 @@ const toasterPosition = computed(() =>
 
 <template>
     <AppShell variant="header">
-        <AppHeader :breadcrumbs="breadcrumbs" />
+        <AppHeader class="print:hidden" :breadcrumbs="breadcrumbs" />
         <AppContent variant="header">
-            <OfflineBanner :enabled="offlineEnabled" />
-            <div class="mx-auto flex w-full max-w-[90rem] flex-1 flex-col space-y-6 px-4 py-6 md:px-6 md:pb-12">
+            <OfflineBanner class="print:hidden" :enabled="offlineEnabled" />
+            <div class="mx-auto flex w-full max-w-[90rem] flex-1 flex-col space-y-6 px-4 py-6 md:px-6 md:pb-12 print:p-0">
                 <OfflineConflictPanel v-if="offlineEnabled" />
                 <slot />
             </div>

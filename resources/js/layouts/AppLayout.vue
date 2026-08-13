@@ -29,7 +29,7 @@ const useHeaderShell = computed(() => shell.value === 'header');
     <AppSidebarLayout v-else :breadcrumbs="breadcrumbs">
         <slot />
     </AppSidebarLayout>
-    <AiInlineEdit />
-    <AiFormFill />
-    <AiChatPanel />
+    <AiInlineEdit class="print:hidden" />
+    <AiFormFill class="print:hidden" />
+    <AiChatPanel class="print:hidden" />
 </template>

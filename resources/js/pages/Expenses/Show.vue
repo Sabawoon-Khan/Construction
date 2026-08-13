@@ -24,7 +24,7 @@ defineOptions({
 
 <template>
     <Head :title="item.expense_no" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-0 print:p-0">
+    <div class="voucher-print-page flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-0 print:p-0">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
@@ -71,12 +71,7 @@ defineOptions({
             />
         </div>
 
-        <div class="space-y-3">
-            <div class="flex items-center justify-between print:hidden">
-                <h3 class="text-sm font-semibold tracking-tight">Payment voucher preview</h3>
-                <Button size="sm" @click="printPage"><Printer class="size-4" /> Print</Button>
-            </div>
-            <PrintableVoucher
+        <PrintableVoucher
                 kind="payment"
                 title="Expense Payment Voucher"
                 :document-no="item.expense_no"
@@ -97,6 +92,5 @@ defineOptions({
                     { label: 'Contractor', value: item.contractor?.name },
                 ]"
             />
-        </div>
     </div>
 </template>

@@ -56,7 +56,13 @@ const kindLabel = computed(() => {
 const accent = computed(() => {
     if (props.kind === 'payment') return 'border-rose-700 text-rose-800';
     if (props.kind === 'receipt') return 'border-emerald-700 text-emerald-800';
-    return 'border-slate-800 text-slate-900';
+    return 'border-slate-700 text-slate-800';
+});
+
+const amountClass = computed(() => {
+    if (props.kind === 'payment') return 'text-rose-800';
+    if (props.kind === 'receipt') return 'text-emerald-800';
+    return 'text-slate-900';
 });
 
 const words = computed(() => amountInWords(props.amount, props.currency));
@@ -64,12 +70,12 @@ const words = computed(() => amountInWords(props.amount, props.currency));
 
 <template>
     <article
-        class="voucher-sheet mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm print:max-w-none print:rounded-none print:border-slate-800 print:shadow-none"
+        class="voucher-sheet mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm print:max-w-none print:rounded-none print:border-black print:shadow-none"
     >
-        <div class="relative border-b border-slate-300 px-6 py-5 print:px-8">
-            <div class="absolute inset-y-0 left-0 w-1.5 bg-slate-900 print:w-2" />
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div class="space-y-1">
+        <div class="relative border-b border-slate-300 px-6 py-5 print:border-black print:px-0 print:py-4">
+            <div class="absolute inset-y-0 left-0 w-1.5 bg-slate-900 print:w-1" />
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:gap-3">
+                <div class="space-y-1 pl-3 print:pl-4">
                     <p class="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
                         {{ kindLabel }}
                     </p>
@@ -84,7 +90,7 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                         Reg. No: {{ company.registration_no }}
                     </p>
                 </div>
-                <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm sm:min-w-[200px]">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm sm:min-w-[200px] print:border-black print:bg-white">
                     <div class="flex justify-between gap-6">
                         <span class="text-slate-500">Voucher No</span>
                         <span class="font-semibold">{{ documentNo }}</span>
@@ -110,21 +116,23 @@ const words = computed(() => amountInWords(props.amount, props.currency));
             </div>
         </div>
 
-        <div class="space-y-5 px-6 py-5 print:px-8">
-            <div class="grid gap-3 sm:grid-cols-2">
-                <div class="rounded-lg border border-slate-200 p-4">
+        <div class="space-y-5 px-6 py-5 print:space-y-4 print:px-0 print:py-4">
+            <div class="grid gap-3 sm:grid-cols-2 print:gap-2">
+                <div class="rounded-lg border border-slate-200 p-4 print:border-black print:p-3">
                     <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">{{ partyLabel }}</p>
                     <p class="mt-1 text-base font-semibold">{{ partyName || '—' }}</p>
                 </div>
-                <div class="rounded-lg border border-slate-200 p-4">
-                    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">Amount</p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums" :class="kind === 'payment' ? 'text-rose-800' : 'text-emerald-800'">
+                <div class="rounded-lg border border-slate-200 p-4 print:border-black print:p-3">
+                    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                        {{ kind === 'statement' ? 'Balance due' : 'Amount' }}
+                    </p>
+                    <p class="mt-1 text-2xl font-semibold tabular-nums" :class="amountClass">
                         {{ money(amount, currency) }}
                     </p>
                 </div>
             </div>
 
-            <dl class="grid gap-x-6 gap-y-3 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-2">
+            <dl class="grid gap-x-6 gap-y-3 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-2 print:border-black print:p-3">
                 <div v-if="projectName">
                     <dt class="text-xs text-slate-500 uppercase">Project</dt>
                     <dd class="mt-0.5 font-medium">{{ projectName }}</dd>
@@ -151,9 +159,9 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                 </div>
             </dl>
 
-            <div v-if="lines?.length" class="overflow-hidden rounded-lg border border-slate-200">
+            <div v-if="lines?.length" class="overflow-hidden rounded-lg border border-slate-200 print:border-black">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 text-left text-slate-600">
+                    <thead class="bg-slate-50 text-left text-slate-600 print:bg-white">
                         <tr>
                             <th class="px-4 py-2.5 font-medium">Description</th>
                             <th class="px-4 py-2.5 font-medium">Details</th>
@@ -183,12 +191,12 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                 </div>
             </div>
 
-            <div class="rounded-lg bg-slate-50 px-4 py-3 text-sm">
+            <div class="rounded-lg bg-slate-50 px-4 py-3 text-sm print:border print:border-black print:bg-white print:py-2">
                 <span class="text-slate-500">Amount in words:</span>
                 <span class="ml-2 font-medium italic">{{ words }}</span>
             </div>
 
-            <div class="grid gap-8 pt-6 sm:grid-cols-3">
+            <div class="grid gap-8 pt-4 sm:grid-cols-3 print:gap-6 print:pt-2">
                 <div class="space-y-8">
                     <div class="border-b border-slate-400" />
                     <p class="text-center text-xs tracking-wide text-slate-500 uppercase">Prepared by</p>
@@ -206,7 +214,7 @@ const words = computed(() => amountInWords(props.amount, props.currency));
             </div>
         </div>
 
-        <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs text-slate-500 print:px-8">
+        <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs text-slate-500 print:border-black print:bg-white print:px-0 print:py-2">
             <span>Computer-generated voucher · {{ companyName }}</span>
             <span>Printed {{ printedAt }}</span>
         </div>
