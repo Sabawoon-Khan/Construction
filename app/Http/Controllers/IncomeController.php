@@ -3,14 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use App\Models\Customer;
 use App\Models\Income;
-use App\Models\IncomeCategory;
-use App\Models\Project;
+use App\Services\FinanceDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,21 +17,20 @@ class IncomeController extends Controller implements HasMiddleware
 
     use AuthorizesResourcePermissions;
 
-
     public function index(Request $request): Response
     {
         $query = Income::query()
-            ->with(['category:id,name', 'project:id,name', 'customer:id,name']);
+            ->whereNull('project_id')
+            ->where('status', 'approved');
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('income_no', 'like', "%{$search}%")
-                    ->orWhere('received_from', 'like', "%{$search}%")
-                    ->orWhere('reference_no', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        $totalAmount = (clone $query)->sum('amount');
+        $totalAmount = (float) (clone $query)->sum('amount');
 
         return Inertia::render('Incomes/Index', [
             'items' => $query->latest('income_date')->paginate(15)->withQueryString(),
@@ -45,20 +41,14 @@ class IncomeController extends Controller implements HasMiddleware
 
     public function create(Request $request): Response
     {
-        return Inertia::render('Incomes/Form', [
-            'item' => null,
-            ...$this->formOptions($request),
-        ]);
+        return Inertia::render('Incomes/Form', ['item' => null]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
 
-        Income::create([
-            ...$data,
-            'income_no' => $data['income_no'] ?: 'INC-'.Str::upper(Str::random(8)),
-        ]);
+        Income::create(FinanceDefaults::incomeAttributes($data));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Income recorded.']);
 
@@ -67,25 +57,12 @@ class IncomeController extends Controller implements HasMiddleware
 
     public function show(Income $income): Response
     {
-        $income->load([
-            'project:id,name',
-            'category:id,name',
-            'customer:id,name',
-            'bankAccount:id,name',
-        ]);
-
-        return Inertia::render('Incomes/Show', [
-            'item' => $income,
-        ]);
+        return Inertia::render('Incomes/Show', ['item' => $income]);
     }
 
     public function edit(Request $request, Income $income): Response
     {
-
-        return Inertia::render('Incomes/Form', [
-            'item' => $income,
-            ...$this->formOptions($request),
-        ]);
+        return Inertia::render('Incomes/Form', ['item' => $income]);
     }
 
     public function update(Request $request, Income $income): RedirectResponse
@@ -110,30 +87,9 @@ class IncomeController extends Controller implements HasMiddleware
     private function validated(Request $request): array
     {
         return $request->validate([
-            'project_id' => 'nullable|exists:projects,id',
-            'income_category_id' => 'required|exists:income_categories,id',
-            'customer_id' => 'nullable|exists:customers,id',
-            'bank_account_id' => 'nullable|exists:bank_accounts,id',
-            'income_no' => 'nullable|string|max:50',
             'income_date' => 'required|date',
-            'received_from' => 'nullable|string|max:255',
             'amount' => 'required|numeric|min:0',
-            'currency' => 'required|string|size:3',
-            'payment_method' => 'required|string|max:50',
-            'reference_no' => 'nullable|string|max:100',
-            'status' => 'required|string|max:50',
-            'description' => 'nullable|string',
+            'description' => 'required|string|max:1000',
         ]);
-    }
-
-    /** @return array<string, mixed> */
-    private function formOptions(Request $request): array
-    {
-
-        return [
-            'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
-            'categories' => IncomeCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'customers' => Customer::query()->orderBy('name')->get(['id', 'name']),
-        ];
     }
 }

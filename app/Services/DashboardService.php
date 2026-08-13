@@ -36,7 +36,7 @@ class DashboardService
         $salesQuery = Sale::query()->where('sales.status', '!=', 'cancelled');
 
         $periodSales = Sale::sumTotalPrice(
-            (clone $salesQuery)->whereBetween('contract_date', [$from->toDateString(), $to->toDateString()])
+            (clone $salesQuery)->whereBetween('sales.contract_date', [$from->toDateString(), $to->toDateString()])
         );
 
         $totalSales = Sale::sumTotalPrice(clone $salesQuery);
@@ -61,22 +61,10 @@ class DashboardService
             ->whereBetween('paid_at', [$from, $to])
             ->sum('amount');
 
-        $netProfitPeriod = (float) $periodSales + (float) $periodIncomes - (float) $periodExpenses;
-        $netProfitTotal = (float) $totalSales + (float) $incomesQuery->sum('amount') - (float) $totalExpenses;
+        $netProfitPeriod = ShareholderProfitService::netProfit($from, $to);
+        $netProfitTotal = ShareholderProfitService::netProfit();
 
-        $partners = Partner::query()
-            ->orderByDesc('ownership_percentage')
-            ->get()
-            ->map(function (Partner $partner) use ($netProfitPeriod) {
-                $share = ((float) $partner->ownership_percentage / 100) * $netProfitPeriod;
-
-                return [
-                    'id' => $partner->id,
-                    'name' => $partner->name,
-                    'ownership_percentage' => (float) $partner->ownership_percentage,
-                    'period_profit_share' => round($share, 2),
-                ];
-            });
+        $partners = ShareholderProfitService::allPartners($from, $to);
 
         $recentSales = Sale::query()
             ->with(['customer:id,name', 'unit:id,unit_no,list_price', 'project:id,name'])
@@ -85,7 +73,7 @@ class DashboardService
             ->get();
 
         $recentExpenses = Expense::query()
-            ->with(['category:id,name', 'project:id,name'])
+            ->with(['project:id,name'])
             ->latest('expense_date')
             ->limit(6)
             ->get();
@@ -99,13 +87,13 @@ class DashboardService
 
         $projects = Project::query()
             ->withCount(['units', 'sales', 'expenses'])
-            ->withSum('expenses', 'amount')
+            ->withSum(['expenses as project_expenses_sum' => fn ($q) => $q->where('status', 'approved')], 'amount')
             ->orderByDesc('updated_at')
             ->limit(8)
             ->get()
             ->map(function (Project $project) use ($salesByProject) {
                 $revenue = (float) ($salesByProject[$project->id] ?? 0);
-                $cost = (float) ($project->expenses_sum_amount ?? 0);
+                $cost = (float) ($project->project_expenses_sum ?? 0);
 
                 return [
                     'id' => $project->id,
@@ -153,17 +141,44 @@ class DashboardService
      */
     public function shareholderView(Partner $partner, ?CarbonInterface $from = null, ?CarbonInterface $to = null): array
     {
+        $from ??= now()->startOfMonth();
+        $to ??= now()->endOfDay();
+
         $summary = $this->summary($from, $to);
-        $share = ((float) $partner->ownership_percentage / 100) * $summary['kpis']['net_profit_period'];
+        $partner->loadMissing('projects:id,name');
+
+        $projectShares = $partner->projects->map(function ($project) use ($partner, $from, $to) {
+            $share = ShareholderProfitService::partnerShare($partner, $project->id, $from, $to);
+
+            return [
+                'project_id' => $project->id,
+                'project_name' => $project->name,
+                ...$share,
+            ];
+        });
+
+        $allTimeShares = $partner->projects->map(fn ($project) => ShareholderProfitService::partnerShare($partner, $project->id));
 
         return [
             'partner' => [
                 'id' => $partner->id,
                 'name' => $partner->name,
-                'ownership_percentage' => (float) $partner->ownership_percentage,
+                'projects' => $partner->projects->map(fn ($p) => [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'ownership_percentage' => (float) $p->pivot->ownership_percentage,
+                ]),
             ],
             'company_profit' => $summary['kpis']['net_profit_period'],
-            'my_profit' => round($share, 2),
+            'my_profit' => round((float) $projectShares->sum('entitled_share'), 2),
+            'my_paid' => round((float) $projectShares->sum('paid_total'), 2),
+            'my_balance' => round((float) $projectShares->sum('balance_owed'), 2),
+            'project_shares' => $projectShares,
+            'all_time' => [
+                'entitled_share' => round((float) $allTimeShares->sum('entitled_share'), 2),
+                'paid_total' => round((float) $allTimeShares->sum('paid_total'), 2),
+                'balance_owed' => round((float) $allTimeShares->sum('balance_owed'), 2),
+            ],
             'period' => $summary['period'],
             'projects' => $summary['projects'],
             'kpis' => [

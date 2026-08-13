@@ -4,7 +4,6 @@ import { ArrowLeft, Pencil, Printer } from '@lucide/vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
-import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
@@ -16,7 +15,7 @@ defineOptions({
         breadcrumbs: [
             { title: 'Dashboard', href: '/dashboard' },
             { title: 'Incomes', href: '/incomes' },
-            { title: 'Details', href: '#' },
+            { title: 'Voucher', href: '#' },
         ],
     },
 });
@@ -30,12 +29,11 @@ defineOptions({
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
                     <Link href="/incomes"><ArrowLeft class="size-4" /> Back</Link>
                 </Button>
-                <Heading :title="item.income_no" :description="item.category?.name || 'Income details'" />
+                <Heading :title="item.income_no" description="General income" />
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <StatusBadge :status="item.status" />
                 <Button variant="outline" @click="printPage">
-                    <Printer class="size-4" /> Print receipt
+                    <Printer class="size-4" /> Print voucher
                 </Button>
                 <Button as-child>
                     <Link :href="`/incomes/${item.id}/edit`"><Pencil class="size-4" /> Edit</Link>
@@ -45,7 +43,7 @@ defineOptions({
 
         <div class="print:hidden">
             <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
-                <div class="text-sm text-muted-foreground">Amount</div>
+                <div class="text-sm text-muted-foreground">Total amount</div>
                 <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
                     {{ money(item.amount, item.currency || 'USD') }}
                 </div>
@@ -57,38 +55,23 @@ defineOptions({
                 title="Income details"
                 :items="[
                     { label: 'Date', value: item.income_date },
-                    { label: 'Category', value: item.category?.name },
-                    { label: 'Project', value: item.project?.name },
-                    { label: 'Received from', value: item.received_from || item.customer?.name },
-                    { label: 'Customer', value: item.customer?.name },
-                    { label: 'Bank account', value: item.bank_account?.name },
-                    { label: 'Payment method', value: item.payment_method },
-                    { label: 'Reference', value: item.reference_no },
-                    { label: 'Currency', value: item.currency },
                     { label: 'Description', value: item.description, span: true },
                 ]"
             />
         </div>
 
         <PrintableVoucher
-                kind="receipt"
-                title="Income Receipt Voucher"
-                :document-no="item.income_no"
-                :date="item.income_date"
-                party-label="Received from"
-                :party-name="item.received_from || item.customer?.name"
-                :amount="item.amount"
-                :currency="item.currency || 'USD'"
-                :payment-method="item.payment_method"
-                :reference-no="item.reference_no"
-                :project-name="item.project?.name"
-                :account-name="item.bank_account?.name"
-                :description="item.description"
-                :status="item.status"
-                :fields="[
-                    { label: 'Category', value: item.category?.name },
-                    { label: 'Customer', value: item.customer?.name },
-                ]"
-            />
+            kind="receipt"
+            title="Income Receipt Voucher"
+            :document-no="item.income_no"
+            :date="item.income_date"
+            party-label="Received for"
+            party-name="Company-wide"
+            :amount="item.amount"
+            :currency="item.currency || 'USD'"
+            :payment-method="item.payment_method"
+            :description="item.description"
+            :status="item.status"
+        />
     </div>
 </template>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\Trashable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -78,14 +79,16 @@ class Project extends Model
         return $this->hasMany(PartnerInvestment::class);
     }
 
+    public function partners(): BelongsToMany
+    {
+        return $this->belongsToMany(Partner::class, 'project_partner')
+            ->withPivot('ownership_percentage')
+            ->withTimestamps();
+    }
+
     public function partnerDistributions(): HasMany
     {
         return $this->hasMany(PartnerDistribution::class);
-    }
-
-    public function inventoryTransactions(): HasMany
-    {
-        return $this->hasMany(InventoryTransaction::class);
     }
 
     public function financialTransactions(): HasMany

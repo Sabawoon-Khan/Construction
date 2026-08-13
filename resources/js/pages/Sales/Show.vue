@@ -165,6 +165,37 @@ function payAllRemaining() {
             </table>
         </div>
 
+        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm print:hidden">
+            <div class="border-b px-5 py-3">
+                <h3 class="text-sm font-semibold">Receipts</h3>
+            </div>
+            <table class="min-w-full text-sm">
+                <thead class="bg-muted/40 text-left text-muted-foreground">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">No</th>
+                        <th class="px-4 py-3 font-medium">Date</th>
+                        <th class="px-4 py-3 font-medium">Amount</th>
+                        <th class="px-4 py-3 font-medium text-right">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="p in sale.payments" :key="p.id" class="border-t hover:bg-muted/30">
+                        <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
+                        <td class="px-4 py-3">{{ p.paid_at }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency || 'USD') }}</td>
+                        <td class="px-4 py-3 text-right">
+                            <Button as-child size="sm" variant="outline">
+                                <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> Print</Link>
+                            </Button>
+                        </td>
+                    </tr>
+                    <tr v-if="!sale.payments?.length">
+                        <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">No receipts yet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <PrintableVoucher
             kind="statement"
             title="Customer Sale Statement"

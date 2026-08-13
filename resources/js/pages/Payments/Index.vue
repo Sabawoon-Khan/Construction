@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Eye, Plus, Printer, Trash2 } from '@lucide/vue';
+import { Eye, Printer } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
@@ -30,33 +30,10 @@ defineOptions({
 
 const apply = () => router.get('/payments', { search: search.value || undefined }, { preserveState: true, replace: true });
 
-const paymentStatuses = ['posted', 'pending', 'cancelled'];
-
 function rowActions(item: any): RowActionItem[] {
     return [
         { label: 'View', icon: Eye, href: `/payments/${item.id}` },
         { label: 'Print', icon: Printer, href: `/payments/${item.id}` },
-        { separator: true, isLabel: true, label: 'Change status' },
-        ...paymentStatuses.map((status) => ({
-            label: status.charAt(0).toUpperCase() + status.slice(1),
-            method: 'patch' as const,
-            href: `/payments/${item.id}/status`,
-            data: { status },
-            disabled: item.status === status,
-        })),
-        { separator: true, isLabel: true, label: 'Danger' },
-        {
-            label: 'Delete',
-            icon: Trash2,
-            method: 'delete',
-            href: `/payments/${item.id}`,
-            variant: 'destructive' as const,
-            confirm: {
-                title: 'Delete payment',
-                description: 'Are you sure you want to delete this payment? This action cannot be undone.',
-                confirmLabel: 'Delete',
-            },
-        },
     ];
 }
 </script>
@@ -65,11 +42,10 @@ function rowActions(item: any): RowActionItem[] {
     <Head title="Payments" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="Payments" description="Receipts against sales and installments." />
+            <Heading title="Payments" description="Read-only receipt log. Record payments from the sale page." />
             <div class="flex flex-wrap gap-2">
                 <Input v-model="search" placeholder="Search..." @keyup.enter="apply" />
                 <Button variant="secondary" @click="apply">Search</Button>
-                <Button as-child><Link href="/payments/create"><Plus class="size-4" /> Record payment</Link></Button>
             </div>
         </div>
 
@@ -110,7 +86,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="8" title="No payments yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="8" title="No receipts yet" description="Payments appear here when collected on a sale." />
                     </tbody>
                 </table>
             </div>

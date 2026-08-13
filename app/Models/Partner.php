@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Concerns\Trashable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -20,24 +21,20 @@ class Partner extends Model
         'phone',
         'email',
         'national_id',
-        'ownership_percentage',
         'address',
         'notes',
     ];
 
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'ownership_percentage' => 'decimal:4',
-        ];
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'project_partner')
+            ->withPivot('ownership_percentage')
+            ->withTimestamps();
     }
 
     public function investments(): HasMany
@@ -48,5 +45,16 @@ class Partner extends Model
     public function distributions(): HasMany
     {
         return $this->hasMany(PartnerDistribution::class);
+    }
+
+    public function ownershipOnProject(int $projectId): float
+    {
+        $project = $this->projects->firstWhere('id', $projectId);
+
+        if ($project) {
+            return (float) $project->pivot->ownership_percentage;
+        }
+
+        return (float) ($this->projects()->where('project_id', $projectId)->value('ownership_percentage') ?? 0);
     }
 }

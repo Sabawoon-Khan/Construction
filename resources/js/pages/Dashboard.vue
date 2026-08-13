@@ -92,7 +92,7 @@ function applyPeriod() {
 
         <div
             v-if="mode === 'shareholder'"
-            class="grid gap-4 md:grid-cols-3"
+            class="grid gap-4 md:grid-cols-2 xl:grid-cols-5"
         >
             <div class="rounded-2xl border bg-card p-5">
                 <div class="text-sm text-muted-foreground">Company profit</div>
@@ -110,6 +110,18 @@ function applyPeriod() {
                 <div class="text-sm text-emerald-800 dark:text-emerald-300">Your profit share</div>
                 <div class="mt-2 text-3xl font-semibold tabular-nums text-emerald-900 dark:text-emerald-200">
                     {{ money(stats.my_profit) }}
+                </div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="text-sm text-muted-foreground">Paid to you</div>
+                <div class="mt-2 text-3xl font-semibold tabular-nums text-emerald-700">
+                    {{ money(stats.my_paid) }}
+                </div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="text-sm text-muted-foreground">Still owed</div>
+                <div class="mt-2 text-3xl font-semibold tabular-nums text-amber-700">
+                    {{ money(stats.my_balance) }}
                 </div>
             </div>
         </div>
@@ -238,11 +250,15 @@ function applyPeriod() {
                             <div>
                                 <div class="font-medium">{{ partner.name }}</div>
                                 <div class="text-xs text-muted-foreground">
+                                    {{ partner.project_name || 'Company' }} ·
                                     {{ Number(partner.ownership_percentage).toFixed(2) }}% ownership
                                 </div>
                             </div>
-                            <div class="text-right font-semibold tabular-nums">
-                                {{ money(partner.period_profit_share) }}
+                            <div class="text-right text-sm tabular-nums">
+                                <div class="font-semibold">{{ money(partner.entitled_share ?? partner.period_profit_share) }}</div>
+                                <div class="text-xs text-muted-foreground">
+                                    Paid {{ money(partner.paid_total ?? 0) }} · Owed {{ money(partner.balance_owed ?? 0) }}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -298,7 +314,7 @@ function applyPeriod() {
                     >
                         <div>
                             <div class="font-medium">
-                                {{ expense.category?.name || 'Expense' }}
+                                {{ expense.description || 'Expense' }}
                             </div>
                             <div class="text-xs text-muted-foreground">
                                 {{ expense.project?.name || 'Company' }} ·

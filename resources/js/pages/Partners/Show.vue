@@ -8,7 +8,15 @@ import { formatNumber, money } from '@/lib/utils';
 
 defineProps<{
     item: Record<string, any>;
-    stats: { investments_total: number; distributions_total: number };
+    projects: {
+        id: number;
+        name: string;
+        ownership_percentage: number;
+        entitled_share: number;
+        paid_total: number;
+        balance_owed: number;
+    }[];
+    stats: { projects_count: number; contributions_total: number; payouts_total: number };
 }>();
 
 defineOptions({
@@ -39,21 +47,54 @@ defineOptions({
 
         <div class="grid gap-4 sm:grid-cols-3">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Ownership</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ formatNumber(item.ownership_percentage) }}%</div>
+                <div class="text-sm text-muted-foreground">Projects</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ stats.projects_count }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Investments</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.investments_total) }}</div>
+                <div class="text-sm text-muted-foreground">Total contributed</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.contributions_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Distributions</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.distributions_total) }}</div>
+                <div class="text-sm text-muted-foreground">Total paid out</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.payouts_total) }}</div>
             </div>
         </div>
 
+        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+            <div class="border-b px-5 py-3">
+                <h3 class="text-sm font-semibold">Project shares</h3>
+            </div>
+            <table class="min-w-full text-sm">
+                <thead class="bg-muted/40 text-left text-muted-foreground">
+                    <tr>
+                        <th class="px-4 py-3 font-medium">Project</th>
+                        <th class="px-4 py-3 font-medium">Share</th>
+                        <th class="px-4 py-3 font-medium">Profit share</th>
+                        <th class="px-4 py-3 font-medium">Paid</th>
+                        <th class="px-4 py-3 font-medium">Owed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="p in projects" :key="p.id" class="border-t hover:bg-muted/30">
+                        <td class="px-4 py-3">
+                            <Link :href="`/projects/${p.id}`" class="font-medium text-primary hover:underline">{{ p.name }}</Link>
+                        </td>
+                        <td class="px-4 py-3 tabular-nums">{{ formatNumber(p.ownership_percentage) }}%</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(p.entitled_share) }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(p.paid_total) }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(p.balance_owed) }}</td>
+                    </tr>
+                    <tr v-if="!projects.length">
+                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">
+                            Not assigned to any project yet. Add from a project page.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
         <DetailGrid
-            title="Shareholder details"
+            title="Contact details"
             :items="[
                 { label: 'Partner No', value: item.partner_no },
                 { label: 'Phone', value: item.phone },

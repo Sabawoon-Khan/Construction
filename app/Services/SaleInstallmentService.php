@@ -2,29 +2,48 @@
 
 namespace App\Services;
 
+use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\SaleInstallment;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class SaleInstallmentService
 {
     public static function recordPayment(Sale $sale, SaleInstallment $startInstallment, float $amount): void
     {
-        $sale->loadMissing('unit');
-        $installments = $sale->installments()->orderBy('installment_no')->get();
+        DB::transaction(function () use ($sale, $startInstallment, $amount) {
+            $sale->loadMissing('unit');
+            $installments = $sale->installments()->orderBy('installment_no')->get();
 
-        self::allocateAmount($installments, $amount, $startInstallment->id);
+            self::allocateAmount($installments, $amount, $startInstallment->id);
 
-        foreach ($installments as $installment) {
-            $paid = (float) $installment->paid_amount;
-            $due = (float) $installment->amount;
+            foreach ($installments as $installment) {
+                $paid = (float) $installment->paid_amount;
+                $due = (float) $installment->amount;
 
-            $installment->status = $paid >= $due
-                ? 'paid'
-                : ($paid > 0 ? 'partial' : 'pending');
-            $installment->save();
-        }
+                $installment->status = $paid >= $due
+                    ? 'paid'
+                    : ($paid > 0 ? 'partial' : 'pending');
+                $installment->save();
+            }
 
-        self::syncSaleStatus($sale);
+            Payment::create([
+                'project_id' => $sale->project_id,
+                'sale_id' => $sale->id,
+                'sale_installment_id' => $startInstallment->id,
+                'customer_id' => $sale->customer_id,
+                'payment_no' => 'PAY-'.Str::upper(Str::random(8)),
+                'type' => 'receipt',
+                'amount' => $amount,
+                'currency' => $sale->currency ?? 'USD',
+                'paid_at' => now(),
+                'payment_method' => 'cash',
+                'status' => 'posted',
+            ]);
+
+            self::syncSaleStatus($sale);
+        });
     }
 
     public static function syncSaleStatus(Sale $sale): void

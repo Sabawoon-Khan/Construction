@@ -111,8 +111,10 @@ class Sale extends Model
             default => static::query(),
         };
 
+        $table = $query->getModel()->getTable();
+
         return (float) $query
-            ->join('units', 'units.id', '=', 'sales.unit_id')
-            ->sum(DB::raw('units.list_price - COALESCE(sales.discount, 0)'));
+            ->join('units', 'units.id', '=', "{$table}.unit_id")
+            ->sum(DB::raw("units.list_price - COALESCE({$table}.discount, 0)"));
     }
 }

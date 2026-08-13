@@ -83,25 +83,7 @@ return [
         'partners' => [
             'extra' => [],
         ],
-        'suppliers' => [
-            'extra' => [],
-        ],
-        'contractors' => [
-            'extra' => [],
-        ],
-        'expense_categories' => [
-            'extra' => [],
-        ],
-        'income_categories' => [
-            'extra' => [],
-        ],
         'bank_accounts' => [
-            'extra' => [],
-        ],
-        'materials' => [
-            'extra' => [],
-        ],
-        'material_units' => [
             'extra' => [],
         ],
         'expenses' => [
@@ -117,9 +99,6 @@ return [
             'extra' => [],
         ],
         'vouchers' => [
-            'extra' => [],
-        ],
-        'purchases' => [
             'extra' => [],
         ],
         'ai' => [

@@ -3,11 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
+use App\Models\Expense;
+use App\Models\Partner;
+use App\Models\PartnerDistribution;
+use App\Models\PartnerInvestment;
 use App\Models\Project;
 use App\Models\Sale;
+use App\Services\FinanceDefaults;
+use App\Services\ShareholderProfitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,7 +23,6 @@ class ProjectController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'projects';
 
     use AuthorizesResourcePermissions;
-
 
     public function index(Request $request): Response
     {
@@ -75,21 +81,145 @@ class ProjectController extends Controller implements HasMiddleware
             'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest()->limit(8),
         ]);
 
+        $expensesQuery = Expense::query()
+            ->where('project_id', $project->id)
+            ->where('status', 'approved');
+
+        $expensesTotal = (float) (clone $expensesQuery)->sum('amount');
+        $salesTotal = Sale::sumTotalPrice($project->sales()->getQuery());
+        $netProfit = ShareholderProfitService::netProfit(projectId: $project->id);
+
+        $shareholders = ShareholderProfitService::projectPartners($project);
+
+        $assignedIds = $shareholders->pluck('id');
+
         return Inertia::render('Projects/Show', [
             'item' => $project,
             'stats' => [
                 'units_count' => $project->units_count,
                 'sales_count' => $project->sales_count,
-                'expenses_total' => $project->expenses()->sum('amount'),
+                'expenses_total' => $expensesTotal,
                 'incomes_total' => $project->incomes()->sum('amount'),
-                'sales_total' => Sale::sumTotalPrice($project->sales()->getQuery()),
+                'sales_total' => $salesTotal,
+                'net_profit' => $netProfit,
+                'contributions_total' => (float) PartnerInvestment::query()
+                    ->where('project_id', $project->id)
+                    ->sum('amount'),
+                'payouts_total' => (float) PartnerDistribution::query()
+                    ->where('project_id', $project->id)
+                    ->sum('amount'),
             ],
+            'shareholders' => $shareholders,
+            'available_shareholders' => Partner::query()
+                ->orderBy('name')
+                ->when($assignedIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $assignedIds))
+                ->get(['id', 'name', 'phone']),
+            'contributions' => PartnerInvestment::query()
+                ->where('project_id', $project->id)
+                ->with('partner:id,name')
+                ->latest('invested_at')
+                ->limit(50)
+                ->get(['id', 'partner_id', 'amount', 'currency', 'invested_at', 'reference_no', 'notes']),
+            'expenses' => $expensesQuery
+                ->latest('expense_date')
+                ->limit(50)
+                ->get(['id', 'expense_no', 'expense_date', 'description', 'amount', 'currency']),
         ]);
+    }
+
+    public function storeExpense(Request $request, Project $project): RedirectResponse
+    {
+        $data = $request->validate([
+            'expense_date' => 'required|date',
+            'amount' => 'required|numeric|min:0',
+            'description' => 'required|string|max:1000',
+        ]);
+
+        Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Project expense recorded.']);
+
+        return redirect()->route('projects.show', $project);
+    }
+
+    public function storeShareholder(Request $request, Project $project): RedirectResponse
+    {
+        $data = $request->validate([
+            'partner_id' => 'required|exists:partners,id',
+            'ownership_percentage' => 'required|numeric|min:0|max:100',
+        ]);
+
+        if ($project->partners()->where('partners.id', $data['partner_id'])->exists()) {
+            return back()->withErrors(['partner_id' => 'This shareholder is already on the project.']);
+        }
+
+        $project->partners()->attach($data['partner_id'], [
+            'ownership_percentage' => $data['ownership_percentage'],
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder added to project.']);
+
+        return redirect()->route('projects.show', $project);
+    }
+
+    public function storeShareholderContribution(Request $request, Project $project, Partner $partner): RedirectResponse
+    {
+        abort_unless($project->partners()->where('partners.id', $partner->id)->exists(), 404);
+
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'invested_at' => 'required|date',
+            'reference_no' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+        ]);
+
+        PartnerInvestment::create([
+            'project_id' => $project->id,
+            'partner_id' => $partner->id,
+            'amount' => $data['amount'],
+            'currency' => 'USD',
+            'agreed_share_percentage' => $partner->ownershipOnProject($project->id),
+            'invested_at' => $data['invested_at'],
+            'type' => 'investment',
+            'status' => 'approved',
+            'reference_no' => $data['reference_no'] ?? null,
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Contribution recorded.']);
+
+        return redirect()->route('projects.show', $project);
+    }
+
+    public function storeShareholderPayout(Request $request, Project $project, Partner $partner): RedirectResponse
+    {
+        abort_unless($project->partners()->where('partners.id', $partner->id)->exists(), 404);
+
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'distributed_at' => 'required|date',
+            'reference_no' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+        ]);
+
+        PartnerDistribution::create([
+            'project_id' => $project->id,
+            'partner_id' => $partner->id,
+            'amount' => $data['amount'],
+            'currency' => 'USD',
+            'type' => 'profit',
+            'distributed_at' => $data['distributed_at'],
+            'reference_no' => $data['reference_no'] ?? null,
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Payout recorded.']);
+
+        return redirect()->route('projects.show', $project);
     }
 
     public function edit(Request $request, Project $project): Response
     {
-
         return Inertia::render('Projects/Form', [
             'item' => $project,
         ]);
@@ -97,7 +227,6 @@ class ProjectController extends Controller implements HasMiddleware
 
     public function update(Request $request, Project $project): RedirectResponse
     {
-
         $data = $request->validate([
             'code' => 'required|string|max:50',
             'name' => 'required|string|max:255',

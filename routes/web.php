@@ -8,27 +8,20 @@ use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\BankAccountController;
-use App\Http\Controllers\ContractorController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\IncomeCategoryController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\LocaleController;
-use App\Http\Controllers\MaterialController;
-use App\Http\Controllers\MaterialUnitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StatusController;
-use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,29 +67,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->except(['show']);
 
     Route::resource('projects', ProjectController::class);
+    Route::post('projects/{project}/expenses', [ProjectController::class, 'storeExpense'])
+        ->middleware('permission:expenses.create')
+        ->name('projects.expenses.store');
+    Route::post('projects/{project}/shareholders', [ProjectController::class, 'storeShareholder'])
+        ->middleware('permission:partners.create')
+        ->name('projects.shareholders.store');
+    Route::post('projects/{project}/shareholders/{partner}/contributions', [ProjectController::class, 'storeShareholderContribution'])
+        ->middleware('permission:partners.edit')
+        ->name('projects.shareholders.contributions.store');
+    Route::post('projects/{project}/shareholders/{partner}/payouts', [ProjectController::class, 'storeShareholderPayout'])
+        ->middleware('permission:partners.edit')
+        ->name('projects.shareholders.payouts.store');
     Route::resource('units', UnitController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('partners', PartnerController::class);
-    Route::resource('suppliers', SupplierController::class);
-    Route::resource('contractors', ContractorController::class);
-    Route::resource('expense-categories', ExpenseCategoryController::class);
-    Route::resource('income-categories', IncomeCategoryController::class);
     Route::resource('bank-accounts', BankAccountController::class);
-    Route::resource('materials', MaterialController::class);
-    Route::resource('material-units', MaterialUnitController::class)->except(['show']);
-    Route::get('purchases', [PurchaseController::class, 'index'])->name('purchases.index');
-    Route::get('purchases/create', [PurchaseController::class, 'create'])->name('purchases.create');
-    Route::post('purchases', [PurchaseController::class, 'store'])->name('purchases.store');
-    Route::get('purchases/issues/create', [PurchaseController::class, 'createIssue'])->name('purchases.issues.create');
-    Route::post('purchases/issues', [PurchaseController::class, 'storeIssue'])->name('purchases.issues.store');
-    Route::get('purchases/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show');
     Route::resource('expenses', ExpenseController::class);
     Route::resource('incomes', IncomeController::class);
     Route::resource('sales', SaleController::class);
     Route::post('sales/{sale}/installments/{installment}/pay', [SaleController::class, 'payInstallment'])
         ->middleware('permission:sales.edit')
         ->name('sales.installments.pay');
-    Route::resource('payments', PaymentController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+    Route::resource('payments', PaymentController::class)->only(['index', 'show']);
 
     Route::post('/ai/assist', AiAssistController::class)
         ->middleware('throttle:20,1')

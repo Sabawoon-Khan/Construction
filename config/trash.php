@@ -1,5 +1,29 @@
 <?php
 
+use App\Models\AiConversation;
+use App\Models\AiUsageLog;
+use App\Models\Attachment;
+use App\Models\AuthenticationLog;
+use App\Models\BackupRecord;
+use App\Models\Customer;
+use App\Models\EmailLog;
+use App\Models\Expense;
+use App\Models\FieldNote;
+use App\Models\FieldReport;
+use App\Models\FileTrashEntry;
+use App\Models\Income;
+use App\Models\LookupItem;
+use App\Models\OrgSetting;
+use App\Models\Partner;
+use App\Models\Project;
+use App\Models\Role;
+use App\Models\Sale;
+use App\Models\StatusChangeLog;
+use App\Models\SyncClientMutation;
+use App\Models\SyncDevice;
+use App\Models\UploadSession;
+use App\Models\User;
+
 return [
 
     /*
@@ -34,127 +58,117 @@ return [
 
     'models' => [
         'field_reports' => [
-            'model' => App\Models\FieldReport::class,
+            'model' => FieldReport::class,
             'label' => 'Field report',
             'title' => 'title',
         ],
         'field_notes' => [
-            'model' => App\Models\FieldNote::class,
+            'model' => FieldNote::class,
             'label' => 'Field note',
             'title' => 'name',
         ],
         'lookup_items' => [
-            'model' => App\Models\LookupItem::class,
+            'model' => LookupItem::class,
             'label' => 'Lookup item',
             'title' => 'name',
         ],
         'users' => [
-            'model' => App\Models\User::class,
+            'model' => User::class,
             'label' => 'User',
             'title' => 'name',
         ],
         'roles' => [
-            'model' => App\Models\Role::class,
+            'model' => Role::class,
             'label' => 'Role',
             'title' => 'name',
         ],
         'attachments' => [
-            'model' => App\Models\Attachment::class,
+            'model' => Attachment::class,
             'label' => 'Attachment',
             'title' => 'original_filename',
         ],
         'org_settings' => [
-            'model' => App\Models\OrgSetting::class,
+            'model' => OrgSetting::class,
             'label' => 'Setting',
             'title' => 'key',
         ],
         'backup_records' => [
-            'model' => App\Models\BackupRecord::class,
+            'model' => BackupRecord::class,
             'label' => 'Backup',
             'title' => 'name',
         ],
         'upload_sessions' => [
-            'model' => App\Models\UploadSession::class,
+            'model' => UploadSession::class,
             'label' => 'Upload session',
             'title' => 'original_filename',
         ],
         'sync_devices' => [
-            'model' => App\Models\SyncDevice::class,
+            'model' => SyncDevice::class,
             'label' => 'Sync device',
             'title' => 'name',
         ],
         'sync_client_mutations' => [
-            'model' => App\Models\SyncClientMutation::class,
+            'model' => SyncClientMutation::class,
             'label' => 'Sync mutation',
             'title' => 'resource',
         ],
         'ai_usage_logs' => [
-            'model' => App\Models\AiUsageLog::class,
+            'model' => AiUsageLog::class,
             'label' => 'AI usage log',
             'title' => 'action',
         ],
         'email_logs' => [
-            'model' => App\Models\EmailLog::class,
+            'model' => EmailLog::class,
             'label' => 'Email log',
             'title' => 'subject',
         ],
         'authentication_logs' => [
-            'model' => App\Models\AuthenticationLog::class,
+            'model' => AuthenticationLog::class,
             'label' => 'Login log',
             'title' => 'email',
         ],
         'status_change_logs' => [
-            'model' => App\Models\StatusChangeLog::class,
+            'model' => StatusChangeLog::class,
             'label' => 'Status change',
             'title' => 'to_status',
         ],
         'ai_conversations' => [
-            'model' => App\Models\AiConversation::class,
+            'model' => AiConversation::class,
             'label' => 'AI conversation',
             'title' => 'title',
         ],
         'file_trash_entries' => [
-            'model' => App\Models\FileTrashEntry::class,
+            'model' => FileTrashEntry::class,
             'label' => 'File',
             'title' => 'name',
         ],
         'projects' => [
-            'model' => App\Models\Project::class,
+            'model' => Project::class,
             'label' => 'Project',
             'title' => 'name',
         ],
         'customers' => [
-            'model' => App\Models\Customer::class,
+            'model' => Customer::class,
             'label' => 'Customer',
             'title' => 'name',
         ],
         'partners' => [
-            'model' => App\Models\Partner::class,
+            'model' => Partner::class,
             'label' => 'Partner',
             'title' => 'name',
         ],
-        'suppliers' => [
-            'model' => App\Models\Supplier::class,
-            'label' => 'Supplier',
-            'title' => 'name',
-        ],
-        'contractors' => [
-            'model' => App\Models\Contractor::class,
-            'label' => 'Contractor',
-            'title' => 'name',
-        ],
         'sales' => [
-            'model' => App\Models\Sale::class,
+            'model' => Sale::class,
             'label' => 'Sale',
             'title' => 'sale_no',
         ],
         'expenses' => [
-            'model' => App\Models\Expense::class,
+            'model' => Expense::class,
             'label' => 'Expense',
             'title' => 'expense_no',
         ],
         'incomes' => [
-            'model' => App\Models\Income::class,
+            'model' => Income::class,
             'label' => 'Income',
             'title' => 'income_no',
         ],

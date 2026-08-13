@@ -96,7 +96,7 @@ class SaleController extends Controller implements HasMiddleware
     public function show(Request $request, Sale $sale): Response
     {
 
-        $sale->load(['customer', 'project', 'unit', 'installments']);
+        $sale->load(['customer', 'project', 'unit', 'installments', 'payments' => fn ($q) => $q->latest('paid_at')]);
 
         return Inertia::render('Sales/Show', [
             'sale' => $sale,

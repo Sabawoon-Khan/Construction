@@ -10,7 +10,15 @@ const props = defineProps<{
     projects: { id: number; name: string }[];
     summary: Record<string, number>;
     by_category: { category: string; amount: number; count: number }[];
-    partners: { id: number; name: string; ownership_percentage: number; profit_share: number }[];
+    partners: {
+        id: number;
+        name: string;
+        ownership_percentage: number;
+        profit_share: number;
+        entitled_share: number;
+        paid_total: number;
+        balance_owed: number;
+    }[];
     sales: any[];
     expenses: any[];
 }>();
@@ -57,7 +65,7 @@ function exportCsv() {
             'Expense',
             e.expense_date,
             e.expense_no,
-            e.paid_to ?? e.category?.name ?? '',
+            e.paid_to ?? e.description ?? '',
             e.amount,
         ]),
     ];
@@ -127,12 +135,7 @@ function printReport() {
                 <div class="mt-2 text-2xl font-semibold tabular-nums">
                     {{ money(summary.expense_total) }}
                 </div>
-                <div class="text-xs text-muted-foreground">
-                    {{ summary.expense_count }} entries
-                    <span v-if="summary.materials_used_total > 0">
-                        · includes {{ money(summary.materials_used_total) }} stock issued
-                    </span>
-                </div>
+                <div class="text-xs text-muted-foreground">{{ summary.expense_count }} entries</div>
             </div>
             <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
                 <div class="text-sm text-emerald-800 dark:text-emerald-300">Net profit</div>
@@ -168,15 +171,21 @@ function printReport() {
                     <thead class="text-left text-muted-foreground">
                         <tr>
                             <th class="py-2">Shareholder</th>
+                            <th>Project</th>
                             <th>Share %</th>
-                            <th>Profit</th>
+                            <th>Entitled</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="p in partners" :key="p.id" class="border-t">
                             <td class="py-2">{{ p.name }}</td>
+                            <td>{{ p.project_name || '—' }}</td>
                             <td>{{ Number(p.ownership_percentage).toFixed(2) }}%</td>
-                            <td class="font-medium tabular-nums">{{ money(p.profit_share) }}</td>
+                            <td class="tabular-nums">{{ money(p.entitled_share ?? p.profit_share) }}</td>
+                            <td class="tabular-nums">{{ money(p.paid_total ?? 0) }}</td>
+                            <td class="font-medium tabular-nums">{{ money(p.balance_owed ?? 0) }}</td>
                         </tr>
                     </tbody>
                 </table>

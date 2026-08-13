@@ -6,7 +6,6 @@ import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -17,6 +16,7 @@ const props = defineProps<{
     filters: { search?: string };
     totals: { amount: number };
 }>();
+
 const search = ref(props.filters.search ?? '');
 
 defineOptions({
@@ -30,21 +30,11 @@ defineOptions({
 
 const apply = () => router.get('/incomes', { search: search.value || undefined }, { preserveState: true, replace: true });
 
-const incomeStatuses = ['draft', 'approved'];
-
 function rowActions(item: any): RowActionItem[] {
     return [
         { label: 'View', icon: Eye, href: `/incomes/${item.id}` },
         { label: 'Print', icon: Printer, href: `/incomes/${item.id}` },
         { label: 'Edit', icon: Pencil, href: `/incomes/${item.id}/edit` },
-        { separator: true, isLabel: true, label: 'Change status' },
-        ...incomeStatuses.map((status) => ({
-            label: status.charAt(0).toUpperCase() + status.slice(1),
-            method: 'patch' as const,
-            href: `/incomes/${item.id}/status`,
-            data: { status },
-            disabled: item.status === status,
-        })),
         { separator: true, isLabel: true, label: 'Danger' },
         {
             label: 'Delete',
@@ -66,11 +56,11 @@ function rowActions(item: any): RowActionItem[] {
     <Head title="Incomes" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="Other Income" description="Non-sale income such as rentals or miscellaneous receipts." />
+            <Heading title="General Income" description="Company-wide income not tied to a project." />
             <div class="flex flex-wrap gap-2">
                 <Input v-model="search" placeholder="Search..." @keyup.enter="apply" />
                 <Button variant="secondary" @click="apply">Search</Button>
-                <Button as-child><Link href="/incomes/create"><Plus class="size-4" /> Add</Link></Button>
+                <Button as-child><Link href="/incomes/create"><Plus class="size-4" /> Add income</Link></Button>
             </div>
         </div>
 
@@ -85,31 +75,23 @@ function rowActions(item: any): RowActionItem[] {
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">Date</th>
-                            <th class="px-4 py-3 font-medium">No</th>
-                            <th class="px-4 py-3 font-medium">Category</th>
-                            <th class="px-4 py-3 font-medium">From</th>
-                            <th class="px-4 py-3 font-medium">Amount</th>
-                            <th class="px-4 py-3 font-medium">Status</th>
+                            <th class="px-4 py-3 font-medium">Description</th>
+                            <th class="px-4 py-3 font-medium">Total amount</th>
                             <th class="px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
-                            <td class="px-4 py-3">{{ item.income_date }}</td>
-                            <td class="px-4 py-3 font-medium">
-                                <Link :href="`/incomes/${item.id}`" class="hover:text-primary hover:underline">{{ item.income_no }}</Link>
-                            </td>
-                            <td class="px-4 py-3">{{ item.category?.name || '—' }}</td>
-                            <td class="px-4 py-3">{{ item.received_from || item.customer?.name || '—' }}</td>
+                            <td class="px-4 py-3">{{ item.income_date?.slice?.(0, 10) ?? item.income_date }}</td>
+                            <td class="px-4 py-3">{{ item.description || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount) }}</td>
-                            <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="7" title="No income records yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="4" title="No income records yet" />
                     </tbody>
                 </table>
             </div>

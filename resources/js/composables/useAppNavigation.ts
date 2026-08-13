@@ -1,6 +1,5 @@
 import {
     Banknote,
-    Boxes,
     Building2,
     ChartColumn,
     CircleDollarSign,
@@ -10,14 +9,9 @@ import {
     Handshake,
     Landmark,
     LayoutGrid,
-    Package,
-    PackageSearch,
-    Ruler,
     Receipt,
     Settings,
     Shield,
-    Tags,
-    Truck,
     Users,
     WalletCards,
 } from '@lucide/vue';
@@ -100,51 +94,11 @@ export function useAppNavigation() {
             groups.push({ label: t('Finance'), items: finance });
         }
 
-        const procurement: NavItem[] = [];
-
-        if (can('materials.view')) {
-            procurement.push(item(t('Materials'), '/materials', Boxes));
-        }
-
-        if (can('purchases.view')) {
-            procurement.push(item(t('Purchases'), '/purchases', PackageSearch));
-        }
-
-        if (can('suppliers.view')) {
-            procurement.push(item(t('Suppliers'), '/suppliers', Package));
-        }
-
-        if (can('contractors.view')) {
-            procurement.push(item(t('Contractors'), '/contractors', Truck));
-        }
-
-        if (procurement.length) {
-            groups.push({ label: t('Procurement & Stock'), items: procurement });
-        }
-
         if (can('partners.view')) {
             groups.push({
                 label: t('Shareholders'),
                 items: [item(t('Shareholders'), '/partners', Handshake)],
             });
-        }
-
-        const setup: NavItem[] = [];
-
-        if (can('material_units.view')) {
-            setup.push(item(t('Material Units'), '/material-units', Ruler));
-        }
-
-        if (can('expense_categories.view')) {
-            setup.push(item(t('Expense Categories'), '/expense-categories', Tags));
-        }
-
-        if (can('income_categories.view')) {
-            setup.push(item(t('Income Categories'), '/income-categories', Tags));
-        }
-
-        if (setup.length) {
-            groups.push({ label: t('Catalog & Setup'), items: setup });
         }
 
         const administration: NavItem[] = [];

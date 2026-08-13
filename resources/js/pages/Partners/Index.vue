@@ -9,7 +9,6 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { RowActionItem } from '@/lib/row-actions';
-import { formatNumber } from '@/lib/utils';
 
 type Item = Record<string, any>;
 const props = defineProps<{ items: { data: Item[]; links: any[]; meta?: any }; filters: { search?: string } }>();
@@ -24,7 +23,8 @@ defineOptions({
     },
 });
 
-const applySearch = () => router.get('/partners', { search: search.value || undefined }, { preserveState: true, replace: true });
+const applySearch = () =>
+    router.get('/partners', { search: search.value || undefined }, { preserveState: true, replace: true });
 
 function rowActions(item: Item): RowActionItem[] {
     return [
@@ -51,7 +51,7 @@ function rowActions(item: Item): RowActionItem[] {
     <Head title="Shareholders" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="Shareholders" description="Ownership partners and their share percentages." />
+            <Heading title="Shareholders" description="Master list — assign shareholders to projects from each project page." />
             <div class="flex flex-wrap gap-2">
                 <div class="relative min-w-[220px] flex-1">
                     <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -69,7 +69,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">Partner No</th>
                             <th class="px-4 py-3 font-medium">Name</th>
                             <th class="px-4 py-3 font-medium">Phone</th>
-                            <th class="px-4 py-3 font-medium">Ownership</th>
+                            <th class="px-4 py-3 font-medium">Projects</th>
                             <th class="px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
                     </thead>
@@ -80,7 +80,7 @@ function rowActions(item: Item): RowActionItem[] {
                             </td>
                             <td class="px-4 py-3">{{ item.name || '—' }}</td>
                             <td class="px-4 py-3">{{ item.phone || '—' }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ formatNumber(item.ownership_percentage) }}%</td>
+                            <td class="px-4 py-3 tabular-nums">{{ item.projects_count ?? 0 }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
