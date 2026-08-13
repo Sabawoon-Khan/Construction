@@ -1,0 +1,116 @@
+<script setup lang="ts">
+import { Form, Head, Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const props = defineProps<{
+    item: Record<string, any> | null;
+}>();
+
+const isEdit = computed(() => !!props.item);
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Projects', href: '/projects' },
+            { title: 'Form', href: '/projects/create' },
+        ],
+    },
+});
+</script>
+
+<template>
+    <Head :title="isEdit ? 'Edit Projects' : 'Create Projects'" />
+
+    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
+        <Heading
+            :title="isEdit ? 'Edit Projects' : 'Create Projects'"
+            description="Fill in the details below and save."
+        />
+
+        <Form
+            :action="isEdit ? `/projects/${item!.id}` : '/projects'"
+            :method="isEdit ? 'put' : 'post'"
+            class="max-w-3xl space-y-6 rounded-xl border border-sidebar-border/70 bg-card p-6"
+            v-slot="{ errors, processing }"
+        >
+            <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-2">
+                <Label for="code">Code</Label>
+                <Input id="code" name="code" type="text" required :default-value="item?.code ?? ''" />
+                <InputError :message="errors.code" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="name">Name</Label>
+                <Input id="name" name="name" type="text" required :default-value="item?.name ?? ''" />
+                <InputError :message="errors.name" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="type">Type</Label>
+                <Input id="type" name="type" type="text" :default-value="item?.type ?? ''" />
+                <InputError :message="errors.type" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="location">Location</Label>
+                <Input id="location" name="location" type="text" :default-value="item?.location ?? ''" />
+                <InputError :message="errors.location" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="start_date">Start Date</Label>
+                <Input id="start_date" name="start_date" type="date" :default-value="item?.start_date ?? ''" />
+                <InputError :message="errors.start_date" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="expected_completion_date">Expected Completion Date</Label>
+                <Input id="expected_completion_date" name="expected_completion_date" type="date" :default-value="item?.expected_completion_date ?? ''" />
+                <InputError :message="errors.expected_completion_date" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="estimated_budget">Estimated Budget</Label>
+                <Input id="estimated_budget" name="estimated_budget" type="number" step="0.01" :default-value="item?.estimated_budget ?? ''" />
+                <InputError :message="errors.estimated_budget" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="estimated_revenue">Estimated Revenue</Label>
+                <Input id="estimated_revenue" name="estimated_revenue" type="number" step="0.01" :default-value="item?.estimated_revenue ?? ''" />
+                <InputError :message="errors.estimated_revenue" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="progress_percent">Progress Percent</Label>
+                <Input id="progress_percent" name="progress_percent" type="number" step="0.01" :default-value="item?.progress_percent ?? ''" />
+                <InputError :message="errors.progress_percent" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="status">Status</Label>
+                <select id="status" name="status" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs" required :value="item?.status ?? ''">
+                    <option value="" disabled>Select</option>
+                    <option value="planning">planning</option>
+                    <option value="under_construction">under construction</option>
+                    <option value="ready_for_sale">ready for sale</option>
+                    <option value="sold">sold</option>
+                    <option value="completed">completed</option>
+                    <option value="on_hold">on hold</option>
+                </select>
+                <InputError :message="errors.status" />
+            </div>
+            <div class="grid gap-2 sm:col-span-2">
+                <Label for="description">Description</Label>
+                <textarea id="description" name="description" rows="3" class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs" :value="item?.description ?? ''"></textarea>
+                <InputError :message="errors.description" />
+            </div>
+            </div>
+
+            <div class="flex gap-2">
+                <Button type="submit" :disabled="processing">{{ processing ? 'Saving...' : 'Save' }}</Button>
+                <Button as-child variant="secondary">
+                    <Link href="/projects">Cancel</Link>
+                </Button>
+            </div>
+        </Form>
+    </div>
+</template>
