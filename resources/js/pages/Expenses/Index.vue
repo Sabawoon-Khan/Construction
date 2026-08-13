@@ -77,7 +77,7 @@ function rowActions(item: any): RowActionItem[] {
     <Head title="Expenses" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <Heading title="Expenses" description="Record materials, labor, transport, permits and admin costs." />
+            <Heading title="Expenses" description="Labor, transport, permits and admin costs. Use Purchases for materials." />
             <div class="flex flex-wrap gap-2">
                 <Input v-model="search" class="min-w-[180px]" placeholder="Search..." @keyup.enter="applyFilters" />
                 <select

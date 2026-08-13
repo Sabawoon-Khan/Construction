@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
+use App\Http\Controllers\Concerns\ResolvesMaterialUnits;
 use App\Models\Material;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -15,51 +16,48 @@ class MaterialController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'materials';
 
     use AuthorizesResourcePermissions;
-
+    use ResolvesMaterialUnits;
 
     public function index(Request $request): Response
     {
-        $query = Material::query();
+        $query = Material::query()->with('materialUnit:id,unit_name');
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->orWhere('name', 'like', "%{$search}%");
                 $q->orWhere('code', 'like', "%{$search}%");
-                $q->orWhere('unit', 'like', "%{$search}%");
+                $q->orWhereHas('materialUnit', fn ($unitQuery) => $unitQuery->where('unit_name', 'like', "%{$search}%"));
             });
         }
 
         return Inertia::render('Materials/Index', [
-            'items' => $query->latest()->paginate(12)->withQueryString(),
+            'items' => $query->latest()->paginate(12)->through(fn (Material $material) => [
+                ...$material->toArray(),
+                'current_stock' => $material->currentStock(),
+                'average_unit_cost' => $material->averageUnitCost(),
+            ])->withQueryString(),
             'filters' => ['search' => $search],
         ]);
     }
 
     public function create(): Response
     {
-        return Inertia::render('Materials/Form', ['item' => null]);
+        return Inertia::render('Materials/Form', [
+            'item' => null,
+            'units' => $this->materialUnitOptions(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:100',
-            'name' => 'required|string|max:255',
-            'unit' => 'required|string|max:50',
-            'minimum_stock' => 'nullable|numeric|min:0',
-            'unit_cost' => 'nullable|numeric|min:0',
-            'currency' => 'required|string|size:3',
-            'is_active' => 'boolean',
-        ]);
+        $data = $this->validated($request);
 
-        Material::create(array_merge([
-            'unit' => 'pcs',
-            'minimum_stock' => 0,
+        Material::create([
+            ...$data,
             'unit_cost' => 0,
             'currency' => 'USD',
-            'is_active' => true,
-        ], $data, [            'is_active' => $request->boolean('is_active', true),
-        ]));
+            'is_active' => $request->boolean('is_active', true),
+        ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Material created.']);
 
@@ -68,32 +66,31 @@ class MaterialController extends Controller implements HasMiddleware
 
     public function show(Material $material): Response
     {
+        $material->load('materialUnit:id,unit_name');
+
         return Inertia::render('Materials/Show', [
-            'item' => $material,
+            'item' => [
+                ...$material->toArray(),
+                'current_stock' => $material->currentStock(),
+                'average_unit_cost' => $material->averageUnitCost(),
+            ],
         ]);
     }
 
     public function edit(Request $request, Material $material): Response
     {
+        $material->load('materialUnit:id,unit_name');
 
-        return Inertia::render('Materials/Form', ['item' => $material]);
+        return Inertia::render('Materials/Form', [
+            'item' => $material,
+            'units' => $this->materialUnitOptions(),
+        ]);
     }
 
     public function update(Request $request, Material $material): RedirectResponse
     {
-
-        $data = $request->validate([
-            'code' => 'required|string|max:100',
-            'name' => 'required|string|max:255',
-            'unit' => 'required|string|max:50',
-            'minimum_stock' => 'nullable|numeric|min:0',
-            'unit_cost' => 'nullable|numeric|min:0',
-            'currency' => 'required|string|size:3',
-            'is_active' => 'boolean',
-        ]);
-
         $material->update([
-            ...$data,
+            ...$this->validated($request),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -109,5 +106,17 @@ class MaterialController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Material deleted.']);
 
         return redirect()->route('materials.index');
+    }
+
+    /** @return array<string, mixed> */
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'code' => 'required|string|max:100',
+            'name' => 'required|string|max:255',
+            'material_unit_id' => 'required|exists:material_units,id',
+            'minimum_stock' => 'nullable|numeric|min:0',
+            'is_active' => 'boolean',
+        ]);
     }
 }

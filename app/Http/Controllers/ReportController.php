@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\Income;
+use App\Models\InventoryTransaction;
 use App\Models\Partner;
 use App\Models\Project;
 use App\Models\Sale;
@@ -34,6 +35,16 @@ class ReportController extends Controller
             ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->get();
 
+        $issuedMaterials = InventoryTransaction::query()
+            ->where('type', 'issue')
+            ->whereBetween('transaction_date', [$from->toDateString(), $to->toDateString()])
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->where(function ($query) {
+                $query->whereNull('notes')
+                    ->orWhere('notes', 'not like', 'Auto-issued from direct-to-project purchase.%');
+            })
+            ->get();
+
         $sales = Sale::query()
             ->with(['customer:id,name', 'unit:id,unit_no,list_price,currency'])
             ->where('status', '!=', 'cancelled')
@@ -47,7 +58,12 @@ class ReportController extends Controller
             ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->get();
 
-        $expenseTotal = (float) $expenses->sum('amount');
+        $cashExpenseTotal = (float) $expenses->sum('amount');
+        $issuedMaterialTotal = (float) $issuedMaterials->sum('total_cost');
+        $expenseTotal = $projectId
+            ? $cashExpenseTotal + $issuedMaterialTotal
+            : $cashExpenseTotal;
+
         $salesTotal = (float) $sales->sum(fn (Sale $sale) => $sale->total_price);
         $incomeTotal = (float) $incomes->sum('amount');
         $netProfit = $salesTotal + $incomeTotal - $expenseTotal;
@@ -71,6 +87,14 @@ class ReportController extends Controller
             ])
             ->values();
 
+        if ($issuedMaterialTotal > 0) {
+            $byCategory->push([
+                'category' => 'Materials used (stock)',
+                'amount' => $issuedMaterialTotal,
+                'count' => $issuedMaterials->count(),
+            ]);
+        }
+
         return Inertia::render('Reports/Index', [
             'filters' => [
                 'from' => $from->toDateString(),
@@ -82,9 +106,11 @@ class ReportController extends Controller
                 'sales_total' => $salesTotal,
                 'income_total' => $incomeTotal,
                 'expense_total' => $expenseTotal,
+                'cash_expense_total' => $cashExpenseTotal,
+                'materials_used_total' => $issuedMaterialTotal,
                 'net_profit' => $netProfit,
                 'sales_count' => $sales->count(),
-                'expense_count' => $expenses->count(),
+                'expense_count' => $expenses->count() + $issuedMaterials->count(),
             ],
             'by_category' => $byCategory,
             'partners' => $partners,

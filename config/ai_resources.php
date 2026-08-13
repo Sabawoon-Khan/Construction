@@ -1,9 +1,29 @@
 <?php
 
+use App\Models\BankAccount;
+use App\Models\Building;
+use App\Models\Company;
+use App\Models\Contractor;
+use App\Models\Customer;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
+use App\Models\FieldNote;
 use App\Models\FieldReport;
+use App\Models\Floor;
+use App\Models\Income;
+use App\Models\IncomeCategory;
+use App\Models\InventoryTransaction;
 use App\Models\LookupItem;
-use App\Models\User;
+use App\Models\Material;
+use App\Models\MaterialUnit;
+use App\Models\Partner;
+use App\Models\Payment;
+use App\Models\Project;
 use App\Models\Role;
+use App\Models\Sale;
+use App\Models\Supplier;
+use App\Models\Unit;
+use App\Models\User;
 
 /**
  * Agent-operable resources for General Chat.
@@ -148,10 +168,9 @@ return [
         'sensitive' => [],
     ],
 
-
     'field_notes' => [
         'label' => 'Field notes',
-        'model' => \App\Models\FieldNote::class,
+        'model' => FieldNote::class,
         'permission' => 'field_notes',
         'index_route' => 'field-notes.index',
         'edit_route' => 'field-notes.edit',
@@ -175,7 +194,7 @@ return [
 
     'companies' => [
         'label' => 'Company',
-        'model' => \App\Models\Company::class,
+        'model' => Company::class,
         'permission' => 'companies',
         'index_route' => 'settings.company.edit',
         'edit_route' => 'settings.company.edit',
@@ -212,7 +231,7 @@ return [
 
     'projects' => [
         'label' => 'Projects',
-        'model' => \App\Models\Project::class,
+        'model' => Project::class,
         'permission' => 'projects',
         'index_route' => 'projects.index',
         'edit_route' => 'projects.edit',
@@ -257,7 +276,7 @@ return [
 
     'buildings' => [
         'label' => 'Buildings',
-        'model' => \App\Models\Building::class,
+        'model' => Building::class,
         'permission' => 'projects',
         'index_route' => null,
         'edit_route' => null,
@@ -285,7 +304,7 @@ return [
 
     'floors' => [
         'label' => 'Floors',
-        'model' => \App\Models\Floor::class,
+        'model' => Floor::class,
         'permission' => 'projects',
         'index_route' => null,
         'edit_route' => null,
@@ -313,7 +332,7 @@ return [
 
     'units' => [
         'label' => 'Units',
-        'model' => \App\Models\Unit::class,
+        'model' => Unit::class,
         'permission' => 'units',
         'index_route' => 'units.index',
         'edit_route' => 'units.edit',
@@ -352,7 +371,7 @@ return [
 
     'customers' => [
         'label' => 'Customers',
-        'model' => \App\Models\Customer::class,
+        'model' => Customer::class,
         'permission' => 'customers',
         'index_route' => 'customers.index',
         'edit_route' => 'customers.edit',
@@ -389,7 +408,7 @@ return [
 
     'partners' => [
         'label' => 'Partners',
-        'model' => \App\Models\Partner::class,
+        'model' => Partner::class,
         'permission' => 'partners',
         'index_route' => 'partners.index',
         'edit_route' => 'partners.edit',
@@ -427,7 +446,7 @@ return [
 
     'suppliers' => [
         'label' => 'Suppliers',
-        'model' => \App\Models\Supplier::class,
+        'model' => Supplier::class,
         'permission' => 'suppliers',
         'index_route' => 'suppliers.index',
         'edit_route' => 'suppliers.edit',
@@ -461,7 +480,7 @@ return [
 
     'contractors' => [
         'label' => 'Contractors',
-        'model' => \App\Models\Contractor::class,
+        'model' => Contractor::class,
         'permission' => 'contractors',
         'index_route' => 'contractors.index',
         'edit_route' => 'contractors.edit',
@@ -495,7 +514,7 @@ return [
 
     'expense_categories' => [
         'label' => 'Expense categories',
-        'model' => \App\Models\ExpenseCategory::class,
+        'model' => ExpenseCategory::class,
         'permission' => 'expense_categories',
         'index_route' => 'expense-categories.index',
         'edit_route' => 'expense-categories.edit',
@@ -524,7 +543,7 @@ return [
 
     'income_categories' => [
         'label' => 'Income categories',
-        'model' => \App\Models\IncomeCategory::class,
+        'model' => IncomeCategory::class,
         'permission' => 'income_categories',
         'index_route' => 'income-categories.index',
         'edit_route' => 'income-categories.edit',
@@ -553,7 +572,7 @@ return [
 
     'bank_accounts' => [
         'label' => 'Bank accounts',
-        'model' => \App\Models\BankAccount::class,
+        'model' => BankAccount::class,
         'permission' => 'bank_accounts',
         'index_route' => 'bank-accounts.index',
         'edit_route' => 'bank-accounts.edit',
@@ -590,42 +609,91 @@ return [
 
     'materials' => [
         'label' => 'Materials',
-        'model' => \App\Models\Material::class,
+        'model' => Material::class,
         'permission' => 'materials',
         'index_route' => 'materials.index',
         'edit_route' => 'materials.edit',
         'user_scoped' => false,
         'search' => ['code', 'name'],
         'default_order' => ['name', 'asc'],
-        'display' => ['id', 'code', 'name', 'unit', 'unit_cost', 'is_active'],
+        'display' => ['id', 'code', 'name', 'material_unit_id', 'is_active'],
         'title_attribute' => 'name',
-        'fillable' => ['code', 'name', 'unit', 'minimum_stock', 'unit_cost', 'currency', 'is_active'],
+        'fillable' => ['code', 'name', 'material_unit_id', 'minimum_stock', 'is_active'],
         'rules' => [
             'create' => [
                 'code' => ['required', 'string', 'max:50', 'unique:materials,code'],
                 'name' => ['required', 'string', 'max:255'],
-                'unit' => ['nullable', 'string', 'max:30'],
+                'material_unit_id' => ['nullable', 'integer', 'exists:material_units,id'],
                 'minimum_stock' => ['nullable', 'numeric'],
-                'unit_cost' => ['nullable', 'numeric'],
-                'currency' => ['nullable', 'string', 'size:3'],
                 'is_active' => ['sometimes', 'boolean'],
             ],
             'update' => [
                 'code' => ['sometimes', 'string', 'max:50'],
                 'name' => ['sometimes', 'string', 'max:255'],
-                'unit' => ['sometimes', 'nullable', 'string', 'max:30'],
+                'material_unit_id' => ['sometimes', 'nullable', 'integer', 'exists:material_units,id'],
                 'minimum_stock' => ['sometimes', 'nullable', 'numeric'],
-                'unit_cost' => ['sometimes', 'nullable', 'numeric'],
-                'currency' => ['sometimes', 'nullable', 'string', 'size:3'],
                 'is_active' => ['sometimes', 'boolean'],
             ],
         ],
         'sensitive' => [],
     ],
 
+    'material_units' => [
+        'label' => 'Material units',
+        'model' => MaterialUnit::class,
+        'permission' => 'material_units',
+        'index_route' => 'material-units.index',
+        'edit_route' => 'material-units.edit',
+        'user_scoped' => false,
+        'search' => ['unit_name'],
+        'default_order' => ['unit_name', 'asc'],
+        'display' => ['id', 'unit_name'],
+        'title_attribute' => 'unit_name',
+        'fillable' => ['unit_name'],
+        'rules' => [
+            'create' => [
+                'unit_name' => ['required', 'string', 'max:50', 'unique:material_units,unit_name'],
+            ],
+            'update' => [
+                'unit_name' => ['sometimes', 'string', 'max:50', 'unique:material_units,unit_name'],
+            ],
+        ],
+        'sensitive' => [],
+    ],
+
+    'purchases' => [
+        'label' => 'Purchases',
+        'model' => InventoryTransaction::class,
+        'permission' => 'purchases',
+        'index_route' => 'purchases.index',
+        'edit_route' => 'purchases.index',
+        'user_scoped' => false,
+        'search' => ['reference_no', 'type', 'notes'],
+        'default_order' => ['transaction_date', 'desc'],
+        'display' => ['id', 'type', 'material_id', 'project_id', 'quantity', 'total_cost', 'transaction_date'],
+        'title_attribute' => 'reference_no',
+        'fillable' => ['project_id', 'material_id', 'supplier_id', 'expense_id', 'type', 'quantity', 'unit_cost', 'total_cost', 'currency', 'transaction_date', 'reference_no', 'notes'],
+        'rules' => [
+            'create' => [
+                'material_id' => ['required', 'integer', 'exists:materials,id'],
+                'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
+                'project_id' => ['nullable', 'integer', 'exists:projects,id'],
+                'quantity' => ['required', 'numeric', 'min:0.001'],
+                'unit_cost' => ['required', 'numeric', 'min:0'],
+                'currency' => ['required', 'string', 'size:3'],
+                'transaction_date' => ['required', 'date'],
+                'reference_no' => ['nullable', 'string', 'max:100'],
+                'payment_method' => ['nullable', 'string', 'max:50'],
+                'notes' => ['nullable', 'string'],
+            ],
+            'update' => [],
+        ],
+        'sensitive' => [],
+    ],
+
     'sales' => [
         'label' => 'Sales',
-        'model' => \App\Models\Sale::class,
+        'model' => Sale::class,
         'permission' => 'sales',
         'index_route' => 'sales.index',
         'edit_route' => 'sales.edit',
@@ -662,7 +730,7 @@ return [
 
     'expenses' => [
         'label' => 'Expenses',
-        'model' => \App\Models\Expense::class,
+        'model' => Expense::class,
         'permission' => 'expenses',
         'index_route' => 'expenses.index',
         'edit_route' => 'expenses.edit',
@@ -705,7 +773,7 @@ return [
 
     'incomes' => [
         'label' => 'Incomes',
-        'model' => \App\Models\Income::class,
+        'model' => Income::class,
         'permission' => 'incomes',
         'index_route' => 'incomes.index',
         'edit_route' => 'incomes.edit',
@@ -747,7 +815,7 @@ return [
 
     'payments' => [
         'label' => 'Payments',
-        'model' => \App\Models\Payment::class,
+        'model' => Payment::class,
         'permission' => 'payments',
         'index_route' => 'payments.index',
         'edit_route' => null,

@@ -101,6 +101,9 @@ return [
         'materials' => [
             'extra' => [],
         ],
+        'material_units' => [
+            'extra' => [],
+        ],
         'expenses' => [
             'extra' => [],
         ],
@@ -116,7 +119,7 @@ return [
         'vouchers' => [
             'extra' => [],
         ],
-        'inventory' => [
+        'purchases' => [
             'extra' => [],
         ],
         'ai' => [

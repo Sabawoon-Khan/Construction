@@ -11,6 +11,7 @@ class InventoryTransaction extends Model
         'project_id',
         'material_id',
         'supplier_id',
+        'expense_id',
         'type',
         'quantity',
         'unit_cost',
@@ -47,5 +48,10 @@ class InventoryTransaction extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function expense(): BelongsTo
+    {
+        return $this->belongsTo(Expense::class);
     }
 }

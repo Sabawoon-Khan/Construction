@@ -1,4 +1,5 @@
 import {
+    Banknote,
     Boxes,
     Building2,
     ChartColumn,
@@ -7,11 +8,15 @@ import {
     DatabaseBackup,
     FolderKanban,
     Handshake,
+    Landmark,
     LayoutGrid,
     Package,
+    PackageSearch,
+    Ruler,
     Receipt,
     Settings,
     Shield,
+    Tags,
     Truck,
     Users,
     WalletCards,
@@ -20,160 +25,129 @@ import { computed } from 'vue';
 import { usePermissions } from '@/composables/usePermissions';
 import { useTranslations } from '@/composables/useTranslations';
 import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import type { NavGroup, NavItem } from '@/types';
+
+function item(title: string, href: NavItem['href'], icon: NavItem['icon']): NavItem {
+    return { title, href, icon };
+}
 
 export function useAppNavigation() {
     const { t } = useTranslations();
     const { can, canAny } = usePermissions();
 
-    const mainNavItems = computed(() => {
-        const items: NavItem[] = [
-            {
-                title: t('Dashboard'),
-                href: dashboard(),
-                icon: LayoutGrid,
-            },
+    const navGroups = computed(() => {
+        const groups: NavGroup[] = [];
+
+        const overview: NavItem[] = [
+            item(t('Dashboard'), dashboard(), LayoutGrid),
         ];
 
+        if (can('dashboard.view')) {
+            overview.push(item(t('Reports'), '/reports', ChartColumn));
+        }
+
         if (can('field_reports.view')) {
-            items.push({
-                title: t('Field reports'),
-                href: '/field-reports',
-                icon: ClipboardList,
-            });
+            overview.push(item(t('Field reports'), '/field-reports', ClipboardList));
         }
 
         if (can('ai.analytics')) {
-            items.push({
-                title: t('AI Analytics'),
-                href: '/ai/analytics',
-                icon: ChartColumn,
-            });
+            overview.push(item(t('AI Analytics'), '/ai/analytics', ChartColumn));
         }
 
-        return items;
-    });
+        groups.push({ label: t('Overview'), items: overview });
 
-    const constructionNavItems = computed(() => {
-        const items: NavItem[] = [];
+        const projectsAndSales: NavItem[] = [];
 
         if (can('projects.view')) {
-            items.push({
-                title: t('Projects'),
-                href: '/projects',
-                icon: FolderKanban,
-            });
+            projectsAndSales.push(item(t('Projects'), '/projects', FolderKanban));
         }
 
         if (can('units.view')) {
-            items.push({
-                title: t('Units'),
-                href: '/units',
-                icon: Building2,
-            });
+            projectsAndSales.push(item(t('Units'), '/units', Building2));
         }
 
         if (can('sales.view')) {
-            items.push({
-                title: t('Sales'),
-                href: '/sales',
-                icon: CircleDollarSign,
-            });
-        }
-
-        if (can('expenses.view')) {
-            items.push({
-                title: t('Expenses'),
-                href: '/expenses',
-                icon: Receipt,
-            });
-        }
-
-        if (can('incomes.view')) {
-            items.push({
-                title: t('Incomes'),
-                href: '/incomes',
-                icon: WalletCards,
-            });
+            projectsAndSales.push(item(t('Sales'), '/sales', CircleDollarSign));
         }
 
         if (can('customers.view')) {
-            items.push({
-                title: t('Customers'),
-                href: '/customers',
-                icon: Users,
-            });
+            projectsAndSales.push(item(t('Customers'), '/customers', Users));
         }
 
-        if (can('partners.view')) {
-            items.push({
-                title: t('Shareholders'),
-                href: '/partners',
-                icon: Handshake,
-            });
+        if (projectsAndSales.length) {
+            groups.push({ label: t('Projects & Sales'), items: projectsAndSales });
         }
 
-        if (can('suppliers.view')) {
-            items.push({
-                title: t('Suppliers'),
-                href: '/suppliers',
-                icon: Package,
-            });
+        const finance: NavItem[] = [];
+
+        if (can('expenses.view')) {
+            finance.push(item(t('Expenses'), '/expenses', Receipt));
         }
 
-        if (can('contractors.view')) {
-            items.push({
-                title: t('Contractors'),
-                href: '/contractors',
-                icon: Truck,
-            });
+        if (can('incomes.view')) {
+            finance.push(item(t('Incomes'), '/incomes', WalletCards));
         }
 
-        if (can('materials.view')) {
-            items.push({
-                title: t('Materials'),
-                href: '/materials',
-                icon: Boxes,
-            });
+        if (can('payments.view')) {
+            finance.push(item(t('Payments'), '/payments', Banknote));
         }
 
         if (can('bank_accounts.view')) {
-            items.push({
-                title: t('Bank Accounts'),
-                href: '/bank-accounts',
-                icon: Building2,
+            finance.push(item(t('Bank Accounts'), '/bank-accounts', Landmark));
+        }
+
+        if (finance.length) {
+            groups.push({ label: t('Finance'), items: finance });
+        }
+
+        const procurement: NavItem[] = [];
+
+        if (can('materials.view')) {
+            procurement.push(item(t('Materials'), '/materials', Boxes));
+        }
+
+        if (can('purchases.view')) {
+            procurement.push(item(t('Purchases'), '/purchases', PackageSearch));
+        }
+
+        if (can('suppliers.view')) {
+            procurement.push(item(t('Suppliers'), '/suppliers', Package));
+        }
+
+        if (can('contractors.view')) {
+            procurement.push(item(t('Contractors'), '/contractors', Truck));
+        }
+
+        if (procurement.length) {
+            groups.push({ label: t('Procurement & Stock'), items: procurement });
+        }
+
+        if (can('partners.view')) {
+            groups.push({
+                label: t('Shareholders'),
+                items: [item(t('Shareholders'), '/partners', Handshake)],
             });
         }
 
-        if (can('dashboard.view')) {
-            items.push({
-                title: t('Reports'),
-                href: '/reports',
-                icon: ChartColumn,
-            });
+        const setup: NavItem[] = [];
+
+        if (can('material_units.view')) {
+            setup.push(item(t('Material Units'), '/material-units', Ruler));
         }
 
         if (can('expense_categories.view')) {
-            items.push({
-                title: t('Expense Categories'),
-                href: '/expense-categories',
-                icon: Receipt,
-            });
+            setup.push(item(t('Expense Categories'), '/expense-categories', Tags));
         }
 
         if (can('income_categories.view')) {
-            items.push({
-                title: t('Income Categories'),
-                href: '/income-categories',
-                icon: WalletCards,
-            });
+            setup.push(item(t('Income Categories'), '/income-categories', Tags));
         }
 
-        return items;
-    });
+        if (setup.length) {
+            groups.push({ label: t('Catalog & Setup'), items: setup });
+        }
 
-    const adminNavItems = computed(() => {
-        const items: NavItem[] = [];
+        const administration: NavItem[] = [];
 
         if (
             can('settings.manage') ||
@@ -182,7 +156,7 @@ export function useAppNavigation() {
             can('backups.view') ||
             can('storage.view')
         ) {
-            items.push({
+            administration.push({
                 title: t('Settings'),
                 href: can('settings.manage')
                     ? '/settings/appearance'
@@ -198,45 +172,28 @@ export function useAppNavigation() {
         }
 
         if (can('users.view')) {
-            items.push({
-                title: t('Users'),
-                href: '/settings/users',
-                icon: Users,
-            });
+            administration.push(item(t('Users'), '/settings/users', Users));
         }
 
         if (can('roles.view')) {
-            items.push({
-                title: t('Roles'),
-                href: '/settings/roles',
-                icon: Shield,
-            });
+            administration.push(item(t('Roles'), '/settings/roles', Shield));
         }
 
-        if (
-            can('backups.view') ||
-            canAny(['backups.run', 'backups.download'])
-        ) {
-            items.push({
-                title: t('Backups'),
-                href: '/settings/backups',
-                icon: DatabaseBackup,
-            });
+        if (can('backups.view') || canAny(['backups.run', 'backups.download'])) {
+            administration.push(item(t('Backups'), '/settings/backups', DatabaseBackup));
         }
 
-        return items;
+        if (administration.length) {
+            groups.push({ label: t('Administration'), items: administration });
+        }
+
+        return groups;
     });
 
-    const allNavItems = computed(() => [
-        ...mainNavItems.value,
-        ...constructionNavItems.value,
-        ...adminNavItems.value,
-    ]);
+    const allNavItems = computed(() => navGroups.value.flatMap((group) => group.items));
 
     return {
-        mainNavItems,
-        constructionNavItems,
-        adminNavItems,
+        navGroups,
         allNavItems,
     };
 }

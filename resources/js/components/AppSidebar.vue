@@ -35,7 +35,7 @@ const page = usePage();
 const { t } = useTranslations();
 const { sidebarSide, dir } = useLocale();
 const { toggleSidebar, state } = useSidebar();
-const { mainNavItems, constructionNavItems, adminNavItems } = useAppNavigation();
+const { navGroups } = useAppNavigation();
 
 const isCollapsed = computed(() => state.value === 'collapsed');
 
@@ -88,16 +88,11 @@ const sidebarVariant = computed(() => {
             class="px-3 transition-[padding] duration-300 ease-in-out group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0"
             data-tour="sidebar-nav"
         >
-            <NavMain :items="mainNavItems" :label="t('Platform')" />
             <NavMain
-                v-if="constructionNavItems.length"
-                :items="constructionNavItems"
-                :label="t('Construction')"
-            />
-            <NavMain
-                v-if="adminNavItems.length"
-                :items="adminNavItems"
-                :label="t('Administration')"
+                v-for="group in navGroups"
+                :key="group.label"
+                :items="group.items"
+                :label="group.label"
             />
         </SidebarContent>
 

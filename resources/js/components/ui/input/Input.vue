@@ -38,17 +38,24 @@ const dateValue = computed({
 </script>
 
 <template>
-    <DatePicker
-        v-if="isDateInput"
-        v-model="dateValue"
-        :id="(attrs.id as string | undefined)"
-        :disabled="Boolean(attrs.disabled)"
-        :required="Boolean(attrs.required)"
-        :min="(attrs.min as string | undefined) ?? null"
-        :max="(attrs.max as string | undefined) ?? null"
-        :placeholder="(attrs.placeholder as string | undefined) ?? ''"
-        :class="typeof props.class === 'string' ? props.class : undefined"
-    />
+    <template v-if="isDateInput">
+        <DatePicker
+            v-model="dateValue"
+            :id="(attrs.id as string | undefined)"
+            :disabled="Boolean(attrs.disabled)"
+            :required="Boolean(attrs.required)"
+            :min="(attrs.min as string | undefined) ?? null"
+            :max="(attrs.max as string | undefined) ?? null"
+            :placeholder="(attrs.placeholder as string | undefined) ?? ''"
+            :class="typeof props.class === 'string' ? props.class : undefined"
+        />
+        <input
+            v-if="attrs.name"
+            type="hidden"
+            :name="String(attrs.name)"
+            :value="dateValue"
+        />
+    </template>
     <input
         v-else
         v-model="modelValue"

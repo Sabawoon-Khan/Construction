@@ -56,6 +56,7 @@ defineOptions({
             <DetailGrid
                 title="Expense details"
                 :items="[
+                    { label: 'Expense no', value: item.expense_no },
                     { label: 'Date', value: item.expense_date },
                     { label: 'Category', value: item.category?.name },
                     { label: 'Project', value: item.project?.name },

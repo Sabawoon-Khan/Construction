@@ -127,7 +127,12 @@ function printReport() {
                 <div class="mt-2 text-2xl font-semibold tabular-nums">
                     {{ money(summary.expense_total) }}
                 </div>
-                <div class="text-xs text-muted-foreground">{{ summary.expense_count }} entries</div>
+                <div class="text-xs text-muted-foreground">
+                    {{ summary.expense_count }} entries
+                    <span v-if="summary.materials_used_total > 0">
+                        · includes {{ money(summary.materials_used_total) }} stock issued
+                    </span>
+                </div>
             </div>
             <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
                 <div class="text-sm text-emerald-800 dark:text-emerald-300">Net profit</div>

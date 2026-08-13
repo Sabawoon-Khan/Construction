@@ -43,7 +43,7 @@ const page = usePage();
 const { t } = useTranslations();
 const { getInitials } = useInitials();
 const { isCurrentOrParentUrl } = useCurrentUrl();
-const { allNavItems } = useAppNavigation();
+const { navGroups } = useAppNavigation();
 
 const user = computed(() => page.props.auth.user);
 const showAvatar = computed(() =>
@@ -80,25 +80,34 @@ const showAvatar = computed(() =>
                                 <AppLogo tone="on-light" />
                             </Link>
                         </SheetHeader>
-                        <nav class="space-y-1 p-3">
-                            <Link
-                                v-for="item in allNavItems"
-                                :key="toUrl(item.href)"
-                                :href="item.href"
-                                class="flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-medium transition"
-                                :class="
-                                    isCurrentOrParentUrl(item.href)
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'text-foreground/80 hover:bg-muted'
-                                "
+                        <nav class="space-y-4 overflow-y-auto p-3">
+                            <div
+                                v-for="group in navGroups"
+                                :key="group.label"
+                                class="space-y-1"
                             >
-                                <component
-                                    :is="item.icon"
-                                    v-if="item.icon"
-                                    class="size-4 shrink-0"
-                                />
-                                {{ item.title }}
-                            </Link>
+                                <p class="px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    {{ group.label }}
+                                </p>
+                                <Link
+                                    v-for="item in group.items"
+                                    :key="toUrl(item.href)"
+                                    :href="item.href"
+                                    class="flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-medium transition"
+                                    :class="
+                                        isCurrentOrParentUrl(item.href)
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-foreground/80 hover:bg-muted'
+                                    "
+                                >
+                                    <component
+                                        :is="item.icon"
+                                        v-if="item.icon"
+                                        class="size-4 shrink-0"
+                                    />
+                                    {{ item.title }}
+                                </Link>
+                            </div>
                         </nav>
                     </SheetContent>
                 </Sheet>
@@ -123,25 +132,33 @@ const showAvatar = computed(() =>
                 }}</span>
             </Link>
 
-            <nav class="ms-2 hidden min-w-0 flex-1 items-center gap-1 lg:flex">
-                <Link
-                    v-for="item in allNavItems"
-                    :key="toUrl(item.href)"
-                    :href="item.href"
-                    class="inline-flex items-center gap-2 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium transition"
-                    :class="
-                        isCurrentOrParentUrl(item.href)
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                    "
-                >
-                    <component
-                        :is="item.icon"
-                        v-if="item.icon"
-                        class="size-4 shrink-0"
+            <nav class="ms-2 hidden min-w-0 flex-1 items-center gap-2 overflow-x-auto lg:flex">
+                <template v-for="(group, groupIndex) in navGroups" :key="group.label">
+                    <div
+                        v-if="groupIndex > 0"
+                        class="mx-1 hidden h-5 w-px shrink-0 bg-border xl:block"
+                        aria-hidden="true"
                     />
-                    {{ item.title }}
-                </Link>
+                    <Link
+                        v-for="item in group.items"
+                        :key="toUrl(item.href)"
+                        :href="item.href"
+                        class="inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-2 text-sm font-medium transition xl:px-3"
+                        :class="
+                            isCurrentOrParentUrl(item.href)
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        "
+                        :title="`${group.label} · ${item.title}`"
+                    >
+                        <component
+                            :is="item.icon"
+                            v-if="item.icon"
+                            class="size-4 shrink-0"
+                        />
+                        <span class="hidden xl:inline">{{ item.title }}</span>
+                    </Link>
+                </template>
             </nav>
 
             <div class="ms-auto flex shrink-0 items-center gap-1.5">
