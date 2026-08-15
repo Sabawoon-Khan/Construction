@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Banknote, Info, Pencil } from '@lucide/vue';
 import { ref } from 'vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import { MisTabs } from '@/components/mis';
@@ -43,9 +44,11 @@ defineOptions({
                 </Button>
                 <Heading :title="item.name" :description="`${t('Customer')} ${item.customer_no || ''}`" />
             </div>
-            <Button as-child>
-                <Link :href="`/customers/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
-            </Button>
+            <Can permission="customers.edit">
+                <Button as-child>
+                    <Link :href="`/customers/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                </Button>
+            </Can>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">

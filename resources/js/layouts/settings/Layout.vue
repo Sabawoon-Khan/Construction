@@ -5,19 +5,14 @@ import {
     DatabaseBackup,
     FolderOpen,
     History,
-    KeyRound,
     Languages,
-    ListTree,
-    Mail,
     Palette,
     ScrollText,
     Settings2,
     Shield,
-    Sparkles,
     Trash2,
     UserRound,
     Users,
-    Wifi,
 } from '@lucide/vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SettingsContentSkeleton from '@/components/settings/SettingsContentSkeleton.vue';
@@ -68,15 +63,9 @@ function isSettingsManagementPath(pathname: string): boolean {
 function skeletonVariantForPath(pathname: string): 'form' | 'list' {
     if (
         pathname.includes('/create') ||
-        pathname.endsWith('/offline') ||
-        pathname.endsWith('/google-auth') ||
-        pathname.endsWith('/system-control') ||
         pathname.endsWith('/general') ||
         pathname.endsWith('/company') ||
-        pathname.includes('/ai') ||
-        pathname.includes('/email') ||
-        pathname.includes('/translations') ||
-        pathname.includes('/lookups')
+        pathname.includes('/translations')
     ) {
         return 'form';
     }
@@ -139,33 +128,6 @@ const navItems = computed<SettingsNavItem[]>(() => {
     ];
 
     if (can('settings.manage')) {
-        items.push(
-            {
-                title: t('System Control'),
-                href: '/settings/system-control',
-                icon: Settings2,
-                group: 'administration',
-            },
-            {
-                title: t('Offline & PWA'),
-                href: '/settings/offline',
-                icon: Wifi,
-                group: 'administration',
-            },
-            {
-                title: t('Google Auth'),
-                href: '/settings/google-auth',
-                icon: KeyRound,
-                group: 'administration',
-            },
-            {
-                title: t('Lookups'),
-                href: '/settings/lookups',
-                icon: ListTree,
-                group: 'administration',
-            },
-        );
-
         const features = page.props.kitFeatures as
             { translations_ui?: boolean } | undefined;
 
@@ -233,28 +195,7 @@ const navItems = computed<SettingsNavItem[]>(() => {
         });
     }
 
-    if (can('settings.manage') || can('audit.view')) {
-        items.push(
-            {
-                title: t('AI'),
-                href: can('settings.manage')
-                    ? '/settings/ai'
-                    : '/settings/ai/logs',
-                icon: Sparkles,
-                group: 'administration',
-            },
-            {
-                title: t('Email'),
-                href: can('settings.manage')
-                    ? '/settings/email'
-                    : '/settings/email/logs',
-                icon: Mail,
-                group: 'administration',
-            },
-        );
-    }
-
-    if (can('audit.view')) {
+    if (can('audit.view') || can('settings.manage')) {
         items.push(
             {
                 title: t('Login logs'),
@@ -297,18 +238,6 @@ const pageTitle = computed(() => {
         return t('Profile');
     }
 
-    if (component.includes('Offline')) {
-        return t('Offline & PWA');
-    }
-
-    if (component.includes('GoogleAuth')) {
-        return t('Google Auth');
-    }
-
-    if (component.includes('/Ai') || component.endsWith('Ai')) {
-        return t('AI');
-    }
-
     if (component.includes('Users')) {
         return t('Users');
     }
@@ -329,10 +258,6 @@ const pageTitle = computed(() => {
         return t('Trash');
     }
 
-    if (component.includes('Email')) {
-        return t('Email');
-    }
-
     if (component.includes('AuthenticationLogs')) {
         return t('Login logs');
     }
@@ -343,10 +268,6 @@ const pageTitle = computed(() => {
 
     if (component.includes('Translations')) {
         return t('Translations');
-    }
-
-    if (component.includes('Lookups')) {
-        return t('Lookups');
     }
 
     return activeItem.value?.title ?? t('Settings');

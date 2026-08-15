@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Pencil, Printer } from '@lucide/vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
@@ -37,9 +38,11 @@ defineOptions({
                 <Button variant="outline" @click="printPage">
                     <Printer class="size-4" /> {{ t('Print voucher') }}
                 </Button>
-                <Button as-child>
-                    <Link :href="`/incomes/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
-                </Button>
+                <Can permission="incomes.edit">
+                    <Button as-child>
+                        <Link :href="`/incomes/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
             </div>
         </div>
 

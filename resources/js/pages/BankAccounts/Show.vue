@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Pencil } from '@lucide/vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -37,9 +38,11 @@ defineOptions({
             </div>
             <div class="flex items-center gap-2">
                 <StatusBadge :status="item.is_active ? 'active' : 'inactive'" />
-                <Button as-child>
-                    <Link :href="`/bank-accounts/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
-                </Button>
+                <Can permission="bank_accounts.edit">
+                    <Button as-child>
+                        <Link :href="`/bank-accounts/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
             </div>
         </div>
 

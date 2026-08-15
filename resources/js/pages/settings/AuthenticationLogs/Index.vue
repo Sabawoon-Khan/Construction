@@ -67,7 +67,7 @@ type AuthenticationLogRecord = {
 
 const props = defineProps<{
     logs: Paginated<AuthenticationLogRecord>;
-    events: string[];
+    eventTypes: string[];
     filters?: {
         search?: string | null;
         event?: string | null;
@@ -250,7 +250,7 @@ function detailRows(log: AuthenticationLogRecord): Array<{ label: string; value:
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Settings', href: '/settings/login-logs' },
+            { title: 'Settings', href: '/settings/profile' },
             { title: 'Login logs', href: '/settings/login-logs' },
         ],
     },
@@ -298,7 +298,7 @@ defineOptions({
                 >
                     <option value="">{{ t('All') }}</option>
                     <option
-                        v-for="item in events"
+                        v-for="item in eventTypes"
                         :key="item"
                         :value="item"
                     >

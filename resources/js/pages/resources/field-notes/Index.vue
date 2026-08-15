@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { computed, toRef } from 'vue';
+import Can from '@/components/Can.vue';
+import { MisCreateButton } from '@/components/mis';
 import MisPagination from '@/components/MisPagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/composables/useTranslations';
@@ -28,12 +30,9 @@ const { displayItems, showingOfflineCache, online } = useOfflineResourceList({
     <div class="flex flex-col gap-4 p-4">
         <div class="flex items-center justify-between">
             <h1 class="text-xl font-semibold">{{ t('FieldNote') }}</h1>
-            <Link
-                :href="'/' + 'field-notes/create'"
-                class="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground"
-            >
+            <MisCreateButton href="/field-notes/create" permission="field_notes.create">
                 {{ t('Create') }}
-            </Link>
+            </MisCreateButton>
         </div>
 
         <p
@@ -56,13 +55,15 @@ const { displayItems, showingOfflineCache, online } = useOfflineResourceList({
                             {{ t('Pending sync') }}
                         </Badge>
                     </div>
-                    <Link
-                        v-if="item.id"
-                        :href="'/' + 'field-notes/' + item.id + '/edit'"
-                        class="text-sm text-primary"
-                    >
-                        {{ t('Edit') }}
-                    </Link>
+                    <Can permission="field_notes.edit">
+                        <Link
+                            v-if="item.id"
+                            :href="`/field-notes/${item.id}/edit`"
+                            class="text-sm text-primary"
+                        >
+                            {{ t('Edit') }}
+                        </Link>
+                    </Can>
                 </li>
             </ul>
             <div v-if="online" class="px-4 pb-4">

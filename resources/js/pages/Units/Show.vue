@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Banknote, Info, Pencil } from '@lucide/vue';
 import { ref } from 'vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import { MisTabs } from '@/components/mis';
@@ -41,9 +42,11 @@ defineOptions({
             </div>
             <div class="flex items-center gap-2">
                 <StatusBadge :status="item.status" />
-                <Button as-child>
-                    <Link :href="`/units/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
-                </Button>
+                <Can permission="units.edit">
+                    <Button as-child>
+                        <Link :href="`/units/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
             </div>
         </div>
 

@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { Form, Head, Link, router, usePage } from '@inertiajs/vue3';
-import { CheckCircle2, ShieldAlert } from '@lucide/vue';
 import { computed, nextTick, onMounted, watch } from 'vue';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import AppearanceTabs from '@/components/AppearanceTabs.vue';
 import DeleteUser from '@/components/DeleteUser.vue';
 import InputError from '@/components/InputError.vue';
-import type { Props as ManagePasskeysProps } from '@/components/ManagePasskeys.vue';
-import ManagePasskeys from '@/components/ManagePasskeys.vue';
-import type { Props as ManageTwoFactorProps } from '@/components/ManageTwoFactor.vue';
-import ManageTwoFactor from '@/components/ManageTwoFactor.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -42,8 +37,7 @@ type Props = {
     passwordRules: string;
     sessions?: BrowserSession[];
     canListSessions?: boolean;
-} & ManagePasskeysProps &
-    ManageTwoFactorProps;
+};
 
 const props = withDefaults(defineProps<Props>(), {
     mustVerifyEmail: false,
@@ -350,76 +344,6 @@ defineOptions({
                         </Button>
                     </div>
                 </Form>
-            </CardContent>
-        </Card>
-
-        <Card
-            v-if="canManageTwoFactor"
-            id="settings-two-factor"
-            class="scroll-mt-24 overflow-hidden"
-        >
-            <CardHeader class="border-b border-border/60 bg-muted/20">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="space-y-1">
-                        <CardTitle>{{
-                            t('Two-factor authentication')
-                        }}</CardTitle>
-                        <CardDescription>
-                            {{
-                                t(
-                                    'Add an authenticator app for a second sign-in step',
-                                )
-                            }}
-                        </CardDescription>
-                    </div>
-                    <span
-                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
-                        :class="
-                            twoFactorEnabled
-                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-amber-500/10 text-amber-800 dark:text-amber-200'
-                        "
-                    >
-                        <CheckCircle2
-                            v-if="twoFactorEnabled"
-                            class="size-3.5"
-                        />
-                        <ShieldAlert v-else class="size-3.5" />
-                        {{
-                            twoFactorEnabled
-                                ? t('Enabled')
-                                : t('Not enabled')
-                        }}
-                    </span>
-                </div>
-            </CardHeader>
-            <CardContent class="pt-6">
-                <ManageTwoFactor
-                    embedded
-                    :can-manage-two-factor="canManageTwoFactor"
-                    :requires-confirmation="requiresConfirmation"
-                    :two-factor-enabled="twoFactorEnabled"
-                />
-            </CardContent>
-        </Card>
-
-        <Card
-            v-if="canManagePasskeys"
-            id="settings-passkeys"
-            class="scroll-mt-24 overflow-hidden"
-        >
-            <CardHeader class="border-b border-border/60 bg-muted/20">
-                <CardTitle>{{ t('Passkeys') }}</CardTitle>
-                <CardDescription>
-                    {{ t('Manage your passkeys for passwordless sign-in') }}
-                </CardDescription>
-            </CardHeader>
-            <CardContent class="pt-6">
-                <ManagePasskeys
-                    embedded
-                    :can-manage-passkeys="canManagePasskeys"
-                    :passkeys="passkeys"
-                />
             </CardContent>
         </Card>
 

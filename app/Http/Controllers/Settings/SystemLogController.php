@@ -19,7 +19,7 @@ class SystemLogController extends Controller
 
     public function index(Request $request): Response
     {
-        abort_unless($request->user()?->can('audit.view'), 403);
+        $this->authorizeAuditAccess($request);
 
         $files = $this->reader->listFiles();
         $selectedFile = $request->string('file')->trim()->toString();
@@ -73,7 +73,7 @@ class SystemLogController extends Controller
 
     public function download(Request $request): BinaryFileResponse
     {
-        abort_unless($request->user()?->can('audit.view'), 403);
+        $this->authorizeAuditAccess($request);
 
         $filename = $request->string('file')->trim()->toString();
         $path = $this->reader->resolvePath($filename !== '' ? $filename : null);
@@ -87,7 +87,7 @@ class SystemLogController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        abort_unless($request->user()?->can('audit.view'), 403);
+        $this->authorizeAuditAccess($request);
 
         $filename = $request->string('file')->trim()->toString();
         $path = $this->reader->resolvePath($filename !== '' ? $filename : null);
@@ -99,5 +99,15 @@ class SystemLogController extends Controller
         return redirect()
             ->route('settings.system-logs.index')
             ->with('success', __('Log file deleted.'));
+    }
+
+    private function authorizeAuditAccess(Request $request): void
+    {
+        $user = $request->user();
+
+        abort_unless(
+            $user?->can('audit.view') || $user?->can('settings.manage'),
+            403,
+        );
     }
 }

@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Eye, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
+import { Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
-import { MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
@@ -20,6 +21,7 @@ const props = defineProps<{
     totals: { count: number; with_projects: number; contributions: number; payouts: number };
 }>();
 const { t } = useTranslations();
+const { viewAction, editAction, can } = useMisPage();
 const search = ref(props.filters.search ?? '');
 
 defineOptions({
@@ -36,8 +38,8 @@ const applySearch = () =>
 
 function rowActions(item: Item): RowActionItem[] {
     return [
-        { label: t('View'), icon: Eye, href: `/partners/${item.id}` },
-        { label: t('Edit'), icon: Pencil, href: `/partners/${item.id}/edit` },
+        viewAction(`/partners/${item.id}`),
+        editAction(`/partners/${item.id}/edit`, 'partners.edit'),
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -45,6 +47,7 @@ function rowActions(item: Item): RowActionItem[] {
             method: 'delete',
             href: `/partners/${item.id}`,
             variant: 'destructive' as const,
+            hidden: !can('partners.delete'),
             confirm: {
                 title: t('Delete shareholder'),
                 description: t('Are you sure you want to delete this shareholder? This action cannot be undone.'),
@@ -66,7 +69,7 @@ function rowActions(item: Item): RowActionItem[] {
                     <Input v-model="search" class="pl-9" :placeholder="t('Search...')" @keyup.enter="applySearch" />
                 </div>
                 <Button variant="secondary" @click="applySearch">{{ t('Search') }}</Button>
-                <Button as-child><Link href="/partners/create"><Plus class="size-4" /> {{ t('Add') }}</Link></Button>
+                <MisCreateButton href="/partners/create" permission="partners.create">{{ t('Add') }}</MisCreateButton>
             </div>
         </div>
         <MisStatGrid :columns="4">

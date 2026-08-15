@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Banknote, Eye, Pencil, Plus, Printer, Trash2 } from '@lucide/vue';
+import { Banknote, Printer, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
-import { MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
@@ -21,6 +22,7 @@ const props = defineProps<{
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
+const { viewAction, editAction, can } = useMisPage();
 
 defineOptions({
     layout: {
@@ -39,18 +41,27 @@ const saleStatuses = ['draft', 'active', 'completed', 'cancelled'];
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: t('View'), icon: Eye, href: `/sales/${item.id}` },
-        { label: t('Receive payment'), icon: Banknote, href: `/sales/${item.id}#receive-payment` },
+        viewAction(`/sales/${item.id}`),
+        {
+            label: t('Receive payment'),
+            icon: Banknote,
+            href: `/sales/${item.id}#receive-payment`,
+            hidden: !can('payments.create'),
+        },
         { label: t('Print'), icon: Printer, href: `/sales/${item.id}` },
-        { label: t('Edit'), icon: Pencil, href: `/sales/${item.id}/edit` },
-        { separator: true, isLabel: true, label: t('Change status') },
-        ...saleStatuses.map((status) => ({
-            label: t(status),
-            method: 'patch' as const,
-            href: `/sales/${item.id}/status`,
-            data: { status },
-            disabled: item.status === status,
-        })),
+        editAction(`/sales/${item.id}/edit`, 'sales.edit'),
+        ...(can('sales.edit')
+            ? [
+                  { separator: true, isLabel: true, label: t('Change status') },
+                  ...saleStatuses.map((status) => ({
+                      label: t(status),
+                      method: 'patch' as const,
+                      href: `/sales/${item.id}/status`,
+                      data: { status },
+                      disabled: item.status === status,
+                  })),
+              ]
+            : []),
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -58,6 +69,7 @@ function rowActions(item: any): RowActionItem[] {
             method: 'delete',
             href: `/sales/${item.id}`,
             variant: 'destructive' as const,
+            hidden: !can('sales.delete'),
             confirm: {
                 title: t('Delete sale'),
                 description: t('Are you sure you want to delete this sale? This action cannot be undone.'),
@@ -76,7 +88,7 @@ function rowActions(item: any): RowActionItem[] {
             <div class="flex flex-wrap gap-2">
                 <Input v-model="search" :placeholder="t('Search...')" @keyup.enter="apply" />
                 <Button variant="secondary" @click="apply">{{ t('Search') }}</Button>
-                <Button as-child><Link href="/sales/create"><Plus class="size-4" /> {{ t('New sale') }}</Link></Button>
+                <MisCreateButton href="/sales/create" permission="sales.create">{{ t('New sale') }}</MisCreateButton>
             </div>
         </div>
 

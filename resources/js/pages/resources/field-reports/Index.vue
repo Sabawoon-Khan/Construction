@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { ClipboardList, Pencil } from '@lucide/vue';
+import { ClipboardList } from '@lucide/vue';
 import { computed, toRef } from 'vue';
 import {
+    MisCreateButton,
     MisEmptyState,
     MisListPage,
     MisListRow,
     MisPagination,
 } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import SettingsAddButton from '@/components/SettingsAddButton.vue';
 import { Badge } from '@/components/ui/badge';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
@@ -29,7 +29,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
-const { deleteAction } = useMisPage();
+const { editAction, deleteAction } = useMisPage();
 
 const onlineItems = computed(() => props.items.data);
 
@@ -45,16 +45,15 @@ function rowActions(item: (typeof displayItems.value)[number]): RowActionItem[] 
     }
 
     return [
-        {
-            label: t('Edit'),
-            icon: Pencil,
-            href: `/field-reports/${item.id}/edit`,
-        },
-        deleteAction({
-            href: `/field-reports/${item.id}`,
-            title: t('Move to trash'),
-            description: t('Move this field report to trash? You can restore it later.'),
-        }),
+        editAction(`/field-reports/${item.id}/edit`, 'field_reports.edit'),
+        deleteAction(
+            {
+                href: `/field-reports/${item.id}`,
+                title: t('Move to trash'),
+                description: t('Move this field report to trash? You can restore it later.'),
+            },
+            'field_reports.delete',
+        ),
     ];
 }
 
@@ -82,9 +81,9 @@ defineOptions({
         "
     >
         <template #actions>
-            <SettingsAddButton href="/field-reports/create">
+            <MisCreateButton href="/field-reports/create" permission="field_reports.create">
                 {{ t('Create') }}
-            </SettingsAddButton>
+            </MisCreateButton>
         </template>
 
         <p

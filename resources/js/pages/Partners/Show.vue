@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Pencil } from '@lucide/vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
@@ -46,9 +47,11 @@ defineOptions({
                 <Button as-child variant="outline">
                     <a href="/reports/print" target="_blank">{{ t('Print distribution') }}</a>
                 </Button>
-                <Button as-child>
-                    <Link :href="`/partners/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
-                </Button>
+                <Can permission="partners.edit">
+                    <Button as-child>
+                        <Link :href="`/partners/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
             </div>
         </div>
 

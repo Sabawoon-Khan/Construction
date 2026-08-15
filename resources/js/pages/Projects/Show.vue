@@ -2,6 +2,7 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Banknote, Handshake, Info, Pencil, Printer, Receipt } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -100,9 +101,11 @@ defineOptions({
                 <Button as-child variant="outline">
                     <Link :href="`/reports?project_id=${item.id}`">{{ t('Full report') }}</Link>
                 </Button>
-                <Button as-child>
-                    <Link :href="`/projects/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
-                </Button>
+                <Can permission="projects.edit">
+                    <Button as-child>
+                        <Link :href="`/projects/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
             </div>
         </div>
 
@@ -201,7 +204,9 @@ defineOptions({
                     <InputError :message="errors.partner_id" />
                     <p v-if="!available_shareholders.length" class="text-xs text-muted-foreground">
                         {{ t('All shareholders are already on this project.') }}
-                        <Link href="/partners/create" class="text-primary hover:underline">{{ t('Add a new shareholder') }}</Link>
+                        <Can permission="partners.create">
+                            <Link href="/partners/create" class="text-primary hover:underline">{{ t('Add a new shareholder') }}</Link>
+                        </Can>
                     </p>
                 </div>
                 <div class="grid gap-2">
@@ -209,11 +214,11 @@ defineOptions({
                     <Input id="ownership_percentage" name="ownership_percentage" type="number" step="0.01" min="0" max="100" required />
                     <InputError :message="errors.ownership_percentage" />
                 </div>
-                <div class="flex items-end">
+                <Can permission="partners.create">
                     <Button as-child variant="outline" class="w-full">
                         <Link href="/partners/create">{{ t('New shareholder') }}</Link>
                     </Button>
-                </div>
+                </Can>
                 <div class="sm:col-span-4">
                     <Button type="submit" :disabled="processing || !available_shareholders.length">
                         {{ processing ? t('Saving…') : t('Add to project') }}

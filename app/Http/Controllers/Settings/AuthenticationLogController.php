@@ -13,7 +13,12 @@ class AuthenticationLogController extends Controller
 {
     public function index(Request $request): Response
     {
-        abort_unless($request->user()?->can('audit.view'), 403);
+        $user = $request->user();
+
+        abort_unless(
+            $user?->can('audit.view') || $user?->can('settings.manage'),
+            403,
+        );
 
         $search = $request->string('search')->trim()->toString();
         $event = $request->string('event')->trim()->toString();
@@ -44,7 +49,7 @@ class AuthenticationLogController extends Controller
 
         return Inertia::render('settings/AuthenticationLogs/Index', [
             'logs' => $logs,
-            'events' => [
+            'eventTypes' => [
                 AuthenticationLog::EVENT_LOGIN_SUCCESS,
                 AuthenticationLog::EVENT_LOGIN_FAILED,
                 AuthenticationLog::EVENT_LOGOUT,

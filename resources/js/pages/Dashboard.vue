@@ -9,6 +9,7 @@ import {
     Wallet,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import Can from '@/components/Can.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/composables/useTranslations';
@@ -383,15 +384,21 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
             v-if="mode !== 'shareholder'"
             class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
         >
-            <Button as-child variant="outline" class="justify-between">
-                <Link href="/expenses/create">{{ t('Record expense') }} <ArrowUpRight class="size-4" /></Link>
-            </Button>
-            <Button as-child variant="outline" class="justify-between">
-                <Link href="/sales/create">{{ t('Create sale') }} <ArrowUpRight class="size-4" /></Link>
-            </Button>
-            <Button as-child variant="outline" class="justify-between">
-                <Link href="/projects/create">{{ t('Add project') }} <ArrowUpRight class="size-4" /></Link>
-            </Button>
+            <Can permission="expenses.create">
+                <Button as-child variant="outline" class="justify-between">
+                    <Link href="/expenses/create">{{ t('Record expense') }} <ArrowUpRight class="size-4" /></Link>
+                </Button>
+            </Can>
+            <Can permission="sales.create">
+                <Button as-child variant="outline" class="justify-between">
+                    <Link href="/sales/create">{{ t('Create sale') }} <ArrowUpRight class="size-4" /></Link>
+                </Button>
+            </Can>
+            <Can permission="projects.create">
+                <Button as-child variant="outline" class="justify-between">
+                    <Link href="/projects/create">{{ t('Add project') }} <ArrowUpRight class="size-4" /></Link>
+                </Button>
+            </Can>
             <Button as-child variant="outline" class="justify-between">
                 <Link href="/reports">{{ t('Open reports') }} <ArrowUpRight class="size-4" /></Link>
             </Button>

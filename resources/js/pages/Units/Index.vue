@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue';
+import { Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
-import { MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
@@ -24,6 +25,7 @@ const search = ref(props.filters.search ?? '');
 const projectId = ref(String(props.filters.project_id ?? ''));
 const status = ref(props.filters.status ?? '');
 const { t } = useTranslations();
+const { viewAction, editAction, can } = useMisPage();
 
 defineOptions({
     layout: {
@@ -49,16 +51,20 @@ const unitStatuses = ['available', 'reserved', 'sold'];
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: t('View'), icon: Eye, href: `/units/${item.id}` },
-        { label: t('Edit'), icon: Pencil, href: `/units/${item.id}/edit` },
-        { separator: true, isLabel: true, label: t('Change status') },
-        ...unitStatuses.map((status) => ({
-            label: t(status.charAt(0).toUpperCase() + status.slice(1)),
-            method: 'patch' as const,
-            href: `/units/${item.id}/status`,
-            data: { status },
-            disabled: item.status === status,
-        })),
+        viewAction(`/units/${item.id}`),
+        editAction(`/units/${item.id}/edit`, 'units.edit'),
+        ...(can('units.edit')
+            ? [
+                  { separator: true, isLabel: true, label: t('Change status') },
+                  ...unitStatuses.map((status) => ({
+                      label: t(status.charAt(0).toUpperCase() + status.slice(1)),
+                      method: 'patch' as const,
+                      href: `/units/${item.id}/status`,
+                      data: { status },
+                      disabled: item.status === status,
+                  })),
+              ]
+            : []),
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -66,6 +72,7 @@ function rowActions(item: any): RowActionItem[] {
             method: 'delete',
             href: `/units/${item.id}`,
             variant: 'destructive' as const,
+            hidden: !can('units.delete'),
             confirm: {
                 title: t('Delete unit'),
                 description: t('Are you sure you want to delete this unit? This action cannot be undone.'),
@@ -94,7 +101,7 @@ function rowActions(item: any): RowActionItem[] {
                     <option value="sold">{{ t('Sold') }}</option>
                 </select>
                 <Button variant="secondary" @click="apply">{{ t('Filter') }}</Button>
-                <Button as-child><Link href="/units/create"><Plus class="size-4" /> {{ t('Add unit') }}</Link></Button>
+                <MisCreateButton href="/units/create" permission="units.create">{{ t('Add unit') }}</MisCreateButton>
             </div>
         </div>
 

@@ -2,6 +2,7 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, CalendarClock, FileText, Info, Pencil, Printer } from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
@@ -124,9 +125,11 @@ function submitPayment() {
                 <Button variant="outline" @click="printPage">
                     <Printer class="size-4" /> {{ t('Print statement') }}
                 </Button>
-                <Button as-child variant="outline">
-                    <Link :href="`/sales/${sale.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
-                </Button>
+                <Can permission="sales.edit">
+                    <Button as-child variant="outline">
+                        <Link :href="`/sales/${sale.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
             </div>
         </div>
 

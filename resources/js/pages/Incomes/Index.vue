@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Eye, Pencil, Plus, Printer, Trash2 } from '@lucide/vue';
+import { Printer, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
-import { MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
@@ -21,6 +22,7 @@ const props = defineProps<{
 
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
+const { viewAction, editAction, can } = useMisPage();
 
 defineOptions({
     layout: {
@@ -35,9 +37,9 @@ const apply = () => router.get('/incomes', { search: search.value || undefined }
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: t('View'), icon: Eye, href: `/incomes/${item.id}` },
+        viewAction(`/incomes/${item.id}`),
         { label: t('Print'), icon: Printer, href: `/incomes/${item.id}` },
-        { label: t('Edit'), icon: Pencil, href: `/incomes/${item.id}/edit` },
+        editAction(`/incomes/${item.id}/edit`, 'incomes.edit'),
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -45,6 +47,7 @@ function rowActions(item: any): RowActionItem[] {
             method: 'delete',
             href: `/incomes/${item.id}`,
             variant: 'destructive' as const,
+            hidden: !can('incomes.delete'),
             confirm: {
                 title: t('Delete income'),
                 description: t('Are you sure you want to delete this income? This action cannot be undone.'),
@@ -63,7 +66,7 @@ function rowActions(item: any): RowActionItem[] {
             <div class="flex flex-wrap gap-2">
                 <Input v-model="search" :placeholder="t('Search...')" @keyup.enter="apply" />
                 <Button variant="secondary" @click="apply">{{ t('Search') }}</Button>
-                <Button as-child><Link href="/incomes/create"><Plus class="size-4" /> {{ t('Add income') }}</Link></Button>
+                <MisCreateButton href="/incomes/create" permission="incomes.create">{{ t('Add income') }}</MisCreateButton>
             </div>
         </div>
 
