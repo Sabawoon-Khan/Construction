@@ -30,6 +30,11 @@ defineOptions({ layout: { breadcrumbs: [{ title: 'Dashboard', href: '/dashboard'
         <div class="grid gap-2"><Label>{{ t('Type') }}</Label><select name="type" required class="h-9 rounded-md border px-3 text-sm" :value="item?.type ?? 'apartment'"><option value="apartment">{{ t('Apartment') }}</option><option value="house">{{ t('House') }}</option><option value="villa">{{ t('Villa') }}</option><option value="shop">{{ t('Shop') }}</option><option value="office">{{ t('Office') }}</option><option value="other">{{ t('Other') }}</option></select></div>
         <div class="grid gap-2"><Label>{{ t('Area (m2)') }}</Label><Input name="area" type="number" step="0.01" :default-value="item?.area ?? ''" /></div>
         <div class="grid gap-2"><Label>{{ t('Bedrooms') }}</Label><Input name="bedrooms" type="number" :default-value="item?.bedrooms ?? ''" /></div>
+        <div class="grid gap-2"><Label>{{ t('Toilets') }}</Label><Input name="toilets" type="number" :default-value="item?.toilets ?? ''" /></div>
+        <div class="grid gap-2"><Label>{{ t('Bathrooms') }}</Label><Input name="bathrooms" type="number" :default-value="item?.bathrooms ?? ''" /></div>
+        <div class="grid gap-2"><Label>{{ t('Halls') }}</Label><Input name="halls" type="number" :default-value="item?.halls ?? ''" /></div>
+        <div class="grid gap-2"><Label>{{ t('Kitchens') }}</Label><Input name="kitchens" type="number" :default-value="item?.kitchens ?? ''" /></div>
+        <div class="grid gap-2"><Label>{{ t('Balconies') }}</Label><Input name="balconies" type="number" :default-value="item?.balconies ?? ''" /></div>
         <div class="grid gap-2"><Label>{{ t('Planned unit cost') }}</Label><Input name="cost_price" type="number" step="0.01" :default-value="item?.cost_price ?? 0" /><p class="text-xs text-muted-foreground">{{ t('Target build cost for this unit — not project expenses.') }}</p></div>
         <div class="grid gap-2"><Label>{{ t('Sale price') }}</Label><Input name="list_price" type="number" step="0.01" :default-value="item?.list_price ?? 0" /></div>
         <div class="grid gap-2"><Label>{{ t('Currency') }}</Label><Input name="currency" required :default-value="item?.currency ?? 'USD'" /></div>

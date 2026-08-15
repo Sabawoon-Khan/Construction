@@ -8,15 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('units', function (Blueprint $table) {
-            $table->decimal('cost_price', 18, 2)->default(0)->after('bedrooms');
+        Schema::create('expense_units', function (Blueprint $table) {
+            $table->id();
+            $table->string('unit_name')->unique();
         });
     }
 
     public function down(): void
     {
-        Schema::table('units', function (Blueprint $table) {
-            $table->dropColumn('cost_price');
-        });
+        Schema::dropIfExists('expense_units');
     }
 };

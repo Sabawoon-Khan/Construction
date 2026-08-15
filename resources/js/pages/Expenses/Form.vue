@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -13,9 +13,21 @@ import { useTranslations } from '@/composables/useTranslations';
 const props = defineProps<{
     item: Record<string, any> | null;
     categories?: { id: number; name: string; code: string }[];
+    units?: { id: number; unit_name: string }[];
 }>();
 const isEdit = computed(() => !!props.item);
 const { t } = useTranslations();
+const itemAmount = ref(props.item?.item_amount ?? '');
+const perPrice = ref(props.item?.per_price ?? '');
+const totalCost = computed(() => {
+    const qty = Number(itemAmount.value);
+    const price = Number(perPrice.value);
+    if (!Number.isFinite(qty) || !Number.isFinite(price)) {
+        return '';
+    }
+
+    return (qty * price).toFixed(2);
+});
 const existingReceipts = computed<ExistingUploadFile[]>(() =>
     (props.item?.attachments ?? []).map((file: any) => ({
         id: file.id,
@@ -69,6 +81,34 @@ defineOptions({
                     <InputError :message="errors.description" />
                 </div>
                 <div class="grid gap-2">
+                    <Label for="expense_unit_id">{{ t('Unit') }}</Label>
+                    <select
+                        id="expense_unit_id"
+                        name="expense_unit_id"
+                        class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                        :value="item?.expense_unit_id ?? ''"
+                    >
+                        <option value="">{{ t('Select unit') }}</option>
+                        <option v-for="u in units || []" :key="u.id" :value="u.id">{{ u.unit_name }}</option>
+                    </select>
+                    <Link href="/expense-units" class="text-xs text-muted-foreground hover:underline">{{ t('Manage units') }}</Link>
+                </div>
+                <div class="grid gap-2">
+                    <Label for="item_amount">{{ t('Item amount') }}</Label>
+                    <Input id="item_amount" name="item_amount" type="number" step="0.01" min="0" required v-model="itemAmount" />
+                    <InputError :message="errors.item_amount" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="per_price">{{ t('Per price') }}</Label>
+                    <Input id="per_price" name="per_price" type="number" step="0.01" min="0" required v-model="perPrice" />
+                    <InputError :message="errors.per_price" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="amount">{{ t('Total cost') }}</Label>
+                    <Input id="amount" type="number" step="0.01" readonly :model-value="totalCost" class="bg-muted/40" />
+                    <InputError :message="errors.amount" />
+                </div>
+                <div class="grid gap-2">
                     <Label for="expense_date">{{ t('Date') }}</Label>
                     <Input
                         id="expense_date"
@@ -80,9 +120,9 @@ defineOptions({
                     <InputError :message="errors.expense_date" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="amount">{{ t('Total cost') }}</Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" min="0" required :default-value="item?.amount ?? ''" />
-                    <InputError :message="errors.amount" />
+                    <Label for="paid_to">{{ t('Paid to') }}</Label>
+                    <Input id="paid_to" name="paid_to" required :default-value="item?.paid_to ?? ''" />
+                    <InputError :message="errors.paid_to" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="expense_category_id">{{ t('Category') }}</Label>

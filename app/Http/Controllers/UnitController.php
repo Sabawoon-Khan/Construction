@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use App\Models\Building;
-use App\Models\Floor;
 use App\Models\Project;
 use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +23,6 @@ class UnitController extends Controller implements HasMiddleware
         $query = Unit::query()
             ->with([
                 'project:id,name',
-                'floor.building',
                 'sales' => fn ($q) => $q
                     ->where('status', '!=', 'cancelled')
                     ->with('customer:id,name')
@@ -76,26 +73,20 @@ class UnitController extends Controller implements HasMiddleware
         $data = $this->validated($request);
 
         DB::transaction(function () use ($data) {
-            $project = Project::query()
-                ->findOrFail($data['project_id']);
-
-            $building = Building::query()->firstOrCreate(
-                ['project_id' => $project->id, 'name' => 'Main Building'],
-                ['floor_count' => 0]
-            );
-
-            $floor = Floor::query()->firstOrCreate(
-                ['building_id' => $building->id, 'number' => (int) ($data['floor_number'] ?? 1)],
-                ['name' => 'Floor '.((int) ($data['floor_number'] ?? 1))]
-            );
+            Project::query()->findOrFail($data['project_id']);
 
             Unit::create([
-                'project_id' => $project->id,
-                'floor_id' => $floor->id,
+                'project_id' => $data['project_id'],
+                'floor_number' => (int) ($data['floor_number'] ?? 1),
                 'unit_no' => $data['unit_no'],
                 'type' => $data['type'] ?? 'apartment',
                 'area' => $data['area'] ?? null,
                 'bedrooms' => $data['bedrooms'] ?? null,
+                'toilets' => $data['toilets'] ?? null,
+                'bathrooms' => $data['bathrooms'] ?? null,
+                'halls' => $data['halls'] ?? null,
+                'kitchens' => $data['kitchens'] ?? null,
+                'balconies' => $data['balconies'] ?? null,
                 'cost_price' => $data['cost_price'] ?? 0,
                 'list_price' => $data['list_price'] ?? 0,
                 'currency' => $data['currency'] ?? 'USD',
@@ -113,7 +104,6 @@ class UnitController extends Controller implements HasMiddleware
     {
         $unit->load([
             'project:id,name,code',
-            'floor.building',
             'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest(),
         ]);
 
@@ -130,13 +120,10 @@ class UnitController extends Controller implements HasMiddleware
 
     public function edit(Request $request, Unit $unit): Response
     {
-        $unit->load(['floor.building', 'project']);
+        $unit->load('project');
 
         return Inertia::render('Units/Form', [
-            'item' => [
-                ...$unit->toArray(),
-                'floor_number' => $unit->floor?->number,
-            ],
+            'item' => $unit->toArray(),
             ...$this->formOptions($request),
         ]);
     }
@@ -147,9 +134,15 @@ class UnitController extends Controller implements HasMiddleware
 
         $unit->update([
             'unit_no' => $data['unit_no'],
+            'floor_number' => (int) ($data['floor_number'] ?? $unit->floor_number),
             'type' => $data['type'] ?? $unit->type,
             'area' => $data['area'] ?? null,
             'bedrooms' => $data['bedrooms'] ?? null,
+            'toilets' => $data['toilets'] ?? null,
+            'bathrooms' => $data['bathrooms'] ?? null,
+            'halls' => $data['halls'] ?? null,
+            'kitchens' => $data['kitchens'] ?? null,
+            'balconies' => $data['balconies'] ?? null,
             'cost_price' => $data['cost_price'] ?? 0,
             'list_price' => $data['list_price'] ?? 0,
             'currency' => $data['currency'] ?? 'USD',
@@ -181,6 +174,11 @@ class UnitController extends Controller implements HasMiddleware
             'type' => 'required|string|max:50',
             'area' => 'nullable|numeric|min:0',
             'bedrooms' => 'nullable|integer|min:0',
+            'toilets' => 'nullable|integer|min:0',
+            'bathrooms' => 'nullable|integer|min:0',
+            'halls' => 'nullable|integer|min:0',
+            'kitchens' => 'nullable|integer|min:0',
+            'balconies' => 'nullable|integer|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'list_price' => 'nullable|numeric|min:0',
             'currency' => 'required|string|size:3',

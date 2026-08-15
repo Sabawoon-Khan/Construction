@@ -67,7 +67,11 @@ defineOptions({
                 :title="t('Expense details')"
                 :items="[
                     { label: t('Date'), value: item.expense_date?.slice?.(0, 10) ?? item.expense_date },
+                    { label: t('Paid to'), value: item.paid_to || '—' },
                     { label: t('Project'), value: item.project?.name || t('Company-wide') },
+                    { label: t('Unit'), value: item.expense_unit?.unit_name || '—' },
+                    { label: t('Item amount'), value: item.item_amount ?? '—' },
+                    { label: t('Per price'), value: item.per_price != null ? money(item.per_price, item.currency || 'USD') : '—' },
                     { label: t('Reference'), value: item.reference_no || '—' },
                     { label: t('Description'), value: item.description, span: true },
                 ]"
@@ -94,8 +98,8 @@ defineOptions({
             :title="t('Expense Payment Voucher')"
             :document-no="item.expense_no"
             :date="item.expense_date?.slice?.(0, 10) ?? item.expense_date"
-            :party-label="t('Project')"
-            :party-name="item.project?.name || t('Company-wide')"
+            :party-label="t('Paid to')"
+            :party-name="item.paid_to || item.project?.name || t('Company-wide')"
             :amount="item.amount"
             :currency="item.currency || 'USD'"
             :payment-method="item.payment_method"

@@ -44,16 +44,6 @@ class Project extends Model
         ];
     }
 
-    public function buildings(): HasMany
-    {
-        return $this->hasMany(Building::class);
-    }
-
-    public function floors(): HasManyThrough
-    {
-        return $this->hasManyThrough(Floor::class, Building::class);
-    }
-
     public function units(): HasMany
     {
         return $this->hasMany(Unit::class);

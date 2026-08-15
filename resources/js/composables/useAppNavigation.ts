@@ -76,6 +76,7 @@ export function useAppNavigation() {
 
         if (can('expenses.view')) {
             finance.push(item(t('Expenses'), '/expenses', Receipt));
+            finance.push(item(t('Expense units'), '/expense-units', Receipt));
         }
 
         if (can('incomes.view')) {

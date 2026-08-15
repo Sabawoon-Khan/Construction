@@ -11,6 +11,7 @@ use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseUnitController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\NotificationController;
@@ -86,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('partners', PartnerController::class);
     Route::resource('bank-accounts', BankAccountController::class);
     Route::resource('expenses', ExpenseController::class);
+    Route::resource('expense-units', ExpenseUnitController::class)->except(['create', 'edit', 'show']);
     Route::resource('incomes', IncomeController::class);
     Route::resource('sales', SaleController::class);
     Route::post('sales/{sale}/installments/{installment}/pay', [SaleController::class, 'payInstallment'])

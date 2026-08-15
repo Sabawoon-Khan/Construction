@@ -17,12 +17,12 @@ class Expense extends Model
     protected $fillable = [
         'project_id',
         'expense_category_id',
-        'supplier_id',
-        'contractor_id',
-        'bank_account_id',
+        'expense_unit_id',
         'expense_no',
         'expense_date',
         'paid_to',
+        'item_amount',
+        'per_price',
         'amount',
         'currency',
         'payment_method',
@@ -38,6 +38,8 @@ class Expense extends Model
     {
         return [
             'expense_date' => 'date',
+            'item_amount' => 'decimal:2',
+            'per_price' => 'decimal:2',
             'amount' => 'decimal:2',
         ];
     }
@@ -52,8 +54,8 @@ class Expense extends Model
         return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
     }
 
-    public function bankAccount(): BelongsTo
+    public function expenseUnit(): BelongsTo
     {
-        return $this->belongsTo(BankAccount::class);
+        return $this->belongsTo(ExpenseUnit::class);
     }
 }

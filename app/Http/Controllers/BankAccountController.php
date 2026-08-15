@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Models\BankAccount;
 use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,7 +16,6 @@ class BankAccountController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'bank_accounts';
 
     use AuthorizesResourcePermissions;
-
 
     public function index(Request $request): Response
     {
@@ -68,7 +67,7 @@ class BankAccountController extends Controller implements HasMiddleware
             'stats' => [
                 'payments_total' => $bankAccount->payments()->sum('amount'),
                 'incomes_total' => $bankAccount->incomes()->sum('amount'),
-                'expenses_total' => $bankAccount->expenses()->sum('amount'),
+                'expenses_total' => 0,
             ],
         ]);
     }

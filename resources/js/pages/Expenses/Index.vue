@@ -82,7 +82,11 @@ function rowActions(item: any): RowActionItem[] {
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Item amount') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Per price') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
                             <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                         </tr>
@@ -90,7 +94,11 @@ function rowActions(item: any): RowActionItem[] {
                     <tbody>
                         <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
                             <td class="px-4 py-3">{{ item.expense_date?.slice?.(0, 10) ?? item.expense_date }}</td>
+                            <td class="px-4 py-3">{{ item.paid_to || '—' }}</td>
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
+                            <td class="px-4 py-3">{{ item.expense_unit?.unit_name || '—' }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ item.item_amount ?? '—' }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ item.per_price != null ? money(item.per_price) : '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
@@ -98,7 +106,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="4" :title="t('No expenses yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No expenses yet')" />
                     </tbody>
                 </table>
             </div>

@@ -53,9 +53,15 @@ class FinanceDefaults
 
         return [
             'project_id' => $projectId,
-            'expense_category_id' => $data['expense_category_id'] ?? FinanceDefaults::generalExpenseCategoryId(),
+            'expense_category_id' => ! empty($data['expense_category_id'])
+                ? $data['expense_category_id']
+                : FinanceDefaults::generalExpenseCategoryId(),
             'expense_date' => $data['expense_date'],
-            'amount' => $data['amount'],
+            'paid_to' => $data['paid_to'] ?? null,
+            'expense_unit_id' => $data['expense_unit_id'] ?? null,
+            'item_amount' => $data['item_amount'] ?? null,
+            'per_price' => $data['per_price'] ?? null,
+            'amount' => self::totalCost($data),
             'description' => $data['description'] ?? null,
             'reference_no' => $data['reference_no'] ?? null,
             'expense_no' => 'EXP-'.Str::upper(Str::random(8)),
@@ -63,6 +69,11 @@ class FinanceDefaults
             'payment_method' => 'cash',
             'status' => 'approved',
         ];
+    }
+
+    public static function totalCost(array $data): float
+    {
+        return round(((float) ($data['item_amount'] ?? 0)) * ((float) ($data['per_price'] ?? 0)), 2);
     }
 
     /** @return array<string, mixed> */

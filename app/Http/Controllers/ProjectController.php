@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\ExpenseUnit;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
@@ -142,24 +143,35 @@ class ProjectController extends Controller implements HasMiddleware
                 ->limit(50)
                 ->get(['id', 'partner_id', 'amount', 'currency', 'invested_at', 'reference_no', 'notes']),
             'expenses' => $expensesQuery
+                ->with('expenseUnit:id,unit_name')
                 ->latest('expense_date')
                 ->limit(50)
-                ->get(['id', 'expense_no', 'expense_date', 'description', 'amount', 'currency']),
+                ->get(['id', 'expense_no', 'expense_date', 'paid_to', 'description', 'amount', 'item_amount', 'per_price', 'currency', 'expense_unit_id']),
             'expense_categories' => $this->expenseCategories(),
+            'expense_units' => ExpenseUnit::options(),
         ]);
     }
 
     public function storeExpense(Request $request, Project $project): RedirectResponse
     {
+        $request->merge([
+            'expense_category_id' => $request->filled('expense_category_id') ? $request->input('expense_category_id') : null,
+            'expense_unit_id' => $request->filled('expense_unit_id') ? $request->input('expense_unit_id') : null,
+        ]);
+
         $data = $request->validate([
             'expense_date' => 'required|date',
-            'amount' => 'required|numeric|min:0',
+            'paid_to' => 'required|string|max:255',
+            'item_amount' => 'required|numeric|min:0',
+            'per_price' => 'required|numeric|min:0',
+            'expense_unit_id' => 'nullable|exists:expense_units,id',
             'description' => 'required|string|max:1000',
             'expense_category_id' => 'nullable|exists:expense_categories,id',
             'reference_no' => 'nullable|string|max:100',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',
         ]);
+        $data['amount'] = FinanceDefaults::totalCost($data);
         unset($data['documents']);
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));

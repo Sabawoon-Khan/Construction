@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\ExpenseUnit;
 use App\Services\FinanceDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +29,8 @@ class ExpenseController extends Controller implements HasMiddleware
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->where('expense_no', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('paid_to', 'like', "%{$search}%");
             });
         }
 
@@ -42,7 +44,7 @@ class ExpenseController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Expenses/Index', [
-            'items' => $query->latest('expense_date')->paginate(15)->withQueryString(),
+            'items' => $query->with('expenseUnit:id,unit_name')->latest('expense_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
         ]);
@@ -53,6 +55,7 @@ class ExpenseController extends Controller implements HasMiddleware
         return Inertia::render('Expenses/Form', [
             'item' => null,
             'categories' => $this->categories(),
+            'units' => ExpenseUnit::options(),
         ]);
     }
 
@@ -71,7 +74,7 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function show(Expense $expense): Response
     {
-        $expense->load(['project:id,name', 'attachments']);
+        $expense->load(['project:id,name', 'expenseUnit:id,unit_name', 'attachments']);
 
         return Inertia::render('Expenses/Show', [
             'item' => $expense,
@@ -89,6 +92,7 @@ class ExpenseController extends Controller implements HasMiddleware
         return Inertia::render('Expenses/Form', [
             'item' => $expense,
             'categories' => $this->categories(),
+            'units' => ExpenseUnit::options(),
         ]);
     }
 
@@ -104,6 +108,7 @@ class ExpenseController extends Controller implements HasMiddleware
         $expense->update([
             ...$data,
             'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
+            'expense_unit_id' => $request->integer('expense_unit_id') ?: null,
             'reference_no' => $request->input('reference_no'),
         ]);
 
@@ -131,15 +136,27 @@ class ExpenseController extends Controller implements HasMiddleware
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $request->merge([
+            'expense_category_id' => $request->filled('expense_category_id') ? $request->input('expense_category_id') : null,
+            'expense_unit_id' => $request->filled('expense_unit_id') ? $request->input('expense_unit_id') : null,
+        ]);
+
+        $data = $request->validate([
             'expense_date' => 'required|date',
-            'amount' => 'required|numeric|min:0',
+            'paid_to' => 'required|string|max:255',
+            'item_amount' => 'required|numeric|min:0',
+            'per_price' => 'required|numeric|min:0',
+            'expense_unit_id' => 'nullable|exists:expense_units,id',
             'description' => 'required|string|max:1000',
             'expense_category_id' => 'nullable|exists:expense_categories,id',
             'reference_no' => 'nullable|string|max:100',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',
         ]);
+
+        $data['amount'] = FinanceDefaults::totalCost($data);
+
+        return $data;
     }
 
     private function storeDocuments(Request $request, Expense $expense): void

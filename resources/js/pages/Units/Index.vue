@@ -112,6 +112,7 @@ function rowActions(item: any): RowActionItem[] {
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Floor') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Type') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Area') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Beds') }}</th>
@@ -128,6 +129,7 @@ function rowActions(item: any): RowActionItem[] {
                                 <Link :href="`/units/${item.id}`" class="hover:text-primary hover:underline">{{ item.unit_no }}</Link>
                             </td>
                             <td class="px-4 py-3">{{ item.project?.name }}</td>
+                            <td class="px-4 py-3">{{ item.floor_number ?? '—' }}</td>
                             <td class="px-4 py-3 capitalize">{{ item.type }}</td>
                             <td class="px-4 py-3">{{ item.area ?? '—' }}</td>
                             <td class="px-4 py-3">{{ item.bedrooms ?? '—' }}</td>
@@ -141,7 +143,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No units yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="11" :title="t('No units yet')" />
                     </tbody>
                 </table>
             </div>

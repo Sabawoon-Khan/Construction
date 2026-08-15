@@ -12,9 +12,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('expense_category_id')->constrained()->restrictOnDelete();
-            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('contractor_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('bank_account_id')->nullable()->constrained()->nullOnDelete();
             $table->string('expense_no')->unique();
             $table->date('expense_date');
             $table->string('paid_to')->nullable();

@@ -1,13 +1,11 @@
 <?php
 
 use App\Models\BankAccount;
-use App\Models\Building;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Expense;
 use App\Models\FieldNote;
 use App\Models\FieldReport;
-use App\Models\Floor;
 use App\Models\Income;
 use App\Models\LookupItem;
 use App\Models\Partner;
@@ -267,62 +265,6 @@ return [
         'sensitive' => [],
     ],
 
-    'buildings' => [
-        'label' => 'Buildings',
-        'model' => Building::class,
-        'permission' => 'projects',
-        'index_route' => null,
-        'edit_route' => null,
-        'user_scoped' => false,
-        'search' => ['name'],
-        'default_order' => ['id', 'desc'],
-        'display' => ['id', 'project_id', 'name', 'floor_count'],
-        'title_attribute' => 'name',
-        'fillable' => ['project_id', 'name', 'floor_count', 'description'],
-        'rules' => [
-            'create' => [
-                'project_id' => ['required', 'integer', 'exists:projects,id'],
-                'name' => ['required', 'string', 'max:255'],
-                'floor_count' => ['nullable', 'integer', 'min:0'],
-                'description' => ['nullable', 'string'],
-            ],
-            'update' => [
-                'name' => ['sometimes', 'string', 'max:255'],
-                'floor_count' => ['sometimes', 'nullable', 'integer', 'min:0'],
-                'description' => ['sometimes', 'nullable', 'string'],
-            ],
-        ],
-        'sensitive' => [],
-    ],
-
-    'floors' => [
-        'label' => 'Floors',
-        'model' => Floor::class,
-        'permission' => 'projects',
-        'index_route' => null,
-        'edit_route' => null,
-        'user_scoped' => false,
-        'search' => ['name', 'number'],
-        'default_order' => ['id', 'desc'],
-        'display' => ['id', 'building_id', 'number', 'name'],
-        'title_attribute' => 'name',
-        'fillable' => ['building_id', 'number', 'name', 'description'],
-        'rules' => [
-            'create' => [
-                'building_id' => ['required', 'integer', 'exists:buildings,id'],
-                'number' => ['required', 'integer', 'min:0'],
-                'name' => ['nullable', 'string', 'max:255'],
-                'description' => ['nullable', 'string'],
-            ],
-            'update' => [
-                'number' => ['sometimes', 'integer', 'min:0'],
-                'name' => ['sometimes', 'nullable', 'string', 'max:255'],
-                'description' => ['sometimes', 'nullable', 'string'],
-            ],
-        ],
-        'sensitive' => [],
-    ],
-
     'units' => [
         'label' => 'Units',
         'model' => Unit::class,
@@ -334,15 +276,20 @@ return [
         'default_order' => ['id', 'desc'],
         'display' => ['id', 'project_id', 'unit_no', 'type', 'status', 'list_price'],
         'title_attribute' => 'unit_no',
-        'fillable' => ['project_id', 'floor_id', 'unit_no', 'type', 'area', 'bedrooms', 'list_price', 'currency', 'status', 'description'],
+        'fillable' => ['project_id', 'floor_number', 'unit_no', 'type', 'area', 'bedrooms', 'toilets', 'bathrooms', 'halls', 'kitchens', 'balconies', 'list_price', 'currency', 'status', 'description'],
         'rules' => [
             'create' => [
                 'project_id' => ['required', 'integer', 'exists:projects,id'],
-                'floor_id' => ['required', 'integer', 'exists:floors,id'],
+                'floor_number' => ['nullable', 'integer', 'min:0'],
                 'unit_no' => ['required', 'string', 'max:50'],
                 'type' => ['nullable', 'string', 'max:50'],
                 'area' => ['nullable', 'numeric'],
                 'bedrooms' => ['nullable', 'integer', 'min:0'],
+                'toilets' => ['nullable', 'integer', 'min:0'],
+                'bathrooms' => ['nullable', 'integer', 'min:0'],
+                'halls' => ['nullable', 'integer', 'min:0'],
+                'kitchens' => ['nullable', 'integer', 'min:0'],
+                'balconies' => ['nullable', 'integer', 'min:0'],
                 'list_price' => ['nullable', 'numeric'],
                 'currency' => ['nullable', 'string', 'size:3'],
                 'status' => ['nullable', 'string', 'max:50'],
@@ -353,6 +300,11 @@ return [
                 'type' => ['sometimes', 'nullable', 'string', 'max:50'],
                 'area' => ['sometimes', 'nullable', 'numeric'],
                 'bedrooms' => ['sometimes', 'nullable', 'integer', 'min:0'],
+                'toilets' => ['sometimes', 'nullable', 'integer', 'min:0'],
+                'bathrooms' => ['sometimes', 'nullable', 'integer', 'min:0'],
+                'halls' => ['sometimes', 'nullable', 'integer', 'min:0'],
+                'kitchens' => ['sometimes', 'nullable', 'integer', 'min:0'],
+                'balconies' => ['sometimes', 'nullable', 'integer', 'min:0'],
                 'list_price' => ['sometimes', 'nullable', 'numeric'],
                 'currency' => ['sometimes', 'nullable', 'string', 'size:3'],
                 'status' => ['sometimes', 'string', 'max:50'],

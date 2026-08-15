@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Banknote, Handshake, Info, Pencil, Printer, Receipt } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -40,16 +40,32 @@ defineProps<{
         id: number;
         expense_no: string;
         expense_date: string;
+        paid_to?: string;
         description: string;
         amount: number;
+        item_amount?: number | null;
+        per_price?: number | null;
         currency?: string;
+        expense_unit?: { id: number; unit_name: string } | null;
     }[];
     expense_categories?: { id: number; name: string; code: string }[];
+    expense_units?: { id: number; unit_name: string }[];
 }>();
 
 const contributionPartnerId = ref('');
 const payoutPartnerId = ref('');
 const tab = ref('info');
+const itemAmount = ref('');
+const perPrice = ref('');
+const totalCost = computed(() => {
+    const qty = Number(itemAmount.value);
+    const price = Number(perPrice.value);
+    if (!Number.isFinite(qty) || !Number.isFinite(price)) {
+        return '';
+    }
+
+    return (qty * price).toFixed(2);
+});
 const { t } = useTranslations();
 const tabs = [
     { id: 'info', label: t('Project info'), icon: Info },
@@ -350,6 +366,34 @@ defineOptions({
                     <InputError :message="errors.description" />
                 </div>
                 <div class="grid gap-2">
+                    <Label for="expense_unit_id">{{ t('Unit') }}</Label>
+                    <select id="expense_unit_id" name="expense_unit_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+                        <option value="">{{ t('Select unit') }}</option>
+                        <option v-for="u in expense_units || []" :key="u.id" :value="u.id">{{ u.unit_name }}</option>
+                    </select>
+                    <Link href="/expense-units" class="text-xs text-muted-foreground hover:underline">{{ t('Manage units') }}</Link>
+                </div>
+                <div class="grid gap-2">
+                    <Label for="item_amount">{{ t('Item amount') }}</Label>
+                    <Input id="item_amount" name="item_amount" type="number" step="0.01" min="0" required v-model="itemAmount" />
+                    <InputError :message="errors.item_amount" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="per_price">{{ t('Per price') }}</Label>
+                    <Input id="per_price" name="per_price" type="number" step="0.01" min="0" required v-model="perPrice" />
+                    <InputError :message="errors.per_price" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="amount">{{ t('Total cost') }}</Label>
+                    <Input id="amount" type="number" step="0.01" readonly :model-value="totalCost" class="bg-muted/40" />
+                    <InputError :message="errors.amount" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="paid_to">{{ t('Paid to') }}</Label>
+                    <Input id="paid_to" name="paid_to" required />
+                    <InputError :message="errors.paid_to" />
+                </div>
+                <div class="grid gap-2">
                     <Label for="expense_date">{{ t('Date') }}</Label>
                     <Input
                         id="expense_date"
@@ -359,11 +403,6 @@ defineOptions({
                         :default-value="new Date().toISOString().slice(0, 10)"
                     />
                     <InputError :message="errors.expense_date" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="amount">{{ t('Total cost') }}</Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" min="0" required />
-                    <InputError :message="errors.amount" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="expense_category_id">{{ t('Category') }}</Label>
@@ -398,7 +437,11 @@ defineOptions({
                     <thead class="bg-muted/40 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Item amount') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Per price') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
                             <th class="px-4 py-3 font-medium text-right">{{ t('Voucher') }}</th>
                         </tr>
@@ -406,7 +449,11 @@ defineOptions({
                     <tbody>
                         <tr v-for="expense in expenses" :key="expense.id" class="border-t hover:bg-muted/30">
                             <td class="px-4 py-3">{{ expense.expense_date?.slice?.(0, 10) ?? expense.expense_date }}</td>
+                            <td class="px-4 py-3">{{ expense.paid_to || '—' }}</td>
                             <td class="px-4 py-3">{{ expense.description || '—' }}</td>
+                            <td class="px-4 py-3">{{ expense.expense_unit?.unit_name || '—' }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ expense.item_amount ?? '—' }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ expense.per_price != null ? money(expense.per_price, expense.currency || 'USD') : '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(expense.amount, expense.currency || 'USD') }}</td>
                             <td class="px-4 py-3 text-right">
                                 <Button as-child variant="ghost" size="sm">
@@ -415,7 +462,7 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!expenses.length">
-                            <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">{{ t('No expenses yet') }}</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">{{ t('No expenses yet') }}</td>
                         </tr>
                     </tbody>
                 </table>

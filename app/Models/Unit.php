@@ -11,11 +11,16 @@ class Unit extends Model
 {
     protected $fillable = [
         'project_id',
-        'floor_id',
+        'floor_number',
         'unit_no',
         'type',
         'area',
         'bedrooms',
+        'toilets',
+        'bathrooms',
+        'halls',
+        'kitchens',
+        'balconies',
         'cost_price',
         'list_price',
         'currency',
@@ -38,11 +43,6 @@ class Unit extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
-    }
-
-    public function floor(): BelongsTo
-    {
-        return $this->belongsTo(Floor::class);
     }
 
     public function sales(): HasMany

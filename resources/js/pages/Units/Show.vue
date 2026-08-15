@@ -73,9 +73,14 @@ defineOptions({
             :title="t('Unit details')"
             :items="[
                 { label: t('Project'), value: item.project?.name },
-                { label: t('Building'), value: item.floor?.building?.name },
-                { label: t('Floor'), value: item.floor?.number },
+                { label: t('Floor'), value: item.floor_number ?? '—' },
                 { label: t('Type'), value: item.type },
+                { label: t('Bedrooms'), value: item.bedrooms ?? '—' },
+                { label: t('Toilets'), value: item.toilets ?? '—' },
+                { label: t('Bathrooms'), value: item.bathrooms ?? '—' },
+                { label: t('Halls'), value: item.halls ?? '—' },
+                { label: t('Kitchens'), value: item.kitchens ?? '—' },
+                { label: t('Balconies'), value: item.balconies ?? '—' },
                 { label: t('Buyer'), value: item.sales?.[0]?.customer?.name || '—' },
                 { label: t('Currency'), value: item.currency },
                 { label: t('Description'), value: item.description, span: true },
