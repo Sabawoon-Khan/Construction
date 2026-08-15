@@ -3,14 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
 use App\Models\Project;
+use App\Models\User;
 use App\Services\ShareholderProfitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,10 +23,13 @@ class PartnerController extends Controller implements HasMiddleware
 
     use AuthorizesResourcePermissions;
 
-
     public function index(Request $request): Response
     {
         $query = Partner::query()->withCount('projects');
+
+        if ($request->user()?->isRestrictedShareholder() && $request->user()->partner) {
+            $query->whereKey($request->user()->partner->id);
+        }
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
@@ -54,11 +59,14 @@ class PartnerController extends Controller implements HasMiddleware
     {
         return Inertia::render('Partners/Form', [
             'item' => null,
+            'users' => $this->linkableUsers(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['user_id' => $request->input('user_id') ?: null]);
+
         $data = $request->validate([
             'partner_no' => 'nullable|string|max:50|unique:partners,partner_no',
             'name' => 'required|string|max:255',
@@ -67,20 +75,29 @@ class PartnerController extends Controller implements HasMiddleware
             'national_id' => 'nullable|string|max:100',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
+            'user_id' => 'nullable|exists:users,id|unique:partners,user_id',
         ]);
 
-        Partner::create([
+        $partner = Partner::create([
             ...$data,
             'partner_no' => ($data['partner_no'] ?? null) ?: 'PTR-'.Str::upper(Str::random(8)),
         ]);
+
+        $this->syncShareholderRole($partner);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder saved.']);
 
         return redirect()->route('partners.index');
     }
 
-    public function show(Partner $partner): Response
+    public function show(Request $request, Partner $partner): Response
     {
+        abort_if(
+            $request->user()?->isRestrictedShareholder()
+                && (int) $request->user()->partner?->id !== (int) $partner->id,
+            403,
+        );
+
         $partner->load([
             'projects:id,name',
             'distributions' => fn ($q) => $q->latest('distributed_at')->limit(20),
@@ -113,11 +130,14 @@ class PartnerController extends Controller implements HasMiddleware
     {
         return Inertia::render('Partners/Form', [
             'item' => $partner,
+            'users' => $this->linkableUsers($partner->id),
         ]);
     }
 
     public function update(Request $request, Partner $partner): RedirectResponse
     {
+        $request->merge(['user_id' => $request->input('user_id') ?: null]);
+
         $data = $request->validate([
             'partner_no' => 'required|string|max:50|unique:partners,partner_no,'.$partner->id,
             'name' => 'required|string|max:255',
@@ -126,9 +146,11 @@ class PartnerController extends Controller implements HasMiddleware
             'national_id' => 'nullable|string|max:100',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
+            'user_id' => 'nullable|exists:users,id|unique:partners,user_id,'.$partner->id,
         ]);
 
         $partner->update($data);
+        $this->syncShareholderRole($partner);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder updated.']);
 
@@ -142,5 +164,33 @@ class PartnerController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder deleted.']);
 
         return redirect()->route('partners.index');
+    }
+
+    private function syncShareholderRole(Partner $partner): void
+    {
+        if (! $partner->user_id) {
+            return;
+        }
+
+        $user = User::query()->find($partner->user_id);
+
+        if ($user && ! $user->hasAnyRole(['Owner', 'Admin', 'Finance', 'Project Manager', 'Shareholder'])) {
+            $user->assignRole('Shareholder');
+        }
+    }
+
+    /** @return Collection<int, User> */
+    private function linkableUsers(?int $exceptPartnerId = null)
+    {
+        return User::query()
+            ->orderBy('name')
+            ->where(function ($q) use ($exceptPartnerId) {
+                $q->whereDoesntHave('partner');
+
+                if ($exceptPartnerId) {
+                    $q->orWhereHas('partner', fn ($p) => $p->whereKey($exceptPartnerId));
+                }
+            })
+            ->get(['id', 'name', 'email']);
     }
 }

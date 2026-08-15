@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Concerns\HasStatusChangeLogs;
-use Database\Factories\UserFactory;
 use App\Concerns\Trashable;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -72,6 +72,23 @@ class User extends Authenticatable implements PasskeyUser
     public function partner(): HasOne
     {
         return $this->hasOne(Partner::class);
+    }
+
+    public function isRestrictedShareholder(): bool
+    {
+        if ($this->hasAnyRole(['Owner', 'Admin', 'Finance', 'Project Manager'])) {
+            return false;
+        }
+
+        return $this->partner()->exists() || $this->hasRole('Shareholder');
+    }
+
+    /** @return list<int> */
+    public function assignedProjectIds(): array
+    {
+        $this->loadMissing('partner.projects');
+
+        return $this->partner?->projects->pluck('id')->map(fn ($id) => (int) $id)->all() ?? [];
     }
 
     public function getActivitylogOptions(): LogOptions

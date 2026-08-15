@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Income;
 use App\Models\Partner;
 use App\Models\Project;
@@ -12,12 +13,16 @@ use Illuminate\Support\Collection;
 
 class ShareholderProfitService
 {
-    public static function netProfit(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): float
+    /**
+     * @return array{sales_total: float, income_total: float, revenue_total: float, expense_total: float, salary_total: float, operating_expense_total: float, net_profit: float}
+     */
+    public static function breakdown(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): array
     {
         $salesQuery = Sale::query()->where('sales.status', '!=', 'cancelled');
 
         if ($from && $to) {
-            $salesQuery->whereBetween('sales.contract_date', [$from->toDateString(), $to->toDateString()]);
+            $salesQuery->whereDate('sales.contract_date', '>=', $from->toDateString())
+                ->whereDate('sales.contract_date', '<=', $to->toDateString());
         }
 
         if ($projectId) {
@@ -25,34 +30,83 @@ class ShareholderProfitService
         }
 
         $salesTotal = Sale::sumTotalPrice($salesQuery);
+        $expenseTotal = self::expenseTotal($from, $to, $projectId);
+        $salaryTotal = self::salaryTotal($from, $to, $projectId);
+        $incomeTotal = self::incomeTotal($from, $to, $projectId);
+        $revenueTotal = $salesTotal + $incomeTotal;
 
-        $expensesQuery = Expense::query()->where('status', 'approved');
+        return [
+            'sales_total' => $salesTotal,
+            'income_total' => $incomeTotal,
+            'revenue_total' => $revenueTotal,
+            'expense_total' => $expenseTotal,
+            'salary_total' => $salaryTotal,
+            'operating_expense_total' => max(0, $expenseTotal - $salaryTotal),
+            'net_profit' => $revenueTotal - $expenseTotal,
+        ];
+    }
+
+    public static function netProfit(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): float
+    {
+        return self::breakdown($from, $to, $projectId)['net_profit'];
+    }
+
+    public static function expenseTotal(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): float
+    {
+        $query = Expense::query()->where('status', 'approved');
 
         if ($from && $to) {
-            $expensesQuery->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()]);
+            $query->whereDate('expense_date', '>=', $from->toDateString())
+                ->whereDate('expense_date', '<=', $to->toDateString());
         }
 
         if ($projectId) {
-            $expensesQuery->where('project_id', $projectId);
+            $query->where('project_id', $projectId);
         }
 
-        $expenseTotal = (float) $expensesQuery->sum('amount');
+        return (float) $query->sum('amount');
+    }
 
-        $incomesQuery = Income::query()->where('status', 'approved');
+    public static function salaryTotal(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): float
+    {
+        $ids = ExpenseCategory::salaryIds();
+
+        if ($ids === []) {
+            return 0.0;
+        }
+
+        $query = Expense::query()
+            ->where('status', 'approved')
+            ->whereIn('expense_category_id', $ids);
+
+        if ($from && $to) {
+            $query->whereDate('expense_date', '>=', $from->toDateString())
+                ->whereDate('expense_date', '<=', $to->toDateString());
+        }
 
         if ($projectId) {
-            $incomesQuery->where('project_id', $projectId);
+            $query->where('project_id', $projectId);
+        }
+
+        return (float) $query->sum('amount');
+    }
+
+    public static function incomeTotal(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): float
+    {
+        $query = Income::query()->where('status', 'approved');
+
+        if ($projectId) {
+            $query->where('project_id', $projectId);
         } else {
-            $incomesQuery->whereNull('project_id');
+            $query->whereNull('project_id');
         }
 
         if ($from && $to) {
-            $incomesQuery->whereBetween('income_date', [$from->toDateString(), $to->toDateString()]);
+            $query->whereDate('income_date', '>=', $from->toDateString())
+                ->whereDate('income_date', '<=', $to->toDateString());
         }
 
-        $incomeTotal = (float) $incomesQuery->sum('amount');
-
-        return (float) $salesTotal + $incomeTotal - $expenseTotal;
+        return (float) $query->sum('amount');
     }
 
     public static function distributionsTotal(Partner $partner, int $projectId, ?CarbonInterface $from = null, ?CarbonInterface $to = null): float
@@ -60,7 +114,8 @@ class ShareholderProfitService
         $query = $partner->distributions()->where('project_id', $projectId);
 
         if ($from && $to) {
-            $query->whereBetween('distributed_at', [$from->toDateString(), $to->toDateString()]);
+            $query->whereDate('distributed_at', '>=', $from->toDateString())
+                ->whereDate('distributed_at', '<=', $to->toDateString());
         }
 
         return (float) $query->sum('amount');

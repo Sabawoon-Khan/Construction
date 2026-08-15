@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Services\FinanceDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -48,7 +50,10 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function create(Request $request): Response
     {
-        return Inertia::render('Expenses/Form', ['item' => null]);
+        return Inertia::render('Expenses/Form', [
+            'item' => null,
+            'categories' => $this->categories(),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -77,7 +82,10 @@ class ExpenseController extends Controller implements HasMiddleware
             return redirect()->route('projects.show', $expense->project_id);
         }
 
-        return Inertia::render('Expenses/Form', ['item' => $expense]);
+        return Inertia::render('Expenses/Form', [
+            'item' => $expense,
+            'categories' => $this->categories(),
+        ]);
     }
 
     public function update(Request $request, Expense $expense): RedirectResponse
@@ -86,7 +94,11 @@ class ExpenseController extends Controller implements HasMiddleware
             return redirect()->route('projects.show', $expense->project_id);
         }
 
-        $expense->update($this->validated($request));
+        $expense->update([
+            ...$this->validated($request),
+            'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
+            'reference_no' => $request->input('reference_no'),
+        ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
 
@@ -114,6 +126,16 @@ class ExpenseController extends Controller implements HasMiddleware
             'expense_date' => 'required|date',
             'amount' => 'required|numeric|min:0',
             'description' => 'required|string|max:1000',
+            'expense_category_id' => 'nullable|exists:expense_categories,id',
+            'reference_no' => 'nullable|string|max:100',
         ]);
+    }
+
+    /** @return Collection<int, ExpenseCategory> */
+    private function categories()
+    {
+        ExpenseCategory::ensureDefaults();
+
+        return ExpenseCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']);
     }
 }

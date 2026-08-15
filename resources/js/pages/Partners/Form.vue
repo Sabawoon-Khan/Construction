@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 
 const props = defineProps<{
     item: Record<string, any> | null;
+    users?: { id: number; name: string; email: string }[];
 }>();
 
 const isEdit = computed(() => !!props.item);
@@ -65,6 +66,20 @@ defineOptions({
                     <Label for="email">Email</Label>
                     <Input id="email" name="email" type="email" :default-value="item?.email ?? ''" />
                     <InputError :message="errors.email" />
+                </div>
+                <div class="grid gap-2 sm:col-span-2">
+                    <Label for="user_id">Login account</Label>
+                    <select
+                        id="user_id"
+                        name="user_id"
+                        class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                        :value="item?.user_id ?? ''"
+                    >
+                        <option value="">No login — view-only record</option>
+                        <option v-for="u in users || []" :key="u.id" :value="u.id">{{ u.name }} · {{ u.email }}</option>
+                    </select>
+                    <p class="text-xs text-muted-foreground">Linked users see only their profit share and assigned projects.</p>
+                    <InputError :message="errors.user_id" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="national_id">National Id</Label>

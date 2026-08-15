@@ -36,7 +36,9 @@ class DashboardService
         $salesQuery = Sale::query()->where('sales.status', '!=', 'cancelled');
 
         $periodSales = Sale::sumTotalPrice(
-            (clone $salesQuery)->whereBetween('sales.contract_date', [$from->toDateString(), $to->toDateString()])
+            (clone $salesQuery)
+                ->whereDate('sales.contract_date', '>=', $from->toDateString())
+                ->whereDate('sales.contract_date', '<=', $to->toDateString())
         );
 
         $totalSales = Sale::sumTotalPrice(clone $salesQuery);
@@ -44,7 +46,8 @@ class DashboardService
         $expensesQuery = Expense::query()->where('status', 'approved');
 
         $periodExpenses = (clone $expensesQuery)
-            ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('expense_date', '>=', $from->toDateString())
+            ->whereDate('expense_date', '<=', $to->toDateString())
             ->sum('amount');
 
         $totalExpenses = (clone $expensesQuery)->sum('amount');
@@ -52,8 +55,13 @@ class DashboardService
         $incomesQuery = Income::query()->where('status', 'approved');
 
         $periodIncomes = (clone $incomesQuery)
-            ->whereBetween('income_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('income_date', '>=', $from->toDateString())
+            ->whereDate('income_date', '<=', $to->toDateString())
             ->sum('amount');
+
+        $periodSalaries = ShareholderProfitService::salaryTotal($from, $to);
+        $totalSalaries = ShareholderProfitService::salaryTotal();
+        $periodRevenue = (float) $periodSales + (float) $periodIncomes;
 
         $receipts = Payment::query()
             ->where('type', 'receipt')
@@ -125,6 +133,9 @@ class DashboardService
                 'period_expenses' => (float) $periodExpenses,
                 'total_expenses' => (float) $totalExpenses,
                 'period_incomes' => (float) $periodIncomes,
+                'period_revenue' => $periodRevenue,
+                'period_salaries' => $periodSalaries,
+                'total_salaries' => $totalSalaries,
                 'period_receipts' => (float) $receipts,
                 'net_profit_period' => $netProfitPeriod,
                 'net_profit_total' => $netProfitTotal,
@@ -183,7 +194,9 @@ class DashboardService
             'projects' => $summary['projects'],
             'kpis' => [
                 'period_sales' => $summary['kpis']['period_sales'],
+                'period_revenue' => $summary['kpis']['period_revenue'],
                 'period_expenses' => $summary['kpis']['period_expenses'],
+                'period_salaries' => $summary['kpis']['period_salaries'],
                 'active_projects' => $summary['kpis']['active_projects'],
             ],
         ];

@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const props = defineProps<{
-    filters: { from: string; to: string; project_id?: number | null };
+    filters: { from: string; to: string; project_id?: number | null; preset?: string };
+    restricted?: boolean;
     projects: { id: number; name: string }[];
     summary: Record<string, number>;
     by_category: { category: string; amount: number; count: number }[];
     partners: {
         id: number;
         name: string;
+        project_name?: string;
         ownership_percentage: number;
         profit_share: number;
         entitled_share: number;
@@ -21,6 +23,8 @@ const props = defineProps<{
     }[];
     sales: any[];
     expenses: any[];
+    salaries: any[];
+    activity: any[];
 }>();
 
 const from = ref(props.filters.from);
@@ -39,48 +43,34 @@ defineOptions({
 const money = (v: unknown) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v ?? 0));
 
-function apply() {
+const dateOnly = (v: unknown) => String(v ?? '').slice(0, 10) || '—';
+
+function apply(preset?: string) {
     router.get(
         '/reports',
         {
-            from: from.value || undefined,
-            to: to.value || undefined,
+            preset: preset ?? 'custom',
+            from: preset && preset !== 'custom' ? undefined : from.value || undefined,
+            to: preset && preset !== 'custom' ? undefined : to.value || undefined,
             project_id: projectId.value || undefined,
         },
         { preserveState: true, replace: true },
     );
 }
 
-function exportCsv() {
-    const rows = [
-        ['Type', 'Date', 'Reference', 'Party', 'Amount'],
-        ...props.sales.map((s) => [
-            'Sale',
-            s.contract_date,
-            s.sale_no,
-            s.customer?.name ?? '',
-            Math.max(0, Number(s.unit?.list_price ?? 0) - Number(s.discount ?? 0)),
-        ]),
-        ...props.expenses.map((e) => [
-            'Expense',
-            e.expense_date,
-            e.expense_no,
-            e.paid_to ?? e.description ?? '',
-            e.amount,
-        ]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mis-report-${from.value}-to-${to.value}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-}
+function exportUrl(format: string) {
+    const params = new URLSearchParams({
+        format,
+        preset: props.filters.preset || 'custom',
+        from: from.value,
+        to: to.value,
+    });
 
-function printReport() {
-    window.print();
+    if (projectId.value) {
+        params.set('project_id', projectId.value);
+    }
+
+    return `/reports/export?${params.toString()}`;
 }
 </script>
 
@@ -88,104 +78,187 @@ function printReport() {
     <Head title="Reports" />
 
     <div class="print-document flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-4 print:p-0">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between print:hidden">
+        <div class="space-y-4 print:hidden">
             <Heading
                 title="Reports & Analytics"
-                description="Daily and monthly MIS: sales, expenses, net profit and shareholder shares."
+                description="Daily and monthly MIS: sales, expenses, salaries, net profit and shareholder shares."
             />
-            <div class="flex flex-wrap gap-2">
-                <Input v-model="from" type="date" />
-                <Input v-model="to" type="date" />
-                <select
-                    v-model="projectId"
-                    class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                >
+            <div class="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4">
+                <Button variant="outline" :class="filters.preset === 'today' ? 'border-emerald-600' : ''" @click="apply('today')">
+                    Daily
+                </Button>
+                <Button variant="outline" :class="filters.preset === 'month' ? 'border-emerald-600' : ''" @click="apply('month')">
+                    Monthly
+                </Button>
+                <Button variant="outline" :class="filters.preset === 'year' ? 'border-emerald-600' : ''" @click="apply('year')">
+                    Yearly
+                </Button>
+                <Input v-model="from" type="date" class="w-auto" />
+                <Input v-model="to" type="date" class="w-auto" />
+                <select v-model="projectId" class="h-9 min-w-44 rounded-md border border-input bg-transparent px-3 text-sm">
                     <option value="">All projects</option>
                     <option v-for="p in projects" :key="p.id" :value="String(p.id)">
                         {{ p.name }}
                     </option>
                 </select>
-                <Button variant="secondary" @click="apply">Filter</Button>
-                <Button variant="outline" @click="exportCsv">Excel/CSV</Button>
-                <Button @click="printReport">Print / PDF</Button>
+                <Button variant="secondary" @click="apply('custom')">Filter</Button>
+                <div class="ms-auto flex flex-wrap gap-2">
+                    <Button as-child variant="outline">
+                        <a :href="exportUrl('xlsx')">Excel</a>
+                    </Button>
+                    <Button as-child>
+                        <a :href="exportUrl('print').replace('/reports/export', '/reports/print')" target="_blank">Print / PDF</a>
+                    </Button>
+                </div>
             </div>
         </div>
 
-        <div class="hidden print:mb-4 print:block">
-            <h1 class="text-xl font-semibold">Reports & Analytics</h1>
-            <p class="text-sm text-slate-600">{{ filters.from }} — {{ filters.to }}</p>
-        </div>
-
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border bg-card p-4">
+        <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl border bg-card p-6">
                 <div class="text-sm text-muted-foreground">Sales</div>
-                <div class="mt-2 text-2xl font-semibold tabular-nums">
-                    {{ money(summary.sales_total) }}
-                </div>
-                <div class="text-xs text-muted-foreground">{{ summary.sales_count }} contracts</div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ money(summary.sales_total) }}</div>
+                <div class="mt-1 text-sm text-muted-foreground">{{ summary.sales_count }} contracts</div>
             </div>
-            <div class="rounded-xl border bg-card p-4">
-                <div class="text-sm text-muted-foreground">Other income</div>
-                <div class="mt-2 text-2xl font-semibold tabular-nums">
-                    {{ money(summary.income_total) }}
-                </div>
+            <div class="rounded-2xl border bg-card p-6">
+                <div class="text-sm text-muted-foreground">Total revenue</div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ money(summary.revenue_total) }}</div>
             </div>
-            <div class="rounded-xl border bg-card p-4">
-                <div class="text-sm text-muted-foreground">Expenses</div>
-                <div class="mt-2 text-2xl font-semibold tabular-nums">
-                    {{ money(summary.expense_total) }}
-                </div>
-                <div class="text-xs text-muted-foreground">{{ summary.expense_count }} entries</div>
+            <div class="rounded-2xl border bg-card p-6">
+                <div class="text-sm text-muted-foreground">Operating expenses</div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ money(summary.operating_expense_total) }}</div>
             </div>
-            <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
+            <div class="rounded-2xl border bg-card p-6">
+                <div class="text-sm text-muted-foreground">Paid salaries</div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ money(summary.salary_total) }}</div>
+            </div>
+            <div class="rounded-2xl border bg-card p-6">
+                <div class="text-sm text-muted-foreground">All expenses</div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ money(summary.expense_total) }}</div>
+            </div>
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900 dark:bg-emerald-950/40">
                 <div class="text-sm text-emerald-800 dark:text-emerald-300">Net profit</div>
-                <div class="mt-2 text-2xl font-semibold tabular-nums">
-                    {{ money(summary.net_profit) }}
-                </div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ money(summary.net_profit) }}</div>
+                <div class="mt-1 text-sm text-muted-foreground">Sales + income − expenses − salaries</div>
             </div>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-2">
-            <div class="rounded-xl border bg-card p-4">
-                <h2 class="mb-3 font-medium">Expenses by category</h2>
-                <table class="min-w-full text-sm">
+        <div class="rounded-2xl border bg-card p-6">
+            <h2 class="mb-3 font-medium">Expenses by category</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
                     <thead class="text-left text-muted-foreground">
                         <tr>
-                            <th class="py-2">Category</th>
-                            <th>Count</th>
-                            <th>Amount</th>
+                            <th class="py-2 pr-4">Category</th>
+                            <th class="py-2 pr-4">Count</th>
+                            <th class="py-2">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="row in by_category" :key="row.category" class="border-t">
-                            <td class="py-2">{{ row.category }}</td>
-                            <td>{{ row.count }}</td>
-                            <td class="tabular-nums">{{ money(row.amount) }}</td>
+                            <td class="py-3 pr-4">{{ row.category }}</td>
+                            <td class="py-3 pr-4">{{ row.count }}</td>
+                            <td class="py-3 tabular-nums">{{ money(row.amount) }}</td>
+                        </tr>
+                        <tr v-if="!by_category.length">
+                            <td colspan="3" class="py-6 text-muted-foreground">No expenses in this period.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <div class="rounded-xl border bg-card p-4">
-                <h2 class="mb-3 font-medium">Shareholder distribution</h2>
-                <table class="min-w-full text-sm">
+        </div>
+
+        <div class="rounded-2xl border bg-card p-6">
+            <h2 class="mb-3 font-medium">Shareholder distribution</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[720px] text-sm">
                     <thead class="text-left text-muted-foreground">
                         <tr>
-                            <th class="py-2">Shareholder</th>
-                            <th>Project</th>
-                            <th>Share %</th>
-                            <th>Entitled</th>
-                            <th>Paid</th>
-                            <th>Balance</th>
+                            <th class="whitespace-nowrap py-2 pr-4">Shareholder</th>
+                            <th class="whitespace-nowrap py-2 pr-4">Project</th>
+                            <th class="whitespace-nowrap py-2 pr-4">Share %</th>
+                            <th class="whitespace-nowrap py-2 pr-4">Entitled</th>
+                            <th class="whitespace-nowrap py-2 pr-4">Paid</th>
+                            <th class="whitespace-nowrap py-2">Balance</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="p in partners" :key="p.id" class="border-t">
-                            <td class="py-2">{{ p.name }}</td>
-                            <td>{{ p.project_name || '—' }}</td>
-                            <td>{{ Number(p.ownership_percentage).toFixed(2) }}%</td>
-                            <td class="tabular-nums">{{ money(p.entitled_share ?? p.profit_share) }}</td>
-                            <td class="tabular-nums">{{ money(p.paid_total ?? 0) }}</td>
-                            <td class="font-medium tabular-nums">{{ money(p.balance_owed ?? 0) }}</td>
+                        <tr v-for="p in partners" :key="`${p.id}-${p.project_name}`" class="border-t">
+                            <td class="whitespace-nowrap py-3 pr-4">{{ p.name }}</td>
+                            <td class="whitespace-nowrap py-3 pr-4">{{ p.project_name || '—' }}</td>
+                            <td class="whitespace-nowrap py-3 pr-4">{{ Number(p.ownership_percentage).toFixed(2) }}%</td>
+                            <td class="whitespace-nowrap py-3 pr-4 tabular-nums">{{ money(p.entitled_share ?? p.profit_share) }}</td>
+                            <td class="whitespace-nowrap py-3 pr-4 tabular-nums">{{ money(p.paid_total ?? 0) }}</td>
+                            <td class="whitespace-nowrap py-3 font-medium tabular-nums">{{ money(p.balance_owed ?? 0) }}</td>
+                        </tr>
+                        <tr v-if="!partners.length">
+                            <td colspan="6" class="py-6 text-muted-foreground">No shareholders in this period.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div v-if="!restricted" class="rounded-2xl border bg-card p-6">
+            <h2 class="mb-3 font-medium">New sales</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="text-left text-muted-foreground">
+                        <tr>
+                            <th class="py-2 pr-4">Date</th>
+                            <th class="py-2 pr-4">Buyer</th>
+                            <th class="py-2">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="s in sales" :key="s.id" class="border-t">
+                            <td class="whitespace-nowrap py-3 pr-4">{{ dateOnly(s.contract_date) }}</td>
+                            <td class="py-3 pr-4">{{ s.customer?.name }}</td>
+                            <td class="whitespace-nowrap py-3 tabular-nums">{{ money(Math.max(0, Number(s.unit?.list_price ?? 0) - Number(s.discount ?? 0))) }}</td>
+                        </tr>
+                        <tr v-if="!sales.length">
+                            <td colspan="3" class="py-6 text-muted-foreground">No sales in this period.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div v-if="!restricted" class="rounded-2xl border bg-card p-6">
+            <h2 class="mb-3 font-medium">New expenses & salaries</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[640px] text-sm">
+                    <thead class="text-left text-muted-foreground">
+                        <tr>
+                            <th class="whitespace-nowrap py-2 pr-4">Date</th>
+                            <th class="whitespace-nowrap py-2 pr-4">Category</th>
+                            <th class="py-2 pr-4">Description</th>
+                            <th class="whitespace-nowrap py-2">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="e in expenses" :key="e.id" class="border-t">
+                            <td class="whitespace-nowrap py-3 pr-4">{{ dateOnly(e.expense_date) }}</td>
+                            <td class="whitespace-nowrap py-3 pr-4">{{ e.category?.name || 'General' }}</td>
+                            <td class="py-3 pr-4">{{ e.description }}</td>
+                            <td class="whitespace-nowrap py-3 tabular-nums">{{ money(e.amount) }}</td>
+                        </tr>
+                        <tr v-if="!expenses.length">
+                            <td colspan="4" class="py-6 text-muted-foreground">No expenses in this period.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div v-if="!restricted && activity.length" class="rounded-2xl border bg-card p-6">
+            <h2 class="mb-3 font-medium">Project activity</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <tbody>
+                        <tr v-for="row in activity" :key="row.id" class="border-t">
+                            <td class="whitespace-nowrap py-3 pr-4">{{ dateOnly(row.created_at) }}</td>
+                            <td class="py-3 pr-4">{{ row.subject?.name || 'Project' }}</td>
+                            <td class="py-3">{{ row.from_status }} → {{ row.to_status }}</td>
                         </tr>
                     </tbody>
                 </table>

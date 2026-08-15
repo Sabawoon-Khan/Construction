@@ -42,6 +42,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
+    Route::get('reports/print', [ReportController::class, 'print'])->name('reports.print');
 
     Route::patch('{resource}/{id}/status', [StatusController::class, 'update'])
         ->whereIn('resource', ['projects', 'units', 'sales', 'payments', 'expenses', 'incomes'])

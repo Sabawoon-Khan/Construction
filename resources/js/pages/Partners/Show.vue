@@ -40,9 +40,14 @@ defineOptions({
                 </Button>
                 <Heading :title="item.name" :description="`Shareholder ${item.partner_no || ''}`" />
             </div>
-            <Button as-child>
-                <Link :href="`/partners/${item.id}/edit`"><Pencil class="size-4" /> Edit</Link>
-            </Button>
+            <div class="flex gap-2">
+                <Button as-child variant="outline">
+                    <a href="/reports/print" target="_blank">Print distribution</a>
+                </Button>
+                <Button as-child>
+                    <Link :href="`/partners/${item.id}/edit`"><Pencil class="size-4" /> Edit</Link>
+                </Button>
+            </div>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">

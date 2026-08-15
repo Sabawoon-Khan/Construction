@@ -43,6 +43,7 @@ const props = defineProps<{
         amount: number;
         currency?: string;
     }[];
+    expense_categories?: { id: number; name: string; code: string }[];
 }>();
 
 const contributionPartnerId = ref('');
@@ -361,6 +362,17 @@ defineOptions({
                     <Label for="amount">Total cost</Label>
                     <Input id="amount" name="amount" type="number" step="0.01" min="0" required />
                     <InputError :message="errors.amount" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="expense_category_id">Category</Label>
+                    <select id="expense_category_id" name="expense_category_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+                        <option value="">General</option>
+                        <option v-for="c in expense_categories || []" :key="c.id" :value="c.id">{{ c.name }}</option>
+                    </select>
+                </div>
+                <div class="grid gap-2">
+                    <Label for="reference_no">Receipt / reference</Label>
+                    <Input id="reference_no" name="reference_no" />
                 </div>
                 <div class="sm:col-span-4">
                     <Button type="submit" :disabled="processing">{{ processing ? 'Saving...' : 'Add expense' }}</Button>

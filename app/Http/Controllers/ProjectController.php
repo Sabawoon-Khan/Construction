@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
@@ -15,7 +16,7 @@ use App\Services\ShareholderProfitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,6 +30,10 @@ class ProjectController extends Controller implements HasMiddleware
     {
         $query = Project::query();
         $query->withCount(['units', 'sales', 'expenses']);
+
+        if ($request->user()?->isRestrictedShareholder()) {
+            $query->whereIn('id', $request->user()->assignedProjectIds() ?: [0]);
+        }
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
@@ -83,8 +88,14 @@ class ProjectController extends Controller implements HasMiddleware
         return redirect()->route('projects.index');
     }
 
-    public function show(Project $project): Response
+    public function show(Request $request, Project $project): Response
     {
+        abort_if(
+            $request->user()?->isRestrictedShareholder()
+                && ! in_array((int) $project->id, $request->user()->assignedProjectIds(), true),
+            403,
+        );
+
         $project->loadCount(['units', 'sales', 'expenses', 'incomes']);
         $project->load([
             'units' => fn ($q) => $q->latest()->limit(8),
@@ -134,6 +145,7 @@ class ProjectController extends Controller implements HasMiddleware
                 ->latest('expense_date')
                 ->limit(50)
                 ->get(['id', 'expense_no', 'expense_date', 'description', 'amount', 'currency']),
+            'expense_categories' => $this->expenseCategories(),
         ]);
     }
 
@@ -143,6 +155,8 @@ class ProjectController extends Controller implements HasMiddleware
             'expense_date' => 'required|date',
             'amount' => 'required|numeric|min:0',
             'description' => 'required|string|max:1000',
+            'expense_category_id' => 'nullable|exists:expense_categories,id',
+            'reference_no' => 'nullable|string|max:100',
         ]);
 
         Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
@@ -265,5 +279,13 @@ class ProjectController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects deleted.']);
 
         return redirect()->route('projects.index');
+    }
+
+    /** @return Collection<int, ExpenseCategory> */
+    private function expenseCategories()
+    {
+        ExpenseCategory::ensureDefaults();
+
+        return ExpenseCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']);
     }
 }

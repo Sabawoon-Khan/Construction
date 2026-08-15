@@ -16,6 +16,7 @@ class Unit extends Model
         'type',
         'area',
         'bedrooms',
+        'cost_price',
         'list_price',
         'currency',
         'status',
@@ -29,6 +30,7 @@ class Unit extends Model
     {
         return [
             'area' => 'decimal:2',
+            'cost_price' => 'decimal:2',
             'list_price' => 'decimal:2',
         ];
     }

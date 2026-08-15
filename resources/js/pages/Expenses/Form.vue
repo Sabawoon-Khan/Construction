@@ -8,7 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const props = defineProps<{ item: Record<string, any> | null }>();
+const props = defineProps<{
+    item: Record<string, any> | null;
+    categories?: { id: number; name: string; code: string }[];
+}>();
 const isEdit = computed(() => !!props.item);
 
 defineOptions({
@@ -68,6 +71,22 @@ defineOptions({
                     <Label for="amount">Total cost</Label>
                     <Input id="amount" name="amount" type="number" step="0.01" min="0" required :default-value="item?.amount ?? ''" />
                     <InputError :message="errors.amount" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="expense_category_id">Category</Label>
+                    <select
+                        id="expense_category_id"
+                        name="expense_category_id"
+                        class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+                        :value="item?.expense_category_id ?? ''"
+                    >
+                        <option value="">General</option>
+                        <option v-for="c in categories || []" :key="c.id" :value="c.id">{{ c.name }}</option>
+                    </select>
+                </div>
+                <div class="grid gap-2">
+                    <Label for="reference_no">Receipt / reference</Label>
+                    <Input id="reference_no" name="reference_no" :default-value="item?.reference_no ?? ''" />
                 </div>
             </div>
             <div class="flex gap-2">

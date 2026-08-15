@@ -54,7 +54,7 @@ defineOptions({
             <DetailGrid
                 title="Expense details"
                 :items="[
-                    { label: 'Date', value: item.expense_date },
+                    { label: 'Date', value: item.expense_date?.slice?.(0, 10) ?? item.expense_date },
                     { label: 'Project', value: item.project?.name || 'Company-wide' },
                     { label: 'Description', value: item.description, span: true },
                 ]"
@@ -65,7 +65,7 @@ defineOptions({
             kind="payment"
             title="Expense Payment Voucher"
             :document-no="item.expense_no"
-            :date="item.expense_date"
+            :date="item.expense_date?.slice?.(0, 10) ?? item.expense_date"
             party-label="Project"
             :party-name="item.project?.name || 'Company-wide'"
             :amount="item.amount"

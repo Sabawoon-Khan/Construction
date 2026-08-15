@@ -17,6 +17,7 @@ type Stats = Record<string, any>;
 
 const props = defineProps<{
     mode: 'admin' | 'shareholder';
+    preset?: 'today' | 'month' | 'year' | 'custom';
     stats: Stats;
 }>();
 
@@ -40,10 +41,14 @@ const money = (v: unknown) =>
         maximumFractionDigits: 0,
     }).format(Number(v ?? 0));
 
-function applyPeriod() {
+function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
     router.get(
         '/dashboard',
-        { from: from.value || undefined, to: to.value || undefined },
+        {
+            preset: nextPreset ?? 'custom',
+            from: nextPreset && nextPreset !== 'custom' ? undefined : from.value || undefined,
+            to: nextPreset && nextPreset !== 'custom' ? undefined : to.value || undefined,
+        },
         { preserveState: true, replace: true },
     );
 }
@@ -77,6 +82,27 @@ function applyPeriod() {
                     </p>
                 </div>
                 <div class="flex flex-wrap items-end gap-2">
+                    <Button
+                        variant="outline"
+                        :class="preset === 'today' ? 'border-emerald-600' : ''"
+                        @click="applyPeriod('today')"
+                    >
+                        Today
+                    </Button>
+                    <Button
+                        variant="outline"
+                        :class="preset === 'month' ? 'border-emerald-600' : ''"
+                        @click="applyPeriod('month')"
+                    >
+                        This month
+                    </Button>
+                    <Button
+                        variant="outline"
+                        :class="preset === 'year' ? 'border-emerald-600' : ''"
+                        @click="applyPeriod('year')"
+                    >
+                        This year
+                    </Button>
                     <div class="grid gap-1">
                         <label class="text-xs text-muted-foreground">From</label>
                         <Input v-model="from" type="date" class="bg-background/80" />
@@ -85,7 +111,7 @@ function applyPeriod() {
                         <label class="text-xs text-muted-foreground">To</label>
                         <Input v-model="to" type="date" class="bg-background/80" />
                     </div>
-                    <Button @click="applyPeriod">Apply</Button>
+                    <Button @click="applyPeriod('custom')">Apply</Button>
                 </div>
             </div>
         </div>
@@ -126,7 +152,7 @@ function applyPeriod() {
             </div>
         </div>
 
-        <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-muted-foreground">Active projects</span>
@@ -151,6 +177,18 @@ function applyPeriod() {
             </div>
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">Total revenue</span>
+                    <CircleDollarSign class="size-4 text-muted-foreground" />
+                </div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">
+                    {{ money(kpis.period_revenue) }}
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground">
+                    Sales + other income
+                </div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
                     <span class="text-sm text-muted-foreground">Period expenses</span>
                     <Wallet class="size-4 text-muted-foreground" />
                 </div>
@@ -158,7 +196,19 @@ function applyPeriod() {
                     {{ money(kpis.period_expenses) }}
                 </div>
                 <div class="mt-1 text-xs text-muted-foreground">
-                    Receipts {{ money(kpis.period_receipts) }}
+                    All-time {{ money(kpis.total_expenses) }}
+                </div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">Paid salaries</span>
+                    <Wallet class="size-4 text-muted-foreground" />
+                </div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">
+                    {{ money(kpis.period_salaries) }}
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground">
+                    All-time {{ money(kpis.total_salaries) }}
                 </div>
             </div>
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40">
@@ -318,7 +368,7 @@ function applyPeriod() {
                             </div>
                             <div class="text-xs text-muted-foreground">
                                 {{ expense.project?.name || 'Company' }} ·
-                                {{ expense.expense_date }}
+                                {{ String(expense.expense_date ?? '').slice(0, 10) }}
                             </div>
                         </div>
                         <div class="font-medium tabular-nums">{{ money(expense.amount) }}</div>
@@ -342,6 +392,9 @@ function applyPeriod() {
             </Button>
             <Button as-child variant="outline" class="justify-between">
                 <Link href="/reports">Open reports <ArrowUpRight class="size-4" /></Link>
+            </Button>
+            <Button as-child variant="outline" class="justify-between">
+                <Link href="/partners">Shareholder accounts <ArrowUpRight class="size-4" /></Link>
             </Button>
         </div>
     </div>

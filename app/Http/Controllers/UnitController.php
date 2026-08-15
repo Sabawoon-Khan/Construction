@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Models\Building;
 use App\Models\Floor;
 use App\Models\Project;
 use App\Models\Unit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,12 +20,21 @@ class UnitController extends Controller implements HasMiddleware
 
     use AuthorizesResourcePermissions;
 
-
     public function index(Request $request): Response
     {
         $query = Unit::query()
-            ->with(['project:id,name', 'floor.building']);
+            ->with([
+                'project:id,name',
+                'floor.building',
+                'sales' => fn ($q) => $q
+                    ->where('status', '!=', 'cancelled')
+                    ->with('customer:id,name')
+                    ->latest('contract_date'),
+            ]);
 
+        if ($request->user()?->isRestrictedShareholder()) {
+            $query->whereIn('project_id', $request->user()->assignedProjectIds() ?: [0]);
+        }
 
         if ($request->filled('project_id')) {
             $query->where('project_id', $request->integer('project_id'));
@@ -66,7 +75,7 @@ class UnitController extends Controller implements HasMiddleware
     {
         $data = $this->validated($request);
 
-        DB::transaction(function () use ($request, $data) {
+        DB::transaction(function () use ($data) {
             $project = Project::query()
                 ->findOrFail($data['project_id']);
 
@@ -84,9 +93,10 @@ class UnitController extends Controller implements HasMiddleware
                 'project_id' => $project->id,
                 'floor_id' => $floor->id,
                 'unit_no' => $data['unit_no'],
-                'type' => 'apartment',
+                'type' => $data['type'] ?? 'apartment',
                 'area' => $data['area'] ?? null,
                 'bedrooms' => $data['bedrooms'] ?? null,
+                'cost_price' => $data['cost_price'] ?? 0,
                 'list_price' => $data['list_price'] ?? 0,
                 'currency' => $data['currency'] ?? 'USD',
                 'status' => $data['status'] ?? 'available',
@@ -99,13 +109,19 @@ class UnitController extends Controller implements HasMiddleware
         return redirect()->route('units.index');
     }
 
-    public function show(Unit $unit): Response
+    public function show(Request $request, Unit $unit): Response
     {
         $unit->load([
             'project:id,name,code',
             'floor.building',
             'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest(),
         ]);
+
+        abort_if(
+            $request->user()?->isRestrictedShareholder()
+                && ! in_array((int) $unit->project_id, $request->user()->assignedProjectIds(), true),
+            403,
+        );
 
         return Inertia::render('Units/Show', [
             'item' => $unit,
@@ -131,8 +147,10 @@ class UnitController extends Controller implements HasMiddleware
 
         $unit->update([
             'unit_no' => $data['unit_no'],
+            'type' => $data['type'] ?? $unit->type,
             'area' => $data['area'] ?? null,
             'bedrooms' => $data['bedrooms'] ?? null,
+            'cost_price' => $data['cost_price'] ?? 0,
             'list_price' => $data['list_price'] ?? 0,
             'currency' => $data['currency'] ?? 'USD',
             'status' => $data['status'] ?? 'available',
@@ -160,8 +178,10 @@ class UnitController extends Controller implements HasMiddleware
             'project_id' => 'required|exists:projects,id',
             'floor_number' => 'nullable|integer|min:0',
             'unit_no' => 'required|string|max:50',
+            'type' => 'required|string|max:50',
             'area' => 'nullable|numeric|min:0',
             'bedrooms' => 'nullable|integer|min:0',
+            'cost_price' => 'nullable|numeric|min:0',
             'list_price' => 'nullable|numeric|min:0',
             'currency' => 'required|string|size:3',
             'status' => 'required|string|max:50',

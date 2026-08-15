@@ -45,9 +45,13 @@ defineOptions({
             </div>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-4">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">List price</div>
+                <div class="text-sm text-muted-foreground">Planned unit cost</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(item.cost_price, item.currency || 'USD') }}</div>
+            </div>
+            <div class="rounded-xl border bg-card p-4 shadow-sm">
+                <div class="text-sm text-muted-foreground">Sale price</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(item.list_price, item.currency || 'USD') }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
@@ -70,6 +74,7 @@ defineOptions({
                 { label: 'Building', value: item.floor?.building?.name },
                 { label: 'Floor', value: item.floor?.number },
                 { label: 'Type', value: item.type },
+                { label: 'Buyer', value: item.sales?.[0]?.customer?.name || '—' },
                 { label: 'Currency', value: item.currency },
                 { label: 'Description', value: item.description, span: true },
             ]"

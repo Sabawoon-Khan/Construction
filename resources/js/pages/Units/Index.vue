@@ -113,7 +113,9 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">Type</th>
                             <th class="px-4 py-3 font-medium">Area</th>
                             <th class="px-4 py-3 font-medium">Beds</th>
-                            <th class="px-4 py-3 font-medium">Price</th>
+                            <th class="px-4 py-3 font-medium">Planned cost</th>
+                            <th class="px-4 py-3 font-medium">Sale price</th>
+                            <th class="px-4 py-3 font-medium">Buyer</th>
                             <th class="px-4 py-3 font-medium">Status</th>
                             <th class="px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
@@ -127,7 +129,9 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 capitalize">{{ item.type }}</td>
                             <td class="px-4 py-3">{{ item.area ?? '—' }}</td>
                             <td class="px-4 py-3">{{ item.bedrooms ?? '—' }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.cost_price, item.currency || 'USD') }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.list_price, item.currency || 'USD') }}</td>
+                            <td class="px-4 py-3">{{ item.sales?.[0]?.customer?.name || '—' }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
@@ -135,7 +139,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="8" title="No units yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="10" title="No units yet" />
                     </tbody>
                 </table>
             </div>

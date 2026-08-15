@@ -49,12 +49,15 @@ class FinanceDefaults
     /** @return array<string, mixed> */
     public static function expenseAttributes(array $data, ?int $projectId = null): array
     {
+        ExpenseCategory::ensureDefaults();
+
         return [
             'project_id' => $projectId,
-            'expense_category_id' => FinanceDefaults::generalExpenseCategoryId(),
+            'expense_category_id' => $data['expense_category_id'] ?? FinanceDefaults::generalExpenseCategoryId(),
             'expense_date' => $data['expense_date'],
             'amount' => $data['amount'],
             'description' => $data['description'] ?? null,
+            'reference_no' => $data['reference_no'] ?? null,
             'expense_no' => 'EXP-'.Str::upper(Str::random(8)),
             'currency' => 'USD',
             'payment_method' => 'cash',
