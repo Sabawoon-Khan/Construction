@@ -82,10 +82,10 @@ class TranslationLocaleStoreTest extends TestCase
 
         $this->actingAs($owner)
             ->post(route('settings.translations.store'), [
-                'code' => 'ar',
-                'name' => 'Arabic Again',
-                'native' => 'العربية',
-                'dir' => 'rtl',
+                'code' => 'en',
+                'name' => 'English Again',
+                'native' => 'English',
+                'dir' => 'ltr',
                 'from' => 'en',
             ])
             ->assertSessionHasErrors('code');

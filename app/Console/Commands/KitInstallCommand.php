@@ -31,7 +31,7 @@ class KitInstallCommand extends Command
 
         $locale = $this->option('no-interaction')
             ? config('app.locale', 'fa')
-            : $this->choice('Default locale', ['fa', 'ps', 'en', 'ar'], config('app.locale', 'fa'));
+            : $this->choice('Default locale', ['fa', 'en'], config('app.locale', 'fa'));
 
         $this->setEnvValue('APP_LOCALE', $locale);
 

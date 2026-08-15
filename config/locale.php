@@ -23,16 +23,6 @@ return [
             'native' => 'دری',
             'dir' => 'rtl',
         ],
-        'ps' => [
-            'name' => 'Pashto',
-            'native' => 'پښتو',
-            'dir' => 'rtl',
-        ],
-        'ar' => [
-            'name' => 'Arabic',
-            'native' => 'العربية',
-            'dir' => 'rtl',
-        ],
     ],
 
 ];

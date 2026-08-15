@@ -11,7 +11,7 @@ class LocaleTest extends TestCase
 
     public function test_locale_cookie_can_be_set_for_supported_locales(): void
     {
-        foreach (['en', 'fa', 'ps', 'ar'] as $locale) {
+        foreach (['en', 'fa'] as $locale) {
             $response = $this->from('/')->post(route('locale.update', $locale));
 
             $response->assertRedirect('/');
@@ -24,14 +24,14 @@ class LocaleTest extends TestCase
         $this->from('/')->post(route('locale.update', 'xx'))->assertNotFound();
     }
 
-    public function test_home_shares_available_locales_including_arabic(): void
+    public function test_home_shares_only_english_and_dari(): void
     {
         $response = $this->get('/');
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->has('locales')
-            ->where('locales', fn ($locales) => collect($locales)->contains(fn ($item) => ($item['code'] ?? null) === 'ar'))
+            ->where('locales', fn ($locales) => collect($locales)->pluck('code')->sort()->values()->all() === ['en', 'fa'])
         );
     }
 }
