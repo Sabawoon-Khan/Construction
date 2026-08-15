@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\HasAttachments;
 use App\Concerns\Trashable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 
 class Sale extends Model
 {
+    use HasAttachments;
     use SoftDeletes;
     use Trashable;
 
@@ -68,6 +70,23 @@ class Sale extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Sale $sale): void {
+            if (method_exists($sale, 'isForceDeleting') && $sale->isForceDeleting()) {
+                $sale->payments()->withTrashed()->forceDelete();
+
+                return;
+            }
+
+            $sale->payments()->delete();
+        });
+
+        static::restoring(function (Sale $sale): void {
+            $sale->payments()->onlyTrashed()->restore();
+        });
     }
 
     public function getListPriceAttribute(): float

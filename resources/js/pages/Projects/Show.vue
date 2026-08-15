@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Pencil, Printer } from '@lucide/vue';
+import { ArrowLeft, Banknote, Handshake, Info, Pencil, Printer, Receipt } from '@lucide/vue';
 import { ref } from 'vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
+import { MisTabs } from '@/components/mis';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,13 @@ const props = defineProps<{
 
 const contributionPartnerId = ref('');
 const payoutPartnerId = ref('');
+const tab = ref('info');
+const tabs = [
+    { id: 'info', label: 'Project info', icon: Info },
+    { id: 'shareholders', label: 'Shareholders', icon: Handshake },
+    { id: 'expenses', label: 'Expenses', icon: Receipt },
+    { id: 'sales', label: 'Sales', icon: Banknote },
+];
 
 defineOptions({
     layout: {
@@ -98,7 +106,9 @@ defineOptions({
             </div>
         </div>
 
-        <div class="grid gap-4 lg:grid-cols-2">
+        <MisTabs v-model="tab" :tabs="tabs" />
+
+        <div v-show="tab === 'info'" class="grid gap-4 lg:grid-cols-2">
             <DetailGrid
                 title="Project details"
                 :items="[
@@ -113,8 +123,9 @@ defineOptions({
                     { label: 'Description', value: item.description, span: true },
                 ]"
             />
+        </div>
 
-            <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div v-show="tab === 'sales'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div class="border-b px-5 py-3">
                     <h3 class="text-sm font-semibold">Recent sales</h3>
                 </div>
@@ -139,10 +150,9 @@ defineOptions({
                         </tr>
                     </tbody>
                 </table>
-            </div>
         </div>
 
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div v-show="tab === 'shareholders'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-4">
                 <h3 class="text-sm font-semibold">Shareholders</h3>
                 <p class="text-xs text-muted-foreground">
@@ -319,7 +329,7 @@ defineOptions({
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div v-show="tab === 'expenses'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-4">
                 <h3 class="text-sm font-semibold">Project expenses</h3>
                 <p class="text-xs text-muted-foreground">Building costs and operating spend for this project only.</p>

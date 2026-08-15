@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Link } from '@inertiajs/vue3';
+import { ArrowLeft } from '@lucide/vue';
 import { computed, useSlots } from 'vue';
 import FileUploadField from '@/components/FileUploadField.vue';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,7 @@ const props = withDefaults(
         processing?: boolean;
         clientUuid: string;
         resource: string;
+        backHref?: string;
         showAttachments?: boolean;
         submitLabel?: string;
     }>(),
@@ -20,6 +23,7 @@ const props = withDefaults(
         offlineEnabled: false,
         online: true,
         processing: false,
+        backHref: undefined,
         showAttachments: true,
         submitLabel: undefined,
     },
@@ -52,6 +56,9 @@ function onOfflineComplete(payload: { offlineBlobId?: string | null; item: { fil
 <template>
     <form class="mx-auto flex max-w-lg flex-col gap-4 p-4" @submit.prevent="emit('submit')">
         <div class="space-y-1">
+            <Button v-if="backHref" as-child variant="ghost" size="sm" class="-ml-2 mb-2 w-fit">
+                <Link :href="backHref"><ArrowLeft class="size-4" /> Back</Link>
+            </Button>
             <h1 class="text-xl font-semibold">{{ title }}</h1>
             <p v-if="offlineEnabled" class="text-sm text-muted-foreground">
                 {{

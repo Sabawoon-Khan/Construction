@@ -43,6 +43,7 @@ const model = defineModel<string>({ required: true });
         <Button
             v-for="tab in tabs.filter((t) => !t.href)"
             :key="`btn-${tab.id}`"
+            type="button"
             variant="ghost"
             size="sm"
             role="tab"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -13,6 +14,26 @@ const props = defineProps<{
 
 const isEdit = computed(() => !!props.item);
 
+const form = useForm({
+    name: props.item?.name ?? '',
+    bank_name: props.item?.bank_name ?? '',
+    account_number: props.item?.account_number ?? '',
+    iban: props.item?.iban ?? '',
+    currency: props.item?.currency ?? 'USD',
+    opening_balance: props.item?.opening_balance ?? 0,
+    is_cash: Boolean(props.item?.is_cash ?? false),
+    is_active: Boolean(props.item?.is_active ?? true),
+});
+
+function submit(): void {
+    if (isEdit.value && props.item) {
+        form.put(`/bank-accounts/${props.item.id}`);
+        return;
+    }
+
+    form.post('/bank-accounts');
+}
+
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -25,69 +46,71 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="isEdit ? 'Edit Bank Accounts' : 'Create Bank Accounts'" />
+    <Head :title="isEdit ? 'Edit Bank Account' : 'Create Bank Account'" />
 
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <Heading
-            :title="isEdit ? 'Edit Bank Accounts' : 'Create Bank Accounts'"
-            description="Fill in the details below and save."
-        />
+        <div class="space-y-3">
+            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
+                <Link href="/bank-accounts"><ArrowLeft class="size-4" /> Back</Link>
+            </Button>
+            <Heading
+                :title="isEdit ? 'Edit Bank Account' : 'Create Bank Account'"
+                description="Cash box or bank account used when receiving sale payments."
+            />
+        </div>
 
-        <Form
-            :action="isEdit ? `/bank-accounts/${item!.id}` : '/bank-accounts'"
-            :method="isEdit ? 'put' : 'post'"
+        <form
             class="max-w-3xl space-y-6 rounded-xl border border-sidebar-border/70 bg-card p-6"
-            v-slot="{ errors, processing }"
+            @submit.prevent="submit"
         >
             <div class="grid gap-4 sm:grid-cols-2">
-            <div class="grid gap-2">
-                <Label for="name">Name</Label>
-                <Input id="name" name="name" type="text" required :default-value="item?.name ?? ''" />
-                <InputError :message="errors.name" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="bank_name">Bank Name</Label>
-                <Input id="bank_name" name="bank_name" type="text" :default-value="item?.bank_name ?? ''" />
-                <InputError :message="errors.bank_name" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="account_number">Account Number</Label>
-                <Input id="account_number" name="account_number" type="text" :default-value="item?.account_number ?? ''" />
-                <InputError :message="errors.account_number" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="iban">Iban</Label>
-                <Input id="iban" name="iban" type="text" :default-value="item?.iban ?? ''" />
-                <InputError :message="errors.iban" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="currency">Currency</Label>
-                <Input id="currency" name="currency" type="text" required :default-value="item?.currency ?? ''" />
-                <InputError :message="errors.currency" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="opening_balance">Opening Balance</Label>
-                <Input id="opening_balance" name="opening_balance" type="number" step="0.01" :default-value="item?.opening_balance ?? ''" />
-                <InputError :message="errors.opening_balance" />
-            </div>
-            <div class="flex items-center gap-2 sm:col-span-2">
-                <input id="is_cash" type="checkbox" name="is_cash" value="1" class="size-4 rounded border" :checked="item?.is_cash ?? true" />
-                <Label for="is_cash">Is Cash</Label>
-                <InputError :message="errors.is_cash" />
-            </div>
-            <div class="flex items-center gap-2 sm:col-span-2">
-                <input id="is_active" type="checkbox" name="is_active" value="1" class="size-4 rounded border" :checked="item?.is_active ?? true" />
-                <Label for="is_active">Is Active</Label>
-                <InputError :message="errors.is_active" />
-            </div>
+                <div class="grid gap-2">
+                    <Label for="name">Name</Label>
+                    <Input id="name" v-model="form.name" type="text" required />
+                    <InputError :message="form.errors.name" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="bank_name">Bank Name</Label>
+                    <Input id="bank_name" v-model="form.bank_name" type="text" />
+                    <InputError :message="form.errors.bank_name" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="account_number">Account Number</Label>
+                    <Input id="account_number" v-model="form.account_number" type="text" />
+                    <InputError :message="form.errors.account_number" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="iban">IBAN</Label>
+                    <Input id="iban" v-model="form.iban" type="text" placeholder="Optional — e.g. AF18 ACCT-000009" />
+                    <p class="text-xs text-muted-foreground">International Bank Account Number for bank transfers. Leave empty if you only use a local account number.</p>
+                    <InputError :message="form.errors.iban" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="currency">Currency</Label>
+                    <Input id="currency" v-model="form.currency" type="text" maxlength="3" required />
+                    <InputError :message="form.errors.currency" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="opening_balance">Opening Balance</Label>
+                    <Input id="opening_balance" v-model="form.opening_balance" type="number" step="0.01" />
+                    <InputError :message="form.errors.opening_balance" />
+                </div>
+                <label class="flex items-center gap-2 sm:col-span-2">
+                    <input v-model="form.is_cash" type="checkbox" class="size-4 rounded border" />
+                    <span class="text-sm">Cash account (safe / cash box)</span>
+                </label>
+                <label class="flex items-center gap-2 sm:col-span-2">
+                    <input v-model="form.is_active" type="checkbox" class="size-4 rounded border" />
+                    <span class="text-sm">Active</span>
+                </label>
             </div>
 
             <div class="flex gap-2">
-                <Button type="submit" :disabled="processing">{{ processing ? 'Saving...' : 'Save' }}</Button>
+                <Button type="submit" :disabled="form.processing">{{ form.processing ? 'Saving...' : 'Save' }}</Button>
                 <Button as-child variant="secondary">
                     <Link href="/bank-accounts">Cancel</Link>
                 </Button>
             </div>
-        </Form>
+        </form>
     </div>
 </template>

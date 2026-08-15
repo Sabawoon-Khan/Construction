@@ -19,6 +19,9 @@ class PaymentController extends Controller implements HasMiddleware
     public function index(Request $request): Response
     {
         $query = Payment::query()
+            ->where(function ($q) {
+                $q->whereNull('sale_id')->orWhereHas('sale');
+            })
             ->with(['customer:id,name', 'project:id,name', 'sale:id,sale_no']);
 
         if ($search = $request->string('search')->toString()) {

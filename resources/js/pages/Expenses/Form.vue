@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -24,10 +25,15 @@ defineOptions({
 <template>
     <Head :title="isEdit ? 'Edit Expense' : 'Record Expense'" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <Heading
-            :title="isEdit ? 'Edit Expense' : 'Record Expense'"
-            description="Company-wide expenses not tied to a project."
-        />
+        <div class="space-y-3">
+            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
+                <Link href="/expenses"><ArrowLeft class="size-4" /> Back</Link>
+            </Button>
+            <Heading
+                :title="isEdit ? 'Edit Expense' : 'Record Expense'"
+                description="Company-wide expenses not tied to a project."
+            />
+        </div>
         <Form
             :action="isEdit ? `/expenses/${item!.id}` : '/expenses'"
             :method="isEdit ? 'put' : 'post'"

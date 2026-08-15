@@ -78,7 +78,9 @@ class CustomerController extends Controller implements HasMiddleware
             'stats' => [
                 'sales_count' => $customer->sales()->count(),
                 'sales_total' => Sale::sumTotalPrice($customer->sales()->getQuery()),
-                'payments_total' => $customer->payments()->sum('amount'),
+                'payments_total' => $customer->payments()
+                    ->where(fn ($q) => $q->whereNull('sale_id')->orWhereHas('sale'))
+                    ->sum('amount'),
             ],
         ]);
     }

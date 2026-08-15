@@ -112,6 +112,7 @@ function onAttachmentRemoved(file: ExistingUploadFile): void {
         :processing="processing || form.processing"
         :client-uuid="clientUuid"
         resource="field_reports"
+        back-href="/field-reports"
         :show-attachments="attachmentsEnabled"
         @submit="onSubmit"
         @attachment-stored="onAttachmentStored"

@@ -10,9 +10,12 @@ use Illuminate\Support\Str;
 
 class SaleInstallmentService
 {
-    public static function recordPayment(Sale $sale, SaleInstallment $startInstallment, float $amount): void
+    /**
+     * @param  array{payment_method?: string, bank_account_id?: int|null, reference_no?: string|null, notes?: string|null, paid_at?: mixed}  $meta
+     */
+    public static function recordPayment(Sale $sale, SaleInstallment $startInstallment, float $amount, array $meta = []): void
     {
-        DB::transaction(function () use ($sale, $startInstallment, $amount) {
+        DB::transaction(function () use ($sale, $startInstallment, $amount, $meta) {
             $sale->loadMissing('unit');
             $installments = $sale->installments()->orderBy('installment_no')->get();
 
@@ -33,13 +36,16 @@ class SaleInstallmentService
                 'sale_id' => $sale->id,
                 'sale_installment_id' => $startInstallment->id,
                 'customer_id' => $sale->customer_id,
+                'bank_account_id' => $meta['bank_account_id'] ?? null,
                 'payment_no' => 'PAY-'.Str::upper(Str::random(8)),
                 'type' => 'receipt',
                 'amount' => $amount,
                 'currency' => $sale->currency ?? 'USD',
-                'paid_at' => now(),
-                'payment_method' => 'cash',
+                'paid_at' => $meta['paid_at'] ?? now(),
+                'payment_method' => $meta['payment_method'] ?? 'cash',
+                'reference_no' => $meta['reference_no'] ?? null,
                 'status' => 'posted',
+                'notes' => $meta['notes'] ?? null,
             ]);
 
             self::syncSaleStatus($sale);

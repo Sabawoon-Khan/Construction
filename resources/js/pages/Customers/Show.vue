@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Pencil } from '@lucide/vue';
+import { ArrowLeft, Banknote, Info, Pencil } from '@lucide/vue';
+import { ref } from 'vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
+import { MisTabs } from '@/components/mis';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { money } from '@/lib/utils';
+
+const tab = ref('info');
+const tabs = [
+    { id: 'info', label: 'Customer info', icon: Info },
+    { id: 'sales', label: 'Sales', icon: Banknote },
+];
 
 const props = defineProps<{
     item: Record<string, any>;
@@ -53,7 +61,10 @@ defineOptions({
             </div>
         </div>
 
+        <MisTabs v-model="tab" :tabs="tabs" />
+
         <DetailGrid
+            v-show="tab === 'info'"
             title="Customer details"
             :items="[
                 { label: 'Customer No', value: item.customer_no },
@@ -66,7 +77,7 @@ defineOptions({
             ]"
         />
 
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div v-show="tab === 'sales'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">Recent sales</h3>
             </div>

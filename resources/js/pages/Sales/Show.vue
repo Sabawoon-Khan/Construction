@@ -1,16 +1,27 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { ArrowLeft, Pencil, Printer } from '@lucide/vue';
-import { computed } from 'vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft, CalendarClock, FileText, Info, Pencil, Printer } from '@lucide/vue';
+import { computed, onMounted, ref } from 'vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
+import { MisTabs } from '@/components/mis';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
-const props = defineProps<{ sale: any; paid_amount: number; remaining_amount: number; total_price: number }>();
+const props = defineProps<{
+    sale: any;
+    paid_amount: number;
+    remaining_amount: number;
+    total_price: number;
+    bankAccounts?: { id: number; name: string; is_cash: boolean }[];
+}>();
 
 defineOptions({
     layout: {
@@ -22,6 +33,37 @@ defineOptions({
     },
 });
 
+const tab = ref(window.location.hash === '#receive-payment' ? 'schedule' : 'info');
+const tabs = [
+    { id: 'info', label: 'Sale info', icon: Info },
+    { id: 'schedule', label: 'Payment schedule', icon: CalendarClock },
+    { id: 'documents', label: 'Contract documents', icon: FileText },
+];
+
+const existingDocuments = computed<ExistingUploadFile[]>(() =>
+    (props.sale.attachments ?? []).map((file: any) => ({
+        id: file.id,
+        name: file.original_filename || file.title || 'Document',
+        size: file.file_size,
+        mime: file.mime_type,
+        url: file.download_url,
+    })),
+);
+
+const firstUnpaidId = computed(() => {
+    const row = (props.sale.installments ?? []).find((i: any) => installmentRemaining(i) > 0);
+    return row?.id ?? props.sale.installments?.[0]?.id ?? null;
+});
+
+const payForm = useForm({
+    amount: '',
+    payment_method: 'cash',
+    bank_account_id: '',
+    reference_no: '',
+    notes: '',
+    installment_id: null as number | null,
+});
+
 const statementLines = computed(() =>
     (props.sale.installments ?? []).map((i: any) => ({
         description: `Installment #${i.installment_no}`,
@@ -30,39 +72,35 @@ const statementLines = computed(() =>
     })),
 );
 
+onMounted(() => {
+    if (window.location.hash === '#receive-payment') {
+        tab.value = 'schedule';
+    }
+});
+
 function installmentRemaining(installment: any) {
     return Math.max(0, Number(installment.amount ?? 0) - Number(installment.paid_amount ?? 0));
 }
 
-function payInstallment(installment: any) {
-    const remaining = installmentRemaining(installment);
-    if (remaining <= 0) {
-        return;
-    }
-
-    if (!confirm(`Record payment of ${money(remaining, props.sale.currency || 'USD')} for installment #${installment.installment_no}?`)) {
-        return;
-    }
-
-    router.post(`/sales/${props.sale.id}/installments/${installment.id}/pay`, { amount: remaining });
+function fillInstallment(installment: any) {
+    payForm.installment_id = installment.id;
+    payForm.amount = String(installmentRemaining(installment) || '');
+    tab.value = 'schedule';
 }
 
-function payAllRemaining() {
-    const remaining = props.remaining_amount;
-    if (remaining <= 0) {
+function submitPayment() {
+    const installmentId = payForm.installment_id ?? firstUnpaidId.value;
+    if (!installmentId) {
         return;
     }
 
-    const firstUnpaid = props.sale.installments?.find((i: any) => installmentRemaining(i) > 0);
-    if (!firstUnpaid) {
-        return;
-    }
-
-    if (!confirm(`Record full payment of ${money(remaining, props.sale.currency || 'USD')}?`)) {
-        return;
-    }
-
-    router.post(`/sales/${props.sale.id}/installments/${firstUnpaid.id}/pay`, { amount: remaining });
+    payForm.post(`/sales/${props.sale.id}/installments/${installmentId}/pay`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            payForm.reset('amount', 'reference_no', 'notes');
+            payForm.installment_id = null;
+        },
+    });
 }
 </script>
 
@@ -87,13 +125,12 @@ function payAllRemaining() {
                 <Button as-child variant="outline">
                     <Link :href="`/sales/${sale.id}/edit`"><Pencil class="size-4" /> Edit</Link>
                 </Button>
-                <Button v-if="remaining_amount > 0 && sale.installments?.length" @click="payAllRemaining">
-                    Pay all {{ money(remaining_amount, sale.currency || 'USD') }}
-                </Button>
             </div>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-3 print:hidden">
+        <MisTabs v-model="tab" :tabs="tabs" class="print:hidden" />
+
+        <div v-show="tab === 'info'" class="grid gap-4 md:grid-cols-3 print:hidden">
             <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">Total due</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(total_price, sale.currency || 'USD') }}</div>
@@ -108,7 +145,7 @@ function payAllRemaining() {
             </div>
         </div>
 
-        <div class="print:hidden">
+        <div v-show="tab === 'info'" class="print:hidden">
             <DetailGrid
                 title="Contract details"
                 :items="[
@@ -125,7 +162,48 @@ function payAllRemaining() {
             />
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm print:hidden">
+        <div v-show="tab === 'schedule'" class="space-y-4 print:hidden">
+        <div id="receive-payment" v-if="remaining_amount > 0" class="space-y-4 rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm">
+            <div>
+                <h3 class="text-sm font-semibold">Receive payment</h3>
+                <p class="text-sm text-muted-foreground">Record money collected against this sale. It posts a receipt under Payments.</p>
+            </div>
+            <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitPayment">
+                <div class="grid gap-2">
+                    <Label>Amount</Label>
+                    <Input v-model="payForm.amount" type="number" step="0.01" min="0.01" required :placeholder="String(remaining_amount)" />
+                    <InputError :message="payForm.errors.amount" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>Method</Label>
+                    <select v-model="payForm.payment_method" class="h-9 rounded-md border px-3 text-sm">
+                        <option value="cash">Cash</option>
+                        <option value="bank">Bank</option>
+                        <option value="transfer">Transfer</option>
+                    </select>
+                </div>
+                <div class="grid gap-2">
+                    <Label>Bank account</Label>
+                    <select v-model="payForm.bank_account_id" class="h-9 rounded-md border px-3 text-sm">
+                        <option value="">None</option>
+                        <option v-for="account in bankAccounts" :key="account.id" :value="String(account.id)">{{ account.name }}</option>
+                    </select>
+                </div>
+                <div class="grid gap-2">
+                    <Label>Reference</Label>
+                    <Input v-model="payForm.reference_no" placeholder="Receipt / slip no" />
+                </div>
+                <div class="grid gap-2 sm:col-span-2">
+                    <Label>Notes</Label>
+                    <Input v-model="payForm.notes" placeholder="Optional" />
+                </div>
+                <div class="sm:col-span-2">
+                    <Button type="submit" :disabled="payForm.processing">Record receipt</Button>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">Installments</h3>
             </div>
@@ -152,9 +230,9 @@ function payAllRemaining() {
                                 v-if="installmentRemaining(i) > 0"
                                 size="sm"
                                 variant="outline"
-                                @click="payInstallment(i)"
+                                @click="fillInstallment(i)"
                             >
-                                Pay {{ money(installmentRemaining(i), sale.currency || 'USD') }}
+                                Receive {{ money(installmentRemaining(i), sale.currency || 'USD') }}
                             </Button>
                         </td>
                     </tr>
@@ -165,7 +243,7 @@ function payAllRemaining() {
             </table>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm print:hidden">
+        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">Receipts</h3>
             </div>
@@ -194,6 +272,22 @@ function payAllRemaining() {
                     </tr>
                 </tbody>
             </table>
+        </div>
+        </div>
+
+        <div v-show="tab === 'documents'" class="space-y-3 rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm print:hidden">
+            <h3 class="text-sm font-semibold">Contract documents</h3>
+            <FileUploadField
+                mode="chunked"
+                destination="attachment"
+                attachable="sales"
+                :attachable-id="sale.id"
+                multiple
+                :max-files="10"
+                accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
+                hint="Signed contract and related files."
+                :existing="existingDocuments"
+            />
         </div>
 
         <PrintableVoucher

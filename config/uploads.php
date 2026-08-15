@@ -106,6 +106,11 @@ return [
             'user_scoped' => true,
             'permissions' => ['field_reports.create', 'field_reports.edit'],
         ],
+        'sales' => [
+            'model' => \App\Models\Sale::class,
+            'user_scoped' => false,
+            'permissions' => ['sales.create', 'sales.edit'],
+        ],
     ],
 
 ];

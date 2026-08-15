@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from '@lucide/vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -39,7 +40,12 @@ defineOptions({
     <Head :title="t('Create user')" />
 
     <div class="space-y-6">
-        <Heading variant="small" :title="t('Create user')" />
+        <div class="space-y-3">
+            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
+                <Link href="/settings/users"><ArrowLeft class="size-4" /> Back</Link>
+            </Button>
+            <Heading variant="small" :title="t('Create user')" />
+        </div>
 
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2">

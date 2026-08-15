@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -67,7 +68,12 @@ defineOptions({
     <Head :title="t('Create role')" />
 
     <div class="space-y-6">
-        <Heading variant="small" :title="t('Create role')" />
+        <div class="space-y-3">
+            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
+                <Link href="/settings/roles"><ArrowLeft class="size-4" /> Back</Link>
+            </Button>
+            <Heading variant="small" :title="t('Create role')" />
+        </div>
 
         <form class="space-y-4" @submit.prevent="submit">
             <div class="space-y-2">

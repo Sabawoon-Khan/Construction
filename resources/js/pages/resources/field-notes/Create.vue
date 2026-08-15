@@ -53,6 +53,7 @@ const {
         :processing="processing || form.processing"
         :client-uuid="clientUuid"
         resource="field_notes"
+        back-href="/field-notes"
         :show-attachments="attachmentsEnabled"
         @submit="onSubmit"
         @attachment-stored="onAttachmentStored"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -13,7 +14,12 @@ defineOptions({ layout: { breadcrumbs: [{ title: 'Dashboard', href: '/dashboard'
 <template>
   <Head :title="isEdit ? 'Edit Unit' : 'Create Unit'" />
   <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-    <Heading :title="isEdit ? 'Edit Unit' : 'Create Unit'" />
+    <div class="space-y-3">
+      <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
+        <Link href="/units"><ArrowLeft class="size-4" /> Back</Link>
+      </Button>
+      <Heading :title="isEdit ? 'Edit Unit' : 'Create Unit'" />
+    </div>
     <Form :action="isEdit ? `/units/${item.id}` : '/units'" :method="isEdit ? 'put' : 'post'" class="max-w-3xl space-y-6 rounded-xl border bg-card p-6" v-slot="{ errors, processing }">
       <div class="grid gap-4 sm:grid-cols-2">
         <div class="grid gap-2"><Label>Project</Label><select name="project_id" required class="h-9 rounded-md border px-3 text-sm" :value="item?.project_id ?? ''"><option value="" disabled>Select</option><option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option></select><InputError :message="errors.project_id" /></div>

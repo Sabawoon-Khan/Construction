@@ -42,10 +42,11 @@ function rowActions(item: any): RowActionItem[] {
     <Head title="Payments" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="Payments" description="Read-only receipt log. Record payments from the sale page." />
+            <Heading title="Payments" description="Receipts created when you collect money on a sale. Open a sale to receive a payment." />
             <div class="flex flex-wrap gap-2">
                 <Input v-model="search" placeholder="Search..." @keyup.enter="apply" />
                 <Button variant="secondary" @click="apply">Search</Button>
+                <Button as-child variant="outline"><Link href="/sales">Go to sales</Link></Button>
             </div>
         </div>
 

@@ -44,20 +44,9 @@ class BankAccountController extends Controller implements HasMiddleware
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'bank_name' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:100',
-            'iban' => 'nullable|string|max:100',
-            'currency' => 'required|string|size:3',
-            'opening_balance' => 'nullable|numeric',
-            'is_cash' => 'boolean',
-            'is_active' => 'boolean',
-        ]);
+        BankAccount::create($this->validated($request));
 
-        BankAccount::create(array_merge(['currency' => 'USD', 'opening_balance' => 0, 'is_cash' => false, 'is_active' => true], $data));
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Bank Accounts created.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Bank account created.']);
 
         return redirect()->route('bank-accounts.index');
     }
@@ -85,22 +74,34 @@ class BankAccountController extends Controller implements HasMiddleware
     public function update(Request $request, BankAccount $bankAccount): RedirectResponse
     {
 
-        $data = $request->validate([
+        $bankAccount->update($this->validated($request));
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Bank account updated.']);
+
+        return redirect()->route('bank-accounts.show', $bankAccount);
+    }
+
+    /** @return array<string, mixed> */
+    private function validated(Request $request): array
+    {
+        $request->merge([
+            'opening_balance' => $request->filled('opening_balance') ? $request->input('opening_balance') : 0,
+            'iban' => $request->filled('iban') ? preg_replace('/\s+/', '', (string) $request->input('iban')) : null,
+            'currency' => strtoupper(substr(trim((string) $request->input('currency', 'USD')) ?: 'USD', 0, 3)),
+            'is_cash' => $request->boolean('is_cash'),
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return $request->validate([
             'name' => 'required|string|max:255',
             'bank_name' => 'nullable|string|max:255',
             'account_number' => 'nullable|string|max:100',
-            'iban' => 'nullable|string|max:100',
+            'iban' => 'nullable|string|max:34',
             'currency' => 'required|string|size:3',
             'opening_balance' => 'nullable|numeric',
             'is_cash' => 'boolean',
             'is_active' => 'boolean',
         ]);
-
-        $bankAccount->update($data);
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Bank Accounts updated.']);
-
-        return redirect()->route('bank-accounts.index');
     }
 
     public function destroy(Request $request, BankAccount $bankAccount): RedirectResponse

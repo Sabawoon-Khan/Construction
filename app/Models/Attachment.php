@@ -69,6 +69,24 @@ class Attachment extends Model
         return false;
     }
 
+    public function canDownload(?User $user): bool
+    {
+        if ($this->ownedBy($user)) {
+            return true;
+        }
+
+        return $this->attachable instanceof Sale && (bool) $user?->can('sales.view');
+    }
+
+    public function canDelete(?User $user): bool
+    {
+        if ($this->ownedBy($user)) {
+            return true;
+        }
+
+        return $this->attachable instanceof Sale && (bool) $user?->can('sales.edit');
+    }
+
     public function deleteFile(): void
     {
         if ($this->file_path && Storage::disk('local')->exists($this->file_path)) {

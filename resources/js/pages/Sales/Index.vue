@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Eye, Pencil, Plus, Printer, Trash2 } from '@lucide/vue';
+import { Banknote, Eye, Pencil, Plus, Printer, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
@@ -36,6 +36,7 @@ const saleStatuses = ['draft', 'active', 'completed', 'cancelled'];
 function rowActions(item: any): RowActionItem[] {
     return [
         { label: 'View', icon: Eye, href: `/sales/${item.id}` },
+        { label: 'Receive payment', icon: Banknote, href: `/sales/${item.id}#receive-payment` },
         { label: 'Print', icon: Printer, href: `/sales/${item.id}` },
         { label: 'Edit', icon: Pencil, href: `/sales/${item.id}/edit` },
         { separator: true, isLabel: true, label: 'Change status' },

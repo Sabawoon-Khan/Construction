@@ -12,7 +12,7 @@ class AttachmentController extends Controller
     public function download(Request $request, Attachment $attachment): StreamedResponse
     {
         abort_unless($request->user(), 403);
-        abort_unless($attachment->ownedBy($request->user()), 403);
+        abort_unless($attachment->canDownload($request->user()), 403);
         abort_unless(Storage::disk('local')->exists($attachment->file_path), 404);
 
         return Storage::disk('local')->download(
@@ -24,7 +24,7 @@ class AttachmentController extends Controller
     public function destroy(Request $request, Attachment $attachment)
     {
         abort_unless($request->user(), 403);
-        abort_unless($attachment->ownedBy($request->user()), 403);
+        abort_unless($attachment->canDelete($request->user()), 403);
 
         $attachment->delete();
 
