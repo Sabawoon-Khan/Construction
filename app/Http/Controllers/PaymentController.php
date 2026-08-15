@@ -31,12 +31,17 @@ class PaymentController extends Controller implements HasMiddleware
             });
         }
 
-        $totalAmount = (clone $query)->sum('amount');
+        $totals = [
+            'count' => (clone $query)->count(),
+            'amount' => (float) (clone $query)->sum('amount'),
+            'this_month' => (float) (clone $query)->where('paid_at', '>=', now()->startOfMonth())->sum('amount'),
+            'cash' => (float) (clone $query)->where('payment_method', 'cash')->sum('amount'),
+        ];
 
         return Inertia::render('Payments/Index', [
             'items' => $query->latest('paid_at')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
-            'totals' => ['amount' => $totalAmount],
+            'totals' => $totals,
         ]);
     }
 

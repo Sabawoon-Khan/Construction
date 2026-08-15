@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
+use App\Models\PartnerInvestment;
 use App\Models\Project;
 use App\Services\ShareholderProfitService;
 use Illuminate\Http\RedirectResponse;
@@ -34,9 +35,18 @@ class PartnerController extends Controller implements HasMiddleware
             });
         }
 
+        $ids = (clone $query)->select('id');
+        $totals = [
+            'count' => (clone $query)->count(),
+            'with_projects' => (clone $query)->whereHas('projects')->count(),
+            'contributions' => (float) PartnerInvestment::query()->whereIn('partner_id', clone $ids)->sum('amount'),
+            'payouts' => (float) PartnerDistribution::query()->whereIn('partner_id', clone $ids)->sum('amount'),
+        ];
+
         return Inertia::render('Partners/Index', [
             'items' => $query->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
+            'totals' => $totals,
         ]);
     }
 

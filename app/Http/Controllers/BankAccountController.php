@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Models\BankAccount;
+use App\Models\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -29,9 +30,18 @@ class BankAccountController extends Controller implements HasMiddleware
             });
         }
 
+        $ids = (clone $query)->select('id');
+        $totals = [
+            'count' => (clone $query)->count(),
+            'active' => (clone $query)->where('is_active', true)->count(),
+            'opening_balance' => (float) (clone $query)->sum('opening_balance'),
+            'receipts' => (float) Payment::query()->whereIn('bank_account_id', $ids)->sum('amount'),
+        ];
+
         return Inertia::render('BankAccounts/Index', [
             'items' => $query->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
+            'totals' => $totals,
         ]);
     }
 

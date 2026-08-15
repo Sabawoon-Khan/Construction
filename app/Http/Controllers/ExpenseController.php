@@ -30,12 +30,19 @@ class ExpenseController extends Controller implements HasMiddleware
             });
         }
 
+        $count = (clone $query)->count();
         $totalAmount = (float) (clone $query)->sum('amount');
+        $totals = [
+            'count' => $count,
+            'amount' => $totalAmount,
+            'this_month' => (float) (clone $query)->where('expense_date', '>=', now()->startOfMonth())->sum('amount'),
+            'average' => $count > 0 ? $totalAmount / $count : 0,
+        ];
 
         return Inertia::render('Expenses/Index', [
             'items' => $query->latest('expense_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
-            'totals' => ['amount' => $totalAmount],
+            'totals' => $totals,
         ]);
     }
 

@@ -39,10 +39,18 @@ class UnitController extends Controller implements HasMiddleware
             $query->where('unit_no', 'like', "%{$search}%");
         }
 
+        $totals = [
+            'count' => (clone $query)->count(),
+            'available' => (clone $query)->where('status', 'available')->count(),
+            'reserved' => (clone $query)->where('status', 'reserved')->count(),
+            'sold' => (clone $query)->where('status', 'sold')->count(),
+        ];
+
         return Inertia::render('Units/Index', [
             'items' => $query->latest()->paginate(20)->withQueryString(),
             'filters' => $request->only(['search', 'project_id', 'status']),
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
+            'totals' => $totals,
         ]);
     }
 

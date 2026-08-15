@@ -4,6 +4,7 @@ import { Eye, Pencil, Plus, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
+import { MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -16,6 +17,7 @@ const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: any;
     projects: any[];
+    totals: { count: number; available: number; reserved: number; sold: number };
 }>();
 const search = ref(props.filters.search ?? '');
 const projectId = ref(String(props.filters.project_id ?? ''));
@@ -93,6 +95,13 @@ function rowActions(item: any): RowActionItem[] {
                 <Button as-child><Link href="/units/create"><Plus class="size-4" /> Add unit</Link></Button>
             </div>
         </div>
+
+        <MisStatGrid :columns="4">
+            <MisStatCard label="Units" :value="totals.count" />
+            <MisStatCard label="Available" :value="totals.available" tone="success" />
+            <MisStatCard label="Reserved" :value="totals.reserved" tone="warning" />
+            <MisStatCard label="Sold" :value="totals.sold" />
+        </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="overflow-x-auto">

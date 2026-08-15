@@ -4,15 +4,21 @@ import { Eye, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
+import { MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { RowActionItem } from '@/lib/row-actions';
+import { money } from '@/lib/utils';
 
 type Item = Record<string, any>;
-const props = defineProps<{ items: { data: Item[]; links: any[]; meta?: any }; filters: { search?: string } }>();
+const props = defineProps<{
+    items: { data: Item[]; links: any[]; meta?: any };
+    filters: { search?: string };
+    totals: { count: number; active: number; opening_balance: number; receipts: number };
+}>();
 const search = ref(props.filters.search ?? '');
 
 defineOptions({
@@ -61,6 +67,13 @@ function rowActions(item: Item): RowActionItem[] {
                 <Button as-child><Link href="/bank-accounts/create"><Plus class="size-4" /> Add</Link></Button>
             </div>
         </div>
+        <MisStatGrid :columns="4">
+            <MisStatCard label="Accounts" :value="totals.count" />
+            <MisStatCard label="Active" :value="totals.active" tone="success" />
+            <MisStatCard label="Opening balance" :value="money(totals.opening_balance)" />
+            <MisStatCard label="Receipts" :value="money(totals.receipts)" />
+        </MisStatGrid>
+
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">

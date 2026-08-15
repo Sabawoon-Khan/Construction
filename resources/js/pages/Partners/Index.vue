@@ -4,14 +4,20 @@ import { Eye, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
+import { MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { RowActionItem } from '@/lib/row-actions';
+import { money } from '@/lib/utils';
 
 type Item = Record<string, any>;
-const props = defineProps<{ items: { data: Item[]; links: any[]; meta?: any }; filters: { search?: string } }>();
+const props = defineProps<{
+    items: { data: Item[]; links: any[]; meta?: any };
+    filters: { search?: string };
+    totals: { count: number; with_projects: number; contributions: number; payouts: number };
+}>();
 const search = ref(props.filters.search ?? '');
 
 defineOptions({
@@ -61,6 +67,13 @@ function rowActions(item: Item): RowActionItem[] {
                 <Button as-child><Link href="/partners/create"><Plus class="size-4" /> Add</Link></Button>
             </div>
         </div>
+        <MisStatGrid :columns="4">
+            <MisStatCard label="Shareholders" :value="totals.count" />
+            <MisStatCard label="On projects" :value="totals.with_projects" />
+            <MisStatCard label="Contributed" :value="money(totals.contributions)" />
+            <MisStatCard label="Paid out" :value="money(totals.payouts)" tone="success" />
+        </MisStatGrid>
+
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">

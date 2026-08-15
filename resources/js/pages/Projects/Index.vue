@@ -4,19 +4,21 @@ import { Eye, Pencil, Plus, Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
+import { MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { RowActionItem } from '@/lib/row-actions';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, money } from '@/lib/utils';
 
 type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
     filters: { search?: string };
+    totals: { count: number; active: number; units: number; sales_total: number };
 }>();
 
 const search = ref(props.filters.search ?? '');
@@ -86,6 +88,13 @@ function rowActions(item: Item): RowActionItem[] {
                 </Button>
             </div>
         </div>
+
+        <MisStatGrid :columns="4">
+            <MisStatCard label="Projects" :value="totals.count" />
+            <MisStatCard label="Active" :value="totals.active" hint="Planning, construction, ready" />
+            <MisStatCard label="Units" :value="totals.units" />
+            <MisStatCard label="Sales total" :value="money(totals.sales_total)" tone="success" />
+        </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="overflow-x-auto">

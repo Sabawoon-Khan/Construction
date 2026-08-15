@@ -132,8 +132,24 @@ class Sale extends Model
 
         $table = $query->getModel()->getTable();
 
-        return (float) $query
+        return (float) static::query()
+            ->whereIn("{$table}.id", $query->select("{$table}.id"))
             ->join('units', 'units.id', '=', "{$table}.unit_id")
             ->sum(DB::raw("units.list_price - COALESCE({$table}.discount, 0)"));
+    }
+
+    public static function sumPaidAmount(Builder|HasMany|Relation|null $source = null): float
+    {
+        $query = match (true) {
+            $source instanceof Relation => $source->getQuery()->clone(),
+            $source instanceof Builder => $source->clone(),
+            default => static::query(),
+        };
+
+        $table = $query->getModel()->getTable();
+
+        return (float) SaleInstallment::query()
+            ->whereIn('sale_id', $query->select("{$table}.id"))
+            ->sum('paid_amount');
     }
 }

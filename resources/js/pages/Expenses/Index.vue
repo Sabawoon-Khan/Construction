@@ -4,6 +4,7 @@ import { Eye, Pencil, Plus, Printer, Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
+import { MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { money } from '@/lib/utils';
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { amount: number };
+    totals: { count: number; amount: number; this_month: number; average: number };
 }>();
 
 const search = ref(props.filters.search ?? '');
@@ -66,10 +67,12 @@ function rowActions(item: any): RowActionItem[] {
             </div>
         </div>
 
-        <div class="rounded-xl border border-sidebar-border/70 bg-card px-4 py-3 text-sm shadow-sm">
-            Total:
-            <span class="font-semibold tabular-nums text-rose-700">{{ money(totals.amount) }}</span>
-        </div>
+        <MisStatGrid :columns="4">
+            <MisStatCard label="Entries" :value="totals.count" hint="Approved expenses" />
+            <MisStatCard label="Total spent" :value="money(totals.amount)" tone="danger" />
+            <MisStatCard label="This month" :value="money(totals.this_month)" />
+            <MisStatCard label="Average" :value="money(totals.average)" />
+        </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="overflow-x-auto">

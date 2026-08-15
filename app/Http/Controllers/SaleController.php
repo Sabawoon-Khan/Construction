@@ -29,7 +29,8 @@ class SaleController extends Controller implements HasMiddleware
     public function index(Request $request): Response
     {
         $query = Sale::query()
-            ->with(['customer:id,name', 'project:id,name', 'unit:id,unit_no,list_price,currency']);
+            ->with(['customer:id,name', 'project:id,name', 'unit:id,unit_no,list_price,currency'])
+            ->withSum('installments as paid_total', 'paid_amount');
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
@@ -38,8 +39,13 @@ class SaleController extends Controller implements HasMiddleware
             });
         }
 
+        $totalPrice = Sale::sumTotalPrice(clone $query);
+        $paid = Sale::sumPaidAmount(clone $query);
         $totals = [
-            'total_price' => Sale::sumTotalPrice(clone $query),
+            'count' => (clone $query)->count(),
+            'total_price' => $totalPrice,
+            'paid' => $paid,
+            'remaining' => max(0, $totalPrice - $paid),
         ];
 
         return Inertia::render('Sales/Index', [

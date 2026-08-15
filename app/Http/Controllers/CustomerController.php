@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Models\Customer;
+use App\Models\Payment;
 use App\Models\Sale;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,9 +32,21 @@ class CustomerController extends Controller implements HasMiddleware
             });
         }
 
+        $ids = (clone $query)->select('id');
+        $totals = [
+            'count' => (clone $query)->count(),
+            'with_sales' => (clone $query)->whereHas('sales')->count(),
+            'sales_total' => Sale::sumTotalPrice(Sale::query()->whereIn('customer_id', clone $ids)),
+            'payments_total' => (float) Payment::query()
+                ->whereIn('customer_id', clone $ids)
+                ->where(fn ($q) => $q->whereNull('sale_id')->orWhereHas('sale'))
+                ->sum('amount'),
+        ];
+
         return Inertia::render('Customers/Index', [
             'items' => $query->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
+            'totals' => $totals,
         ]);
     }
 

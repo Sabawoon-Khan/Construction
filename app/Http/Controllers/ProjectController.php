@@ -9,6 +9,7 @@ use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
 use App\Models\Project;
 use App\Models\Sale;
+use App\Models\Unit;
 use App\Services\FinanceDefaults;
 use App\Services\ShareholderProfitService;
 use Illuminate\Http\RedirectResponse;
@@ -37,9 +38,18 @@ class ProjectController extends Controller implements HasMiddleware
             });
         }
 
+        $ids = (clone $query)->select('id');
+        $totals = [
+            'count' => (clone $query)->count(),
+            'active' => (clone $query)->whereIn('status', ['planning', 'under_construction', 'ready_for_sale'])->count(),
+            'units' => Unit::query()->whereIn('project_id', clone $ids)->count(),
+            'sales_total' => Sale::sumTotalPrice(Sale::query()->whereIn('project_id', clone $ids)),
+        ];
+
         return Inertia::render('Projects/Index', [
             'items' => $query->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
+            'totals' => $totals,
         ]);
     }
 
