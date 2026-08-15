@@ -10,6 +10,7 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ const props = defineProps<{
     totals: { count: number; active: number; opening_balance: number; receipts: number };
 }>();
 const search = ref(props.filters.search ?? '');
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -34,19 +36,19 @@ const applySearch = () => router.get('/bank-accounts', { search: search.value ||
 
 function rowActions(item: Item): RowActionItem[] {
     return [
-        { label: 'View', icon: Eye, href: `/bank-accounts/${item.id}` },
-        { label: 'Edit', icon: Pencil, href: `/bank-accounts/${item.id}/edit` },
-        { separator: true, isLabel: true, label: 'Danger' },
+        { label: t('View'), icon: Eye, href: `/bank-accounts/${item.id}` },
+        { label: t('Edit'), icon: Pencil, href: `/bank-accounts/${item.id}/edit` },
+        { separator: true, isLabel: true, label: t('Danger') },
         {
-            label: 'Delete',
+            label: t('Delete'),
             icon: Trash2,
             method: 'delete',
             href: `/bank-accounts/${item.id}`,
             variant: 'destructive' as const,
             confirm: {
-                title: 'Delete bank account',
-                description: 'Are you sure you want to delete this bank account? This action cannot be undone.',
-                confirmLabel: 'Delete',
+                title: t('Delete bank account'),
+                description: t('Are you sure you want to delete this bank account? This action cannot be undone.'),
+                confirmLabel: t('Delete'),
             },
         },
     ];
@@ -54,24 +56,24 @@ function rowActions(item: Item): RowActionItem[] {
 </script>
 
 <template>
-    <Head title="Bank Accounts" />
+    <Head :title="t('Bank Accounts')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="Bank Accounts" description="Cash and bank accounts used for receipts and payments." />
+            <Heading :title="t('Bank Accounts')" :description="t('Cash and bank accounts used for receipts and payments.')" />
             <div class="flex flex-wrap gap-2">
                 <div class="relative min-w-[220px] flex-1">
                     <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input v-model="search" class="pl-9" placeholder="Search..." @keyup.enter="applySearch" />
+                    <Input v-model="search" class="pl-9" :placeholder="t('Search...')" @keyup.enter="applySearch" />
                 </div>
-                <Button variant="secondary" @click="applySearch">Search</Button>
-                <Button as-child><Link href="/bank-accounts/create"><Plus class="size-4" /> Add</Link></Button>
+                <Button variant="secondary" @click="applySearch">{{ t('Search') }}</Button>
+                <Button as-child><Link href="/bank-accounts/create"><Plus class="size-4" /> {{ t('Add') }}</Link></Button>
             </div>
         </div>
         <MisStatGrid :columns="4">
-            <MisStatCard label="Accounts" :value="totals.count" />
-            <MisStatCard label="Active" :value="totals.active" tone="success" />
-            <MisStatCard label="Opening balance" :value="money(totals.opening_balance)" />
-            <MisStatCard label="Receipts" :value="money(totals.receipts)" />
+            <MisStatCard :label="t('Accounts')" :value="totals.count" />
+            <MisStatCard :label="t('Active')" :value="totals.active" tone="success" />
+            <MisStatCard :label="t('Opening balance')" :value="money(totals.opening_balance)" />
+            <MisStatCard :label="t('Receipts')" :value="money(totals.receipts)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -79,12 +81,12 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Name</th>
-                            <th class="px-4 py-3 font-medium">Bank</th>
-                            <th class="px-4 py-3 font-medium">Account No</th>
-                            <th class="px-4 py-3 font-medium">Currency</th>
-                            <th class="px-4 py-3 font-medium">Type</th>
-                            <th class="px-4 py-3 font-medium text-right">Actions</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Bank') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Account No') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Currency') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Type') }}</th>
+                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,7 +104,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="6" title="No bank accounts yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="6" :title="t('No bank accounts yet')" />
                     </tbody>
                 </table>
             </div>

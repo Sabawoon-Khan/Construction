@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use App\Models\Role;
 
 class RoleManagementController extends Controller
@@ -33,7 +34,7 @@ class RoleManagementController extends Controller
 
         return Inertia::render('settings/Roles/Index', [
             'roles' => Role::query()
-                ->with('permissions:id,name')
+                ->with('permissions')
                 ->withCount('users')
                 ->orderBy('name')
                 ->get(['id', 'name']),
@@ -72,7 +73,10 @@ class RoleManagementController extends Controller
         $this->authorizePermission($request, 'roles.edit');
 
         $validated = $request->validated();
-        $permissions = $validated['permissions'] ?? [];
+        $permissions = array_values(array_filter(
+            $validated['permissions'] ?? [],
+            fn ($permission) => is_string($permission) && $permission !== '',
+        ));
 
         if (
             in_array($role->name, $this->protectedRoles, true)
@@ -83,8 +87,16 @@ class RoleManagementController extends Controller
 
         $role->update(['name' => $validated['name']]);
         $role->syncPermissions($permissions);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return back()->with('success', __('Role updated.'));
+        $role->load('permissions');
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Role updated (:count permissions).', ['count' => $role->permissions->count()]),
+        ]);
+
+        return redirect()->route('settings.roles.index');
     }
 
     public function destroy(Request $request, Role $role): RedirectResponse

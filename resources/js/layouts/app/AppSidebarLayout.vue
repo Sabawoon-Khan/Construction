@@ -21,24 +21,20 @@ withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const offlineEnabled = computed(() => Boolean((page.props as { offlineEnabled?: boolean }).offlineEnabled));
-const { dir, sidebarSide } = useLocale();
+const { dir } = useLocale();
 
 const toasterPosition = computed(() =>
     dir.value === 'rtl' ? 'top-left' : 'top-right',
 );
 
-const isSidebarRight = computed(() => sidebarSide.value === 'right');
 </script>
 
 <template>
     <AppShell variant="sidebar">
-        <AppSidebar :class="[isSidebarRight ? 'order-2' : 'order-1', 'print:hidden']" />
+        <AppSidebar class="print:hidden" />
         <AppContent
             variant="sidebar"
-            :class="[
-                'min-w-0 flex-1 overflow-x-hidden',
-                isSidebarRight ? 'order-1' : 'order-2',
-            ]"
+            class="min-w-0 flex-1 overflow-x-hidden"
         >
             <OfflineBanner class="print:hidden" :enabled="offlineEnabled" />
             <AppSidebarHeader class="print:hidden" :breadcrumbs="breadcrumbs" />

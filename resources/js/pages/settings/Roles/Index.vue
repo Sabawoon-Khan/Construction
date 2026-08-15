@@ -3,6 +3,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { Pencil, Shield, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
+import InputError from '@/components/InputError.vue';
 import {
     MisEmptyState,
     MisListPage,
@@ -11,7 +12,6 @@ import {
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SettingsAddButton from '@/components/SettingsAddButton.vue';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -42,9 +42,12 @@ const props = defineProps<{
 const { t } = useTranslations();
 const { can } = usePermissions();
 const protectedRoles = ['Owner'];
+const editOpen = ref(false);
 const editingRole = ref<RoleRecord | null>(null);
 const editName = ref('');
 const editPermissions = ref<string[]>([]);
+const formErrors = ref<Record<string, string>>({});
+const processing = ref(false);
 
 const permissionGroups = computed(() => {
     const groups: Record<string, Permission[]> = {};
@@ -66,30 +69,53 @@ const permissionGroups = computed(() => {
 function openEdit(role: RoleRecord): void {
     editingRole.value = role;
     editName.value = role.name;
-    editPermissions.value = role.permissions?.map((p) => p.name) ?? [];
+    editPermissions.value = [...(role.permissions?.map((p) => p.name) ?? [])];
+    formErrors.value = {};
+    editOpen.value = true;
 }
 
-function togglePermission(name: string, checked: boolean | 'indeterminate'): void {
-    if (checked === true) {
-        if (!editPermissions.value.includes(name)) {
-            editPermissions.value = [...editPermissions.value, name];
-        }
-    } else {
-        editPermissions.value = editPermissions.value.filter((p) => p !== name);
-    }
-}
-
-function saveRole(): void {
-    if (!editingRole.value) {
+function closeEdit(): void {
+    if (processing.value) {
         return;
     }
 
-    router.patch(`/settings/roles/${editingRole.value.id}`, {
+    editOpen.value = false;
+    editingRole.value = null;
+    editName.value = '';
+    editPermissions.value = [];
+    formErrors.value = {};
+}
+
+function saveRole(): void {
+    if (!editingRole.value || processing.value) {
+        return;
+    }
+
+    const roleId = editingRole.value.id;
+    const payload = {
         name: editName.value,
-        permissions: editPermissions.value,
-    }, {
+        permissions: [...editPermissions.value],
+    };
+
+    processing.value = true;
+    formErrors.value = {};
+
+    router.patch(`/settings/roles/${roleId}`, payload, {
+        preserveScroll: true,
+        onError: (errors) => {
+            formErrors.value = Object.fromEntries(
+                Object.entries(errors).map(([key, value]) => [key, String(value)]),
+            );
+        },
         onSuccess: () => {
+            editOpen.value = false;
             editingRole.value = null;
+            editName.value = '';
+            editPermissions.value = [];
+            formErrors.value = {};
+        },
+        onFinish: () => {
+            processing.value = false;
         },
     });
 }
@@ -152,7 +178,7 @@ defineOptions({
         <template v-else>
             <MisListRow
                 v-for="role in roles"
-                :key="role.id"
+                :key="`${role.id}-${role.permissions?.length ?? 0}`"
                 class="flex flex-wrap items-center justify-between gap-3"
             >
                 <div>
@@ -171,8 +197,8 @@ defineOptions({
 
         <template #below>
             <Dialog
-                :open="!!editingRole"
-                @update:open="(v) => !v && (editingRole = null)"
+                :open="editOpen"
+                @update:open="(open) => !open && closeEdit()"
             >
                 <DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-lg">
                     <DialogHeader>
@@ -181,7 +207,7 @@ defineOptions({
                         </DialogTitle>
                     </DialogHeader>
 
-                    <div class="space-y-4">
+                    <form class="space-y-4" @submit.prevent="saveRole">
                         <div class="space-y-2">
                             <Label for="role-name">{{ t('Name') }}</Label>
                             <Input
@@ -193,12 +219,19 @@ defineOptions({
                                     )
                                 "
                             />
+                            <InputError :message="formErrors.name" />
                         </div>
 
                         <div class="space-y-4">
-                            <p class="text-sm font-medium">
-                                {{ t('Permissions') }}
-                            </p>
+                            <div class="flex items-center justify-between gap-2">
+                                <p class="text-sm font-medium">
+                                    {{ t('Permissions') }}
+                                </p>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ editPermissions.length }} selected
+                                </p>
+                            </div>
+                            <InputError :message="formErrors.permissions" />
                             <div
                                 v-for="[module, modulePermissions] in permissionGroups"
                                 :key="module"
@@ -214,35 +247,31 @@ defineOptions({
                                     :key="permission.id"
                                     class="flex items-center gap-2 text-sm"
                                 >
-                                    <Checkbox
-                                        :checked="
-                                            editPermissions.includes(
-                                                permission.name,
-                                            )
-                                        "
-                                        @update:checked="
-                                            (v) =>
-                                                togglePermission(
-                                                    permission.name,
-                                                    v,
-                                                )
-                                        "
-                                    />
-                                    {{ permission.name }}
+                                    <input
+                                        v-model="editPermissions"
+                                        type="checkbox"
+                                        class="size-4 rounded border border-input accent-primary"
+                                        :value="permission.name"
+                                    >
+                                    <span>{{ permission.name }}</span>
                                 </label>
                             </div>
                         </div>
-                    </div>
 
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            @click="editingRole = null"
-                        >
-                            {{ t('Cancel') }}
-                        </Button>
-                        <Button @click="saveRole">{{ t('Save') }}</Button>
-                    </DialogFooter>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                :disabled="processing"
+                                @click="closeEdit"
+                            >
+                                {{ t('Cancel') }}
+                            </Button>
+                            <Button type="submit" :disabled="processing">
+                                {{ processing ? t('Saving...') : t('Save') }}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </template>

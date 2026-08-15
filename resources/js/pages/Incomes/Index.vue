@@ -9,6 +9,7 @@ import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -33,20 +35,20 @@ const apply = () => router.get('/incomes', { search: search.value || undefined }
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: 'View', icon: Eye, href: `/incomes/${item.id}` },
-        { label: 'Print', icon: Printer, href: `/incomes/${item.id}` },
-        { label: 'Edit', icon: Pencil, href: `/incomes/${item.id}/edit` },
-        { separator: true, isLabel: true, label: 'Danger' },
+        { label: t('View'), icon: Eye, href: `/incomes/${item.id}` },
+        { label: t('Print'), icon: Printer, href: `/incomes/${item.id}` },
+        { label: t('Edit'), icon: Pencil, href: `/incomes/${item.id}/edit` },
+        { separator: true, isLabel: true, label: t('Danger') },
         {
-            label: 'Delete',
+            label: t('Delete'),
             icon: Trash2,
             method: 'delete',
             href: `/incomes/${item.id}`,
             variant: 'destructive' as const,
             confirm: {
-                title: 'Delete income',
-                description: 'Are you sure you want to delete this income? This action cannot be undone.',
-                confirmLabel: 'Delete',
+                title: t('Delete income'),
+                description: t('Are you sure you want to delete this income? This action cannot be undone.'),
+                confirmLabel: t('Delete'),
             },
         },
     ];
@@ -54,22 +56,22 @@ function rowActions(item: any): RowActionItem[] {
 </script>
 
 <template>
-    <Head title="Incomes" />
+    <Head :title="t('Incomes')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="General Income" description="Company-wide income not tied to a project." />
+            <Heading :title="t('General income')" :description="t('Company-wide income not tied to a project.')" />
             <div class="flex flex-wrap gap-2">
-                <Input v-model="search" placeholder="Search..." @keyup.enter="apply" />
-                <Button variant="secondary" @click="apply">Search</Button>
-                <Button as-child><Link href="/incomes/create"><Plus class="size-4" /> Add income</Link></Button>
+                <Input v-model="search" :placeholder="t('Search...')" @keyup.enter="apply" />
+                <Button variant="secondary" @click="apply">{{ t('Search') }}</Button>
+                <Button as-child><Link href="/incomes/create"><Plus class="size-4" /> {{ t('Add income') }}</Link></Button>
             </div>
         </div>
 
         <MisStatGrid :columns="4">
-            <MisStatCard label="Entries" :value="totals.count" hint="Approved income" />
-            <MisStatCard label="Total income" :value="money(totals.amount)" tone="success" />
-            <MisStatCard label="This month" :value="money(totals.this_month)" />
-            <MisStatCard label="Average" :value="money(totals.average)" />
+            <MisStatCard :label="t('Entries')" :value="totals.count" :hint="t('Approved income')" />
+            <MisStatCard :label="t('Total income')" :value="money(totals.amount)" tone="success" />
+            <MisStatCard :label="t('This month')" :value="money(totals.this_month)" />
+            <MisStatCard :label="t('Average')" :value="money(totals.average)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -77,10 +79,10 @@ function rowActions(item: any): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Date</th>
-                            <th class="px-4 py-3 font-medium">Description</th>
-                            <th class="px-4 py-3 font-medium">Total amount</th>
-                            <th class="px-4 py-3 font-medium text-right">Actions</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Total amount') }}</th>
+                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -94,7 +96,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="4" title="No income records yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="4" :title="t('No income records yet')" />
                     </tbody>
                 </table>
             </div>

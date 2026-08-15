@@ -59,8 +59,10 @@ class ExpenseController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
-        Expense::create(FinanceDefaults::expenseAttributes($data));
+        $expense = Expense::create(FinanceDefaults::expenseAttributes($data));
+        $this->storeDocuments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense recorded.']);
 
@@ -69,7 +71,7 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function show(Expense $expense): Response
     {
-        $expense->load(['project:id,name']);
+        $expense->load(['project:id,name', 'attachments']);
 
         return Inertia::render('Expenses/Show', [
             'item' => $expense,
@@ -81,6 +83,8 @@ class ExpenseController extends Controller implements HasMiddleware
         if ($expense->project_id) {
             return redirect()->route('projects.show', $expense->project_id);
         }
+
+        $expense->load('attachments');
 
         return Inertia::render('Expenses/Form', [
             'item' => $expense,
@@ -94,11 +98,16 @@ class ExpenseController extends Controller implements HasMiddleware
             return redirect()->route('projects.show', $expense->project_id);
         }
 
+        $data = $this->validated($request);
+        unset($data['documents']);
+
         $expense->update([
-            ...$this->validated($request),
+            ...$data,
             'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
             'reference_no' => $request->input('reference_no'),
         ]);
+
+        $this->storeDocuments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
 
@@ -128,7 +137,24 @@ class ExpenseController extends Controller implements HasMiddleware
             'description' => 'required|string|max:1000',
             'expense_category_id' => 'nullable|exists:expense_categories,id',
             'reference_no' => 'nullable|string|max:100',
+            'documents' => 'nullable|array',
+            'documents.*' => 'nullable|file|max:20480',
         ]);
+    }
+
+    private function storeDocuments(Request $request, Expense $expense): void
+    {
+        if (! $request->hasFile('documents')) {
+            return;
+        }
+
+        foreach ($request->file('documents', []) as $file) {
+            if (! $file) {
+                continue;
+            }
+
+            $expense->storeAttachment($file, $file->getClientOriginalName(), $request->user()?->id);
+        }
     }
 
     /** @return Collection<int, ExpenseCategory> */

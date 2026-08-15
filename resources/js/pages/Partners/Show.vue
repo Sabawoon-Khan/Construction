@@ -4,6 +4,7 @@ import { ArrowLeft, Pencil } from '@lucide/vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money } from '@/lib/utils';
 
 defineProps<{
@@ -18,6 +19,7 @@ defineProps<{
     }[];
     stats: { projects_count: number; contributions_total: number; payouts_total: number };
 }>();
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -36,47 +38,47 @@ defineOptions({
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/partners"><ArrowLeft class="size-4" /> Back</Link>
+                    <Link href="/partners"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
-                <Heading :title="item.name" :description="`Shareholder ${item.partner_no || ''}`" />
+                <Heading :title="item.name" :description="`${t('Shareholder')} ${item.partner_no || ''}`" />
             </div>
             <div class="flex gap-2">
                 <Button as-child variant="outline">
-                    <a href="/reports/print" target="_blank">Print distribution</a>
+                    <a href="/reports/print" target="_blank">{{ t('Print distribution') }}</a>
                 </Button>
                 <Button as-child>
-                    <Link :href="`/partners/${item.id}/edit`"><Pencil class="size-4" /> Edit</Link>
+                    <Link :href="`/partners/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
                 </Button>
             </div>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Projects</div>
+                <div class="text-sm text-muted-foreground">{{ t('Projects') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ stats.projects_count }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Total contributed</div>
+                <div class="text-sm text-muted-foreground">{{ t('Total contributed') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.contributions_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Total paid out</div>
+                <div class="text-sm text-muted-foreground">{{ t('Total paid out') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.payouts_total) }}</div>
             </div>
         </div>
 
         <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">Project shares</h3>
+                <h3 class="text-sm font-semibold">{{ t('Project shares') }}</h3>
             </div>
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">Project</th>
-                        <th class="px-4 py-3 font-medium">Share</th>
-                        <th class="px-4 py-3 font-medium">Profit share</th>
-                        <th class="px-4 py-3 font-medium">Paid</th>
-                        <th class="px-4 py-3 font-medium">Owed</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Share') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Profit share') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Paid') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Owed') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -91,7 +93,7 @@ defineOptions({
                     </tr>
                     <tr v-if="!projects.length">
                         <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">
-                            Not assigned to any project yet. Add from a project page.
+                            {{ t('Not assigned to any project yet. Add from a project page.') }}
                         </td>
                     </tr>
                 </tbody>
@@ -99,14 +101,14 @@ defineOptions({
         </div>
 
         <DetailGrid
-            title="Contact details"
+            :title="t('Contact details')"
             :items="[
-                { label: 'Partner No', value: item.partner_no },
-                { label: 'Phone', value: item.phone },
-                { label: 'Email', value: item.email },
-                { label: 'National ID', value: item.national_id },
-                { label: 'Address', value: item.address, span: true },
-                { label: 'Notes', value: item.notes, span: true },
+                { label: t('Partner No'), value: item.partner_no },
+                { label: t('Phone'), value: item.phone },
+                { label: t('Email'), value: item.email },
+                { label: t('National ID'), value: item.national_id },
+                { label: t('Address'), value: item.address, span: true },
+                { label: t('Notes'), value: item.notes, span: true },
             ]"
         />
     </div>

@@ -111,6 +111,11 @@ return [
             'user_scoped' => false,
             'permissions' => ['sales.create', 'sales.edit'],
         ],
+        'expenses' => [
+            'model' => \App\Models\Expense::class,
+            'user_scoped' => false,
+            'permissions' => ['expenses.create', 'expenses.edit'],
+        ],
     ],
 
 ];

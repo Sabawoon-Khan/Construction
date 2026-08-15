@@ -9,6 +9,7 @@ import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -37,19 +39,19 @@ function applySearch() {
 
 function rowActions(item: Item): RowActionItem[] {
     return [
-        { label: 'View', icon: Eye, href: `/customers/${item.id}` },
-        { label: 'Edit', icon: Pencil, href: `/customers/${item.id}/edit` },
-        { separator: true, isLabel: true, label: 'Danger' },
+        { label: t('View'), icon: Eye, href: `/customers/${item.id}` },
+        { label: t('Edit'), icon: Pencil, href: `/customers/${item.id}/edit` },
+        { separator: true, isLabel: true, label: t('Danger') },
         {
-            label: 'Delete',
+            label: t('Delete'),
             icon: Trash2,
             method: 'delete',
             href: `/customers/${item.id}`,
             variant: 'destructive' as const,
             confirm: {
-                title: 'Delete customer',
-                description: 'Are you sure you want to delete this customer? This action cannot be undone.',
-                confirmLabel: 'Delete',
+                title: t('Delete customer'),
+                description: t('Are you sure you want to delete this customer? This action cannot be undone.'),
+                confirmLabel: t('Delete'),
             },
         },
     ];
@@ -57,28 +59,28 @@ function rowActions(item: Item): RowActionItem[] {
 </script>
 
 <template>
-    <Head title="Customers" />
+    <Head :title="t('Customers')" />
 
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="Customers" description="People buying homes and units across your projects." />
+            <Heading :title="t('Customers')" :description="t('People buying homes and units across your projects.')" />
             <div class="flex flex-wrap gap-2">
                 <div class="relative min-w-[220px] flex-1">
                     <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input v-model="search" class="pl-9" placeholder="Search customers..." @keyup.enter="applySearch" />
+                    <Input v-model="search" class="pl-9" :placeholder="t('Search customers...')" @keyup.enter="applySearch" />
                 </div>
-                <Button variant="secondary" @click="applySearch">Search</Button>
+                <Button variant="secondary" @click="applySearch">{{ t('Search') }}</Button>
                 <Button as-child>
-                    <Link href="/customers/create"><Plus class="size-4" /> Add customer</Link>
+                    <Link href="/customers/create"><Plus class="size-4" /> {{ t('Add customer') }}</Link>
                 </Button>
             </div>
         </div>
 
         <MisStatGrid :columns="4">
-            <MisStatCard label="Customers" :value="totals.count" />
-            <MisStatCard label="With sales" :value="totals.with_sales" />
-            <MisStatCard label="Sales total" :value="money(totals.sales_total)" />
-            <MisStatCard label="Payments received" :value="money(totals.payments_total)" tone="success" />
+            <MisStatCard :label="t('Customers')" :value="totals.count" />
+            <MisStatCard :label="t('With sales')" :value="totals.with_sales" />
+            <MisStatCard :label="t('Sales total')" :value="money(totals.sales_total)" />
+            <MisStatCard :label="t('Payments received')" :value="money(totals.payments_total)" tone="success" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -86,11 +88,11 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Customer No</th>
-                            <th class="px-4 py-3 font-medium">Name</th>
-                            <th class="px-4 py-3 font-medium">Phone</th>
-                            <th class="px-4 py-3 font-medium">National Id</th>
-                            <th class="px-4 py-3 font-medium text-right">Actions</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Customer No') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Phone') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('National ID') }}</th>
+                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,8 +118,8 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="5"
-                            title="No customers yet"
-                            description="Add your first customer to start recording sales."
+                            :title="t('No customers yet')"
+                            :description="t('Add your first customer to start recording sales.')"
                         />
                     </tbody>
                 </table>

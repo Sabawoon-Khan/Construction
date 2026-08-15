@@ -157,9 +157,22 @@ class ProjectController extends Controller implements HasMiddleware
             'description' => 'required|string|max:1000',
             'expense_category_id' => 'nullable|exists:expense_categories,id',
             'reference_no' => 'nullable|string|max:100',
+            'documents' => 'nullable|array',
+            'documents.*' => 'nullable|file|max:20480',
         ]);
+        unset($data['documents']);
 
-        Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
+        $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
+
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents', []) as $file) {
+                if (! $file) {
+                    continue;
+                }
+
+                $expense->storeAttachment($file, $file->getClientOriginalName(), $request->user()?->id);
+            }
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Project expense recorded.']);
 

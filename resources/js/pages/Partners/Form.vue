@@ -7,6 +7,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 
 const props = defineProps<{
     item: Record<string, any> | null;
@@ -14,6 +15,7 @@ const props = defineProps<{
 }>();
 
 const isEdit = computed(() => !!props.item);
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -27,16 +29,16 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="isEdit ? 'Edit shareholder' : 'Add shareholder'" />
+    <Head :title="isEdit ? t('Edit shareholder') : t('Add shareholder')" />
 
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="space-y-3">
             <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/partners"><ArrowLeft class="size-4" /> Back</Link>
+                <Link href="/partners"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
             </Button>
             <Heading
-                :title="isEdit ? 'Edit shareholder' : 'Add shareholder'"
-                description="Master list of shareholders. Assign them to projects from each project page."
+                :title="isEdit ? t('Edit shareholder') : t('Add shareholder')"
+                :description="t('Master list of shareholders. Assign them to projects from each project page.')"
             />
         </div>
 
@@ -48,60 +50,60 @@ defineOptions({
         >
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="name">Name</Label>
+                    <Label for="name">{{ t('Name') }}</Label>
                     <Input id="name" name="name" type="text" required :default-value="item?.name ?? ''" />
                     <InputError :message="errors.name" />
                 </div>
                 <div v-if="isEdit" class="grid gap-2">
-                    <Label for="partner_no">Partner No</Label>
+                    <Label for="partner_no">{{ t('Partner No') }}</Label>
                     <Input id="partner_no" name="partner_no" type="text" required :default-value="item?.partner_no ?? ''" />
                     <InputError :message="errors.partner_no" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="phone">Phone</Label>
+                    <Label for="phone">{{ t('Phone') }}</Label>
                     <Input id="phone" name="phone" type="text" :default-value="item?.phone ?? ''" />
                     <InputError :message="errors.phone" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="email">Email</Label>
+                    <Label for="email">{{ t('Email') }}</Label>
                     <Input id="email" name="email" type="email" :default-value="item?.email ?? ''" />
                     <InputError :message="errors.email" />
                 </div>
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="user_id">Login account</Label>
+                    <Label for="user_id">{{ t('Login account') }}</Label>
                     <select
                         id="user_id"
                         name="user_id"
                         class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                         :value="item?.user_id ?? ''"
                     >
-                        <option value="">No login — view-only record</option>
+                        <option value="">{{ t('No login — view-only record') }}</option>
                         <option v-for="u in users || []" :key="u.id" :value="u.id">{{ u.name }} · {{ u.email }}</option>
                     </select>
-                    <p class="text-xs text-muted-foreground">Linked users see only their profit share and assigned projects.</p>
+                    <p class="text-xs text-muted-foreground">{{ t('Linked users see only their profit share and assigned projects.') }}</p>
                     <InputError :message="errors.user_id" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="national_id">National Id</Label>
+                    <Label for="national_id">{{ t('National ID') }}</Label>
                     <Input id="national_id" name="national_id" type="text" :default-value="item?.national_id ?? ''" />
                     <InputError :message="errors.national_id" />
                 </div>
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="address">Address</Label>
+                    <Label for="address">{{ t('Address') }}</Label>
                     <textarea id="address" name="address" rows="3" class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs" :value="item?.address ?? ''"></textarea>
                     <InputError :message="errors.address" />
                 </div>
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="notes">Notes</Label>
+                    <Label for="notes">{{ t('Notes') }}</Label>
                     <textarea id="notes" name="notes" rows="3" class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs" :value="item?.notes ?? ''"></textarea>
                     <InputError :message="errors.notes" />
                 </div>
             </div>
 
             <div class="flex gap-2">
-                <Button type="submit" :disabled="processing">{{ processing ? 'Saving...' : 'Save' }}</Button>
+                <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save') }}</Button>
                 <Button as-child variant="secondary">
-                    <Link href="/partners">Cancel</Link>
+                    <Link href="/partners">{{ t('Cancel') }}</Link>
                 </Button>
             </div>
         </Form>

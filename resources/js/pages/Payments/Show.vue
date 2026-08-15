@@ -6,10 +6,12 @@ import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
 defineProps<{ item: Record<string, any> }>();
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -28,21 +30,21 @@ defineOptions({
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/payments"><ArrowLeft class="size-4" /> Back</Link>
+                    <Link href="/payments"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
-                <Heading :title="item.payment_no" :description="item.customer?.name || 'Payment details'" />
+                <Heading :title="item.payment_no" :description="item.customer?.name || t('Payment details')" />
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <StatusBadge :status="item.status" />
                 <Button variant="outline" @click="printPage">
-                    <Printer class="size-4" /> Print receipt
+                    <Printer class="size-4" /> {{ t('Print receipt') }}
                 </Button>
             </div>
         </div>
 
         <div class="print:hidden">
             <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
-                <div class="text-sm text-muted-foreground">Amount</div>
+                <div class="text-sm text-muted-foreground">{{ t('Amount') }}</div>
                 <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
                     {{ money(item.amount, item.currency || 'USD') }}
                 </div>
@@ -51,24 +53,24 @@ defineOptions({
 
         <div class="print:hidden">
             <DetailGrid
-                title="Payment details"
+                :title="t('Payment details')"
                 :items="[
-                    { label: 'Date', value: item.paid_at },
-                    { label: 'Type', value: item.type },
-                    { label: 'Customer', value: item.customer?.name },
-                    { label: 'Project', value: item.project?.name },
-                    { label: 'Sale', value: item.sale?.sale_no },
-                    { label: 'Installment #', value: item.installment?.installment_no },
-                    { label: 'Bank account', value: item.bank_account?.name },
-                    { label: 'Payment method', value: item.payment_method },
-                    { label: 'Reference', value: item.reference_no },
-                    { label: 'Currency', value: item.currency },
-                    { label: 'Notes', value: item.notes, span: true },
+                    { label: t('Date'), value: item.paid_at },
+                    { label: t('Type'), value: item.type },
+                    { label: t('Customer'), value: item.customer?.name },
+                    { label: t('Project'), value: item.project?.name },
+                    { label: t('Sale'), value: item.sale?.sale_no },
+                    { label: t('Installment #'), value: item.installment?.installment_no },
+                    { label: t('Bank account'), value: item.bank_account?.name },
+                    { label: t('Payment method'), value: item.payment_method },
+                    { label: t('Reference'), value: item.reference_no },
+                    { label: t('Currency'), value: item.currency },
+                    { label: t('Notes'), value: item.notes, span: true },
                 ]"
             >
                 <template v-if="item.sale_id">
                     <Button as-child variant="outline" size="sm">
-                        <Link :href="`/sales/${item.sale_id}`">View related sale</Link>
+                        <Link :href="`/sales/${item.sale_id}`">{{ t('View related sale') }}</Link>
                     </Button>
                 </template>
             </DetailGrid>
@@ -76,10 +78,10 @@ defineOptions({
 
         <PrintableVoucher
                 kind="receipt"
-                title="Customer Payment Receipt"
+                :title="t('Customer Payment Receipt')"
                 :document-no="item.payment_no"
                 :date="item.paid_at"
-                party-label="Received from"
+                :party-label="t('Received from')"
                 :party-name="item.customer?.name"
                 :amount="item.amount"
                 :currency="item.currency || 'USD'"
@@ -90,9 +92,9 @@ defineOptions({
                 :description="item.notes"
                 :status="item.status"
                 :fields="[
-                    { label: 'Sale', value: item.sale?.sale_no },
-                    { label: 'Installment', value: item.installment?.installment_no },
-                    { label: 'Voucher type', value: item.type },
+                    { label: t('Sale'), value: item.sale?.sale_no },
+                    { label: t('Installment'), value: item.installment?.installment_no },
+                    { label: t('Voucher type'), value: item.type },
                 ]"
             />
     </div>

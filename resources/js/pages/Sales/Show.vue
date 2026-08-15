@@ -12,6 +12,7 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
@@ -22,6 +23,7 @@ const props = defineProps<{
     total_price: number;
     bankAccounts?: { id: number; name: string; is_cash: boolean }[];
 }>();
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -35,15 +37,15 @@ defineOptions({
 
 const tab = ref(window.location.hash === '#receive-payment' ? 'schedule' : 'info');
 const tabs = [
-    { id: 'info', label: 'Sale info', icon: Info },
-    { id: 'schedule', label: 'Payment schedule', icon: CalendarClock },
-    { id: 'documents', label: 'Contract documents', icon: FileText },
+    { id: 'info', label: t('Sale info'), icon: Info },
+    { id: 'schedule', label: t('Payment schedule'), icon: CalendarClock },
+    { id: 'documents', label: t('Contract documents'), icon: FileText },
 ];
 
 const existingDocuments = computed<ExistingUploadFile[]>(() =>
     (props.sale.attachments ?? []).map((file: any) => ({
         id: file.id,
-        name: file.original_filename || file.title || 'Document',
+        name: file.original_filename || file.title || t('Document'),
         size: file.file_size,
         mime: file.mime_type,
         url: file.download_url,
@@ -66,8 +68,8 @@ const payForm = useForm({
 
 const statementLines = computed(() =>
     (props.sale.installments ?? []).map((i: any) => ({
-        description: `Installment #${i.installment_no}`,
-        meta: `Due ${i.due_date || '—'} · ${String(i.status || '').replaceAll('_', ' ')}`,
+        description: `${t('Installment')} #${i.installment_no}`,
+        meta: `${t('Due')} ${i.due_date || '—'} · ${t(String(i.status || '').replaceAll('_', ' '))}`,
         amount: Number(i.amount ?? 0),
     })),
 );
@@ -105,25 +107,25 @@ function submitPayment() {
 </script>
 
 <template>
-    <Head :title="`Sale ${sale.sale_no}`" />
+    <Head :title="`${t('Sale')} ${sale.sale_no}`" />
     <div class="voucher-print-page flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-0 print:p-0">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/sales"><ArrowLeft class="size-4" /> Back</Link>
+                    <Link href="/sales"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
                 <Heading
                     :title="sale.sale_no"
-                    :description="`${sale.customer?.name || '—'} · ${sale.project?.name || '—'} · Unit ${sale.unit?.unit_no || '—'}`"
+                    :description="`${sale.customer?.name || '—'} · ${sale.project?.name || '—'} · ${t('Unit')} ${sale.unit?.unit_no || '—'}`"
                 />
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <StatusBadge :status="sale.status" />
                 <Button variant="outline" @click="printPage">
-                    <Printer class="size-4" /> Print statement
+                    <Printer class="size-4" /> {{ t('Print statement') }}
                 </Button>
                 <Button as-child variant="outline">
-                    <Link :href="`/sales/${sale.id}/edit`"><Pencil class="size-4" /> Edit</Link>
+                    <Link :href="`/sales/${sale.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
                 </Button>
             </div>
         </div>
@@ -132,32 +134,32 @@ function submitPayment() {
 
         <div v-show="tab === 'info'" class="grid gap-4 md:grid-cols-3 print:hidden">
             <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Total due</div>
+                <div class="text-sm text-muted-foreground">{{ t('Total due') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(total_price, sale.currency || 'USD') }}</div>
             </div>
             <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Paid</div>
+                <div class="text-sm text-muted-foreground">{{ t('Paid') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(paid_amount) }}</div>
             </div>
             <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Remaining</div>
+                <div class="text-sm text-muted-foreground">{{ t('Remaining') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-amber-700">{{ money(remaining_amount) }}</div>
             </div>
         </div>
 
         <div v-show="tab === 'info'" class="print:hidden">
             <DetailGrid
-                title="Contract details"
+                :title="t('Contract details')"
                 :items="[
-                    { label: 'Customer', value: sale.customer?.name },
-                    { label: 'Project', value: sale.project?.name },
-                    { label: 'Unit', value: sale.unit?.unit_no },
-                    { label: 'Sale price', value: money(sale.unit?.list_price, sale.currency || 'USD') },
-                    { label: 'Discount', value: money(sale.discount, sale.currency || 'USD') },
-                    { label: 'Currency', value: sale.currency || 'USD' },
-                    { label: 'Contract date', value: sale.contract_date },
-                    { label: 'Terms', value: sale.terms, span: true },
-                    { label: 'Notes', value: sale.notes, span: true },
+                    { label: t('Customer'), value: sale.customer?.name },
+                    { label: t('Project'), value: sale.project?.name },
+                    { label: t('Unit'), value: sale.unit?.unit_no },
+                    { label: t('Sale price'), value: money(sale.unit?.list_price, sale.currency || 'USD') },
+                    { label: t('Discount'), value: money(sale.discount, sale.currency || 'USD') },
+                    { label: t('Currency'), value: sale.currency || 'USD' },
+                    { label: t('Contract date'), value: sale.contract_date },
+                    { label: t('Terms'), value: sale.terms, span: true },
+                    { label: t('Notes'), value: sale.notes, span: true },
                 ]"
             />
         </div>
@@ -165,57 +167,57 @@ function submitPayment() {
         <div v-show="tab === 'schedule'" class="space-y-4 print:hidden">
         <div id="receive-payment" v-if="remaining_amount > 0" class="space-y-4 rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm">
             <div>
-                <h3 class="text-sm font-semibold">Receive payment</h3>
-                <p class="text-sm text-muted-foreground">Record money collected against this sale. It posts a receipt under Payments.</p>
+                <h3 class="text-sm font-semibold">{{ t('Receive payment') }}</h3>
+                <p class="text-sm text-muted-foreground">{{ t('Record money collected against this sale. It posts a receipt under Payments.') }}</p>
             </div>
             <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitPayment">
                 <div class="grid gap-2">
-                    <Label>Amount</Label>
+                    <Label>{{ t('Amount') }}</Label>
                     <Input v-model="payForm.amount" type="number" step="0.01" min="0.01" required :placeholder="String(remaining_amount)" />
                     <InputError :message="payForm.errors.amount" />
                 </div>
                 <div class="grid gap-2">
-                    <Label>Method</Label>
+                    <Label>{{ t('Method') }}</Label>
                     <select v-model="payForm.payment_method" class="h-9 rounded-md border px-3 text-sm">
-                        <option value="cash">Cash</option>
-                        <option value="bank">Bank</option>
-                        <option value="transfer">Transfer</option>
+                        <option value="cash">{{ t('Cash') }}</option>
+                        <option value="bank">{{ t('Bank') }}</option>
+                        <option value="transfer">{{ t('Transfer') }}</option>
                     </select>
                 </div>
                 <div class="grid gap-2">
-                    <Label>Bank account</Label>
+                    <Label>{{ t('Bank account') }}</Label>
                     <select v-model="payForm.bank_account_id" class="h-9 rounded-md border px-3 text-sm">
-                        <option value="">None</option>
+                        <option value="">{{ t('None') }}</option>
                         <option v-for="account in bankAccounts" :key="account.id" :value="String(account.id)">{{ account.name }}</option>
                     </select>
                 </div>
                 <div class="grid gap-2">
-                    <Label>Reference</Label>
-                    <Input v-model="payForm.reference_no" placeholder="Receipt / slip no" />
+                    <Label>{{ t('Reference') }}</Label>
+                    <Input v-model="payForm.reference_no" :placeholder="t('Receipt / slip no')" />
                 </div>
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label>Notes</Label>
-                    <Input v-model="payForm.notes" placeholder="Optional" />
+                    <Label>{{ t('Notes') }}</Label>
+                    <Input v-model="payForm.notes" :placeholder="t('Optional')" />
                 </div>
                 <div class="sm:col-span-2">
-                    <Button type="submit" :disabled="payForm.processing">Record receipt</Button>
+                    <Button type="submit" :disabled="payForm.processing">{{ t('Record receipt') }}</Button>
                 </div>
             </form>
         </div>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">Installments</h3>
+                <h3 class="text-sm font-semibold">{{ t('Installments') }}</h3>
             </div>
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">#</th>
-                        <th class="px-4 py-3 font-medium">Due</th>
-                        <th class="px-4 py-3 font-medium">Amount</th>
-                        <th class="px-4 py-3 font-medium">Paid</th>
-                        <th class="px-4 py-3 font-medium">Status</th>
-                        <th class="px-4 py-3 font-medium text-right">Action</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Due') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Paid') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                        <th class="px-4 py-3 font-medium text-right">{{ t('Action') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -232,12 +234,12 @@ function submitPayment() {
                                 variant="outline"
                                 @click="fillInstallment(i)"
                             >
-                                Receive {{ money(installmentRemaining(i), sale.currency || 'USD') }}
+                                {{ t('Receive') }} {{ money(installmentRemaining(i), sale.currency || 'USD') }}
                             </Button>
                         </td>
                     </tr>
                     <tr v-if="!sale.installments?.length">
-                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No installments</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No installments') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -245,15 +247,15 @@ function submitPayment() {
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
             <div class="border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">Receipts</h3>
+                <h3 class="text-sm font-semibold">{{ t('Receipts') }}</h3>
             </div>
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">No</th>
-                        <th class="px-4 py-3 font-medium">Date</th>
-                        <th class="px-4 py-3 font-medium">Amount</th>
-                        <th class="px-4 py-3 font-medium text-right">Action</th>
+                        <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
+                        <th class="px-4 py-3 font-medium text-right">{{ t('Action') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -263,12 +265,12 @@ function submitPayment() {
                         <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency || 'USD') }}</td>
                         <td class="px-4 py-3 text-right">
                             <Button as-child size="sm" variant="outline">
-                                <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> Print</Link>
+                                <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
                             </Button>
                         </td>
                     </tr>
                     <tr v-if="!sale.payments?.length">
-                        <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">No receipts yet</td>
+                        <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">{{ t('No receipts yet') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -276,7 +278,7 @@ function submitPayment() {
         </div>
 
         <div v-show="tab === 'documents'" class="space-y-3 rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm print:hidden">
-            <h3 class="text-sm font-semibold">Contract documents</h3>
+            <h3 class="text-sm font-semibold">{{ t('Contract documents') }}</h3>
             <FileUploadField
                 mode="chunked"
                 destination="attachment"
@@ -285,17 +287,17 @@ function submitPayment() {
                 multiple
                 :max-files="10"
                 accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
-                hint="Signed contract and related files."
+                :hint="t('Signed contract and related files.')"
                 :existing="existingDocuments"
             />
         </div>
 
         <PrintableVoucher
             kind="statement"
-            title="Customer Sale Statement"
+            :title="t('Customer Sale Statement')"
             :document-no="sale.sale_no"
             :date="sale.contract_date"
-            party-label="Customer"
+            :party-label="t('Customer')"
             :party-name="sale.customer?.name"
             :amount="remaining_amount"
             :currency="sale.currency || 'USD'"
@@ -303,15 +305,15 @@ function submitPayment() {
             :description="sale.notes || sale.terms"
             :status="sale.status"
             :fields="[
-                { label: 'Unit', value: sale.unit?.unit_no },
-                { label: 'Sale price', value: money(sale.unit?.list_price, sale.currency || 'USD') },
-                { label: 'Discount', value: money(sale.discount, sale.currency || 'USD') },
+                { label: t('Unit'), value: sale.unit?.unit_no },
+                { label: t('Sale price'), value: money(sale.unit?.list_price, sale.currency || 'USD') },
+                { label: t('Discount'), value: money(sale.discount, sale.currency || 'USD') },
             ]"
             :lines="statementLines"
             :totals="[
-                { label: 'Total due', value: money(total_price, sale.currency || 'USD') },
-                { label: 'Paid to date', value: money(paid_amount, sale.currency || 'USD') },
-                { label: 'Balance due', value: money(remaining_amount, sale.currency || 'USD') },
+                { label: t('Total due'), value: money(total_price, sale.currency || 'USD') },
+                { label: t('Paid to date'), value: money(paid_amount, sale.currency || 'USD') },
+                { label: t('Balance due'), value: money(remaining_amount, sale.currency || 'USD') },
             ]"
         />
     </div>

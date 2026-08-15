@@ -75,7 +75,17 @@ class Attachment extends Model
             return true;
         }
 
-        return $this->attachable instanceof Sale && (bool) $user?->can('sales.view');
+        $attachable = $this->attachable;
+
+        if ($attachable instanceof Sale) {
+            return (bool) $user?->can('sales.view');
+        }
+
+        if ($attachable instanceof Expense) {
+            return (bool) $user?->can('expenses.view');
+        }
+
+        return false;
     }
 
     public function canDelete(?User $user): bool
@@ -84,7 +94,17 @@ class Attachment extends Model
             return true;
         }
 
-        return $this->attachable instanceof Sale && (bool) $user?->can('sales.edit');
+        $attachable = $this->attachable;
+
+        if ($attachable instanceof Sale) {
+            return (bool) $user?->can('sales.edit');
+        }
+
+        if ($attachable instanceof Expense) {
+            return (bool) $user?->can('expenses.edit');
+        }
+
+        return false;
     }
 
     public function deleteFile(): void

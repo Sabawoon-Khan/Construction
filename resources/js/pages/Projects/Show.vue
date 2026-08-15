@@ -4,15 +4,16 @@ import { ArrowLeft, Banknote, Handshake, Info, Pencil, Printer, Receipt } from '
 import { ref } from 'vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
-import { MisTabs } from '@/components/mis';
 import InputError from '@/components/InputError.vue';
+import { MisTabs } from '@/components/mis';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money } from '@/lib/utils';
 
-const props = defineProps<{
+defineProps<{
     item: Record<string, any>;
     stats: Record<string, number>;
     shareholders: {
@@ -49,11 +50,12 @@ const props = defineProps<{
 const contributionPartnerId = ref('');
 const payoutPartnerId = ref('');
 const tab = ref('info');
+const { t } = useTranslations();
 const tabs = [
-    { id: 'info', label: 'Project info', icon: Info },
-    { id: 'shareholders', label: 'Shareholders', icon: Handshake },
-    { id: 'expenses', label: 'Expenses', icon: Receipt },
-    { id: 'sales', label: 'Sales', icon: Banknote },
+    { id: 'info', label: t('Project info'), icon: Info },
+    { id: 'shareholders', label: t('Shareholders'), icon: Handshake },
+    { id: 'expenses', label: t('Expenses'), icon: Receipt },
+    { id: 'sales', label: t('Sales'), icon: Banknote },
 ];
 
 defineOptions({
@@ -73,36 +75,36 @@ defineOptions({
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/projects"><ArrowLeft class="size-4" /> Back</Link>
+                    <Link href="/projects"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
-                <Heading :title="item.name" :description="`${item.code} · ${item.location || 'No location'}`" />
+                <Heading :title="item.name" :description="`${item.code} · ${item.location || t('No location')}`" />
             </div>
             <div class="flex items-center gap-2">
                 <StatusBadge :status="item.status" />
                 <Button as-child variant="outline">
-                    <Link :href="`/reports?project_id=${item.id}`">Full report</Link>
+                    <Link :href="`/reports?project_id=${item.id}`">{{ t('Full report') }}</Link>
                 </Button>
                 <Button as-child>
-                    <Link :href="`/projects/${item.id}/edit`"><Pencil class="size-4" /> Edit</Link>
+                    <Link :href="`/projects/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
                 </Button>
             </div>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Sales</div>
+                <div class="text-sm text-muted-foreground">{{ t('Sales') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.sales_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Project spend</div>
+                <div class="text-sm text-muted-foreground">{{ t('Project spend') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-rose-700">{{ money(stats.expenses_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Net profit</div>
+                <div class="text-sm text-muted-foreground">{{ t('Net profit') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.net_profit) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Shareholder money in (USD)</div>
+                <div class="text-sm text-muted-foreground">{{ t('Shareholder money in (USD)') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.contributions_total, 'USD') }}</div>
             </div>
         </div>
@@ -111,31 +113,31 @@ defineOptions({
 
         <div v-show="tab === 'info'" class="grid gap-4 lg:grid-cols-2">
             <DetailGrid
-                title="Project details"
+                :title="t('Project details')"
                 :items="[
-                    { label: 'Code', value: item.code },
-                    { label: 'Type', value: item.type },
-                    { label: 'Location', value: item.location },
-                    { label: 'Progress', value: `${formatNumber(item.progress_percent)}%` },
-                    { label: 'Start date', value: item.start_date },
-                    { label: 'Expected completion', value: item.expected_completion_date },
-                    { label: 'Estimated budget', value: money(item.estimated_budget) },
-                    { label: 'Estimated revenue', value: money(item.estimated_revenue) },
-                    { label: 'Description', value: item.description, span: true },
+                    { label: t('Code'), value: item.code },
+                    { label: t('Type'), value: item.type },
+                    { label: t('Location'), value: item.location },
+                    { label: t('Progress'), value: `${formatNumber(item.progress_percent)}%` },
+                    { label: t('Start date'), value: item.start_date },
+                    { label: t('Expected completion'), value: item.expected_completion_date },
+                    { label: t('Estimated budget'), value: money(item.estimated_budget) },
+                    { label: t('Estimated revenue'), value: money(item.estimated_revenue) },
+                    { label: t('Description'), value: item.description, span: true },
                 ]"
             />
         </div>
 
         <div v-show="tab === 'sales'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div class="border-b px-5 py-3">
-                    <h3 class="text-sm font-semibold">Recent sales</h3>
+                    <h3 class="text-sm font-semibold">{{ t('Recent sales') }}</h3>
                 </div>
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Sale</th>
-                            <th class="px-4 py-3 font-medium">Customer</th>
-                            <th class="px-4 py-3 font-medium">Amount</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Customer') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -147,7 +149,7 @@ defineOptions({
                             <td class="px-4 py-3 tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency || 'USD') }}</td>
                         </tr>
                         <tr v-if="!item.sales?.length">
-                            <td colspan="3" class="px-4 py-10 text-center text-muted-foreground">No sales yet</td>
+                            <td colspan="3" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -155,9 +157,9 @@ defineOptions({
 
         <div v-show="tab === 'shareholders'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-4">
-                <h3 class="text-sm font-semibold">Shareholders</h3>
+                <h3 class="text-sm font-semibold">{{ t('Shareholders') }}</h3>
                 <p class="text-xs text-muted-foreground">
-                    Money they put in is capital, not an expense. Profit share is calculated from sales minus project spend. Payouts are tracked separately.
+                    {{ t('Money they put in is capital, not an expense. Profit share is calculated from sales minus project spend. Payouts are tracked separately.') }}
                 </p>
             </div>
 
@@ -168,37 +170,37 @@ defineOptions({
                 v-slot="{ errors, processing }"
             >
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="partner_id">Shareholder</Label>
+                    <Label for="partner_id">{{ t('Shareholder') }}</Label>
                     <select
                         id="partner_id"
                         name="partner_id"
                         required
                         class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
                     >
-                        <option value="" disabled selected>Select from list</option>
+                        <option value="" disabled selected>{{ t('Select from list') }}</option>
                         <option v-for="s in available_shareholders" :key="s.id" :value="s.id">
                             {{ s.name }}{{ s.phone ? ` · ${s.phone}` : '' }}
                         </option>
                     </select>
                     <InputError :message="errors.partner_id" />
                     <p v-if="!available_shareholders.length" class="text-xs text-muted-foreground">
-                        All shareholders are already on this project.
-                        <Link href="/partners/create" class="text-primary hover:underline">Add a new shareholder</Link>
+                        {{ t('All shareholders are already on this project.') }}
+                        <Link href="/partners/create" class="text-primary hover:underline">{{ t('Add a new shareholder') }}</Link>
                     </p>
                 </div>
                 <div class="grid gap-2">
-                    <Label for="ownership_percentage">Ownership %</Label>
+                    <Label for="ownership_percentage">{{ t('Ownership %') }}</Label>
                     <Input id="ownership_percentage" name="ownership_percentage" type="number" step="0.01" min="0" max="100" required />
                     <InputError :message="errors.ownership_percentage" />
                 </div>
                 <div class="flex items-end">
                     <Button as-child variant="outline" class="w-full">
-                        <Link href="/partners/create">New shareholder</Link>
+                        <Link href="/partners/create">{{ t('New shareholder') }}</Link>
                     </Button>
                 </div>
                 <div class="sm:col-span-4">
                     <Button type="submit" :disabled="processing || !available_shareholders.length">
-                        {{ processing ? 'Saving...' : 'Add to project' }}
+                        {{ processing ? t('Saving…') : t('Add to project') }}
                     </Button>
                 </div>
             </Form>
@@ -207,12 +209,12 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Name</th>
-                            <th class="px-4 py-3 font-medium">Share</th>
-                            <th class="px-4 py-3 font-medium">Money in (USD)</th>
-                            <th class="px-4 py-3 font-medium">Profit share (USD)</th>
-                            <th class="px-4 py-3 font-medium">Paid out (USD)</th>
-                            <th class="px-4 py-3 font-medium">Still owed (USD)</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Share') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Money in (USD)') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Profit share (USD)') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Paid out (USD)') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Still owed (USD)') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -225,7 +227,7 @@ defineOptions({
                             <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(s.balance_owed, 'USD') }}</td>
                         </tr>
                         <tr v-if="!shareholders.length">
-                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">No shareholders yet</td>
+                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No shareholders yet') }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -303,17 +305,17 @@ defineOptions({
 
             <div v-if="contributions.length" class="border-t">
                 <div class="border-b px-5 py-3">
-                    <h4 class="text-sm font-semibold">Contribution history (USD)</h4>
+                    <h4 class="text-sm font-semibold">{{ t('Contribution history (USD)') }}</h4>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/40 text-left text-muted-foreground">
                             <tr>
-                                <th class="px-4 py-3 font-medium">Date</th>
-                                <th class="px-4 py-3 font-medium">Shareholder</th>
-                                <th class="px-4 py-3 font-medium">Amount (USD)</th>
-                                <th class="px-4 py-3 font-medium">Reference</th>
-                                <th class="px-4 py-3 font-medium">Notes</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Shareholder') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Amount (USD)') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Reference') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Notes') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -332,8 +334,8 @@ defineOptions({
 
         <div v-show="tab === 'expenses'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-4">
-                <h3 class="text-sm font-semibold">Project expenses</h3>
-                <p class="text-xs text-muted-foreground">Building costs and operating spend for this project only.</p>
+                <h3 class="text-sm font-semibold">{{ t('Project expenses') }}</h3>
+                <p class="text-xs text-muted-foreground">{{ t('Building costs and operating spend for this project only.') }}</p>
             </div>
 
             <Form
@@ -343,12 +345,12 @@ defineOptions({
                 v-slot="{ errors, processing }"
             >
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="description">Description</Label>
-                    <Input id="description" name="description" required placeholder="What was this expense for?" />
+                    <Label for="description">{{ t('Description') }}</Label>
+                    <Input id="description" name="description" required :placeholder="t('What was this expense for?')" />
                     <InputError :message="errors.description" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="expense_date">Date</Label>
+                    <Label for="expense_date">{{ t('Date') }}</Label>
                     <Input
                         id="expense_date"
                         name="expense_date"
@@ -359,23 +361,35 @@ defineOptions({
                     <InputError :message="errors.expense_date" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="amount">Total cost</Label>
+                    <Label for="amount">{{ t('Total cost') }}</Label>
                     <Input id="amount" name="amount" type="number" step="0.01" min="0" required />
                     <InputError :message="errors.amount" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="expense_category_id">Category</Label>
+                    <Label for="expense_category_id">{{ t('Category') }}</Label>
                     <select id="expense_category_id" name="expense_category_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-                        <option value="">General</option>
+                        <option value="">{{ t('General') }}</option>
                         <option v-for="c in expense_categories || []" :key="c.id" :value="c.id">{{ c.name }}</option>
                     </select>
                 </div>
                 <div class="grid gap-2">
-                    <Label for="reference_no">Receipt / reference</Label>
+                    <Label for="reference_no">{{ t('Receipt / reference') }}</Label>
                     <Input id="reference_no" name="reference_no" />
                 </div>
+                <div class="grid gap-2 sm:col-span-2">
+                    <Label for="documents">{{ t('Receipt file') }}</Label>
+                    <input
+                        id="documents"
+                        type="file"
+                        name="documents[]"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        class="text-sm"
+                    />
+                    <InputError :message="errors.documents" />
+                </div>
                 <div class="sm:col-span-4">
-                    <Button type="submit" :disabled="processing">{{ processing ? 'Saving...' : 'Add expense' }}</Button>
+                    <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Add expense') }}</Button>
                 </div>
             </Form>
 
@@ -383,10 +397,10 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Date</th>
-                            <th class="px-4 py-3 font-medium">Description</th>
-                            <th class="px-4 py-3 font-medium">Total cost</th>
-                            <th class="px-4 py-3 font-medium text-right">Voucher</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
+                            <th class="px-4 py-3 font-medium text-right">{{ t('Voucher') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -396,12 +410,12 @@ defineOptions({
                             <td class="px-4 py-3 tabular-nums">{{ money(expense.amount, expense.currency || 'USD') }}</td>
                             <td class="px-4 py-3 text-right">
                                 <Button as-child variant="ghost" size="sm">
-                                    <Link :href="`/expenses/${expense.id}`"><Printer class="size-4" /> Print</Link>
+                                    <Link :href="`/expenses/${expense.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
                                 </Button>
                             </td>
                         </tr>
                         <tr v-if="!expenses.length">
-                            <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">No expenses yet</td>
+                            <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">{{ t('No expenses yet') }}</td>
                         </tr>
                     </tbody>
                 </table>

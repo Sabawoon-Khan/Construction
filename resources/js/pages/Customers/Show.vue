@@ -7,12 +7,14 @@ import Heading from '@/components/Heading.vue';
 import { MisTabs } from '@/components/mis';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
 const tab = ref('info');
+const { t } = useTranslations();
 const tabs = [
-    { id: 'info', label: 'Customer info', icon: Info },
-    { id: 'sales', label: 'Sales', icon: Banknote },
+    { id: 'info', label: t('Customer info'), icon: Info },
+    { id: 'sales', label: t('Sales'), icon: Banknote },
 ];
 
 const props = defineProps<{
@@ -37,26 +39,26 @@ defineOptions({
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/customers"><ArrowLeft class="size-4" /> Back</Link>
+                    <Link href="/customers"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
-                <Heading :title="item.name" :description="`Customer ${item.customer_no || ''}`" />
+                <Heading :title="item.name" :description="`${t('Customer')} ${item.customer_no || ''}`" />
             </div>
             <Button as-child>
-                <Link :href="`/customers/${item.id}/edit`"><Pencil class="size-4" /> Edit</Link>
+                <Link :href="`/customers/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
             </Button>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-3">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Sales</div>
+                <div class="text-sm text-muted-foreground">{{ t('Sales') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ stats.sales_count }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Sales total</div>
+                <div class="text-sm text-muted-foreground">{{ t('Sales total') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.sales_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">Payments received</div>
+                <div class="text-sm text-muted-foreground">{{ t('Payments received') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.payments_total) }}</div>
             </div>
         </div>
@@ -65,30 +67,30 @@ defineOptions({
 
         <DetailGrid
             v-show="tab === 'info'"
-            title="Customer details"
+            :title="t('Customer details')"
             :items="[
-                { label: 'Customer No', value: item.customer_no },
-                { label: 'Father name', value: item.father_name },
-                { label: 'Phone', value: item.phone },
-                { label: 'Email', value: item.email },
-                { label: 'National ID', value: item.national_id },
-                { label: 'Address', value: item.address, span: true },
-                { label: 'Notes', value: item.notes, span: true },
+                { label: t('Customer No'), value: item.customer_no },
+                { label: t('Father name'), value: item.father_name },
+                { label: t('Phone'), value: item.phone },
+                { label: t('Email'), value: item.email },
+                { label: t('National ID'), value: item.national_id },
+                { label: t('Address'), value: item.address, span: true },
+                { label: t('Notes'), value: item.notes, span: true },
             ]"
         />
 
         <div v-show="tab === 'sales'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">Recent sales</h3>
+                <h3 class="text-sm font-semibold">{{ t('Recent sales') }}</h3>
             </div>
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">Sale</th>
-                        <th class="px-4 py-3 font-medium">Project</th>
-                        <th class="px-4 py-3 font-medium">Unit</th>
-                        <th class="px-4 py-3 font-medium">Net</th>
-                        <th class="px-4 py-3 font-medium">Status</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Net') }}</th>
+                        <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -102,7 +104,7 @@ defineOptions({
                         <td class="px-4 py-3"><StatusBadge :status="sale.status" /></td>
                     </tr>
                     <tr v-if="!item.sales?.length">
-                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">No sales yet</td>
+                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
                     </tr>
                 </tbody>
             </table>

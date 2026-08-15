@@ -7,9 +7,11 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 
 const props = defineProps<{ item: Record<string, any> | null }>();
 const isEdit = computed(() => !!props.item);
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -23,15 +25,15 @@ defineOptions({
 </script>
 
 <template>
-    <Head :title="isEdit ? 'Edit Income' : 'Record Income'" />
+    <Head :title="isEdit ? t('Edit income') : t('Record income')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="space-y-3">
             <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/incomes"><ArrowLeft class="size-4" /> Back</Link>
+                <Link href="/incomes"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
             </Button>
             <Heading
-                :title="isEdit ? 'Edit Income' : 'Record Income'"
-                description="Company-wide income not tied to a project."
+                :title="isEdit ? t('Edit income') : t('Record income')"
+                :description="t('Company-wide income not tied to a project.')"
             />
         </div>
         <Form
@@ -42,7 +44,7 @@ defineOptions({
         >
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="grid gap-2 sm:col-span-2">
-                    <Label for="description">Description</Label>
+                    <Label for="description">{{ t('Description') }}</Label>
                     <textarea
                         id="description"
                         name="description"
@@ -54,7 +56,7 @@ defineOptions({
                     <InputError :message="errors.description" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="income_date">Date</Label>
+                    <Label for="income_date">{{ t('Date') }}</Label>
                     <Input
                         id="income_date"
                         name="income_date"
@@ -65,14 +67,14 @@ defineOptions({
                     <InputError :message="errors.income_date" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="amount">Total amount</Label>
+                    <Label for="amount">{{ t('Total amount') }}</Label>
                     <Input id="amount" name="amount" type="number" step="0.01" min="0" required :default-value="item?.amount ?? ''" />
                     <InputError :message="errors.amount" />
                 </div>
             </div>
             <div class="flex gap-2">
-                <Button type="submit" :disabled="processing">{{ processing ? 'Saving...' : 'Save Income' }}</Button>
-                <Button as-child variant="secondary"><Link href="/incomes">Cancel</Link></Button>
+                <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save income') }}</Button>
+                <Button as-child variant="secondary"><Link href="/incomes">{{ t('Cancel') }}</Link></Button>
             </div>
         </Form>
     </div>

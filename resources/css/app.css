@@ -103,6 +103,10 @@
     html[dir='rtl'] [data-sidebar='sidebar'] {
         direction: rtl;
     }
+
+    html[dir='rtl'] .group\/sidebar-wrapper {
+        flex-direction: row-reverse;
+    }
 }
 
 @layer utilities {

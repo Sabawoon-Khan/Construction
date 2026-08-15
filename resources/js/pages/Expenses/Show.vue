@@ -3,16 +3,28 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Printer } from '@lucide/vue';
 import { computed } from 'vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
 const props = defineProps<{ item: Record<string, any> }>();
+const { t } = useTranslations();
 
 const backHref = computed(() =>
     props.item.project_id ? `/projects/${props.item.project_id}` : '/expenses',
+);
+const existingReceipts = computed<ExistingUploadFile[]>(() =>
+    (props.item.attachments ?? []).map((file: any) => ({
+        id: file.id,
+        name: file.original_filename || file.title || t('Receipt'),
+        size: file.file_size,
+        mime: file.mime_type,
+        url: file.download_url,
+    })),
 );
 
 defineOptions({
@@ -32,18 +44,18 @@ defineOptions({
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link :href="backHref"><ArrowLeft class="size-4" /> Back</Link>
+                    <Link :href="backHref"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
-                <Heading :title="item.expense_no" :description="item.project?.name || 'General expense'" />
+                <Heading :title="item.expense_no" :description="item.project?.name || t('General expense')" />
             </div>
             <Button variant="outline" @click="printPage">
-                <Printer class="size-4" /> Print voucher
+                <Printer class="size-4" /> {{ t('Print voucher') }}
             </Button>
         </div>
 
         <div class="print:hidden">
             <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
-                <div class="text-sm text-muted-foreground">Total cost</div>
+                <div class="text-sm text-muted-foreground">{{ t('Total cost') }}</div>
                 <div class="mt-1 text-3xl font-semibold tabular-nums text-rose-700">
                     {{ money(item.amount, item.currency || 'USD') }}
                 </div>
@@ -52,22 +64,38 @@ defineOptions({
 
         <div class="print:hidden">
             <DetailGrid
-                title="Expense details"
+                :title="t('Expense details')"
                 :items="[
-                    { label: 'Date', value: item.expense_date?.slice?.(0, 10) ?? item.expense_date },
-                    { label: 'Project', value: item.project?.name || 'Company-wide' },
-                    { label: 'Description', value: item.description, span: true },
+                    { label: t('Date'), value: item.expense_date?.slice?.(0, 10) ?? item.expense_date },
+                    { label: t('Project'), value: item.project?.name || t('Company-wide') },
+                    { label: t('Reference'), value: item.reference_no || '—' },
+                    { label: t('Description'), value: item.description, span: true },
                 ]"
+            />
+        </div>
+
+        <div class="space-y-3 rounded-xl border bg-card p-5 shadow-sm print:hidden sm:max-w-xl">
+            <h3 class="text-sm font-semibold">{{ t('Receipt files') }}</h3>
+            <FileUploadField
+                mode="chunked"
+                destination="attachment"
+                attachable="expenses"
+                :attachable-id="item.id"
+                multiple
+                :max-files="10"
+                accept="application/pdf,image/jpeg,image/png,image/webp"
+                :hint="t('Upload or download receipt photos and PDFs.')"
+                :existing="existingReceipts"
             />
         </div>
 
         <PrintableVoucher
             kind="payment"
-            title="Expense Payment Voucher"
+            :title="t('Expense Payment Voucher')"
             :document-no="item.expense_no"
             :date="item.expense_date?.slice?.(0, 10) ?? item.expense_date"
-            party-label="Project"
-            :party-name="item.project?.name || 'Company-wide'"
+            :party-label="t('Project')"
+            :party-name="item.project?.name || t('Company-wide')"
             :amount="item.amount"
             :currency="item.currency || 'USD'"
             :payment-method="item.payment_method"

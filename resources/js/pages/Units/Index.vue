@@ -10,6 +10,7 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
 
@@ -22,6 +23,7 @@ const props = defineProps<{
 const search = ref(props.filters.search ?? '');
 const projectId = ref(String(props.filters.project_id ?? ''));
 const status = ref(props.filters.status ?? '');
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -47,27 +49,27 @@ const unitStatuses = ['available', 'reserved', 'sold'];
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: 'View', icon: Eye, href: `/units/${item.id}` },
-        { label: 'Edit', icon: Pencil, href: `/units/${item.id}/edit` },
-        { separator: true, isLabel: true, label: 'Change status' },
+        { label: t('View'), icon: Eye, href: `/units/${item.id}` },
+        { label: t('Edit'), icon: Pencil, href: `/units/${item.id}/edit` },
+        { separator: true, isLabel: true, label: t('Change status') },
         ...unitStatuses.map((status) => ({
-            label: status.charAt(0).toUpperCase() + status.slice(1),
+            label: t(status.charAt(0).toUpperCase() + status.slice(1)),
             method: 'patch' as const,
             href: `/units/${item.id}/status`,
             data: { status },
             disabled: item.status === status,
         })),
-        { separator: true, isLabel: true, label: 'Danger' },
+        { separator: true, isLabel: true, label: t('Danger') },
         {
-            label: 'Delete',
+            label: t('Delete'),
             icon: Trash2,
             method: 'delete',
             href: `/units/${item.id}`,
             variant: 'destructive' as const,
             confirm: {
-                title: 'Delete unit',
-                description: 'Are you sure you want to delete this unit? This action cannot be undone.',
-                confirmLabel: 'Delete',
+                title: t('Delete unit'),
+                description: t('Are you sure you want to delete this unit? This action cannot be undone.'),
+                confirmLabel: t('Delete'),
             },
         },
     ];
@@ -75,32 +77,32 @@ function rowActions(item: any): RowActionItem[] {
 </script>
 
 <template>
-    <Head title="Units & Homes" />
+    <Head :title="t('Units & Homes')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <Heading title="Units & Homes" description="List prices, specs, and sale status for every unit." />
+            <Heading :title="t('Units & Homes')" :description="t('List prices, specs, and sale status for every unit.')" />
             <div class="flex flex-wrap gap-2">
-                <Input v-model="search" placeholder="Unit no..." @keyup.enter="apply" />
+                <Input v-model="search" :placeholder="t('Unit no...')" @keyup.enter="apply" />
                 <select v-model="projectId" class="h-9 rounded-md border border-input bg-background px-3 text-sm" @change="apply">
-                    <option value="">All projects</option>
+                    <option value="">{{ t('All projects') }}</option>
                     <option v-for="p in projects" :key="p.id" :value="String(p.id)">{{ p.name }}</option>
                 </select>
                 <select v-model="status" class="h-9 rounded-md border border-input bg-background px-3 text-sm" @change="apply">
-                    <option value="">All statuses</option>
-                    <option value="available">Available</option>
-                    <option value="reserved">Reserved</option>
-                    <option value="sold">Sold</option>
+                    <option value="">{{ t('All statuses') }}</option>
+                    <option value="available">{{ t('Available') }}</option>
+                    <option value="reserved">{{ t('Reserved') }}</option>
+                    <option value="sold">{{ t('Sold') }}</option>
                 </select>
-                <Button variant="secondary" @click="apply">Filter</Button>
-                <Button as-child><Link href="/units/create"><Plus class="size-4" /> Add unit</Link></Button>
+                <Button variant="secondary" @click="apply">{{ t('Filter') }}</Button>
+                <Button as-child><Link href="/units/create"><Plus class="size-4" /> {{ t('Add unit') }}</Link></Button>
             </div>
         </div>
 
         <MisStatGrid :columns="4">
-            <MisStatCard label="Units" :value="totals.count" />
-            <MisStatCard label="Available" :value="totals.available" tone="success" />
-            <MisStatCard label="Reserved" :value="totals.reserved" tone="warning" />
-            <MisStatCard label="Sold" :value="totals.sold" />
+            <MisStatCard :label="t('Units')" :value="totals.count" />
+            <MisStatCard :label="t('Available')" :value="totals.available" tone="success" />
+            <MisStatCard :label="t('Reserved')" :value="totals.reserved" tone="warning" />
+            <MisStatCard :label="t('Sold')" :value="totals.sold" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -108,16 +110,16 @@ function rowActions(item: any): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Unit</th>
-                            <th class="px-4 py-3 font-medium">Project</th>
-                            <th class="px-4 py-3 font-medium">Type</th>
-                            <th class="px-4 py-3 font-medium">Area</th>
-                            <th class="px-4 py-3 font-medium">Beds</th>
-                            <th class="px-4 py-3 font-medium">Planned cost</th>
-                            <th class="px-4 py-3 font-medium">Sale price</th>
-                            <th class="px-4 py-3 font-medium">Buyer</th>
-                            <th class="px-4 py-3 font-medium">Status</th>
-                            <th class="px-4 py-3 font-medium text-right">Actions</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Type') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Area') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Beds') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Planned cost') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Sale price') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Buyer') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -139,7 +141,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="10" title="No units yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No units yet')" />
                     </tbody>
                 </table>
             </div>

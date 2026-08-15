@@ -10,6 +10,7 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const props = defineProps<{
     totals: { count: number; total_price: number; remaining: number };
 }>();
 const search = ref(props.filters.search ?? '');
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -37,29 +39,29 @@ const saleStatuses = ['draft', 'active', 'completed', 'cancelled'];
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: 'View', icon: Eye, href: `/sales/${item.id}` },
-        { label: 'Receive payment', icon: Banknote, href: `/sales/${item.id}#receive-payment` },
-        { label: 'Print', icon: Printer, href: `/sales/${item.id}` },
-        { label: 'Edit', icon: Pencil, href: `/sales/${item.id}/edit` },
-        { separator: true, isLabel: true, label: 'Change status' },
+        { label: t('View'), icon: Eye, href: `/sales/${item.id}` },
+        { label: t('Receive payment'), icon: Banknote, href: `/sales/${item.id}#receive-payment` },
+        { label: t('Print'), icon: Printer, href: `/sales/${item.id}` },
+        { label: t('Edit'), icon: Pencil, href: `/sales/${item.id}/edit` },
+        { separator: true, isLabel: true, label: t('Change status') },
         ...saleStatuses.map((status) => ({
-            label: status.charAt(0).toUpperCase() + status.slice(1),
+            label: t(status),
             method: 'patch' as const,
             href: `/sales/${item.id}/status`,
             data: { status },
             disabled: item.status === status,
         })),
-        { separator: true, isLabel: true, label: 'Danger' },
+        { separator: true, isLabel: true, label: t('Danger') },
         {
-            label: 'Delete',
+            label: t('Delete'),
             icon: Trash2,
             method: 'delete',
             href: `/sales/${item.id}`,
             variant: 'destructive' as const,
             confirm: {
-                title: 'Delete sale',
-                description: 'Are you sure you want to delete this sale? This action cannot be undone.',
-                confirmLabel: 'Delete',
+                title: t('Delete sale'),
+                description: t('Are you sure you want to delete this sale? This action cannot be undone.'),
+                confirmLabel: t('Delete'),
             },
         },
     ];
@@ -67,21 +69,21 @@ function rowActions(item: any): RowActionItem[] {
 </script>
 
 <template>
-    <Head title="Sales" />
+    <Head :title="t('Sales')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading title="Home Sales" description="Contracts, installments and collection status." />
+            <Heading :title="t('Home Sales')" :description="t('Contracts, installments and collection status.')" />
             <div class="flex flex-wrap gap-2">
-                <Input v-model="search" placeholder="Search..." @keyup.enter="apply" />
-                <Button variant="secondary" @click="apply">Search</Button>
-                <Button as-child><Link href="/sales/create"><Plus class="size-4" /> New sale</Link></Button>
+                <Input v-model="search" :placeholder="t('Search...')" @keyup.enter="apply" />
+                <Button variant="secondary" @click="apply">{{ t('Search') }}</Button>
+                <Button as-child><Link href="/sales/create"><Plus class="size-4" /> {{ t('New sale') }}</Link></Button>
             </div>
         </div>
 
         <MisStatGrid :columns="3">
-            <MisStatCard label="Contracts" :value="totals.count" hint="All matching sales" />
-            <MisStatCard label="Sales total" :value="money(totals.total_price)" />
-            <MisStatCard label="Remaining" :value="money(totals.remaining)" tone="warning" />
+            <MisStatCard :label="t('Contracts')" :value="totals.count" :hint="t('All matching sales')" />
+            <MisStatCard :label="t('Sales total')" :value="money(totals.total_price)" />
+            <MisStatCard :label="t('Remaining')" :value="money(totals.remaining)" tone="warning" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -89,16 +91,16 @@ function rowActions(item: any): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Sale No</th>
-                            <th class="px-4 py-3 font-medium">Customer</th>
-                            <th class="px-4 py-3 font-medium">Project</th>
-                            <th class="px-4 py-3 font-medium">Unit</th>
-                            <th class="px-4 py-3 font-medium">Sale Price</th>
-                            <th class="px-4 py-3 font-medium">Discount</th>
-                            <th class="px-4 py-3 font-medium">Total</th>
-                            <th class="px-4 py-3 font-medium">Remaining</th>
-                            <th class="px-4 py-3 font-medium">Status</th>
-                            <th class="px-4 py-3 font-medium text-right">Actions</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Sale No') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Customer') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Sale price') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Discount') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Total') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Remaining') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,7 +122,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="10" title="No sales yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No sales yet')" />
                     </tbody>
                 </table>
             </div>

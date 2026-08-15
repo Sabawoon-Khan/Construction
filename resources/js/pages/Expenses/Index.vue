@@ -9,6 +9,7 @@ import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
 
@@ -19,6 +20,7 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { t } = useTranslations();
 
 defineOptions({
     layout: {
@@ -35,20 +37,20 @@ function applyFilters() {
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: 'View', icon: Eye, href: `/expenses/${item.id}` },
-        { label: 'Print', icon: Printer, href: `/expenses/${item.id}` },
-        { label: 'Edit', icon: Pencil, href: `/expenses/${item.id}/edit` },
-        { separator: true, isLabel: true, label: 'Danger' },
+        { label: t('View'), icon: Eye, href: `/expenses/${item.id}` },
+        { label: t('Print'), icon: Printer, href: `/expenses/${item.id}` },
+        { label: t('Edit'), icon: Pencil, href: `/expenses/${item.id}/edit` },
+        { separator: true, isLabel: true, label: t('Danger') },
         {
-            label: 'Delete',
+            label: t('Delete'),
             icon: Trash2,
             method: 'delete',
             href: `/expenses/${item.id}`,
             variant: 'destructive' as const,
             confirm: {
-                title: 'Delete expense',
-                description: 'Are you sure you want to delete this expense? This action cannot be undone.',
-                confirmLabel: 'Delete',
+                title: t('Delete expense'),
+                description: t('Are you sure you want to delete this expense? This action cannot be undone.'),
+                confirmLabel: t('Delete'),
             },
         },
     ];
@@ -56,22 +58,22 @@ function rowActions(item: any): RowActionItem[] {
 </script>
 
 <template>
-    <Head title="Expenses" />
+    <Head :title="t('Expenses')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <Heading title="General Expenses" description="Company-wide costs not tied to a project. Use the project page for project expenses." />
+            <Heading :title="t('General Expenses')" :description="t('Company-wide costs not tied to a project. Use the project page for project expenses.')" />
             <div class="flex flex-wrap gap-2">
-                <Input v-model="search" class="min-w-[180px]" placeholder="Search..." @keyup.enter="applyFilters" />
-                <Button variant="secondary" @click="applyFilters"><Search class="size-4" /> Filter</Button>
-                <Button as-child><Link href="/expenses/create"><Plus class="size-4" /> Add expense</Link></Button>
+                <Input v-model="search" class="min-w-[180px]" :placeholder="t('Search...')" @keyup.enter="applyFilters" />
+                <Button variant="secondary" @click="applyFilters"><Search class="size-4" /> {{ t('Filter') }}</Button>
+                <Button as-child><Link href="/expenses/create"><Plus class="size-4" /> {{ t('Add expense') }}</Link></Button>
             </div>
         </div>
 
         <MisStatGrid :columns="4">
-            <MisStatCard label="Entries" :value="totals.count" hint="Approved expenses" />
-            <MisStatCard label="Total spent" :value="money(totals.amount)" tone="danger" />
-            <MisStatCard label="This month" :value="money(totals.this_month)" />
-            <MisStatCard label="Average" :value="money(totals.average)" />
+            <MisStatCard :label="t('Entries')" :value="totals.count" :hint="t('Approved expenses')" />
+            <MisStatCard :label="t('Total spent')" :value="money(totals.amount)" tone="danger" />
+            <MisStatCard :label="t('This month')" :value="money(totals.this_month)" />
+            <MisStatCard :label="t('Average')" :value="money(totals.average)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -79,10 +81,10 @@ function rowActions(item: any): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="border-b bg-muted/40 text-left text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">Date</th>
-                            <th class="px-4 py-3 font-medium">Description</th>
-                            <th class="px-4 py-3 font-medium">Total cost</th>
-                            <th class="px-4 py-3 font-medium text-right">Actions</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
+                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,7 +98,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="4" title="No expenses yet" />
+                        <EmptyState v-if="!items.data.length" :colspan="4" :title="t('No expenses yet')" />
                     </tbody>
                 </table>
             </div>
