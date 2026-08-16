@@ -1,0 +1,1 @@
+import{Pn as e,at as t,cn as n,dn as r,gt as i,hr as a,n as o,tn as s,vr as c}from"./button-Bazp6Oio.js";var l=i({__name:`MisListRow`,props:{class:{default:void 0},as:{default:`div`}},setup(i){return(l,u)=>(s(),t(r(i.as),{class:c(a(o)(`ui-list-row`,l.$props.class))},{default:e(()=>[n(l.$slots,`default`)]),_:3},8,[`class`]))}});export{l as t};
