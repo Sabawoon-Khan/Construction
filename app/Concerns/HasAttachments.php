@@ -4,6 +4,7 @@ namespace App\Concerns;
 
 use App\Models\Attachment;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -143,10 +144,12 @@ trait HasAttachments
             }
         });
 
-        static::restoring(function ($model): void {
-            foreach ($model->attachments()->onlyTrashed()->get() as $attachment) {
-                $attachment->restore();
-            }
-        });
+        if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
+            static::restoring(function ($model): void {
+                foreach ($model->attachments()->onlyTrashed()->get() as $attachment) {
+                    $attachment->restore();
+                }
+            });
+        }
     }
 }

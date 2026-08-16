@@ -19,6 +19,7 @@ const { t } = useTranslations();
 
 const form = useForm({
     employee_id: String(props.item?.employee_id ?? ''),
+    employee_ids: [] as string[],
     date: props.item?.date?.slice?.(0, 10) ?? new Date().toISOString().slice(0, 10),
     check_in: props.item?.check_in?.slice?.(0, 5) ?? '',
     check_out: props.item?.check_out?.slice?.(0, 5) ?? '',
@@ -55,19 +56,45 @@ defineOptions({
             </Button>
             <Heading
                 :title="isEdit ? t('Edit attendance') : t('Record attendance')"
-                :description="t('Select the employee and record their attendance for the day.')"
+                :description="isEdit ? t('Update attendance for one employee.') : t('Select one or more employees and record attendance for the day.')"
             />
         </div>
 
         <form class="max-w-3xl space-y-6 rounded-xl border border-sidebar-border/70 bg-card p-6" @submit.prevent="submit">
             <div class="grid gap-4 sm:grid-cols-2">
-                <div class="grid gap-2">
+                <div v-if="isEdit" class="grid gap-2">
                     <Label for="employee_id">{{ t('Employee') }}</Label>
                     <select id="employee_id" v-model="form.employee_id" required class="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
                         <option value="" disabled>{{ t('Select employee') }}</option>
                         <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
                     </select>
                     <InputError :message="form.errors.employee_id" />
+                </div>
+                <div v-else class="grid gap-2 sm:col-span-2">
+                    <div class="flex items-center justify-between">
+                        <Label>{{ t('Employees') }}</Label>
+                        <div class="flex gap-2 text-xs">
+                            <button type="button" class="text-primary hover:underline" @click="form.employee_ids = employees.map((e) => String(e.id))">{{ t('Select all') }}</button>
+                            <button type="button" class="text-primary hover:underline" @click="form.employee_ids = []">{{ t('Clear') }}</button>
+                        </div>
+                    </div>
+                    <div class="max-h-56 overflow-auto rounded-md border p-3">
+                        <label
+                            v-for="employee in employees"
+                            :key="employee.id"
+                            class="flex items-center gap-2 py-1 text-sm"
+                        >
+                            <input
+                                v-model="form.employee_ids"
+                                type="checkbox"
+                                :value="String(employee.id)"
+                                class="size-4"
+                            />
+                            <span>{{ employee.name }}</span>
+                            <span class="text-muted-foreground">({{ employee.employee_no }})</span>
+                        </label>
+                    </div>
+                    <InputError :message="form.errors.employee_ids" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="date">{{ t('Date') }}</Label>

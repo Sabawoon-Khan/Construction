@@ -6,9 +6,10 @@ use App\Http\Controllers\AiAnalyticsController;
 use App\Http\Controllers\AiAssistController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AttachmentController;
-use App\Http\Controllers\Auth\GoogleAuthController;
-use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\BalanceSheetController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
@@ -24,8 +25,8 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RobotsController;
-use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\SupplierController;
@@ -51,6 +52,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('reports/print', [ReportController::class, 'print'])->name('reports.print');
+
+    Route::get('balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet.index');
+    Route::get('balance-sheet/export', [BalanceSheetController::class, 'export'])->name('balance-sheet.export');
+    Route::get('balance-sheet/print', [BalanceSheetController::class, 'print'])->name('balance-sheet.print');
 
     Route::patch('{resource}/{id}/status', [StatusController::class, 'update'])
         ->whereIn('resource', ['projects', 'units', 'sales', 'payments', 'expenses', 'incomes'])

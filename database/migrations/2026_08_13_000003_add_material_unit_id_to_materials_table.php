@@ -9,9 +9,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('materials', function (Blueprint $table) {
-            $table->foreignId('material_unit_id')->nullable()->after('name')->constrained('material_units')->nullOnDelete();
-        });
+        if (! Schema::hasColumn('materials', 'material_unit_id')) {
+            Schema::table('materials', function (Blueprint $table) {
+                $table->foreignId('material_unit_id')->nullable()->after('name')->constrained('material_units')->nullOnDelete();
+            });
+        }
+
+        if (! Schema::hasColumn('materials', 'unit')) {
+            return;
+        }
 
         $now = now();
 
@@ -54,22 +60,26 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('materials', function (Blueprint $table) {
-            $table->string('unit')->default('pcs')->after('name');
-        });
-
-        DB::table('materials')
-            ->join('material_units', 'materials.material_unit_id', '=', 'material_units.id')
-            ->select('materials.id', 'material_units.unit_name')
-            ->get()
-            ->each(function ($row) {
-                DB::table('materials')->where('id', $row->id)->update([
-                    'unit' => $row->unit_name,
-                ]);
+        if (! Schema::hasColumn('materials', 'unit')) {
+            Schema::table('materials', function (Blueprint $table) {
+                $table->string('unit')->default('pcs')->after('name');
             });
+        }
 
-        Schema::table('materials', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('material_unit_id');
-        });
+        if (Schema::hasColumn('materials', 'material_unit_id')) {
+            DB::table('materials')
+                ->join('material_units', 'materials.material_unit_id', '=', 'material_units.id')
+                ->select('materials.id', 'material_units.unit_name')
+                ->get()
+                ->each(function ($row) {
+                    DB::table('materials')->where('id', $row->id)->update([
+                        'unit' => $row->unit_name,
+                    ]);
+                });
+
+            Schema::table('materials', function (Blueprint $table) {
+                $table->dropConstrainedForeignId('material_unit_id');
+            });
+        }
     }
 };

@@ -1,1 +1,0 @@
-import{at as e,gt as t,hr as n,n as r,tn as i,vr as a}from"./button-Bazp6Oio.js";import{st as o}from"./app-BAydglJ9.js";var s=t({__name:`Spinner`,props:{class:{type:[Boolean,null,String,Object,Array]}},setup(t){let s=t;return(t,c)=>(i(),e(n(o),{role:`status`,"aria-label":`Loading`,class:a(n(r)(`size-4 animate-spin`,s.class))},null,8,[`class`]))}});export{s as t};

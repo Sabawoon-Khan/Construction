@@ -64,11 +64,24 @@ class AttendanceController extends Controller implements HasMiddleware
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $this->validated($request);
+        $data = $this->validatedBulk($request);
 
-        Attendance::query()->create($data);
+        foreach ($data['employee_ids'] as $employeeId) {
+            Attendance::query()->updateOrCreate(
+                [
+                    'employee_id' => $employeeId,
+                    'date' => $data['date'],
+                ],
+                [
+                    'check_in' => $data['check_in'] ?: null,
+                    'check_out' => $data['check_out'] ?: null,
+                    'status' => $data['status'],
+                    'notes' => $data['notes'] ?: null,
+                ],
+            );
+        }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Attendance recorded.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Attendance recorded for selected employees.']);
 
         return redirect()->route('attendance.index');
     }
@@ -104,6 +117,20 @@ class AttendanceController extends Controller implements HasMiddleware
     {
         return $request->validate([
             'employee_id' => 'required|exists:employees,id',
+            'date' => 'required|date',
+            'check_in' => 'nullable|date_format:H:i',
+            'check_out' => 'nullable|date_format:H:i|after_or_equal:check_in',
+            'status' => 'required|string|in:present,absent,leave,half_day',
+            'notes' => 'nullable|string',
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function validatedBulk(Request $request): array
+    {
+        return $request->validate([
+            'employee_ids' => 'required|array|min:1',
+            'employee_ids.*' => 'required|exists:employees,id',
             'date' => 'required|date',
             'check_in' => 'nullable|date_format:H:i',
             'check_out' => 'nullable|date_format:H:i|after_or_equal:check_in',

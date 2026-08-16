@@ -12,6 +12,7 @@ import {
     LayoutGrid,
     Package,
     Receipt,
+    Scale,
     Settings,
     Shield,
     Truck,
@@ -42,6 +43,7 @@ export function useAppNavigation() {
 
         if (can('dashboard.view')) {
             overview.push(item(t('Reports'), '/reports', ChartColumn));
+            overview.push(item(t('Balance Sheet'), '/balance-sheet', Scale));
         }
 
         if (can('field_reports.view')) {
@@ -76,23 +78,29 @@ export function useAppNavigation() {
             groups.push({ label: t('Projects & Sales'), items: projectsAndSales });
         }
 
-        const finance: NavItem[] = [];
+        const purchaseAndStock: NavItem[] = [];
 
         if (can('purchases.view')) {
-            finance.push(item(t('Purchases'), '/purchases', Package));
+            purchaseAndStock.push(item(t('Purchases'), '/purchases', Package));
         }
 
         if (can('suppliers.view')) {
-            finance.push(item(t('Suppliers'), '/suppliers', Truck));
+            purchaseAndStock.push(item(t('Suppliers'), '/suppliers', Truck));
         }
 
         if (can('materials.view')) {
-            finance.push(item(t('Materials'), '/materials', Boxes));
+            purchaseAndStock.push(item(t('Materials'), '/materials', Boxes));
         }
 
         if (can('inventory.view')) {
-            finance.push(item(t('Stock'), '/inventory', Warehouse));
+            purchaseAndStock.push(item(t('Stock'), '/inventory', Warehouse));
         }
+
+        if (purchaseAndStock.length) {
+            groups.push({ label: t('Purchase & Stock'), items: purchaseAndStock });
+        }
+
+        const finance: NavItem[] = [];
 
         if (can('expenses.view')) {
             finance.push(item(t('Expenses'), '/expenses', Receipt));
