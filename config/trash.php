@@ -13,12 +13,15 @@ use App\Models\FieldReport;
 use App\Models\FileTrashEntry;
 use App\Models\Income;
 use App\Models\LookupItem;
+use App\Models\Material;
 use App\Models\OrgSetting;
 use App\Models\Partner;
 use App\Models\Project;
+use App\Models\Purchase;
 use App\Models\Role;
 use App\Models\Sale;
 use App\Models\StatusChangeLog;
+use App\Models\Supplier;
 use App\Models\SyncClientMutation;
 use App\Models\SyncDevice;
 use App\Models\UploadSession;
@@ -151,6 +154,21 @@ return [
             'model' => Customer::class,
             'label' => 'Customer',
             'title' => 'name',
+        ],
+        'suppliers' => [
+            'model' => Supplier::class,
+            'label' => 'Supplier',
+            'title' => 'name',
+        ],
+        'materials' => [
+            'model' => Material::class,
+            'label' => 'Material',
+            'title' => 'name',
+        ],
+        'purchases' => [
+            'model' => Purchase::class,
+            'label' => 'Purchase',
+            'title' => 'purchase_no',
         ],
         'partners' => [
             'model' => Partner::class,

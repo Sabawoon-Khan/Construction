@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('code')->unique();
             $table->string('name');
-            $table->string('unit')->default('pcs');
+            $table->foreignId('expense_unit_id')->nullable()->index();
             $table->decimal('minimum_stock', 18, 3)->default(0);
             $table->decimal('unit_cost', 18, 2)->default(0);
             $table->string('currency', 3)->default('USD');

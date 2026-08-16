@@ -35,7 +35,7 @@ defineOptions({
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
                     <Link href="/payments"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
-                <Heading :title="item.payment_no" :description="item.customer?.name || t('Payment details')" />
+                <Heading :title="item.payment_no" :description="item.supplier?.name || item.customer?.name || t('Payment details')" />
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <StatusBadge :status="item.status" />
@@ -61,8 +61,10 @@ defineOptions({
                     { label: t('Date'), value: formatDate(item.paid_at) },
                     { label: t('Type'), value: item.type },
                     { label: t('Customer'), value: item.customer?.name },
+                    { label: t('Supplier'), value: item.supplier?.name },
                     { label: t('Project'), value: item.project?.name },
                     { label: t('Sale'), value: item.sale?.sale_no },
+                    { label: t('Purchase'), value: item.purchase?.purchase_no },
                     { label: t('Installment #'), value: item.installment?.installment_no },
                     { label: t('Payment method'), value: item.payment_method },
                     { label: t('Reference'), value: item.reference_no },
@@ -75,16 +77,21 @@ defineOptions({
                         <Link :href="`/sales/${item.sale_id}`">{{ t('View related sale') }}</Link>
                     </Button>
                 </template>
+                <template v-else-if="item.purchase_id">
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="`/purchases/${item.purchase_id}`">{{ t('View related purchase') }}</Link>
+                    </Button>
+                </template>
             </DetailGrid>
         </div>
 
         <PrintableVoucher
-                kind="receipt"
-                :title="t('Customer Payment Receipt')"
+                :kind="item.type === 'disbursement' ? 'payment' : 'receipt'"
+                :title="item.type === 'disbursement' ? t('Supplier Payment Voucher') : t('Customer Payment Receipt')"
                 :document-no="item.payment_no"
                 :date="item.paid_at"
-                :party-label="t('Received from')"
-                :party-name="item.customer?.name"
+                :party-label="item.type === 'disbursement' ? t('Paid to') : t('Received from')"
+                :party-name="item.supplier?.name || item.customer?.name"
                 :amount="item.amount"
                 :currency="item.currency || 'USD'"
                 :payment-method="item.payment_method"
@@ -94,6 +101,7 @@ defineOptions({
                 :status="item.status"
                 :fields="[
                     { label: t('Sale'), value: item.sale?.sale_no },
+                    { label: t('Purchase'), value: item.purchase?.purchase_no },
                     { label: t('Installment'), value: item.installment?.installment_no },
                     { label: t('Voucher type'), value: item.type },
                 ]"

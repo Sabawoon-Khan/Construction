@@ -42,7 +42,7 @@ class TranslationController extends Controller
                 $locale,
                 $search,
                 max(1, $request->integer('page', 1)),
-                25,
+                50,
             ),
             'editingLocale' => $locale,
             'filters' => [

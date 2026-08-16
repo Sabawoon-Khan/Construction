@@ -14,7 +14,9 @@ class Payment extends Model
         'project_id',
         'sale_id',
         'sale_installment_id',
+        'purchase_id',
         'customer_id',
+        'supplier_id',
         'bank_account_id',
         'payment_no',
         'type',
@@ -56,6 +58,16 @@ class Payment extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function bankAccount(): BelongsTo

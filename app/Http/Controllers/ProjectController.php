@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
-use App\Models\ExpenseUnit;
+use App\Models\InventoryTransaction;
+use App\Models\Material;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
 use App\Models\Project;
+use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Unit;
 use App\Services\FinanceDefaults;
@@ -18,6 +20,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -110,6 +113,16 @@ class ProjectController extends Controller implements HasMiddleware
         $expensesTotal = (float) (clone $expensesQuery)->sum('amount');
         $salesTotal = Sale::sumTotalPrice($project->sales()->getQuery());
         $netProfit = ShareholderProfitService::netProfit(projectId: $project->id);
+        $purchasesQuery = Purchase::query()->where('project_id', $project->id);
+        $purchasesTotal = (float) (clone $purchasesQuery)->sum('total_amount');
+        $purchasesPaid = (float) (clone $purchasesQuery)->sum('paid_amount');
+        $stock = InventoryTransaction::stockLevels($project->id);
+        $stockIssues = InventoryTransaction::query()
+            ->where('project_id', $project->id)
+            ->where('type', InventoryTransaction::TYPE_ISSUE)
+            ->with('material:id,name,material_unit_id')
+            ->latest('transaction_date')
+            ->get(['id', 'material_id', 'quantity', 'transaction_date']);
 
         $shareholders = ShareholderProfitService::projectPartners($project);
 
@@ -130,6 +143,8 @@ class ProjectController extends Controller implements HasMiddleware
                 'payouts_total' => (float) PartnerDistribution::query()
                     ->where('project_id', $project->id)
                     ->sum('amount'),
+                'purchases_total' => $purchasesTotal,
+                'purchases_remaining' => max(0, $purchasesTotal - $purchasesPaid),
             ],
             'shareholders' => $shareholders,
             'available_shareholders' => Partner::query()
@@ -143,12 +158,29 @@ class ProjectController extends Controller implements HasMiddleware
                 ->limit(50)
                 ->get(['id', 'partner_id', 'amount', 'currency', 'invested_at']),
             'expenses' => $expensesQuery
-                ->with('expenseUnit:id,unit_name')
                 ->latest('expense_date')
                 ->limit(50)
-                ->get(['id', 'expense_no', 'expense_date', 'paid_to', 'description', 'amount', 'item_amount', 'per_price', 'currency', 'expense_unit_id']),
+                ->get(['id', 'expense_no', 'expense_date', 'paid_to', 'description', 'amount', 'currency', 'purchase_id']),
             'expense_categories' => $this->expenseCategories(),
-            'expense_units' => ExpenseUnit::options(),
+            'purchases' => $purchasesQuery
+                ->with('supplier:id,name')
+                ->latest('purchase_date')
+                ->limit(50)
+                ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'paid_amount', 'currency', 'status']),
+            'stock' => $stock->map(function ($row) {
+                return [
+                    'material_id' => (int) $row->material_id,
+                    'purchased' => (float) $row->purchased,
+                    'issued' => (float) $row->issued,
+                    'on_hand' => (float) $row->on_hand,
+                    'last_issue_at' => $row->last_issue_at,
+                ];
+            })->values(),
+            'stock_materials' => Material::query()
+                ->with('unit:id,unit_name')
+                ->whereIn('id', $stock->pluck('material_id')->filter()->all() ?: [0])
+                ->get(['id', 'name', 'code', 'material_unit_id']),
+            'stock_issues' => $stockIssues,
         ]);
     }
 
@@ -156,22 +188,24 @@ class ProjectController extends Controller implements HasMiddleware
     {
         $request->merge([
             'expense_category_id' => $request->filled('expense_category_id') ? $request->input('expense_category_id') : null,
-            'expense_unit_id' => $request->filled('expense_unit_id') ? $request->input('expense_unit_id') : null,
         ]);
 
         $data = $request->validate([
             'expense_date' => 'required|date',
             'paid_to' => 'required|string|max:255',
-            'item_amount' => 'required|numeric|min:0',
-            'per_price' => 'required|numeric|min:0',
-            'expense_unit_id' => 'nullable|exists:expense_units,id',
+            'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:1000',
-            'expense_category_id' => 'nullable|exists:expense_categories,id',
+            'expense_category_id' => [
+                'nullable',
+                'exists:expense_categories,id',
+                Rule::notIn(ExpenseCategory::materialIds()),
+            ],
             'reference_no' => 'nullable|string|max:100',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',
+        ], [
+            'expense_category_id.not_in' => 'Materials must be recorded as a purchase so stock and remaining balance are tracked.',
         ]);
-        $data['amount'] = FinanceDefaults::totalCost($data);
         unset($data['documents']);
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
@@ -321,8 +355,6 @@ class ProjectController extends Controller implements HasMiddleware
     /** @return Collection<int, ExpenseCategory> */
     private function expenseCategories()
     {
-        ExpenseCategory::ensureDefaults();
-
-        return ExpenseCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']);
+        return ExpenseCategory::nonMaterialOptions();
     }
 }

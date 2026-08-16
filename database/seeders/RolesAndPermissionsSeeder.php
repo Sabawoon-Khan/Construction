@@ -36,6 +36,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'customers.view',
             'expenses.view',
             'expenses.create',
+            'purchases.view',
+            'purchases.create',
+            'inventory.view',
+            'inventory.create',
+            'suppliers.view',
+            'materials.view',
             'field_reports.view',
             'field_reports.create',
             'field_reports.edit',
@@ -64,6 +70,18 @@ class RolesAndPermissionsSeeder extends Seeder
             'sales.edit',
             'payments.view',
             'vouchers.view',
+            'suppliers.view',
+            'suppliers.create',
+            'suppliers.edit',
+            'materials.view',
+            'materials.create',
+            'materials.edit',
+            'purchases.view',
+            'purchases.create',
+            'purchases.edit',
+            'inventory.view',
+            'inventory.create',
+            'inventory.edit',
         ]);
 
         $shareholder = Role::findOrCreate('Shareholder');
@@ -81,6 +99,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'units.view',
             'expenses.view',
             'expenses.create',
+            'purchases.view',
+            'inventory.view',
         ]);
 
         $user = Role::findOrCreate('User');

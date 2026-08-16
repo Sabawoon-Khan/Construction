@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Banknote, Handshake, Info, Pencil, Printer, Receipt } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { ArrowLeft, Banknote, Handshake, Info, Package, Pencil, Printer, Receipt, Warehouse } from '@lucide/vue';
+import { ref } from 'vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
@@ -43,29 +43,29 @@ defineProps<{
         paid_to?: string;
         description: string;
         amount: number;
-        item_amount?: number | null;
-        per_price?: number | null;
         currency?: string;
-        expense_unit?: { id: number; unit_name: string } | null;
+        purchase_id?: number | null;
     }[];
     expense_categories?: { id: number; name: string; code: string }[];
-    expense_units?: { id: number; unit_name: string }[];
+    purchases?: {
+        id: number;
+        purchase_no: string;
+        purchase_date: string;
+        total_amount: number;
+        paid_amount: number;
+        remaining_amount?: number;
+        currency?: string;
+        status: string;
+        supplier?: { id: number; name: string };
+    }[];
+    stock?: { material_id: number; purchased: number; issued: number; on_hand: number; last_issue_at?: string | null }[];
+    stock_materials?: { id: number; name: string; code: string; unit?: { unit_name: string } | null }[];
+    stock_issues?: { id: number; material_id: number; quantity: number; transaction_date?: string | null; material?: { id: number; name: string } | null }[];
 }>();
 
 const contributionPartnerId = ref('');
 const payoutPartnerId = ref('');
 const tab = ref('info');
-const itemAmount = ref('');
-const perPrice = ref('');
-const totalCost = computed(() => {
-    const qty = Number(itemAmount.value);
-    const price = Number(perPrice.value);
-    if (!Number.isFinite(qty) || !Number.isFinite(price)) {
-        return '';
-    }
-
-    return (qty * price).toFixed(2);
-});
 const { t } = useTranslations();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
@@ -73,6 +73,8 @@ const tabs = [
     { id: 'info', label: t('Project info'), icon: Info },
     { id: 'shareholders', label: t('Shareholders'), icon: Handshake },
     { id: 'expenses', label: t('Expenses'), icon: Receipt },
+    { id: 'purchases', label: t('Purchases'), icon: Package },
+    { id: 'stock', label: t('Stock'), icon: Warehouse },
     { id: 'sales', label: t('Sales'), icon: Banknote },
 ];
 
@@ -120,12 +122,12 @@ defineOptions({
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-rose-700">{{ money(stats.expenses_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Net profit') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.net_profit) }}</div>
+                <div class="text-sm text-muted-foreground">{{ t('Owed to suppliers') }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums text-amber-700">{{ money(stats.purchases_remaining ?? 0) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Shareholder money in (USD)') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.contributions_total, 'USD') }}</div>
+                <div class="text-sm text-muted-foreground">{{ t('Net profit') }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.net_profit) }}</div>
             </div>
         </div>
 
@@ -361,9 +363,16 @@ defineOptions({
         </div>
 
         <div v-show="tab === 'expenses'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <div class="border-b px-5 py-4">
-                <h3 class="text-sm font-semibold">{{ t('Project expenses') }}</h3>
-                <p class="text-xs text-muted-foreground">{{ t('Building costs and operating spend for this project only.') }}</p>
+            <div class="flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4">
+                <div>
+                    <h3 class="text-sm font-semibold">{{ t('Project expenses') }}</h3>
+                    <p class="text-xs text-muted-foreground">{{ t('Labor, transport, salaries, and other project spend — not materials. Materials go through Purchases so stock and remaining balance are tracked.') }}</p>
+                </div>
+                <Can permission="purchases.create">
+                    <Button as-child size="sm" variant="outline">
+                        <Link :href="`/purchases/create?project_id=${item.id}`">{{ t('Buying materials? Record a purchase') }}</Link>
+                    </Button>
+                </Can>
             </div>
 
             <Form
@@ -374,35 +383,17 @@ defineOptions({
             >
                 <div class="grid gap-2 sm:col-span-2">
                     <Label for="description">{{ t('Description') }}</Label>
-                    <Input id="description" name="description" required :placeholder="t('What was this expense for?')" />
+                    <Input id="description" name="description" required :placeholder="t('e.g. site labor, transport, salary')" />
                     <InputError :message="errors.description" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="expense_unit_id">{{ t('Unit') }}</Label>
-                    <select id="expense_unit_id" name="expense_unit_id" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
-                        <option value="">{{ t('Select unit') }}</option>
-                        <option v-for="u in expense_units || []" :key="u.id" :value="u.id">{{ u.unit_name }}</option>
-                    </select>
-                    <Link href="/expense-units" class="text-xs text-muted-foreground hover:underline">{{ t('Manage units') }}</Link>
-                </div>
-                <div class="grid gap-2">
-                    <Label for="item_amount">{{ t('Item amount') }}</Label>
-                    <Input id="item_amount" name="item_amount" type="number" step="0.01" min="0" required v-model="itemAmount" />
-                    <InputError :message="errors.item_amount" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="per_price">{{ t('Per price') }}</Label>
-                    <Input id="per_price" name="per_price" type="number" step="0.01" min="0" required v-model="perPrice" />
-                    <InputError :message="errors.per_price" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="amount">{{ t('Total cost') }}</Label>
-                    <Input id="amount" type="number" step="0.01" readonly :model-value="totalCost" class="bg-muted/40" />
+                    <Label for="amount">{{ t('Amount') }}</Label>
+                    <Input id="amount" name="amount" type="number" step="0.01" min="0.01" required />
                     <InputError :message="errors.amount" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="paid_to">{{ t('Paid to') }}</Label>
-                    <Input id="paid_to" name="paid_to" required />
+                    <Input id="paid_to" name="paid_to" required :placeholder="t('Worker, contractor, or payee')" />
                     <InputError :message="errors.paid_to" />
                 </div>
                 <div class="grid gap-2">
@@ -451,10 +442,7 @@ defineOptions({
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Item amount') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Per price') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
                             <th class="px-4 py-3 font-medium text-right">{{ t('Voucher') }}</th>
                         </tr>
                     </thead>
@@ -462,10 +450,10 @@ defineOptions({
                         <tr v-for="expense in expenses" :key="expense.id" class="border-t hover:bg-muted/30">
                             <td class="px-4 py-3">{{ formatDate(expense.expense_date) }}</td>
                             <td class="px-4 py-3">{{ expense.paid_to || '—' }}</td>
-                            <td class="px-4 py-3">{{ expense.description || '—' }}</td>
-                            <td class="px-4 py-3">{{ expense.expense_unit?.unit_name || '—' }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ expense.item_amount ?? '—' }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ expense.per_price != null ? money(expense.per_price, expense.currency || 'USD') : '—' }}</td>
+                            <td class="px-4 py-3">
+                                {{ expense.description || '—' }}
+                                <span v-if="expense.purchase_id" class="ml-1 text-xs text-muted-foreground">{{ t('(from purchase)') }}</span>
+                            </td>
                             <td class="px-4 py-3 tabular-nums">{{ money(expense.amount, expense.currency || 'USD') }}</td>
                             <td class="px-4 py-3 text-right">
                                 <Button as-child variant="ghost" size="sm">
@@ -474,11 +462,150 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!expenses.length">
-                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">{{ t('No expenses yet') }}</td>
+                            <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No expenses yet') }}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <div v-show="tab === 'purchases'" class="overflow-hidden rounded-xl border bg-card shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4">
+                <div>
+                    <h3 class="text-sm font-semibold">{{ t('Project purchases') }}</h3>
+                    <p class="text-xs text-muted-foreground">{{ t('Full amount is already in project expenses. Remaining is what you still owe the supplier.') }}</p>
+                </div>
+                <Can permission="purchases.create">
+                    <Button as-child size="sm">
+                        <Link :href="`/purchases/create?project_id=${item.id}`">{{ t('New purchase') }}</Link>
+                    </Button>
+                </Can>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-muted/40 text-left text-muted-foreground">
+                        <tr>
+                            <th class="px-4 py-3 font-medium">{{ t('Purchase') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Supplier') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Total') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Remaining') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="purchase in purchases || []" :key="purchase.id" class="border-t hover:bg-muted/30">
+                            <td class="px-4 py-3">
+                                <Link :href="`/purchases/${purchase.id}`" class="font-medium text-primary hover:underline">{{ purchase.purchase_no }}</Link>
+                            </td>
+                            <td class="px-4 py-3">{{ formatDate(purchase.purchase_date) }}</td>
+                            <td class="px-4 py-3">{{ purchase.supplier?.name || '—' }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(purchase.total_amount, purchase.currency || 'USD') }}</td>
+                            <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(purchase.remaining_amount ?? Math.max(0, Number(purchase.total_amount) - Number(purchase.paid_amount)), purchase.currency || 'USD') }}</td>
+                            <td class="px-4 py-3"><StatusBadge :status="purchase.status" /></td>
+                        </tr>
+                        <tr v-if="!(purchases || []).length">
+                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No purchases yet') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div v-show="tab === 'stock'" class="space-y-4">
+            <Form
+                action="/inventory"
+                method="post"
+                class="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-4"
+                v-slot="{ errors, processing }"
+            >
+                <input type="hidden" name="project_id" :value="item.id" />
+                <input type="hidden" name="redirect_to" :value="`/projects/${item.id}`" />
+                <div class="grid gap-2 sm:col-span-2">
+                    <Label>{{ t('Material') }}</Label>
+                    <select name="material_id" required class="h-9 rounded-md border px-3 text-sm">
+                        <option value="">{{ t('Select material') }}</option>
+                        <option
+                            v-for="row in (stock || []).filter((s) => s.on_hand > 0)"
+                            :key="row.material_id"
+                            :value="row.material_id"
+                        >
+                            {{ stock_materials?.find((m) => m.id === row.material_id)?.name || row.material_id }}
+                            ({{ t('on hand') }} {{ row.on_hand }})
+                        </option>
+                    </select>
+                    <InputError :message="errors.material_id" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>{{ t('Qty to issue') }}</Label>
+                    <Input name="quantity" type="number" step="0.001" min="0.001" required />
+                    <InputError :message="errors.quantity" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>{{ t('Date') }}</Label>
+                    <Input name="transaction_date" type="date" :default-value="new Date().toISOString().slice(0, 10)" />
+                </div>
+                <div class="sm:col-span-4">
+                    <Can permission="inventory.create">
+                        <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Issue from stock') }}</Button>
+                    </Can>
+                </div>
+            </Form>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+                <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+                    <div class="border-b px-5 py-4">
+                        <h3 class="text-sm font-semibold">{{ t('Stock on hand') }}</h3>
+                        <p class="text-xs text-muted-foreground">{{ t('Current quantity available for each material.') }}</p>
+                    </div>
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-muted/40 text-left text-muted-foreground">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">{{ t('Material') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('On hand') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in stock || []" :key="`onhand-${row.material_id}`" class="border-t">
+                                <td class="px-4 py-3">{{ stock_materials?.find((m) => m.id === row.material_id)?.name || '—' }}</td>
+                                <td class="px-4 py-3">{{ stock_materials?.find((m) => m.id === row.material_id)?.unit?.unit_name || '—' }}</td>
+                                <td class="px-4 py-3 tabular-nums font-medium">{{ row.on_hand }}</td>
+                            </tr>
+                            <tr v-if="!(stock || []).length">
+                                <td colspan="3" class="px-4 py-10 text-center text-muted-foreground">{{ t('No stock yet') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+                    <div class="border-b px-5 py-4">
+                        <h3 class="text-sm font-semibold">{{ t('Stock issue dates') }}</h3>
+                        <p class="text-xs text-muted-foreground">{{ t('All stock issue entries with their dates.') }}</p>
+                    </div>
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-muted/40 text-left text-muted-foreground">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">{{ t('Material') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Issued qty') }}</th>
+                                <th class="px-4 py-3 font-medium">{{ t('Issue date') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="issue in stock_issues || []" :key="`issued-${issue.id}`" class="border-t">
+                                <td class="px-4 py-3">{{ issue.material?.name || stock_materials?.find((m) => m.id === issue.material_id)?.name || '—' }}</td>
+                                <td class="px-4 py-3 tabular-nums">{{ issue.quantity }}</td>
+                                <td class="px-4 py-3">{{ issue.transaction_date ? formatDate(issue.transaction_date) : '—' }}</td>
+                            </tr>
+                            <tr v-if="!(stock_issues || []).length">
+                                <td colspan="3" class="px-4 py-10 text-center text-muted-foreground">{{ t('No issue dates yet') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
+

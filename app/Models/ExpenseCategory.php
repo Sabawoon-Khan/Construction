@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class ExpenseCategory extends Model
 {
@@ -70,5 +71,30 @@ class ExpenseCategory extends Model
             ->whereIn('code', ['salaries', 'salary', 'payroll'])
             ->pluck('id')
             ->all();
+    }
+
+    /** @return list<int> */
+    public static function materialIds(): array
+    {
+        self::ensureDefaults();
+
+        return self::query()
+            ->whereIn('code', ['materials', 'material'])
+            ->pluck('id')
+            ->all();
+    }
+
+    /** @return Collection<int, ExpenseCategory> */
+    public static function nonMaterialOptions()
+    {
+        self::ensureDefaults();
+
+        $ids = self::materialIds();
+
+        return self::query()
+            ->where('is_active', true)
+            ->when($ids !== [], fn ($q) => $q->whereNotIn('id', $ids))
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
     }
 }

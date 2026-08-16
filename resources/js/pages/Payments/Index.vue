@@ -18,7 +18,7 @@ import { money } from '@/lib/utils';
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; amount: number; this_month: number; cash: number };
+    totals: { count: number; amount: number; paid_out?: number; this_month: number; cash: number };
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
@@ -47,19 +47,20 @@ function rowActions(item: any): RowActionItem[] {
     <Head :title="t('Payments')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading :title="t('Payments')" :description="t('Receipts created when you collect money on a sale. Open a sale to receive a payment.')" />
+            <Heading :title="t('Payments')" :description="t('Money in from sales and money out to suppliers.')" />
             <div class="flex flex-wrap gap-2">
                 <Input v-model="search" :placeholder="t('Search...')" @keyup.enter="apply" />
                 <Button variant="secondary" @click="apply">{{ t('Search') }}</Button>
                 <Button as-child variant="outline"><Link href="/sales">{{ t('Go to sales') }}</Link></Button>
+                <Button as-child variant="outline"><Link href="/purchases">{{ t('Go to purchases') }}</Link></Button>
             </div>
         </div>
 
         <MisStatGrid :columns="4">
-            <MisStatCard :label="t('Receipts')" :value="totals.count" :hint="t('Collected payments')" />
-            <MisStatCard :label="t('Total collected')" :value="money(totals.amount)" tone="success" />
+            <MisStatCard :label="t('Entries')" :value="totals.count" />
+            <MisStatCard :label="t('Collected')" :value="money(totals.amount)" tone="success" />
+            <MisStatCard :label="t('Paid to suppliers')" :value="money(totals.paid_out ?? 0)" tone="danger" />
             <MisStatCard :label="t('This month')" :value="money(totals.this_month)" />
-            <MisStatCard :label="t('Cash')" :value="money(totals.cash)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -69,8 +70,9 @@ function rowActions(item: any): RowActionItem[] {
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Customer') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Type') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Party') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Linked') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Method') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
@@ -83,8 +85,9 @@ function rowActions(item: any): RowActionItem[] {
                                 <Link :href="`/payments/${item.id}`" class="hover:text-primary hover:underline">{{ item.payment_no }}</Link>
                             </td>
                             <td class="px-4 py-3">{{ formatDate(item.paid_at) }}</td>
-                            <td class="px-4 py-3">{{ item.customer?.name || '—' }}</td>
-                            <td class="px-4 py-3">{{ item.sale?.sale_no || '—' }}</td>
+                            <td class="px-4 py-3 capitalize">{{ item.type === 'disbursement' ? t('Paid out') : t('Receipt') }}</td>
+                            <td class="px-4 py-3">{{ item.supplier?.name || item.customer?.name || '—' }}</td>
+                            <td class="px-4 py-3">{{ item.purchase?.purchase_no || item.sale?.sale_no || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount) }}</td>
                             <td class="px-4 py-3 capitalize">{{ item.payment_method }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
@@ -94,7 +97,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No receipts yet')" :description="t('Payments appear here when collected on a sale.')" />
+                        <EmptyState v-if="!items.data.length" :colspan="9" :title="t('No payments yet')" :description="t('Receipts from sales and payments to suppliers appear here.')" />
                     </tbody>
                 </table>
             </div>

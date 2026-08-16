@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { Languages, Loader2, Plus } from '@lucide/vue';
+import { Head, useForm } from '@inertiajs/vue3';
+import { Languages, Loader2, Search } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
-import {
-    MisPagination,
-    MisSearchInput,
-    MisSegmentedControl,
-} from '@/components/mis';
+import MisPagination from '@/components/MisPagination.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -15,27 +11,10 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useLocale } from '@/composables/useLocale';
 import { useTranslations } from '@/composables/useTranslations';
 import type { Paginated } from '@/lib/format';
-import type { TextDirection } from '@/types/locale';
 
 interface TranslationEntry {
     key: string;
@@ -43,11 +22,13 @@ interface TranslationEntry {
     missing: boolean;
 }
 
-const props = defineProps<{
+interface Props {
     entries: Paginated<TranslationEntry>;
     editingLocale: string;
     filters: { search?: string | null; locale: string };
-}>();
+}
+
+const props = defineProps<Props>();
 
 const { t } = useTranslations();
 const { locales } = useLocale();
@@ -80,13 +61,6 @@ const syncFormValues = (): void => {
 
 watch(() => props.entries, syncFormValues, { immediate: true, deep: true });
 
-const editingDir = computed<TextDirection>(() => {
-    return (
-        locales.value.find((item) => item.code === props.editingLocale)?.dir ??
-        'ltr'
-    );
-});
-
 const localeTabHref = (code: string): string => {
     const params = new URLSearchParams();
 
@@ -96,21 +70,10 @@ const localeTabHref = (code: string): string => {
 
     params.set('locale', code);
 
-    return `/settings/translations?${params.toString()}`;
+    const query = params.toString();
+
+    return query ? `/settings/translations?${query}` : '/settings/translations';
 };
-
-const localeSegments = computed(() =>
-    locales.value.map((option) => ({
-        id: option.code,
-        label: option.native,
-        href: localeTabHref(option.code),
-    })),
-);
-
-const editingLocaleModel = computed({
-    get: () => props.editingLocale,
-    set: () => undefined,
-});
 
 const saveTranslations = (): void => {
     form.locale = props.editingLocale;
@@ -118,63 +81,9 @@ const saveTranslations = (): void => {
     form.put('/settings/translations', { preserveScroll: true });
 };
 
-const search = ref(props.filters.search ?? '');
-
-const submitSearch = (): void => {
-    router.get(
-        '/settings/translations',
-        {
-            locale: props.editingLocale,
-            search: search.value || undefined,
-        },
-        { preserveState: true, replace: true },
-    );
-};
-
-const addOpen = ref(false);
-
-const addForm = useForm({
-    code: '',
-    name: '',
-    native: '',
-    dir: 'ltr' as TextDirection,
-    from: 'en',
-});
-
-const openAddLanguage = (): void => {
-    addForm.reset();
-    addForm.clearErrors();
-    addForm.code = '';
-    addForm.name = '';
-    addForm.native = '';
-    addForm.dir = 'ltr';
-    addForm.from = 'en';
-    addOpen.value = true;
-};
-
-const submitAddLanguage = (): void => {
-    addForm.code = addForm.code.trim().toLowerCase();
-    addForm
-        .transform((data) => ({
-            ...data,
-            code: data.code.trim().toLowerCase(),
-        }))
-        .post('/settings/translations', {
-            preserveScroll: true,
-            onSuccess: () => {
-                addOpen.value = false;
-                addForm.reset();
-            },
-        });
-};
-
-const setAddDir = (value: string | number | bigint | Record<string, never> | null): void => {
-    addForm.dir = value === 'rtl' ? 'rtl' : 'ltr';
-};
-
-const setAddFrom = (value: string | number | bigint | Record<string, never> | null): void => {
-    addForm.from = String(value ?? 'en');
-};
+const hasSearch = computed(
+    () => (props.filters.search?.trim().length ?? 0) > 0,
+);
 </script>
 
 <template>
@@ -182,237 +91,146 @@ const setAddFrom = (value: string | number | bigint | Record<string, never> | nu
 
     <Card>
         <CardHeader class="space-y-4 border-b pb-4">
-            <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
-            >
-                <div class="flex flex-col gap-1">
-                    <CardTitle class="flex items-center gap-2 text-base">
-                        <Languages class="size-4" />
-                        {{ t('Translations') }}
-                    </CardTitle>
-                    <CardDescription class="text-xs">
-                        {{
-                            t(
-                                'Edit application translations. Keys cannot be changed.',
-                            )
-                        }}
-                    </CardDescription>
-                </div>
-
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    class="shrink-0"
-                    @click="openAddLanguage"
-                >
-                    <Plus class="size-4" />
-                    {{ t('Add language') }}
-                </Button>
+            <div class="flex flex-col gap-1">
+                <CardTitle class="flex items-center gap-2 text-base">
+                    <Languages class="size-4" />
+                    {{ t('Translations') }}
+                </CardTitle>
+                <CardDescription class="text-xs">
+                    {{ t('Edit application translations. Keys cannot be changed.') }}
+                </CardDescription>
             </div>
 
-            <div
-                class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <MisSegmentedControl
-                    v-model="editingLocaleModel"
-                    :items="localeSegments"
-                />
-
-                <form
-                    class="flex-1 sm:max-w-xs"
-                    @submit.prevent="submitSearch"
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                    class="inline-flex w-fit gap-0.5 rounded-md bg-muted p-0.5"
                 >
-                    <MisSearchInput
-                        v-model="search"
-                        :placeholder="t('Search')"
-                        :aria-label="t('Search')"
-                    />
-                </form>
+                    <a
+                        v-for="option in locales"
+                        :key="option.code"
+                        :href="localeTabHref(option.code)"
+                        :class="[
+                            'rounded px-2.5 py-1 text-xs font-medium transition-colors',
+                            editingLocale === option.code
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground',
+                        ]"
+                    >
+                        {{ option.native }}
+                    </a>
+                </div>
+
+                <div class="flex flex-1 items-center gap-2 sm:max-w-md sm:justify-end">
+                    <form
+                        method="get"
+                        action="/settings/translations"
+                        class="relative min-w-0 flex-1"
+                    >
+                        <input type="hidden" name="locale" :value="editingLocale" />
+                        <Search
+                            class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+                        />
+                        <Input
+                            name="search"
+                            :default-value="filters.search ?? ''"
+                            :placeholder="t('Search translations...')"
+                            :aria-label="t('Search translations...')"
+                            class="h-8 pl-8 text-sm"
+                        />
+                    </form>
+
+                    <Button
+                        type="button"
+                        size="sm"
+                        class="shrink-0 gap-1.5"
+                        :disabled="!hasSearch || form.processing || entries.data.length === 0"
+                        @click="saveTranslations"
+                    >
+                        <Loader2
+                            v-if="form.processing"
+                            class="size-3.5 animate-spin"
+                        />
+                        {{ t('Save') }}
+                    </Button>
+                </div>
             </div>
         </CardHeader>
 
-        <CardContent class="space-y-4 pt-4">
+        <CardContent class="p-0">
             <div
-                v-for="entry in entries.data"
-                :key="entry.key"
-                class="grid gap-2 border-b pb-3 last:border-0 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] sm:items-start"
+                v-if="!hasSearch"
+                class="px-6 py-12 text-center text-sm text-muted-foreground"
             >
-                <div>
-                    <p class="font-mono text-xs break-all text-muted-foreground">
-                        {{ entry.key }}
-                    </p>
-                    <p
-                        v-if="entry.missing"
-                        class="text-xs text-amber-600 dark:text-amber-400"
-                    >
-                        {{ t('Missing translation') }}
-                    </p>
-                </div>
-                <Input
-                    v-model="formValues[entry.key]"
-                    class="text-sm"
-                    :dir="editingDir"
-                />
+                {{ t('Search to load translations.') }}
             </div>
 
-            <div class="flex items-center justify-between gap-3 pt-2">
-                <MisPagination :pagination="entries" />
-                <Button
-                    type="button"
-                    :disabled="form.processing"
-                    @click="saveTranslations"
-                >
-                    <Loader2
-                        v-if="form.processing"
-                        class="size-4 animate-spin"
-                    />
-                    {{ t('Save') }}
-                </Button>
+            <div
+                v-else-if="entries.data.length === 0"
+                class="px-6 py-12 text-center text-sm text-muted-foreground"
+            >
+                {{ t('No translations found.') }}
             </div>
+
+            <form v-else @submit.prevent="saveTranslations">
+                <div class="overflow-x-auto">
+                    <table class="w-full table-fixed text-xs sm:text-sm">
+                        <thead>
+                            <tr class="border-b bg-muted/30 text-left text-xs text-muted-foreground">
+                                <th class="w-[36%] px-3 py-1.5 font-medium sm:w-[34%]">
+                                    {{ t('Key') }}
+                                </th>
+                                <th class="px-3 py-1.5 font-medium">
+                                    {{ t('Translation') }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="(entry, index) in entries.data"
+                                :key="entry.key"
+                                class="border-b last:border-b-0 hover:bg-muted/10"
+                            >
+                                <td class="px-3 py-1 align-middle">
+                                    <div class="flex items-center gap-2 min-w-0">
+                                        <span
+                                            v-if="entry.missing"
+                                            class="size-1.5 shrink-0 rounded-full bg-amber-500"
+                                            :title="t('Missing translation')"
+                                        />
+                                        <span
+                                            class="truncate text-xs text-muted-foreground"
+                                            :title="entry.key"
+                                        >
+                                            {{ entry.key }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="px-3 py-0.5 align-middle">
+                                    <Input
+                                        :id="`translation-${index}`"
+                                        v-model="formValues[entry.key]"
+                                        class="h-7 border-transparent bg-transparent px-2 text-xs shadow-none focus-visible:border-input focus-visible:bg-background sm:text-sm"
+                                    />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p
+                    v-if="form.errors.translations"
+                    class="border-t px-4 py-2 text-xs text-destructive"
+                >
+                    {{ form.errors.translations }}
+                </p>
+
+                <div
+                    v-if="entries.meta && entries.meta.last_page > 1"
+                    class="border-t px-4 py-3"
+                >
+                    <MisPagination :pagination="entries" />
+                </div>
+            </form>
         </CardContent>
     </Card>
-
-    <Dialog :open="addOpen" @update:open="(v) => (addOpen = v)">
-        <DialogContent class="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>{{ t('Add language') }}</DialogTitle>
-                <DialogDescription>
-                    {{
-                        t(
-                            'Create a new language by copying translations from an existing one. Choose RTL for right-to-left scripts.',
-                        )
-                    }}
-                </DialogDescription>
-            </DialogHeader>
-
-            <form class="space-y-4" @submit.prevent="submitAddLanguage">
-                <div class="space-y-2">
-                    <Label for="locale-code">{{ t('Language code') }}</Label>
-                    <Input
-                        id="locale-code"
-                        v-model="addForm.code"
-                        placeholder="ur"
-                        class="font-mono lowercase"
-                        autocomplete="off"
-                    />
-                    <p class="text-xs text-muted-foreground">
-                        {{ t('Use a short code like ur, fr, or tr.') }}
-                    </p>
-                    <p
-                        v-if="addForm.errors.code"
-                        class="text-xs text-destructive"
-                    >
-                        {{ addForm.errors.code }}
-                    </p>
-                </div>
-
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="space-y-2">
-                        <Label for="locale-name">{{ t('English name') }}</Label>
-                        <Input
-                            id="locale-name"
-                            v-model="addForm.name"
-                            placeholder="Urdu"
-                        />
-                        <p
-                            v-if="addForm.errors.name"
-                            class="text-xs text-destructive"
-                        >
-                            {{ addForm.errors.name }}
-                        </p>
-                    </div>
-                    <div class="space-y-2">
-                        <Label for="locale-native">{{ t('Native name') }}</Label>
-                        <Input
-                            id="locale-native"
-                            v-model="addForm.native"
-                            placeholder="اردو"
-                            :dir="addForm.dir"
-                        />
-                        <p
-                            v-if="addForm.errors.native"
-                            class="text-xs text-destructive"
-                        >
-                            {{ addForm.errors.native }}
-                        </p>
-                    </div>
-                </div>
-
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="space-y-2">
-                        <Label>{{ t('Text direction') }}</Label>
-                        <Select
-                            :model-value="addForm.dir"
-                            @update:model-value="setAddDir"
-                        >
-                            <SelectTrigger class="w-full">
-                                <SelectValue
-                                    :placeholder="t('Text direction')"
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="ltr">
-                                    {{ t('Left to right') }} (LTR)
-                                </SelectItem>
-                                <SelectItem value="rtl">
-                                    {{ t('Right to left') }} (RTL)
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p
-                            v-if="addForm.errors.dir"
-                            class="text-xs text-destructive"
-                        >
-                            {{ addForm.errors.dir }}
-                        </p>
-                    </div>
-
-                    <div class="space-y-2">
-                        <Label>{{ t('Copy from') }}</Label>
-                        <Select
-                            :model-value="addForm.from"
-                            @update:model-value="setAddFrom"
-                        >
-                            <SelectTrigger class="w-full">
-                                <SelectValue :placeholder="t('Copy from')" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="option in locales"
-                                    :key="option.code"
-                                    :value="option.code"
-                                >
-                                    {{ option.native }} ({{ option.code }})
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <p
-                            v-if="addForm.errors.from"
-                            class="text-xs text-destructive"
-                        >
-                            {{ addForm.errors.from }}
-                        </p>
-                    </div>
-                </div>
-
-                <DialogFooter>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        @click="addOpen = false"
-                    >
-                        {{ t('Cancel') }}
-                    </Button>
-                    <Button type="submit" :disabled="addForm.processing">
-                        <Loader2
-                            v-if="addForm.processing"
-                            class="size-4 animate-spin"
-                        />
-                        {{ t('Add language') }}
-                    </Button>
-                </DialogFooter>
-            </form>
-        </DialogContent>
-    </Dialog>
 </template>

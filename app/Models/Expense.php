@@ -16,6 +16,7 @@ class Expense extends Model
 
     protected $fillable = [
         'project_id',
+        'purchase_id',
         'expense_category_id',
         'expense_unit_id',
         'expense_no',
@@ -47,6 +48,16 @@ class Expense extends Model
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
+    }
+
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
+    }
+
+    public function isPurchaseLinked(): bool
+    {
+        return $this->purchase_id !== null;
     }
 
     public function category(): BelongsTo

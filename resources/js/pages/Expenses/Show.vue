@@ -72,13 +72,20 @@ defineOptions({
                     { label: t('Date'), value: formatDate(item.expense_date) },
                     { label: t('Paid to'), value: item.paid_to || '—' },
                     { label: t('Project'), value: item.project?.name || t('Company-wide') },
+                    { label: t('Purchase'), value: item.purchase?.purchase_no || '—' },
                     { label: t('Unit'), value: item.expense_unit?.unit_name || '—' },
                     { label: t('Item amount'), value: item.item_amount ?? '—' },
                     { label: t('Per price'), value: item.per_price != null ? money(item.per_price, item.currency || 'USD') : '—' },
                     { label: t('Reference'), value: item.reference_no || '—' },
                     { label: t('Description'), value: item.description, span: true },
                 ]"
-            />
+            >
+                <template v-if="item.purchase_id">
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="`/purchases/${item.purchase_id}`">{{ t('View purchase') }}</Link>
+                    </Button>
+                </template>
+            </DetailGrid>
         </div>
 
         <div class="space-y-3 rounded-xl border bg-card p-5 shadow-sm print:hidden sm:max-w-xl">

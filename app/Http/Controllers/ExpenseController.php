@@ -74,7 +74,7 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function show(Expense $expense): Response
     {
-        $expense->load(['project:id,name', 'expenseUnit:id,unit_name', 'attachments']);
+        $expense->load(['project:id,name', 'expenseUnit:id,unit_name', 'attachments', 'purchase:id,purchase_no']);
 
         return Inertia::render('Expenses/Show', [
             'item' => $expense,
@@ -83,6 +83,10 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function edit(Request $request, Expense $expense): Response|RedirectResponse
     {
+        if ($expense->purchase_id) {
+            return redirect()->route('purchases.show', $expense->purchase_id);
+        }
+
         if ($expense->project_id) {
             return redirect()->route('projects.show', $expense->project_id);
         }
@@ -98,6 +102,12 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function update(Request $request, Expense $expense): RedirectResponse
     {
+        if ($expense->purchase_id) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Edit this through the purchase, not as a standalone expense.']);
+
+            return redirect()->route('purchases.show', $expense->purchase_id);
+        }
+
         if ($expense->project_id) {
             return redirect()->route('projects.show', $expense->project_id);
         }
@@ -121,6 +131,12 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function destroy(Request $request, Expense $expense): RedirectResponse
     {
+        if ($expense->purchase_id) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Delete the purchase instead. That also removes this expense.']);
+
+            return redirect()->route('purchases.show', $expense->purchase_id);
+        }
+
         $projectId = $expense->project_id;
         $expense->delete();
 

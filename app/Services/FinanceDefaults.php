@@ -61,13 +61,16 @@ class FinanceDefaults
             'expense_unit_id' => $data['expense_unit_id'] ?? null,
             'item_amount' => $data['item_amount'] ?? null,
             'per_price' => $data['per_price'] ?? null,
-            'amount' => self::totalCost($data),
+            'amount' => isset($data['amount'])
+                ? round((float) $data['amount'], 2)
+                : self::totalCost($data),
             'description' => $data['description'] ?? null,
             'reference_no' => $data['reference_no'] ?? null,
             'expense_no' => 'EXP-'.Str::upper(Str::random(8)),
             'currency' => 'USD',
             'payment_method' => 'cash',
             'status' => 'approved',
+            'purchase_id' => $data['purchase_id'] ?? null,
         ];
     }
 

@@ -83,6 +83,18 @@ return [
         'partners' => [
             'extra' => [],
         ],
+        'suppliers' => [
+            'extra' => [],
+        ],
+        'materials' => [
+            'extra' => [],
+        ],
+        'purchases' => [
+            'extra' => [],
+        ],
+        'inventory' => [
+            'extra' => [],
+        ],
         'expenses' => [
             'extra' => [],
         ],

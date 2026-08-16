@@ -1,5 +1,6 @@
 import {
     Banknote,
+    Boxes,
     Building2,
     ChartColumn,
     CircleDollarSign,
@@ -8,10 +9,13 @@ import {
     FolderKanban,
     Handshake,
     LayoutGrid,
+    Package,
     Receipt,
     Settings,
     Shield,
+    Truck,
     Users,
+    Warehouse,
     WalletCards,
 } from '@lucide/vue';
 import { computed } from 'vue';
@@ -72,6 +76,22 @@ export function useAppNavigation() {
         }
 
         const finance: NavItem[] = [];
+
+        if (can('purchases.view')) {
+            finance.push(item(t('Purchases'), '/purchases', Package));
+        }
+
+        if (can('suppliers.view')) {
+            finance.push(item(t('Suppliers'), '/suppliers', Truck));
+        }
+
+        if (can('materials.view')) {
+            finance.push(item(t('Materials'), '/materials', Boxes));
+        }
+
+        if (can('inventory.view')) {
+            finance.push(item(t('Stock'), '/inventory', Warehouse));
+        }
 
         if (can('expenses.view')) {
             finance.push(item(t('Expenses'), '/expenses', Receipt));

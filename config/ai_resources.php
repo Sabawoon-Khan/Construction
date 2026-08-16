@@ -7,11 +7,14 @@ use App\Models\FieldNote;
 use App\Models\FieldReport;
 use App\Models\Income;
 use App\Models\LookupItem;
+use App\Models\Material;
 use App\Models\Partner;
 use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Purchase;
 use App\Models\Role;
 use App\Models\Sale;
+use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
 
@@ -344,6 +347,93 @@ return [
                 'email' => ['sometimes', 'nullable', 'email', 'max:255'],
                 'national_id' => ['sometimes', 'nullable', 'string', 'max:50'],
                 'address' => ['sometimes', 'nullable', 'string'],
+                'notes' => ['sometimes', 'nullable', 'string'],
+            ],
+        ],
+        'sensitive' => [],
+    ],
+
+    'suppliers' => [
+        'label' => 'Suppliers',
+        'model' => Supplier::class,
+        'permission' => 'suppliers',
+        'index_route' => 'suppliers.index',
+        'edit_route' => 'suppliers.edit',
+        'user_scoped' => false,
+        'search' => ['supplier_no', 'name', 'phone', 'email'],
+        'default_order' => ['id', 'desc'],
+        'display' => ['id', 'supplier_no', 'name', 'phone'],
+        'title_attribute' => 'name',
+        'fillable' => ['supplier_no', 'name', 'contact_person', 'phone', 'email', 'address', 'notes'],
+        'rules' => [
+            'create' => [
+                'name' => ['required', 'string', 'max:255'],
+                'contact_person' => ['nullable', 'string', 'max:255'],
+                'phone' => ['nullable', 'string', 'max:50'],
+                'email' => ['nullable', 'email', 'max:255'],
+                'address' => ['nullable', 'string'],
+                'notes' => ['nullable', 'string'],
+            ],
+            'update' => [
+                'name' => ['sometimes', 'string', 'max:255'],
+                'contact_person' => ['sometimes', 'nullable', 'string', 'max:255'],
+                'phone' => ['sometimes', 'nullable', 'string', 'max:50'],
+                'email' => ['sometimes', 'nullable', 'email', 'max:255'],
+                'address' => ['sometimes', 'nullable', 'string'],
+                'notes' => ['sometimes', 'nullable', 'string'],
+            ],
+        ],
+        'sensitive' => [],
+    ],
+
+    'materials' => [
+        'label' => 'Materials',
+        'model' => Material::class,
+        'permission' => 'materials',
+        'index_route' => 'materials.index',
+        'edit_route' => 'materials.edit',
+        'user_scoped' => false,
+        'search' => ['code', 'name'],
+        'default_order' => ['name', 'asc'],
+        'display' => ['id', 'code', 'name', 'unit_cost'],
+        'title_attribute' => 'name',
+        'fillable' => ['code', 'name', 'minimum_stock', 'unit_cost', 'is_active'],
+        'rules' => [
+            'create' => [
+                'name' => ['required', 'string', 'max:255'],
+                'minimum_stock' => ['nullable', 'numeric', 'min:0'],
+                'unit_cost' => ['nullable', 'numeric', 'min:0'],
+            ],
+            'update' => [
+                'name' => ['sometimes', 'string', 'max:255'],
+                'minimum_stock' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+                'unit_cost' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            ],
+        ],
+        'sensitive' => [],
+    ],
+
+    'purchases' => [
+        'label' => 'Purchases',
+        'model' => Purchase::class,
+        'permission' => 'purchases',
+        'index_route' => 'purchases.index',
+        'edit_route' => 'purchases.edit',
+        'user_scoped' => false,
+        'search' => ['purchase_no', 'reference_no', 'status'],
+        'default_order' => ['id', 'desc'],
+        'display' => ['id', 'purchase_no', 'project_id', 'supplier_id', 'total_amount', 'paid_amount', 'status'],
+        'title_attribute' => 'purchase_no',
+        'fillable' => ['project_id', 'supplier_id', 'purchase_date', 'reference_no', 'notes'],
+        'rules' => [
+            'create' => [
+                'project_id' => ['required', 'integer', 'exists:projects,id'],
+                'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
+                'purchase_date' => ['required', 'date'],
+            ],
+            'update' => [
+                'purchase_date' => ['sometimes', 'date'],
+                'reference_no' => ['sometimes', 'nullable', 'string', 'max:100'],
                 'notes' => ['sometimes', 'nullable', 'string'],
             ],
         ],
