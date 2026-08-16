@@ -5,6 +5,7 @@ import {
     ChartColumn,
     CircleDollarSign,
     ClipboardList,
+    Clock,
     DatabaseBackup,
     FolderKanban,
     Handshake,
@@ -108,6 +109,24 @@ export function useAppNavigation() {
 
         if (finance.length) {
             groups.push({ label: t('Finance'), items: finance });
+        }
+
+        const hr: NavItem[] = [];
+
+        if (can('employees.view')) {
+            hr.push(item(t('Employees'), '/employees', Users));
+        }
+
+        if (can('attendance.view')) {
+            hr.push(item(t('Attendance'), '/attendance', Clock));
+        }
+
+        if (can('salaries.view')) {
+            hr.push(item(t('Salaries'), '/salaries', Banknote));
+        }
+
+        if (hr.length) {
+            groups.push({ label: t('HR'), items: hr });
         }
 
         if (can('partners.view')) {

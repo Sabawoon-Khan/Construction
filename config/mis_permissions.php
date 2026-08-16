@@ -107,6 +107,15 @@ return [
         'payments' => [
             'extra' => [],
         ],
+        'employees' => [
+            'extra' => [],
+        ],
+        'attendance' => [
+            'extra' => [],
+        ],
+        'salaries' => [
+            'extra' => [],
+        ],
         'vouchers' => [
             'extra' => [],
         ],

@@ -8,7 +8,9 @@ use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseUnitController;
 use App\Http\Controllers\IncomeController;
@@ -23,6 +25,7 @@ use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\SupplierController;
@@ -105,6 +108,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('permission:sales.edit')
         ->name('sales.installments.pay');
     Route::resource('payments', PaymentController::class)->only(['index', 'show']);
+    Route::resource('employees', EmployeeController::class);
+    Route::resource('attendance', AttendanceController::class);
+    Route::resource('salaries', SalaryController::class);
 
     Route::post('/ai/assist', AiAssistController::class)
         ->middleware('throttle:20,1')

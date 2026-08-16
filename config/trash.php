@@ -7,6 +7,7 @@ use App\Models\AuthenticationLog;
 use App\Models\BackupRecord;
 use App\Models\Customer;
 use App\Models\EmailLog;
+use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\FieldNote;
 use App\Models\FieldReport;
@@ -184,6 +185,11 @@ return [
             'model' => Expense::class,
             'label' => 'Expense',
             'title' => 'expense_no',
+        ],
+        'employees' => [
+            'model' => Employee::class,
+            'label' => 'Employee',
+            'title' => 'name',
         ],
         'incomes' => [
             'model' => Income::class,

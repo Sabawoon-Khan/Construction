@@ -1,1 +1,0 @@
-import{cn as e,gt as t,ot as n,rt as r}from"./button-Bazp6Oio.js";import{j as i}from"./app-DN9cVL6g.js";var a=t({__name:`Can`,props:{permission:{}},setup(t){let a=t,{can:o,canAny:s}=i(),c=r(()=>Array.isArray(a.permission)?s(a.permission):o(a.permission));return(t,r)=>c.value?e(t.$slots,`default`,{},void 0,void 0,0):n(``,!0)}});export{a as t};
