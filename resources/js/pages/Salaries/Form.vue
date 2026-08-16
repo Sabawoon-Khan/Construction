@@ -37,9 +37,9 @@ const netSalary = computed(() => {
     return Math.max(0, basic + bonus - deduction);
 });
 
-watch(() => form.employee_id, (id) => {
+watch(() => form.employee_id, (id: string) => {
     if (isEdit.value) return;
-    const employee = props.employees.find((e) => String(e.id) === id);
+    const employee = props.employees.find((e: { id: number; basic_salary: number | null }) => String(e.id) === id);
     if (employee && employee.basic_salary !== null && employee.basic_salary !== undefined) {
         form.basic_salary = String(employee.basic_salary);
     }
