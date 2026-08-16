@@ -1,0 +1,1 @@
+function e(){let e=document.activeElement;if(e==null)return null;for(;e!=null&&e.shadowRoot!=null&&e.shadowRoot.activeElement!=null;)e=e.shadowRoot.activeElement;return e}function t(e){return e==null}export{e as n,t};
