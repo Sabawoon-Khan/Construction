@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
-import { Pencil, Plus, Trash2 } from '@lucide/vue';
+import { Form, Head, router } from '@inertiajs/vue3';
+import { Pencil, Plus, Search, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -16,11 +16,13 @@ import type { RowActionItem } from '@/lib/row-actions';
 
 const props = defineProps<{
     items: { id: number; unit_name: string }[];
+    filters?: { search?: string };
 }>();
 
 const { t } = useTranslations();
 const { can } = useMisPage();
 const editingId = ref<number | null>(null);
+const search = ref(props.filters?.search ?? '');
 
 defineOptions({
     layout: {
@@ -30,6 +32,10 @@ defineOptions({
         ],
     },
 });
+
+function applySearch() {
+    router.get('/expense-units', { search: search.value || undefined }, { preserveState: true, replace: true });
+}
 
 function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
     return [
@@ -60,7 +66,16 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
 <template>
     <Head :title="t('Expense units')" />
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <Heading :title="t('Expense units')" :description="t('Units you can pick when recording a purchased item.')" />
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <Heading :title="t('Expense units')" :description="t('Units you can pick when recording a purchased item.')" />
+            <div class="flex flex-wrap gap-2">
+                <div class="relative min-w-[220px] flex-1">
+                    <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input v-model="search" class="pl-9" :placeholder="t('Search...')" @keyup.enter="applySearch" />
+                </div>
+                <Button variant="secondary" @click="applySearch">{{ t('Search') }}</Button>
+            </div>
+        </div>
 
         <Can permission="expenses.create">
             <Form action="/expense-units" method="post" class="flex max-w-xl flex-wrap items-end gap-3 rounded-xl border bg-card p-4" v-slot="{ errors, processing }">

@@ -27,14 +27,27 @@ class FieldReportController extends Controller
     {
         $this->authorizePermission($request, 'field_reports.view');
 
-        $items = FieldReport::query()
-            ->where('user_id', $request->user()->id)
+        $search = $request->string('search')->toString();
+
+        $query = FieldReport::query()
+            ->where('user_id', $request->user()->id);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
+
+        $items = $query
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
         return Inertia::render('resources/field-reports/Index', [
             'items' => $this->inertiaPagination($items),
+            'filters' => ['search' => $search],
             ...$this->offlineInertiaProps('field_reports'),
         ]);
     }

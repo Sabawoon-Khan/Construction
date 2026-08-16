@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ClipboardList } from '@lucide/vue';
-import { computed, toRef } from 'vue';
+import { computed, ref, toRef, watch } from 'vue';
 import {
     MisCreateButton,
     MisEmptyState,
     MisListPage,
     MisListRow,
     MisPagination,
+    MisSearchInput,
 } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Badge } from '@/components/ui/badge';
@@ -26,10 +27,13 @@ const props = defineProps<{
         status: string;
     }>;
     offlineEnabled: boolean;
+    filters?: { search?: string };
 }>();
 
 const { t } = useTranslations();
 const { editAction, deleteAction } = useMisPage();
+const search = ref(props.filters?.search ?? '');
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const onlineItems = computed(() => props.items.data);
 
@@ -37,6 +41,33 @@ const { displayItems, showingOfflineCache, online } = useOfflineResourceList({
     resource: 'field_reports',
     offlineEnabled: toRef(props, 'offlineEnabled'),
     onlineItems,
+});
+
+watch(
+    () => props.filters?.search,
+    (value) => {
+        search.value = value ?? '';
+    },
+);
+
+watch(search, (value) => {
+    if (searchTimer) {
+        clearTimeout(searchTimer);
+    }
+
+    searchTimer = setTimeout(() => {
+        const next = value.trim();
+        const current = (props.filters?.search ?? '').trim();
+        if (next === current) {
+            return;
+        }
+
+        router.get(
+            '/field-reports',
+            { search: next || undefined },
+            { preserveState: true, replace: true, preserveScroll: true },
+        );
+    }, 300);
 });
 
 function rowActions(item: (typeof displayItems.value)[number]): RowActionItem[] {
@@ -85,6 +116,13 @@ defineOptions({
                 {{ t('Create') }}
             </MisCreateButton>
         </template>
+
+        <MisSearchInput
+            v-model="search"
+            class="max-w-sm"
+            :aria-label="t('Search')"
+            :placeholder="t('Search...')"
+        />
 
         <p
             v-if="showingOfflineCache"

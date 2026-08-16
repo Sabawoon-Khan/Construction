@@ -16,10 +16,19 @@ class ExpenseUnitController extends Controller implements HasMiddleware
 
     use AuthorizesResourcePermissions;
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $search = $request->string('search')->toString();
+
+        $query = ExpenseUnit::query()->orderBy('unit_name');
+
+        if ($search !== '') {
+            $query->where('unit_name', 'like', "%{$search}%");
+        }
+
         return Inertia::render('ExpenseUnits/Index', [
-            'items' => ExpenseUnit::query()->orderBy('unit_name')->get(['id', 'unit_name']),
+            'items' => $query->get(['id', 'unit_name']),
+            'filters' => ['search' => $search],
         ]);
     }
 

@@ -22,6 +22,7 @@ class InventoryController extends Controller implements HasMiddleware
     public function index(Request $request): Response
     {
         $projectId = $request->integer('project_id') ?: null;
+        $search = $request->string('search')->toString();
         $levels = InventoryTransaction::stockLevels($projectId);
 
         $materials = Material::query()
@@ -49,6 +50,15 @@ class InventoryController extends Controller implements HasMiddleware
             ];
         })->values();
 
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $items = $items->filter(function (array $row) use ($needle) {
+                return str_contains(mb_strtolower((string) ($row['project_name'] ?? '')), $needle)
+                    || str_contains(mb_strtolower((string) ($row['material_name'] ?? '')), $needle)
+                    || str_contains(mb_strtolower((string) ($row['material_code'] ?? '')), $needle);
+            })->values();
+        }
+
         return Inertia::render('Inventory/Index', [
             'items' => $items,
             'projects' => $projects,
@@ -57,7 +67,10 @@ class InventoryController extends Controller implements HasMiddleware
                 ->with('unit:id,unit_name')
                 ->orderBy('name')
                 ->get(['id', 'name', 'code', 'material_unit_id']),
-            'filters' => ['project_id' => $projectId],
+            'filters' => [
+                'project_id' => $projectId,
+                'search' => $search,
+            ],
             'totals' => [
                 'rows' => $items->count(),
                 'on_hand_rows' => $items->where('on_hand', '>', 0)->count(),

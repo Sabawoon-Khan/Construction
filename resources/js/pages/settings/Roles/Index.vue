@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { Pencil, Shield, Trash2 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import InputError from '@/components/InputError.vue';
 import {
     MisEmptyState,
     MisListPage,
     MisListRow,
+    MisSearchInput,
 } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SettingsAddButton from '@/components/SettingsAddButton.vue';
@@ -37,6 +38,7 @@ type RoleRecord = {
 const props = defineProps<{
     roles: RoleRecord[];
     permissions: Permission[];
+    filters?: { search?: string };
 }>();
 
 const { t } = useTranslations();
@@ -48,6 +50,8 @@ const editName = ref('');
 const editPermissions = ref<string[]>([]);
 const formErrors = ref<Record<string, string>>({});
 const processing = ref(false);
+const search = ref(props.filters?.search ?? '');
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const permissionGroups = computed(() => {
     const groups: Record<string, Permission[]> = {};
@@ -64,6 +68,33 @@ const permissionGroups = computed(() => {
     }
 
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+});
+
+watch(
+    () => props.filters?.search,
+    (value) => {
+        search.value = value ?? '';
+    },
+);
+
+watch(search, (value) => {
+    if (searchTimer) {
+        clearTimeout(searchTimer);
+    }
+
+    searchTimer = setTimeout(() => {
+        const next = value.trim();
+        const current = (props.filters?.search ?? '').trim();
+        if (next === current) {
+            return;
+        }
+
+        router.get(
+            '/settings/roles',
+            { search: next || undefined },
+            { preserveState: true, replace: true, preserveScroll: true },
+        );
+    }, 300);
 });
 
 function openEdit(role: RoleRecord): void {
@@ -170,6 +201,13 @@ defineOptions({
                 </SettingsAddButton>
             </Can>
         </template>
+
+        <MisSearchInput
+            v-model="search"
+            class="max-w-sm"
+            :aria-label="t('Search')"
+            :placeholder="t('Search...')"
+        />
 
         <MisEmptyState v-if="roles.length === 0">
             {{ t('No roles found') }}

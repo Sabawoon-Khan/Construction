@@ -20,6 +20,7 @@ class SalaryController extends Controller implements HasMiddleware
     public function index(Request $request): Response
     {
         $query = Salary::query()->with('employee:id,name,employee_no');
+        $search = $request->string('search')->toString();
 
         if ($employeeId = $request->integer('employee_id')) {
             $query->where('employee_id', $employeeId);
@@ -33,6 +34,16 @@ class SalaryController extends Controller implements HasMiddleware
             $query->where('year', $year);
         }
 
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('status', 'like', "%{$search}%")
+                    ->orWhereHas('employee', function ($employee) use ($search) {
+                        $employee->where('name', 'like', "%{$search}%")
+                            ->orWhere('employee_no', 'like', "%{$search}%");
+                    });
+            });
+        }
+
         $totals = [
             'count' => (clone $query)->count(),
             'basic_total' => (float) (clone $query)->sum('basic_salary'),
@@ -44,6 +55,7 @@ class SalaryController extends Controller implements HasMiddleware
         return Inertia::render('Salaries/Index', [
             'items' => $query->latest('year')->latest('month')->paginate(15)->withQueryString(),
             'filters' => [
+                'search' => $search,
                 'employee_id' => $employeeId ?: null,
                 'month' => $month ?: null,
                 'year' => $year ?: null,

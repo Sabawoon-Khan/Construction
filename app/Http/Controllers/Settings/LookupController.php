@@ -21,13 +21,23 @@ class LookupController extends Controller
 
         $groups = LookupTable::groups();
         $active = $request->string('group')->toString() ?: array_key_first($groups);
+        $search = $request->string('search')->toString();
 
         abort_unless($active && LookupTable::isAllowed($active), 404);
 
         $items = [];
 
         foreach (array_keys($groups) as $group) {
-            $items[$group] = LookupTable::forGroup($group);
+            $rows = LookupTable::forGroup($group);
+
+            if ($search !== '' && $group === $active) {
+                $needle = mb_strtolower($search);
+                $rows = $rows
+                    ->filter(fn ($row) => str_contains(mb_strtolower((string) $row->name), $needle))
+                    ->values();
+            }
+
+            $items[$group] = $rows;
         }
 
         return Inertia::render('settings/Lookups/Index', [
@@ -37,6 +47,7 @@ class LookupController extends Controller
             ])->values()->all(),
             'activeGroup' => $active,
             'items' => $items,
+            'filters' => ['search' => $search],
         ]);
     }
 

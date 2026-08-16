@@ -32,13 +32,21 @@ class RoleManagementController extends Controller
 
         $this->permissions->sync();
 
+        $search = $request->string('search')->toString();
+
+        $rolesQuery = Role::query()
+            ->with('permissions')
+            ->withCount('users')
+            ->orderBy('name');
+
+        if ($search !== '') {
+            $rolesQuery->where('name', 'like', "%{$search}%");
+        }
+
         return Inertia::render('settings/Roles/Index', [
-            'roles' => Role::query()
-                ->with('permissions')
-                ->withCount('users')
-                ->orderBy('name')
-                ->get(['id', 'name']),
+            'roles' => $rolesQuery->get(['id', 'name']),
             'permissions' => Permission::query()->orderBy('name')->get(['id', 'name']),
+            'filters' => ['search' => $search],
         ]);
     }
 

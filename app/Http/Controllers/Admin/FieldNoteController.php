@@ -23,14 +23,23 @@ class FieldNoteController extends Controller
     {
         $this->authorizePermission($request, 'field_notes.view');
 
-        $items = FieldNote::query()
-            ->where('user_id', $request->user()->id)
+        $search = $request->string('search')->toString();
+
+        $query = FieldNote::query()
+            ->where('user_id', $request->user()->id);
+
+        if ($search !== '') {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        $items = $query
             ->latest()
             ->paginate(20)
             ->withQueryString();
 
         return Inertia::render('resources/field-notes/Index', [
             'items' => $this->inertiaPagination($items),
+            'filters' => ['search' => $search],
             ...$this->offlineInertiaProps('field_notes'),
         ]);
     }

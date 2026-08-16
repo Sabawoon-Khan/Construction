@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link, router } from '@inertiajs/vue3';
+import { Search } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
@@ -28,12 +29,13 @@ const props = defineProps<{
     items: StockRow[];
     projects: { id: number; name: string }[];
     materials: { id: number; name: string; code: string; unit?: { unit_name: string } | null }[];
-    filters: { project_id?: number | null };
+    filters: { project_id?: number | null; search?: string };
     totals: { rows: number; on_hand_rows: number };
 }>();
 
 const { t } = useTranslations();
 const projectId = ref(props.filters.project_id ? String(props.filters.project_id) : '');
+const search = ref(props.filters.search ?? '');
 
 const issueMaterials = computed(() => {
     if (!projectId.value) {
@@ -50,7 +52,10 @@ const issueMaterials = computed(() => {
 });
 
 function applyFilter() {
-    router.get('/inventory', { project_id: projectId.value || undefined }, { preserveState: true, replace: true });
+    router.get('/inventory', {
+        project_id: projectId.value || undefined,
+        search: search.value || undefined,
+    }, { preserveState: true, replace: true });
 }
 
 defineOptions({
@@ -69,10 +74,15 @@ defineOptions({
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <Heading :title="t('Stock')" :description="t('On-hand materials by project. Issuing reduces quantity only — cost already hit the project at purchase.')" />
             <div class="flex flex-wrap gap-2">
+                <div class="relative min-w-[200px] flex-1">
+                    <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input v-model="search" class="pl-9" :placeholder="t('Search...')" @keyup.enter="applyFilter" />
+                </div>
                 <select v-model="projectId" class="h-9 rounded-md border px-3 text-sm" @change="applyFilter">
                     <option value="">{{ t('All projects') }}</option>
                     <option v-for="project in projects" :key="project.id" :value="String(project.id)">{{ project.name }}</option>
                 </select>
+                <Button variant="secondary" @click="applyFilter">{{ t('Search') }}</Button>
                 <Button as-child variant="outline"><Link href="/purchases/create">{{ t('New purchase') }}</Link></Button>
             </div>
         </div>

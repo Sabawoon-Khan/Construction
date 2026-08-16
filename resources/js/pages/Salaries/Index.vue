@@ -18,11 +18,12 @@ type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
-    filters: { employee_id?: number | null; month?: number | null; year?: number | null };
+    filters: { search?: string; employee_id?: number | null; month?: number | null; year?: number | null };
     totals: { count: number; basic_total: number; bonus_total: number; deduction_total: number; net_total: number };
     employees: { id: number; name: string; employee_no: string; basic_salary: number | null }[];
 }>();
 
+const search = ref(props.filters.search ?? '');
 const employeeId = ref(props.filters.employee_id ?? '');
 const month = ref(props.filters.month ?? '');
 const year = ref(props.filters.year ?? new Date().getFullYear());
@@ -40,6 +41,7 @@ defineOptions({
 
 function applyFilters() {
     router.get('/salaries', {
+        search: search.value || undefined,
         employee_id: employeeId.value || undefined,
         month: month.value || undefined,
         year: year.value || undefined,
@@ -74,6 +76,10 @@ function rowActions(item: Item): RowActionItem[] {
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <Heading :title="t('Salaries')" :description="t('Fixed monthly salary records for employees.')" />
             <div class="flex flex-wrap gap-2">
+                <div class="relative min-w-[200px] flex-1">
+                    <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input v-model="search" class="pl-9" :placeholder="t('Search...')" @keyup.enter="applyFilters" />
+                </div>
                 <select v-model="employeeId" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm" @change="applyFilters">
                     <option value="">{{ t('All employees') }}</option>
                     <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>

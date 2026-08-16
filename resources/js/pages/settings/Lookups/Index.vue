@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import {
     MisEmptyState,
     MisListPage,
     MisListRow,
+    MisSearchInput,
     MisSegmentedControl,
 } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -27,9 +28,12 @@ const props = defineProps<{
     groups: LookupGroup[];
     activeGroup: string;
     items: Record<string, LookupRow[]>;
+    filters?: { search?: string };
 }>();
 
 const { t } = useTranslations();
+const search = ref(props.filters?.search ?? '');
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const rows = computed(() => props.items[props.activeGroup] ?? []);
 
@@ -43,8 +47,45 @@ const segmentItems = computed(() =>
 const activeGroupModel = computed({
     get: () => props.activeGroup,
     set: (key: string) => {
-        router.get('/settings/lookups', { group: key }, { preserveState: true });
+        router.get(
+            '/settings/lookups',
+            {
+                group: key,
+                search: search.value || undefined,
+            },
+            { preserveState: true },
+        );
     },
+});
+
+watch(
+    () => props.filters?.search,
+    (value) => {
+        search.value = value ?? '';
+    },
+);
+
+watch(search, (value) => {
+    if (searchTimer) {
+        clearTimeout(searchTimer);
+    }
+
+    searchTimer = setTimeout(() => {
+        const next = value.trim();
+        const current = (props.filters?.search ?? '').trim();
+        if (next === current) {
+            return;
+        }
+
+        router.get(
+            '/settings/lookups',
+            {
+                group: props.activeGroup,
+                search: next || undefined,
+            },
+            { preserveState: true, replace: true, preserveScroll: true },
+        );
+    }, 300);
 });
 
 const form = useForm({
@@ -134,6 +175,13 @@ function rowActions(row: LookupRow): RowActionItem[] {
                 :items="segmentItems"
             />
         </template>
+
+        <MisSearchInput
+            v-model="search"
+            class="max-w-sm"
+            :aria-label="t('Search')"
+            :placeholder="t('Search...')"
+        />
 
         <form
             class="grid gap-3 sm:grid-cols-[1fr_auto_auto]"

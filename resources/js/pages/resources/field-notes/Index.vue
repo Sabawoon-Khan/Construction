@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { computed, toRef } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref, toRef, watch } from 'vue';
 import Can from '@/components/Can.vue';
-import { MisCreateButton } from '@/components/mis';
+import { MisCreateButton, MisSearchInput } from '@/components/mis';
 import MisPagination from '@/components/MisPagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/composables/useTranslations';
@@ -12,9 +12,12 @@ import { useOfflineResourceList } from '@/offline/useOfflineResourceList';
 const props = defineProps<{
     items: Paginated<{ id: number; name: string; client_uuid?: string }>;
     offlineEnabled?: boolean;
+    filters?: { search?: string };
 }>();
 
 const { t } = useTranslations();
+const search = ref(props.filters?.search ?? '');
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 const onlineItems = computed(() => props.items.data);
 
 const { displayItems, showingOfflineCache, online } = useOfflineResourceList({
@@ -22,18 +25,52 @@ const { displayItems, showingOfflineCache, online } = useOfflineResourceList({
     offlineEnabled: toRef(props, 'offlineEnabled'),
     onlineItems,
 });
+
+watch(
+    () => props.filters?.search,
+    (value) => {
+        search.value = value ?? '';
+    },
+);
+
+watch(search, (value) => {
+    if (searchTimer) {
+        clearTimeout(searchTimer);
+    }
+
+    searchTimer = setTimeout(() => {
+        const next = value.trim();
+        const current = (props.filters?.search ?? '').trim();
+        if (next === current) {
+            return;
+        }
+
+        router.get(
+            '/field-notes',
+            { search: next || undefined },
+            { preserveState: true, replace: true, preserveScroll: true },
+        );
+    }, 300);
+});
 </script>
 
 <template>
     <Head :title="t('FieldNote')" />
 
     <div class="flex flex-col gap-4 p-4">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="text-xl font-semibold">{{ t('FieldNote') }}</h1>
             <MisCreateButton href="/field-notes/create" permission="field_notes.create">
                 {{ t('Create') }}
             </MisCreateButton>
         </div>
+
+        <MisSearchInput
+            v-model="search"
+            class="max-w-sm"
+            :aria-label="t('Search')"
+            :placeholder="t('Search...')"
+        />
 
         <p
             v-if="showingOfflineCache"
