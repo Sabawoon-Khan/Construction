@@ -10,6 +10,7 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
@@ -21,6 +22,7 @@ const props = defineProps<{
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
+const { formatDate } = useMisPage();
 
 defineOptions({
     layout: {
@@ -80,7 +82,7 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 font-medium">
                                 <Link :href="`/payments/${item.id}`" class="hover:text-primary hover:underline">{{ item.payment_no }}</Link>
                             </td>
-                            <td class="px-4 py-3">{{ item.paid_at }}</td>
+                            <td class="px-4 py-3">{{ formatDate(item.paid_at) }}</td>
                             <td class="px-4 py-3">{{ item.customer?.name || '—' }}</td>
                             <td class="px-4 py-3">{{ item.sale?.sale_no || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount) }}</td>

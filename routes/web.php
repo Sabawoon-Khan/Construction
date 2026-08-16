@@ -7,7 +7,6 @@ use App\Http\Controllers\AiAssistController;
 use App\Http\Controllers\AiChatController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\GoogleAuthController;
-use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseController;
@@ -82,10 +81,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/shareholders/{partner}/payouts', [ProjectController::class, 'storeShareholderPayout'])
         ->middleware('permission:partners.edit')
         ->name('projects.shareholders.payouts.store');
+    Route::get('projects/{project}/contributions/{investment}', [ProjectController::class, 'showContribution'])
+        ->middleware('permission:projects.view')
+        ->name('projects.contributions.show');
     Route::resource('units', UnitController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('partners', PartnerController::class);
-    Route::resource('bank-accounts', BankAccountController::class);
     Route::resource('expenses', ExpenseController::class);
     Route::resource('expense-units', ExpenseUnitController::class)->except(['create', 'edit', 'show']);
     Route::resource('incomes', IncomeController::class);

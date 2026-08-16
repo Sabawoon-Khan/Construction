@@ -141,7 +141,7 @@ class ProjectController extends Controller implements HasMiddleware
                 ->with('partner:id,name')
                 ->latest('invested_at')
                 ->limit(50)
-                ->get(['id', 'partner_id', 'amount', 'currency', 'invested_at', 'reference_no', 'notes']),
+                ->get(['id', 'partner_id', 'amount', 'currency', 'invested_at']),
             'expenses' => $expensesQuery
                 ->with('expenseUnit:id,unit_name')
                 ->latest('expense_date')
@@ -238,6 +238,18 @@ class ProjectController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Contribution recorded.']);
 
         return redirect()->route('projects.show', $project);
+    }
+
+    public function showContribution(Project $project, PartnerInvestment $investment): Response
+    {
+        abort_unless($investment->project_id === $project->id, 404);
+
+        $investment->load(['partner:id,name', 'project:id,name,code']);
+
+        return Inertia::render('Projects/ContributionVoucher', [
+            'item' => $investment,
+            'project' => $project->only(['id', 'name', 'code']),
+        ]);
     }
 
     public function storeShareholderPayout(Request $request, Project $project, Partner $partner): RedirectResponse

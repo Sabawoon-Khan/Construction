@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { amountInWords, formatVoucherDate, type VoucherField, type VoucherKind, type VoucherLine } from '@/lib/voucher';
+import { useCalendar } from '@/composables/useCalendar';
+import { amountInWords, type VoucherField, type VoucherKind, type VoucherLine } from '@/lib/voucher';
 import { money } from '@/lib/utils';
 
 const props = withDefaults(
@@ -33,11 +34,13 @@ const props = withDefaults(
 );
 
 const page = usePage();
+const calendar = useCalendar();
 const company = computed(() => page.props.company);
 const companyName = computed(
     () => company.value?.legal_name || company.value?.name || page.props.name || 'Company',
 );
 const printedAt = computed(() =>
+    calendar.formatDateTime(new Date()) ||
     new Date().toLocaleString('en-GB', {
         day: '2-digit',
         month: 'short',
@@ -46,6 +49,7 @@ const printedAt = computed(() =>
         minute: '2-digit',
     }),
 );
+const displayDate = computed(() => calendar.format(props.date) || '—');
 
 const kindLabel = computed(() => {
     if (props.kind === 'receipt') return 'Receipt Voucher';
@@ -97,7 +101,7 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                     </div>
                     <div class="mt-2 flex justify-between gap-6">
                         <span class="text-slate-500">Date</span>
-                        <span class="font-medium">{{ formatVoucherDate(date) }}</span>
+                        <span class="font-medium">{{ displayDate }}</span>
                     </div>
                     <div v-if="status" class="mt-2 flex justify-between gap-6">
                         <span class="text-slate-500">Status</span>

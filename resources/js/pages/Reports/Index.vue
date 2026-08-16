@@ -4,6 +4,7 @@ import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCalendar } from '@/composables/useCalendar';
 
 const props = defineProps<{
     filters: { from: string; to: string; project_id?: number | null; preset?: string };
@@ -30,6 +31,7 @@ const props = defineProps<{
 const from = ref(props.filters.from);
 const to = ref(props.filters.to);
 const projectId = ref(String(props.filters.project_id ?? ''));
+const calendar = useCalendar();
 
 defineOptions({
     layout: {
@@ -43,7 +45,7 @@ defineOptions({
 const money = (v: unknown) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v ?? 0));
 
-const dateOnly = (v: unknown) => String(v ?? '').slice(0, 10) || '—';
+const dateOnly = (v: unknown) => calendar.format(v == null ? null : String(v)) || '—';
 
 function apply(preset?: string) {
     router.get(

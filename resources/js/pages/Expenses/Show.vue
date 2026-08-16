@@ -7,12 +7,15 @@ import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploa
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import { Button } from '@/components/ui/button';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
 const props = defineProps<{ item: Record<string, any> }>();
 const { t } = useTranslations();
+const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
 const backHref = computed(() =>
     props.item.project_id ? `/projects/${props.item.project_id}` : '/expenses',
@@ -66,7 +69,7 @@ defineOptions({
             <DetailGrid
                 :title="t('Expense details')"
                 :items="[
-                    { label: t('Date'), value: item.expense_date?.slice?.(0, 10) ?? item.expense_date },
+                    { label: t('Date'), value: formatDate(item.expense_date) },
                     { label: t('Paid to'), value: item.paid_to || '—' },
                     { label: t('Project'), value: item.project?.name || t('Company-wide') },
                     { label: t('Unit'), value: item.expense_unit?.unit_name || '—' },

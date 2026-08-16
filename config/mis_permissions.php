@@ -83,9 +83,6 @@ return [
         'partners' => [
             'extra' => [],
         ],
-        'bank_accounts' => [
-            'extra' => [],
-        ],
         'expenses' => [
             'extra' => [],
         ],

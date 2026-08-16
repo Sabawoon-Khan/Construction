@@ -6,12 +6,15 @@ import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import { Button } from '@/components/ui/button';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
 defineProps<{ item: Record<string, any> }>();
 const { t } = useTranslations();
+const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
 defineOptions({
     layout: {
@@ -59,7 +62,7 @@ defineOptions({
             <DetailGrid
                 :title="t('Income details')"
                 :items="[
-                    { label: t('Date'), value: item.income_date },
+                    { label: t('Date'), value: formatDate(item.income_date) },
                     { label: t('Description'), value: item.description, span: true },
                 ]"
             />

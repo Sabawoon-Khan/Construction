@@ -13,6 +13,7 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
@@ -22,9 +23,10 @@ const props = defineProps<{
     paid_amount: number;
     remaining_amount: number;
     total_price: number;
-    bankAccounts?: { id: number; name: string; is_cash: boolean }[];
 }>();
 const { t } = useTranslations();
+const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
 defineOptions({
     layout: {
@@ -61,7 +63,6 @@ const firstUnpaidId = computed(() => {
 const payForm = useForm({
     amount: '',
     payment_method: 'cash',
-    bank_account_id: '',
     reference_no: '',
     notes: '',
     installment_id: null as number | null,
@@ -70,7 +71,7 @@ const payForm = useForm({
 const statementLines = computed(() =>
     (props.sale.installments ?? []).map((i: any) => ({
         description: `${t('Installment')} #${i.installment_no}`,
-        meta: `${t('Due')} ${i.due_date || '—'} · ${t(String(i.status || '').replaceAll('_', ' '))}`,
+        meta: `${t('Due')} ${formatDate(i.due_date)} · ${t(String(i.status || '').replaceAll('_', ' '))}`,
         amount: Number(i.amount ?? 0),
     })),
 );
@@ -160,7 +161,7 @@ function submitPayment() {
                     { label: t('Sale price'), value: money(sale.unit?.list_price, sale.currency || 'USD') },
                     { label: t('Discount'), value: money(sale.discount, sale.currency || 'USD') },
                     { label: t('Currency'), value: sale.currency || 'USD' },
-                    { label: t('Contract date'), value: sale.contract_date },
+                    { label: t('Contract date'), value: formatDate(sale.contract_date) },
                     { label: t('Terms'), value: sale.terms, span: true },
                     { label: t('Notes'), value: sale.notes, span: true },
                 ]"
@@ -185,13 +186,6 @@ function submitPayment() {
                         <option value="cash">{{ t('Cash') }}</option>
                         <option value="bank">{{ t('Bank') }}</option>
                         <option value="transfer">{{ t('Transfer') }}</option>
-                    </select>
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Bank account') }}</Label>
-                    <select v-model="payForm.bank_account_id" class="h-9 rounded-md border px-3 text-sm">
-                        <option value="">{{ t('None') }}</option>
-                        <option v-for="account in bankAccounts" :key="account.id" :value="String(account.id)">{{ account.name }}</option>
                     </select>
                 </div>
                 <div class="grid gap-2">
@@ -226,7 +220,7 @@ function submitPayment() {
                 <tbody>
                     <tr v-for="i in sale.installments" :key="i.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3">{{ i.installment_no }}</td>
-                        <td class="px-4 py-3">{{ i.due_date }}</td>
+                        <td class="px-4 py-3">{{ formatDate(i.due_date) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(i.amount) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(i.paid_amount) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="i.status" /></td>
@@ -264,7 +258,7 @@ function submitPayment() {
                 <tbody>
                     <tr v-for="p in sale.payments" :key="p.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
-                        <td class="px-4 py-3">{{ p.paid_at }}</td>
+                        <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency || 'USD') }}</td>
                         <td class="px-4 py-3 text-right">
                             <Button as-child size="sm" variant="outline">

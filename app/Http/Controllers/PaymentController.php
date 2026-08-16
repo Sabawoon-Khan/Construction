@@ -52,7 +52,6 @@ class PaymentController extends Controller implements HasMiddleware
             'project:id,name',
             'sale:id,sale_no',
             'installment',
-            'bankAccount:id,name',
         ]);
 
         return Inertia::render('Payments/Show', [

@@ -12,6 +12,7 @@ import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { dashboard } from '@/routes';
 
@@ -23,6 +24,8 @@ const props = defineProps<{
     stats: Stats;
 }>();
 const { t } = useTranslations();
+const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
 defineOptions({
     layout: {
@@ -371,7 +374,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                             </div>
                             <div class="text-xs text-muted-foreground">
                                 {{ expense.project?.name || t('Company') }} ·
-                                {{ String(expense.expense_date ?? '').slice(0, 10) }}
+                                {{ formatDate(String(expense.expense_date ?? '')) }}
                             </div>
                         </div>
                         <div class="font-medium tabular-nums">{{ money(expense.amount) }}</div>

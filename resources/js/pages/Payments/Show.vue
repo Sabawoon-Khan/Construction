@@ -6,12 +6,15 @@ import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
 defineProps<{ item: Record<string, any> }>();
 const { t } = useTranslations();
+const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
 defineOptions({
     layout: {
@@ -55,13 +58,12 @@ defineOptions({
             <DetailGrid
                 :title="t('Payment details')"
                 :items="[
-                    { label: t('Date'), value: item.paid_at },
+                    { label: t('Date'), value: formatDate(item.paid_at) },
                     { label: t('Type'), value: item.type },
                     { label: t('Customer'), value: item.customer?.name },
                     { label: t('Project'), value: item.project?.name },
                     { label: t('Sale'), value: item.sale?.sale_no },
                     { label: t('Installment #'), value: item.installment?.installment_no },
-                    { label: t('Bank account'), value: item.bank_account?.name },
                     { label: t('Payment method'), value: item.payment_method },
                     { label: t('Reference'), value: item.reference_no },
                     { label: t('Currency'), value: item.currency },
@@ -88,7 +90,6 @@ defineOptions({
                 :payment-method="item.payment_method"
                 :reference-no="item.reference_no"
                 :project-name="item.project?.name"
-                :account-name="item.bank_account?.name"
                 :description="item.notes"
                 :status="item.status"
                 :fields="[

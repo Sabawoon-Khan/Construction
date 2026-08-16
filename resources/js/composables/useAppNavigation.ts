@@ -7,7 +7,6 @@ import {
     DatabaseBackup,
     FolderKanban,
     Handshake,
-    Landmark,
     LayoutGrid,
     Receipt,
     Settings,
@@ -85,10 +84,6 @@ export function useAppNavigation() {
 
         if (can('payments.view')) {
             finance.push(item(t('Payments'), '/payments', Banknote));
-        }
-
-        if (can('bank_accounts.view')) {
-            finance.push(item(t('Bank Accounts'), '/bank-accounts', Landmark));
         }
 
         if (finance.length) {

@@ -3,7 +3,6 @@ import { Form, Head, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import GoogleSignInButton from '@/components/GoogleSignInButton.vue';
 import InputError from '@/components/InputError.vue';
-import PasskeyVerify from '@/components/PasskeyVerify.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
@@ -55,9 +54,8 @@ const flashError = computed(() => {
         {{ flashError }}
     </div>
 
-    <div class="flex flex-col gap-2">
-        <PasskeyVerify :show-separator="!canUseGoogleAuth" />
-        <GoogleSignInButton v-if="canUseGoogleAuth" />
+    <div v-if="canUseGoogleAuth" class="flex flex-col gap-2">
+        <GoogleSignInButton />
     </div>
 
     <Form

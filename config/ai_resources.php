@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\BankAccount;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Expense;
@@ -382,43 +381,6 @@ return [
                 'national_id' => ['sometimes', 'nullable', 'string', 'max:50'],
                 'address' => ['sometimes', 'nullable', 'string'],
                 'notes' => ['sometimes', 'nullable', 'string'],
-            ],
-        ],
-        'sensitive' => [],
-    ],
-
-    'bank_accounts' => [
-        'label' => 'Bank accounts',
-        'model' => BankAccount::class,
-        'permission' => 'bank_accounts',
-        'index_route' => 'bank-accounts.index',
-        'edit_route' => 'bank-accounts.edit',
-        'user_scoped' => false,
-        'search' => ['name', 'bank_name', 'account_number'],
-        'default_order' => ['id', 'desc'],
-        'display' => ['id', 'name', 'bank_name', 'currency', 'is_cash', 'is_active'],
-        'title_attribute' => 'name',
-        'fillable' => ['name', 'bank_name', 'account_number', 'iban', 'currency', 'opening_balance', 'is_cash', 'is_active'],
-        'rules' => [
-            'create' => [
-                'name' => ['required', 'string', 'max:255'],
-                'bank_name' => ['nullable', 'string', 'max:255'],
-                'account_number' => ['nullable', 'string', 'max:100'],
-                'iban' => ['nullable', 'string', 'max:50'],
-                'currency' => ['nullable', 'string', 'size:3'],
-                'opening_balance' => ['nullable', 'numeric'],
-                'is_cash' => ['sometimes', 'boolean'],
-                'is_active' => ['sometimes', 'boolean'],
-            ],
-            'update' => [
-                'name' => ['sometimes', 'string', 'max:255'],
-                'bank_name' => ['sometimes', 'nullable', 'string', 'max:255'],
-                'account_number' => ['sometimes', 'nullable', 'string', 'max:100'],
-                'iban' => ['sometimes', 'nullable', 'string', 'max:50'],
-                'currency' => ['sometimes', 'nullable', 'string', 'size:3'],
-                'opening_balance' => ['sometimes', 'nullable', 'numeric'],
-                'is_cash' => ['sometimes', 'boolean'],
-                'is_active' => ['sometimes', 'boolean'],
             ],
         ],
         'sensitive' => [],

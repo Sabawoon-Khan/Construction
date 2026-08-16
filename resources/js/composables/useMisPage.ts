@@ -1,4 +1,5 @@
 import { Eye, Pencil, Trash2 } from '@lucide/vue';
+import { useCalendar } from '@/composables/useCalendar';
 import { usePermissions } from '@/composables/usePermissions';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -6,6 +7,12 @@ import type { RowActionItem } from '@/lib/row-actions';
 export function useMisPage() {
     const { t } = useTranslations();
     const { can } = usePermissions();
+    const calendar = useCalendar();
+
+    const formatDate = (
+        value: Date | string | null | undefined,
+        fallback = '—',
+    ): string => calendar.format(value) || fallback;
 
     const gated = (
         action: RowActionItem,
@@ -65,6 +72,7 @@ export function useMisPage() {
     return {
         t,
         can,
+        formatDate,
         viewAction,
         editAction,
         deleteAction,

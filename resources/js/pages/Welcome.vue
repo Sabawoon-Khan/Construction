@@ -137,15 +137,13 @@ const projectImages = [
                     >
                         {{ t('Dashboard') }}
                     </Link>
-                    <template v-else>
-                        <Link :href="login()" class="construct-login">{{
-                            t('Log in')
-                        }}</Link>
-                        <Link :href="register()" class="construct-button">
-                            {{ lt('home.hero.ctaPrimary', 'Request Proposal') }}
-                            <ArrowRight :size="14" />
-                        </Link>
-                    </template>
+                    <Link
+                        v-else
+                        :href="login()"
+                        class="construct-login"
+                    >
+                        {{ t('Log in') }}
+                    </Link>
                     <button
                         type="button"
                         class="construct-menu"
@@ -244,15 +242,10 @@ const projectImages = [
                             </Link>
                             <Link
                                 v-else
-                                :href="register()"
+                                :href="login()"
                                 class="construct-button construct-button-primary"
                             >
-                                {{
-                                    lt(
-                                        'home.hero.ctaPrimary',
-                                        'Request Proposal',
-                                    )
-                                }}
+                                {{ t('Log in') }}
                                 <ArrowRight :size="15" />
                             </Link>
                             <a

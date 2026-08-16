@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use Illuminate\Routing\Controllers\HasMiddleware;
-use App\Models\BankAccount;
 use App\Models\Customer;
 use App\Models\Project;
 use App\Models\Sale;
@@ -66,13 +65,13 @@ class SaleController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
-        unset($data['installments'], $data['documents']);
+        unset($data['installments'], $data['documents'], $data['sale_no']);
         $this->ensureUnitHasListPrice((int) $data['unit_id']);
 
         $sale = DB::transaction(function () use ($request, $data) {
             $sale = Sale::create([
                 ...$data,
-                'sale_no' => $data['sale_no'] ?: 'SAL-'.Str::upper(Str::random(8)),
+                'sale_no' => 'SAL-'.Str::upper(Str::random(8)),
                 'discount' => $data['discount'] ?? 0,
                 'currency' => $data['currency'] ?? 'USD',
             ]);
@@ -108,10 +107,6 @@ class SaleController extends Controller implements HasMiddleware
             'paid_amount' => $sale->paid_amount,
             'remaining_amount' => $sale->remaining_amount,
             'total_price' => $sale->total_price,
-            'bankAccounts' => BankAccount::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'is_cash']),
         ]);
     }
 
@@ -128,7 +123,7 @@ class SaleController extends Controller implements HasMiddleware
     public function update(Request $request, Sale $sale): RedirectResponse
     {
         $data = $this->validated($request);
-        unset($data['installments'], $data['documents']);
+        unset($data['installments'], $data['documents'], $data['sale_no']);
         $this->ensureUnitHasListPrice((int) $data['unit_id']);
 
         $sale->update([
@@ -155,14 +150,13 @@ class SaleController extends Controller implements HasMiddleware
         $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'nullable|string|max:50',
-            'bank_account_id' => 'nullable|exists:bank_accounts,id',
             'reference_no' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
 
         SaleInstallmentService::recordPayment($sale, $installment, (float) $data['amount'], [
             'payment_method' => $data['payment_method'] ?? 'cash',
-            'bank_account_id' => $data['bank_account_id'] ?? null,
+            'bank_account_id' => null,
             'reference_no' => $data['reference_no'] ?? null,
             'notes' => $data['notes'] ?? null,
         ]);

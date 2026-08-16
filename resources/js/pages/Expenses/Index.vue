@@ -22,7 +22,7 @@ const props = defineProps<{
 
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
-const { viewAction, editAction, can } = useMisPage();
+const { viewAction, editAction, can, formatDate } = useMisPage();
 
 defineOptions({
     layout: {
@@ -96,7 +96,7 @@ function rowActions(item: any): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
-                            <td class="px-4 py-3">{{ item.expense_date?.slice?.(0, 10) ?? item.expense_date }}</td>
+                            <td class="px-4 py-3">{{ formatDate(item.expense_date) }}</td>
                             <td class="px-4 py-3">{{ item.paid_to || '—' }}</td>
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
                             <td class="px-4 py-3">{{ item.expense_unit?.unit_name || '—' }}</td>

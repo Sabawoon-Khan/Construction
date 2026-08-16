@@ -11,6 +11,7 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money } from '@/lib/utils';
 
@@ -33,8 +34,6 @@ defineProps<{
         amount: number;
         currency?: string;
         invested_at: string;
-        reference_no?: string;
-        notes?: string;
         partner?: { id: number; name: string };
     }[];
     expenses: {
@@ -68,6 +67,8 @@ const totalCost = computed(() => {
     return (qty * price).toFixed(2);
 });
 const { t } = useTranslations();
+const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 const tabs = [
     { id: 'info', label: t('Project info'), icon: Info },
     { id: 'shareholders', label: t('Shareholders'), icon: Handshake },
@@ -138,8 +139,8 @@ defineOptions({
                     { label: t('Type'), value: item.type },
                     { label: t('Location'), value: item.location },
                     { label: t('Progress'), value: `${formatNumber(item.progress_percent)}%` },
-                    { label: t('Start date'), value: item.start_date },
-                    { label: t('Expected completion'), value: item.expected_completion_date },
+                    { label: t('Start date'), value: formatDate(item.start_date) },
+                    { label: t('Expected completion'), value: formatDate(item.expected_completion_date) },
                     { label: t('Estimated budget'), value: money(item.estimated_budget) },
                     { label: t('Estimated revenue'), value: money(item.estimated_revenue) },
                     { label: t('Description'), value: item.description, span: true },
@@ -335,17 +336,23 @@ defineOptions({
                                 <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                                 <th class="px-4 py-3 font-medium">{{ t('Shareholder') }}</th>
                                 <th class="px-4 py-3 font-medium">{{ t('Amount (USD)') }}</th>
-                                <th class="px-4 py-3 font-medium">{{ t('Reference') }}</th>
-                                <th class="px-4 py-3 font-medium">{{ t('Notes') }}</th>
+                                <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="c in contributions" :key="c.id" class="border-t hover:bg-muted/30">
-                                <td class="px-4 py-3">{{ c.invested_at?.slice?.(0, 10) ?? c.invested_at }}</td>
+                                <td class="px-4 py-3">{{ formatDate(c.invested_at) }}</td>
                                 <td class="px-4 py-3 font-medium">{{ c.partner?.name || '—' }}</td>
                                 <td class="px-4 py-3 tabular-nums">{{ money(c.amount, c.currency || 'USD') }}</td>
-                                <td class="px-4 py-3">{{ c.reference_no || '—' }}</td>
-                                <td class="px-4 py-3">{{ c.notes || '—' }}</td>
+                                <td class="px-4 py-3">
+                                    <div class="flex justify-end">
+                                        <Button as-child size="sm" variant="outline">
+                                            <Link :href="`/projects/${item.id}/contributions/${c.id}`">
+                                                <Printer class="size-4" /> {{ t('Voucher') }}
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -453,7 +460,7 @@ defineOptions({
                     </thead>
                     <tbody>
                         <tr v-for="expense in expenses" :key="expense.id" class="border-t hover:bg-muted/30">
-                            <td class="px-4 py-3">{{ expense.expense_date?.slice?.(0, 10) ?? expense.expense_date }}</td>
+                            <td class="px-4 py-3">{{ formatDate(expense.expense_date) }}</td>
                             <td class="px-4 py-3">{{ expense.paid_to || '—' }}</td>
                             <td class="px-4 py-3">{{ expense.description || '—' }}</td>
                             <td class="px-4 py-3">{{ expense.expense_unit?.unit_name || '—' }}</td>
