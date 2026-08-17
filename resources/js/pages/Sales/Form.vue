@@ -2,6 +2,7 @@
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, CalendarClock, FileText, Info, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
+import CurrencySelect from '@/components/CurrencySelect.vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -11,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
+import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
@@ -229,7 +231,8 @@ function removeRow(index: number) {
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ t('Currency') }}</Label>
-                    <Input v-model="currency" name="currency" />
+                    <CurrencySelect v-model="currency" />
+                    <input type="hidden" name="currency" :value="currency" />
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ t('Status') }}</Label>

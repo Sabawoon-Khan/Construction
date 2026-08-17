@@ -6,6 +6,7 @@ use App\Concerns\ExportsSpreadsheet;
 use App\Concerns\RendersPrintView;
 use App\Models\Project;
 use App\Services\BalanceSheetService;
+use App\Services\CurrencyService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
@@ -114,6 +115,7 @@ class BalanceSheetController extends Controller
         $user = $request->user();
         $restricted = $user?->isRestrictedShareholder() ?? false;
         $projectId = $request->integer('project_id') ?: null;
+        $reportCurrency = strtoupper($request->input('currency') ?? CurrencyService::baseCurrency());
 
         if ($restricted) {
             $allowed = $user->assignedProjectIds();
@@ -136,14 +138,57 @@ class BalanceSheetController extends Controller
             ->when($restricted, fn ($q) => $q->whereIn('id', $user->assignedProjectIds() ?: [0]))
             ->get(['id', 'name']);
 
+        $balanceSheet = BalanceSheetService::asOf($asOf, $projectId);
+        $convertedBalanceSheet = $reportCurrency === CurrencyService::baseCurrency()
+            ? $balanceSheet
+            : $this->convertBalanceSheet($balanceSheet, $reportCurrency, $asOf);
+
         return [
             'filters' => [
                 'as_of' => $asOf->toDateString(),
                 'project_id' => $projectId,
+                'currency' => $reportCurrency,
             ],
             'restricted' => $restricted,
             'projects' => $projects,
-            'balance_sheet' => BalanceSheetService::asOf($asOf, $projectId),
+            'report_currency' => $reportCurrency,
+            'balance_sheet' => $convertedBalanceSheet,
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $balanceSheet
+     * @return array<string, mixed>
+     */
+    private function convertBalanceSheet(array $balanceSheet, string $reportCurrency, Carbon $asOf): array
+    {
+        $baseCurrency = CurrencyService::baseCurrency();
+        if ($baseCurrency === $reportCurrency) {
+            return $balanceSheet;
+        }
+
+        $rate = CurrencyService::convert(1, $baseCurrency, $reportCurrency, $asOf);
+        if ($rate === null) {
+            return $balanceSheet;
+        }
+
+        return $this->convertNumericValues($balanceSheet, $rate);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function convertNumericValues(array $data, float $rate): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = $this->convertNumericValues($value, $rate);
+            } elseif (is_numeric($value) && (str_contains((string) $key, '_total') || in_array($key, ['amount', 'balance', 'value', 'total', 'paid', 'remaining', 'entitled_share', 'paid_total', 'retained_earnings', 'working_capital'], true))) {
+                $data[$key] = round((float) $value * $rate, 2);
+            }
+        }
+
+        return $data;
     }
 }

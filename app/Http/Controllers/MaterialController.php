@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Material;
 use App\Models\MaterialUnit;
+use App\Services\CurrencyService;
+use App\Services\FinanceDefaults;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -102,6 +105,7 @@ class MaterialController extends Controller implements HasMiddleware
             'material_unit_id' => 'nullable|exists:material_units,id',
             'minimum_stock' => 'nullable|numeric|min:0',
             'unit_cost' => 'nullable|numeric|min:0',
+            'currency' => 'nullable|string|size:3',
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -109,10 +113,16 @@ class MaterialController extends Controller implements HasMiddleware
             $data['code'] = 'MAT-'.Str::upper(Str::random(8));
         }
 
+        $currency = strtoupper($data['currency'] ?? CurrencyService::baseCurrency());
+        $exchangeRate = FinanceDefaults::exchangeRate($currency, now());
+        $unitCost = round((float) ($data['unit_cost'] ?? 0), 2);
+
         $data['minimum_stock'] = $data['minimum_stock'] ?? 0;
-        $data['unit_cost'] = $data['unit_cost'] ?? 0;
+        $data['unit_cost'] = $unitCost;
+        $data['unit_cost_base'] = round($unitCost * $exchangeRate, 2);
         $data['is_active'] = $request->boolean('is_active');
-        $data['currency'] = 'USD';
+        $data['currency'] = $currency;
+        $data['exchange_rate'] = $exchangeRate;
 
         return $data;
     }

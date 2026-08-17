@@ -11,7 +11,9 @@ class PartnerInvestment extends Model
         'project_id',
         'partner_id',
         'amount',
+        'amount_base',
         'currency',
+        'exchange_rate',
         'agreed_share_percentage',
         'invested_at',
         'type',
@@ -27,6 +29,8 @@ class PartnerInvestment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'agreed_share_percentage' => 'decimal:4',
             'invested_at' => 'date',
         ];

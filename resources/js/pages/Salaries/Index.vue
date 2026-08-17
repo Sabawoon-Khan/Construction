@@ -9,6 +9,7 @@ import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -19,8 +20,8 @@ type Item = Record<string, any>;
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
     filters: { search?: string; employee_id?: number | null; month?: number | null; year?: number | null };
-    totals: { count: number; basic_total: number; bonus_total: number; deduction_total: number; net_total: number };
-    employees: { id: number; name: string; employee_no: string; basic_salary: number | null }[];
+    totals: { count: number; basic_total: number; basic_total_base: number; bonus_total: number; bonus_total_base: number; deduction_total: number; deduction_total_base: number; net_total: number; net_total_base: number };
+    employees: { id: number; name: string; employee_no: string; basic_salary: number | null; currency?: string }[];
 }>();
 
 const search = ref(props.filters.search ?? '');
@@ -28,6 +29,7 @@ const employeeId = ref(props.filters.employee_id ?? '');
 const month = ref(props.filters.month ?? '');
 const year = ref(props.filters.year ?? new Date().getFullYear());
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
 const { editAction, can } = useMisPage();
 
 defineOptions({
@@ -96,10 +98,10 @@ function rowActions(item: Item): RowActionItem[] {
 
         <MisStatGrid :columns="5">
             <MisStatCard :label="t('Records')" :value="totals.count" />
-            <MisStatCard :label="t('Basic total')" :value="money(totals.basic_total)" />
-            <MisStatCard :label="t('Bonus total')" :value="money(totals.bonus_total)" tone="success" />
-            <MisStatCard :label="t('Deduction total')" :value="money(totals.deduction_total)" tone="warning" />
-            <MisStatCard :label="t('Net total')" :value="money(totals.net_total)" />
+            <MisStatCard :label="t('Basic total')" :value="money(totals.basic_total_base ?? totals.basic_total, baseCurrency)" />
+            <MisStatCard :label="t('Bonus total')" :value="money(totals.bonus_total_base ?? totals.bonus_total, baseCurrency)" tone="success" />
+            <MisStatCard :label="t('Deduction total')" :value="money(totals.deduction_total_base ?? totals.deduction_total, baseCurrency)" tone="warning" />
+            <MisStatCard :label="t('Net total')" :value="money(totals.net_total_base ?? totals.net_total, baseCurrency)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -132,10 +134,10 @@ function rowActions(item: Item): RowActionItem[] {
                             </td>
                             <td class="px-4 py-3">{{ item.month }}</td>
                             <td class="px-4 py-3">{{ item.year }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.basic_salary) }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.bonus) }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.deduction) }}</td>
-                            <td class="px-4 py-3 tabular-nums font-medium">{{ money(item.net_salary) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.basic_salary, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.bonus, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.deduction, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums font-medium">{{ money(item.net_salary, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3 capitalize">{{ item.status || '—' }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">

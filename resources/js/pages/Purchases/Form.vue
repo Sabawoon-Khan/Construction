@@ -7,6 +7,8 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import CurrencySelect from '@/components/CurrencySelect.vue';
+import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
@@ -23,12 +25,14 @@ const props = defineProps<{
 const isEdit = computed(() => !!props.item);
 const { t } = useTranslations();
 
+const { baseCurrency } = useCurrency();
 const form = useForm({
     project_id: String(props.item?.project_id ?? props.project_id ?? ''),
     supplier_id: String(props.item?.supplier_id ?? ''),
     purchase_date: props.item?.purchase_date?.slice?.(0, 10) ?? new Date().toISOString().slice(0, 10),
     reference_no: String(props.item?.reference_no ?? ''),
     notes: String(props.item?.notes ?? ''),
+    currency: props.item?.currency ?? baseCurrency.value,
     paid_now: '0',
     payment_method: 'cash',
     items: (props.item?.items?.map((row: any) => ({
@@ -140,6 +144,11 @@ defineOptions({
                     <Input v-model="form.reference_no" :placeholder="t('Bill / invoice no')" />
                     <InputError :message="form.errors.reference_no" />
                 </div>
+                <div class="grid gap-2">
+                    <Label for="currency">{{ t('Currency') }}</Label>
+                    <CurrencySelect id="currency" v-model="form.currency" />
+                    <InputError :message="form.errors.currency" />
+                </div>
             </div>
 
             <div v-if="!isEdit" class="space-y-3">
@@ -177,7 +186,7 @@ defineOptions({
                                 <td class="px-3 py-2">
                                     <Input v-model="line.unit_cost" type="number" step="0.01" min="0" required class="min-w-[100px]" />
                                 </td>
-                                <td class="px-3 py-2 tabular-nums">{{ money(lineTotal(line)) }}</td>
+                                <td class="px-3 py-2 tabular-nums">{{ money(lineTotal(line), form.currency) }}</td>
                                 <td class="px-3 py-2">
                                     <Button type="button" variant="ghost" size="sm" @click="removeLine(index)">
                                         <Trash2 class="size-4" />
@@ -215,7 +224,7 @@ defineOptions({
 
             <div v-if="!isEdit" class="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
                 <span class="text-sm text-muted-foreground">{{ t('Purchase total (project expense)') }}</span>
-                <span class="text-lg font-semibold tabular-nums">{{ money(grandTotal) }}</span>
+                <span class="text-lg font-semibold tabular-nums">{{ money(grandTotal, form.currency) }}</span>
             </div>
 
             <div class="flex gap-2">

@@ -11,7 +11,9 @@ class PartnerDistribution extends Model
         'project_id',
         'partner_id',
         'amount',
+        'amount_base',
         'currency',
+        'exchange_rate',
         'type',
         'distributed_at',
         'reference_no',
@@ -25,6 +27,8 @@ class PartnerDistribution extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'distributed_at' => 'date',
         ];
     }

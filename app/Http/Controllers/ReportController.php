@@ -6,6 +6,7 @@ use App\Concerns\ExportsSpreadsheet;
 use App\Concerns\RendersPrintView;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\Income;
 use App\Models\Project;
 use App\Models\Sale;
 use App\Models\StatusChangeLog;
@@ -161,10 +162,32 @@ class ReportController extends Controller
             ->whereDate('expense_date', '>=', $from->toDateString())
             ->whereDate('expense_date', '<=', $to->toDateString())
             ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
-            ->selectRaw('expense_categories.name as category, COUNT(*) as count, SUM(expenses.amount) as amount')
+            ->selectRaw('expense_categories.name as category, COUNT(*) as count, SUM(expenses.amount) as amount, SUM(expenses.amount_base) as amount_base')
             ->groupBy('expense_categories.name')
-            ->orderByDesc('amount')
+            ->orderByDesc('amount_base')
             ->get();
+
+        $expensesByCurrency = Expense::query()
+            ->where('status', 'approved')
+            ->whereDate('expense_date', '>=', $from->toDateString())
+            ->whereDate('expense_date', '<=', $to->toDateString())
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->when($restricted, fn ($q) => $q->whereIn('project_id', $user->assignedProjectIds() ?: [0]))
+            ->selectRaw('currency, COALESCE(SUM(amount), 0) as total')
+            ->groupBy('currency')
+            ->pluck('total', 'currency')
+            ->toArray();
+
+        $incomesByCurrency = Income::query()
+            ->where('status', 'approved')
+            ->whereDate('income_date', '>=', $from->toDateString())
+            ->whereDate('income_date', '<=', $to->toDateString())
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->when($restricted, fn ($q) => $q->whereIn('project_id', $user->assignedProjectIds() ?: [0]))
+            ->selectRaw('currency, COALESCE(SUM(amount), 0) as total')
+            ->groupBy('currency')
+            ->pluck('total', 'currency')
+            ->toArray();
 
         $activity = StatusChangeLog::query()
             ->with(['subject', 'changedBy:id,name'])
@@ -195,6 +218,8 @@ class ReportController extends Controller
                 'expense_count' => $expenses->count(),
                 'salary_count' => $salaries->count(),
             ],
+            'expenses_by_currency' => $expensesByCurrency,
+            'incomes_by_currency' => $incomesByCurrency,
             'by_category' => $byCategory,
             'partners' => $partners,
             'sales' => $restricted ? [] : $sales,

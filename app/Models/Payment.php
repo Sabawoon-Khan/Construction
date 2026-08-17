@@ -21,7 +21,9 @@ class Payment extends Model
         'payment_no',
         'type',
         'amount',
+        'amount_base',
         'currency',
+        'exchange_rate',
         'paid_at',
         'payment_method',
         'reference_no',
@@ -36,6 +38,8 @@ class Payment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'paid_at' => 'datetime',
         ];
     }

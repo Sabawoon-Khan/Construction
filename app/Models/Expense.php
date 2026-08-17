@@ -23,9 +23,13 @@ class Expense extends Model
         'expense_date',
         'paid_to',
         'item_amount',
+        'item_amount_base',
         'per_price',
+        'per_price_base',
         'amount',
+        'amount_base',
         'currency',
+        'exchange_rate',
         'payment_method',
         'reference_no',
         'status',
@@ -40,8 +44,12 @@ class Expense extends Model
         return [
             'expense_date' => 'date',
             'item_amount' => 'decimal:2',
+            'item_amount_base' => 'decimal:2',
             'per_price' => 'decimal:2',
+            'per_price_base' => 'decimal:2',
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 

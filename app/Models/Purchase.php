@@ -20,8 +20,11 @@ class Purchase extends Model
         'purchase_no',
         'purchase_date',
         'total_amount',
+        'total_amount_base',
         'paid_amount',
+        'paid_amount_base',
         'currency',
+        'exchange_rate',
         'status',
         'reference_no',
         'notes',
@@ -35,14 +38,20 @@ class Purchase extends Model
         return [
             'purchase_date' => 'date',
             'total_amount' => 'decimal:2',
+            'total_amount_base' => 'decimal:2',
             'paid_amount' => 'decimal:2',
+            'paid_amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 
     protected $attributes = [
         'paid_amount' => 0,
+        'paid_amount_base' => 0,
         'total_amount' => 0,
+        'total_amount_base' => 0,
         'currency' => 'USD',
+        'exchange_rate' => 1,
         'status' => 'unpaid',
     ];
 

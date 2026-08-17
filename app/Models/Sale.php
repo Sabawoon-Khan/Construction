@@ -25,7 +25,9 @@ class Sale extends Model
         'sale_no',
         'contract_date',
         'discount',
+        'discount_base',
         'currency',
+        'exchange_rate',
         'status',
         'terms',
         'notes',
@@ -39,12 +41,16 @@ class Sale extends Model
         return [
             'contract_date' => 'date',
             'discount' => 'decimal:2',
+            'discount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 
     protected $attributes = [
         'discount' => 0,
+        'discount_base' => 0,
         'currency' => 'USD',
+        'exchange_rate' => 1,
     ];
 
     public function project(): BelongsTo
@@ -98,9 +104,23 @@ class Sale extends Model
         return (float) ($this->unit()->value('list_price') ?? 0);
     }
 
+    public function getListPriceBaseAttribute(): float
+    {
+        if ($this->relationLoaded('unit')) {
+            return (float) ($this->unit?->list_price_base ?? 0);
+        }
+
+        return (float) ($this->unit()->value('list_price_base') ?? 0);
+    }
+
     public function getTotalPriceAttribute(): float
     {
         return max(0, $this->list_price - (float) $this->discount);
+    }
+
+    public function getTotalPriceBaseAttribute(): float
+    {
+        return max(0, $this->list_price_base - (float) $this->discount_base);
     }
 
     public function getPaidAmountAttribute(): float
@@ -112,9 +132,23 @@ class Sale extends Model
         return (float) $this->installments()->sum('paid_amount');
     }
 
+    public function getPaidAmountBaseAttribute(): float
+    {
+        if ($this->relationLoaded('installments')) {
+            return (float) $this->installments->sum('paid_amount_base');
+        }
+
+        return (float) $this->installments()->sum('paid_amount_base');
+    }
+
     public function getRemainingAmountAttribute(): float
     {
         return max(0, $this->total_price - $this->paid_amount);
+    }
+
+    public function getRemainingAmountBaseAttribute(): float
+    {
+        return max(0, $this->total_price_base - $this->paid_amount_base);
     }
 
     public static function sumListPrice(Builder|HasMany|Relation|null $query = null): float
@@ -138,6 +172,22 @@ class Sale extends Model
             ->sum(DB::raw("units.list_price - COALESCE({$table}.discount, 0)"));
     }
 
+    public static function sumTotalPriceBase(Builder|HasMany|Relation|null $source = null): float
+    {
+        $query = match (true) {
+            $source instanceof Relation => $source->getQuery()->clone(),
+            $source instanceof Builder => $source->clone(),
+            default => static::query(),
+        };
+
+        $table = $query->getModel()->getTable();
+
+        return (float) static::query()
+            ->whereIn("{$table}.id", $query->select("{$table}.id"))
+            ->join('units', 'units.id', '=', "{$table}.unit_id")
+            ->sum(DB::raw("units.list_price_base - COALESCE({$table}.discount_base, 0)"));
+    }
+
     public static function sumPaidAmount(Builder|HasMany|Relation|null $source = null): float
     {
         $query = match (true) {
@@ -151,5 +201,20 @@ class Sale extends Model
         return (float) SaleInstallment::query()
             ->whereIn('sale_id', $query->select("{$table}.id"))
             ->sum('paid_amount');
+    }
+
+    public static function sumPaidAmountBase(Builder|HasMany|Relation|null $source = null): float
+    {
+        $query = match (true) {
+            $source instanceof Relation => $source->getQuery()->clone(),
+            $source instanceof Builder => $source->clone(),
+            default => static::query(),
+        };
+
+        $table = $query->getModel()->getTable();
+
+        return (float) SaleInstallment::query()
+            ->whereIn('sale_id', $query->select("{$table}.id"))
+            ->sum('paid_amount_base');
     }
 }

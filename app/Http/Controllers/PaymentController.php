@@ -38,9 +38,13 @@ class PaymentController extends Controller implements HasMiddleware
         $totals = [
             'count' => (clone $query)->count(),
             'amount' => (float) (clone $receipts)->sum('amount'),
+            'amount_base' => (float) (clone $receipts)->sum('amount_base'),
             'paid_out' => (float) (clone $disbursements)->sum('amount'),
+            'paid_out_base' => (float) (clone $disbursements)->sum('amount_base'),
             'this_month' => (float) (clone $query)->where('paid_at', '>=', now()->startOfMonth())->sum('amount'),
+            'this_month_base' => (float) (clone $query)->where('paid_at', '>=', now()->startOfMonth())->sum('amount_base'),
             'cash' => (float) (clone $query)->where('payment_method', 'cash')->sum('amount'),
+            'cash_base' => (float) (clone $query)->where('payment_method', 'cash')->sum('amount_base'),
         ];
 
         return Inertia::render('Payments/Index', [

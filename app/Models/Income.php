@@ -23,7 +23,9 @@ class Income extends Model
         'income_date',
         'received_from',
         'amount',
+        'amount_base',
         'currency',
+        'exchange_rate',
         'payment_method',
         'reference_no',
         'status',
@@ -38,6 +40,8 @@ class Income extends Model
         return [
             'income_date' => 'date',
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 

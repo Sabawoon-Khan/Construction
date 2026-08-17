@@ -12,7 +12,7 @@ import { money } from '@/lib/utils';
 
 const props = defineProps<{
     item: Record<string, any> | null;
-    employees: { id: number; name: string; employee_no: string; basic_salary: number | null }[];
+    employees: { id: number; name: string; employee_no: string; basic_salary: number | null; currency?: string }[];
 }>();
 
 const isEdit = computed(() => !!props.item);
@@ -28,6 +28,11 @@ const form = useForm({
     payment_date: props.item?.payment_date?.slice?.(0, 10) ?? '',
     status: props.item?.status ?? 'pending',
     notes: props.item?.notes ?? '',
+});
+
+const currency = computed(() => {
+    const employee = props.employees.find((e: { id: number; currency?: string }) => String(e.id) === form.employee_id);
+    return employee?.currency || 'USD';
 });
 
 const netSalary = computed(() => {
@@ -138,7 +143,7 @@ defineOptions({
 
             <div class="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
                 <span class="text-sm text-muted-foreground">{{ t('Net salary') }}</span>
-                <span class="text-lg font-semibold tabular-nums">{{ money(netSalary) }}</span>
+                <span class="text-lg font-semibold tabular-nums">{{ money(netSalary, currency) }}</span>
             </div>
 
             <div class="flex gap-2">

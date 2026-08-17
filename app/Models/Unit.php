@@ -22,8 +22,11 @@ class Unit extends Model
         'kitchens',
         'balconies',
         'cost_price',
+        'cost_price_base',
         'list_price',
+        'list_price_base',
         'currency',
+        'exchange_rate',
         'status',
         'description',
     ];
@@ -36,7 +39,10 @@ class Unit extends Model
         return [
             'area' => 'decimal:2',
             'cost_price' => 'decimal:2',
+            'cost_price_base' => 'decimal:2',
             'list_price' => 'decimal:2',
+            'list_price_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 

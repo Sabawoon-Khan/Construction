@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\ExpenseCategory;
 use App\Models\IncomeCategory;
+use App\Support\CurrentCompany;
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 
 class FinanceDefaults
@@ -51,6 +53,15 @@ class FinanceDefaults
     {
         ExpenseCategory::ensureDefaults();
 
+        $currency = strtoupper($data['currency'] ?? self::baseCurrency());
+        $date = isset($data['expense_date']) ? Carbon::parse($data['expense_date']) : now();
+        $exchangeRate = self::exchangeRate($currency, $date);
+        $itemAmount = isset($data['item_amount']) ? (float) $data['item_amount'] : null;
+        $perPrice = isset($data['per_price']) ? round((float) $data['per_price'], 2) : null;
+        $amount = isset($data['amount'])
+            ? round((float) $data['amount'], 2)
+            : self::totalCost($data);
+
         return [
             'project_id' => $projectId,
             'expense_category_id' => ! empty($data['expense_category_id'])
@@ -59,16 +70,18 @@ class FinanceDefaults
             'expense_date' => $data['expense_date'],
             'paid_to' => $data['paid_to'] ?? null,
             'expense_unit_id' => $data['expense_unit_id'] ?? null,
-            'item_amount' => $data['item_amount'] ?? null,
-            'per_price' => $data['per_price'] ?? null,
-            'amount' => isset($data['amount'])
-                ? round((float) $data['amount'], 2)
-                : self::totalCost($data),
+            'item_amount' => $itemAmount,
+            'item_amount_base' => $itemAmount,
+            'per_price' => $perPrice,
+            'per_price_base' => $perPrice !== null ? round($perPrice * $exchangeRate, 2) : null,
+            'amount' => $amount,
+            'amount_base' => round($amount * $exchangeRate, 2),
             'description' => $data['description'] ?? null,
             'reference_no' => $data['reference_no'] ?? null,
             'expense_no' => 'EXP-'.Str::upper(Str::random(8)),
-            'currency' => 'USD',
-            'payment_method' => 'cash',
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
+            'payment_method' => $data['payment_method'] ?? 'cash',
             'status' => 'approved',
             'purchase_id' => $data['purchase_id'] ?? null,
         ];
@@ -82,16 +95,45 @@ class FinanceDefaults
     /** @return array<string, mixed> */
     public static function incomeAttributes(array $data): array
     {
+        $currency = strtoupper($data['currency'] ?? self::baseCurrency());
+        $date = isset($data['income_date']) ? Carbon::parse($data['income_date']) : now();
+        $exchangeRate = self::exchangeRate($currency, $date);
+        $amount = round((float) $data['amount'], 2);
+
         return [
             'project_id' => null,
             'income_category_id' => FinanceDefaults::generalIncomeCategoryId(),
             'income_date' => $data['income_date'],
-            'amount' => $data['amount'],
+            'amount' => $amount,
+            'amount_base' => round($amount * $exchangeRate, 2),
             'description' => $data['description'] ?? null,
             'income_no' => 'INC-'.Str::upper(Str::random(8)),
-            'currency' => 'USD',
-            'payment_method' => 'cash',
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
+            'payment_method' => $data['payment_method'] ?? 'cash',
             'status' => 'approved',
         ];
+    }
+
+    public static function baseCurrency(): string
+    {
+        return strtoupper(CurrentCompany::get()?->base_currency ?? 'USD');
+    }
+
+    public static function exchangeRate(string $currency, ?Carbon $date = null): float
+    {
+        $date ??= now();
+        $baseCurrency = self::baseCurrency();
+
+        if ($currency === $baseCurrency) {
+            return 1.0;
+        }
+
+        return CurrencyService::convert(1.0, $currency, $baseCurrency, $date) ?? 1.0;
+    }
+
+    public static function convertToBase(float $amount, string $currency, ?Carbon $date = null): float
+    {
+        return round($amount * self::exchangeRate($currency, $date), 2);
     }
 }

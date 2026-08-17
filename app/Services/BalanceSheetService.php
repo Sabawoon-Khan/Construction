@@ -23,19 +23,9 @@ use Illuminate\Support\Facades\DB;
 /**
  * Build a balance sheet (assets, liabilities, equity) as of a given date.
  *
- * The MIS is cash-biased: payments and receipts are the primary cash movements,
- * purchases are matched to expenses, and inventory is tracked physically. The
- * sheet therefore uses the best available records:
- *
- *   - Cash & bank: opening balances + linked payments / incomes / vouchers,
- *     plus unlinked cash movements and partner capital/distribution adjustments.
- *   - Cash on hand: unlinked cash receipts/disbursements minus direct expenses,
- *     adjusted for partner investments and payouts.
- *   - Receivables: sales not yet paid.
- *   - Payables: purchases not yet paid.
- *   - Inventory: physical stock on hand at average purchase cost.
- *   - Equity: partner investments + retained earnings. Distributions payable are
- *     shown as a current liability.
+ * All amounts are reported in the company base currency using stored
+ * `amount_base` / `*_base` columns and exchange rates. This avoids runtime
+ * conversion and makes mixed-currency reporting consistent.
  */
 class BalanceSheetService
 {
@@ -106,7 +96,7 @@ class BalanceSheetService
         $accounts = BankAccount::query()
             ->orderBy('is_cash')
             ->orderBy('name')
-            ->get(['id', 'name', 'bank_name', 'opening_balance', 'is_cash', 'currency'])
+            ->get(['id', 'name', 'bank_name', 'opening_balance', 'opening_balance_base', 'is_cash', 'currency'])
             ->map(function (BankAccount $account) use ($asOf, $projectId) {
                 $balance = self::bankAccountBalance($account, $asOf, $projectId);
 
@@ -117,6 +107,7 @@ class BalanceSheetService
                     'is_cash' => $account->is_cash,
                     'currency' => $account->currency,
                     'opening_balance' => (float) $account->opening_balance,
+                    'opening_balance_base' => (float) $account->opening_balance_base,
                     'balance' => $balance,
                 ];
             });
@@ -161,7 +152,7 @@ class BalanceSheetService
         );
 
         return round(
-            (float) $account->opening_balance + $receipts - $disbursements + $incomes - $vouchers,
+            (float) $account->opening_balance_base + $receipts - $disbursements + $incomes - $vouchers,
             2,
         );
     }
@@ -197,7 +188,7 @@ class BalanceSheetService
             ->whereNull('purchase_id')
             ->whereDate('expense_date', '<=', $asOf->toDateString())
             ->when($projectId, fn (Builder $q) => $q->where('project_id', $projectId))
-            ->sum('amount');
+            ->sum('amount_base');
 
         $partnerInvestments = self::sumPartnerInvestments($asOf, $projectId);
         $partnerDistributions = self::sumPartnerDistributions($asOf, $projectId);
@@ -214,7 +205,7 @@ class BalanceSheetService
     public static function accountsReceivable(CarbonInterface $asOf, ?int $projectId = null): array
     {
         $sales = Sale::query()
-            ->with(['customer:id,name', 'unit:id,unit_no,list_price', 'project:id,name'])
+            ->with(['customer:id,name', 'unit:id,unit_no,list_price,list_price_base', 'project:id,name'])
             ->where('status', '!=', 'cancelled')
             ->whereDate('contract_date', '<=', $asOf->toDateString())
             ->when($projectId, fn (Builder $q) => $q->where('project_id', $projectId))
@@ -223,13 +214,13 @@ class BalanceSheetService
         $customerBalances = [];
 
         foreach ($sales as $sale) {
-            $total = $sale->total_price;
+            $total = $sale->total_price_base;
             $paid = (float) Payment::query()
                 ->where('sale_id', $sale->id)
                 ->where('type', 'receipt')
                 ->whereNotNull('paid_at')
                 ->where('paid_at', '<=', $asOf)
-                ->sum('amount');
+                ->sum('amount_base');
             $remaining = max(0, round($total - $paid, 2));
 
             if ($remaining <= 0) {
@@ -287,11 +278,11 @@ class BalanceSheetService
         $supplierBalances = [];
 
         foreach ($purchases as $purchase) {
-            $total = (float) $purchase->total_amount;
+            $total = (float) $purchase->total_amount_base;
             $paid = (float) $purchase->payments()
                 ->whereNotNull('paid_at')
                 ->where('paid_at', '<=', $asOf)
-                ->sum('amount');
+                ->sum('amount_base');
             $remaining = max(0, round($total - $paid, 2));
 
             if ($remaining <= 0) {
@@ -344,7 +335,7 @@ class BalanceSheetService
             ->select(['project_id', 'material_id'])
             ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN quantity ELSE 0 END), 0) as purchased', [InventoryTransaction::TYPE_PURCHASE])
             ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN quantity ELSE 0 END), 0) as issued', [InventoryTransaction::TYPE_ISSUE])
-            ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN total_cost ELSE 0 END), 0) as purchased_cost', [InventoryTransaction::TYPE_PURCHASE])
+            ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN total_cost_base ELSE 0 END), 0) as purchased_cost_base', [InventoryTransaction::TYPE_PURCHASE])
             ->whereDate('transaction_date', '<=', $asOf->toDateString())
             ->groupBy('project_id', 'material_id');
 
@@ -353,7 +344,7 @@ class BalanceSheetService
         }
 
         $rows = $query->get();
-        $materials = Material::query()->pluck('unit_cost', 'id');
+        $materials = Material::query()->pluck('unit_cost_base', 'id');
         $projects = Project::query()->pluck('name', 'id');
         $materialNames = Material::query()->pluck('name', 'id');
 
@@ -366,7 +357,7 @@ class BalanceSheetService
                 }
 
                 $avgCost = (float) $row->purchased > 0
-                    ? round((float) $row->purchased_cost / (float) $row->purchased, 2)
+                    ? round((float) $row->purchased_cost_base / (float) $row->purchased, 2)
                     : (float) ($materials[$row->material_id] ?? 0);
 
                 $value = round($onHand * $avgCost, 2);
@@ -444,7 +435,7 @@ class BalanceSheetService
             ->whereDate('invested_at', '<=', $asOf->toDateString())
             ->when($projectId, fn (Builder $q) => $q->where('project_id', $projectId));
 
-        $investmentsTotal = (float) $investmentsQuery->sum('amount');
+        $investmentsTotal = (float) $investmentsQuery->sum('amount_base');
 
         $investmentsByPartner = Partner::query()
             ->with(['projects:id,name'])
@@ -454,10 +445,10 @@ class BalanceSheetService
                     ->whereDate('invested_at', '<=', $asOf->toDateString())
                     ->when($projectId, fn (Builder $q) => $q->where('project_id', $projectId));
 
-                $total = (float) $query->sum('amount');
+                $total = (float) $query->sum('amount_base');
 
                 $byProject = $query
-                    ->select('project_id', DB::raw('SUM(amount) as amount'))
+                    ->select('project_id', DB::raw('SUM(amount_base) as amount'))
                     ->groupBy('project_id')
                     ->get()
                     ->map(fn ($row) => [
@@ -515,9 +506,9 @@ class BalanceSheetService
             $expenseQuery->where('project_id', $projectId);
         }
 
-        $salesTotal = Sale::sumTotalPrice($salesQuery);
-        $incomeTotal = (float) $incomeQuery->sum('amount');
-        $expenseTotal = (float) $expenseQuery->sum('amount');
+        $salesTotal = Sale::sumTotalPriceBase($salesQuery);
+        $incomeTotal = (float) $incomeQuery->sum('amount_base');
+        $expenseTotal = (float) $expenseQuery->sum('amount_base');
 
         return round($salesTotal + $incomeTotal - $expenseTotal, 2);
     }
@@ -528,7 +519,7 @@ class BalanceSheetService
             ->whereDate('invested_at', '<=', $asOf->toDateString())
             ->when($projectId, fn (Builder $q) => $q->where('project_id', $projectId));
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     public static function sumPartnerDistributions(CarbonInterface $asOf, ?int $projectId = null): float
@@ -537,7 +528,7 @@ class BalanceSheetService
             ->whereDate('distributed_at', '<=', $asOf->toDateString())
             ->when($projectId, fn (Builder $q) => $q->where('project_id', $projectId));
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     private static function epoch(CarbonInterface $asOf): CarbonInterface
@@ -553,7 +544,7 @@ class BalanceSheetService
             $query->where('project_id', $projectId);
         }
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     private static function sumIncomeQuery(Builder $query, CarbonInterface $asOf, ?int $projectId = null): float
@@ -564,7 +555,7 @@ class BalanceSheetService
             $query->where('project_id', $projectId);
         }
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     private static function sumVoucherQuery(Builder $query, CarbonInterface $asOf, ?int $projectId = null): float
@@ -575,6 +566,6 @@ class BalanceSheetService
             $query->where('project_id', $projectId);
         }
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 }

@@ -21,8 +21,11 @@ class InventoryTransaction extends Model
         'type',
         'quantity',
         'unit_cost',
+        'unit_cost_base',
         'total_cost',
+        'total_cost_base',
         'currency',
+        'exchange_rate',
         'transaction_date',
         'reference_no',
         'notes',
@@ -36,7 +39,10 @@ class InventoryTransaction extends Model
         return [
             'quantity' => 'decimal:3',
             'unit_cost' => 'decimal:2',
+            'unit_cost_base' => 'decimal:2',
             'total_cost' => 'decimal:2',
+            'total_cost_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'transaction_date' => 'datetime',
         ];
     }

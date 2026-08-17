@@ -13,7 +13,11 @@ class SaleInstallment extends Model
         'installment_no',
         'due_date',
         'amount',
+        'amount_base',
         'paid_amount',
+        'paid_amount_base',
+        'currency',
+        'exchange_rate',
         'status',
         'notes',
     ];
@@ -26,9 +30,19 @@ class SaleInstallment extends Model
         return [
             'due_date' => 'date',
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
             'paid_amount' => 'decimal:2',
+            'paid_amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
+
+    protected $attributes = [
+        'paid_amount' => 0,
+        'paid_amount_base' => 0,
+        'currency' => 'USD',
+        'exchange_rate' => 1,
+    ];
 
     public function sale(): BelongsTo
     {

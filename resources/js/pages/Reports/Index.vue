@@ -5,13 +5,16 @@ import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCalendar } from '@/composables/useCalendar';
+import { useCurrency } from '@/composables/useCurrency';
 
 const props = defineProps<{
-    filters: { from: string; to: string; project_id?: number | null; preset?: string };
+    filters: { from: string; to: string; project_id?: number | null; preset?: string; currency?: string };
     restricted?: boolean;
     projects: { id: number; name: string }[];
     summary: Record<string, number>;
-    by_category: { category: string; amount: number; count: number }[];
+    expenses_by_currency: Record<string, number>;
+    incomes_by_currency: Record<string, number>;
+    by_category: { category: string; amount: number; amount_base: number; count: number }[];
     partners: {
         id: number;
         name: string;
@@ -32,6 +35,7 @@ const from = ref(props.filters.from);
 const to = ref(props.filters.to);
 const projectId = ref(String(props.filters.project_id ?? ''));
 const calendar = useCalendar();
+const { baseCurrency } = useCurrency();
 
 defineOptions({
     layout: {
@@ -42,8 +46,8 @@ defineOptions({
     },
 });
 
-const money = (v: unknown) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v ?? 0));
+const money = (v: unknown, currency = baseCurrency.value) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Number(v ?? 0));
 
 const dateOnly = (v: unknown) => calendar.format(v == null ? null : String(v)) || '—';
 
@@ -144,6 +148,41 @@ function exportUrl(format: string) {
             </div>
         </div>
 
+        <div class="grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl border bg-card p-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-medium">AFN account</h2>
+                    <span class="text-xs font-semibold rounded-full bg-muted px-2 py-1">AFN</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-sm text-muted-foreground">Expenses</div>
+                        <div class="mt-1 text-2xl font-semibold tabular-nums text-rose-700">{{ money(props.expenses_by_currency.AFN ?? 0, 'AFN') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-muted-foreground">Incomes</div>
+                        <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(props.incomes_by_currency.AFN ?? 0, 'AFN') }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="rounded-2xl border bg-card p-6">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-medium">USD account</h2>
+                    <span class="text-xs font-semibold rounded-full bg-muted px-2 py-1">USD</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-sm text-muted-foreground">Expenses</div>
+                        <div class="mt-1 text-2xl font-semibold tabular-nums text-rose-700">{{ money(props.expenses_by_currency.USD ?? 0, 'USD') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-sm text-muted-foreground">Incomes</div>
+                        <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(props.incomes_by_currency.USD ?? 0, 'USD') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="rounded-2xl border bg-card p-6">
             <h2 class="mb-3 font-medium">Expenses by category</h2>
             <div class="overflow-x-auto">
@@ -159,7 +198,7 @@ function exportUrl(format: string) {
                         <tr v-for="row in by_category" :key="row.category" class="border-t">
                             <td class="py-3 pr-4">{{ row.category }}</td>
                             <td class="py-3 pr-4">{{ row.count }}</td>
-                            <td class="py-3 tabular-nums">{{ money(row.amount) }}</td>
+                            <td class="py-3 tabular-nums">{{ money(row.amount_base ?? row.amount) }}</td>
                         </tr>
                         <tr v-if="!by_category.length">
                             <td colspan="3" class="py-6 text-muted-foreground">No expenses in this period.</td>
@@ -215,7 +254,7 @@ function exportUrl(format: string) {
                         <tr v-for="s in sales" :key="s.id" class="border-t">
                             <td class="whitespace-nowrap py-3 pr-4">{{ dateOnly(s.contract_date) }}</td>
                             <td class="py-3 pr-4">{{ s.customer?.name }}</td>
-                            <td class="whitespace-nowrap py-3 tabular-nums">{{ money(Math.max(0, Number(s.unit?.list_price ?? 0) - Number(s.discount ?? 0))) }}</td>
+                            <td class="whitespace-nowrap py-3 tabular-nums">{{ money(Math.max(0, Number(s.unit?.list_price ?? 0) - Number(s.discount ?? 0)), s.currency || baseCurrency.value) }}</td>
                         </tr>
                         <tr v-if="!sales.length">
                             <td colspan="3" class="py-6 text-muted-foreground">No sales in this period.</td>
@@ -242,7 +281,7 @@ function exportUrl(format: string) {
                             <td class="whitespace-nowrap py-3 pr-4">{{ dateOnly(e.expense_date) }}</td>
                             <td class="whitespace-nowrap py-3 pr-4">{{ e.category?.name || 'General' }}</td>
                             <td class="py-3 pr-4">{{ e.description }}</td>
-                            <td class="whitespace-nowrap py-3 tabular-nums">{{ money(e.amount) }}</td>
+                            <td class="whitespace-nowrap py-3 tabular-nums">{{ money(e.amount, e.currency || baseCurrency.value) }}</td>
                         </tr>
                         <tr v-if="!expenses.length">
                             <td colspan="4" class="py-6 text-muted-foreground">No expenses in this period.</td>

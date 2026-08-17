@@ -14,8 +14,11 @@ use App\Models\Project;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Unit;
+use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
+use App\Services\PurchaseService;
 use App\Services\ShareholderProfitService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -53,6 +56,7 @@ class ProjectController extends Controller implements HasMiddleware
             'active' => (clone $query)->whereIn('status', ['planning', 'under_construction', 'ready_for_sale'])->count(),
             'units' => Unit::query()->whereIn('project_id', clone $ids)->count(),
             'sales_total' => Sale::sumTotalPrice(Sale::query()->whereIn('project_id', clone $ids)),
+            'sales_total_base' => Sale::sumTotalPriceBase(Sale::query()->whereIn('project_id', clone $ids)),
         ];
 
         return Inertia::render('Projects/Index', [
@@ -111,11 +115,15 @@ class ProjectController extends Controller implements HasMiddleware
             ->where('status', 'approved');
 
         $expensesTotal = (float) (clone $expensesQuery)->sum('amount');
+        $expensesTotalBase = (float) (clone $expensesQuery)->sum('amount_base');
         $salesTotal = Sale::sumTotalPrice($project->sales()->getQuery());
+        $salesTotalBase = Sale::sumTotalPriceBase($project->sales()->getQuery());
         $netProfit = ShareholderProfitService::netProfit(projectId: $project->id);
         $purchasesQuery = Purchase::query()->where('project_id', $project->id);
         $purchasesTotal = (float) (clone $purchasesQuery)->sum('total_amount');
+        $purchasesTotalBase = (float) (clone $purchasesQuery)->sum('total_amount_base');
         $purchasesPaid = (float) (clone $purchasesQuery)->sum('paid_amount');
+        $purchasesPaidBase = (float) (clone $purchasesQuery)->sum('paid_amount_base');
         $stock = InventoryTransaction::stockLevels($project->id);
         $stockIssues = InventoryTransaction::query()
             ->where('project_id', $project->id)
@@ -134,17 +142,28 @@ class ProjectController extends Controller implements HasMiddleware
                 'units_count' => $project->units_count,
                 'sales_count' => $project->sales_count,
                 'expenses_total' => $expensesTotal,
+                'expenses_total_base' => $expensesTotalBase,
                 'incomes_total' => $project->incomes()->sum('amount'),
+                'incomes_total_base' => $project->incomes()->sum('amount_base'),
                 'sales_total' => $salesTotal,
+                'sales_total_base' => $salesTotalBase,
                 'net_profit' => $netProfit,
                 'contributions_total' => (float) PartnerInvestment::query()
                     ->where('project_id', $project->id)
                     ->sum('amount'),
+                'contributions_total_base' => (float) PartnerInvestment::query()
+                    ->where('project_id', $project->id)
+                    ->sum('amount_base'),
                 'payouts_total' => (float) PartnerDistribution::query()
                     ->where('project_id', $project->id)
                     ->sum('amount'),
+                'payouts_total_base' => (float) PartnerDistribution::query()
+                    ->where('project_id', $project->id)
+                    ->sum('amount_base'),
                 'purchases_total' => $purchasesTotal,
+                'purchases_total_base' => $purchasesTotalBase,
                 'purchases_remaining' => max(0, $purchasesTotal - $purchasesPaid),
+                'purchases_remaining_base' => max(0, $purchasesTotalBase - $purchasesPaidBase),
             ],
             'shareholders' => $shareholders,
             'available_shareholders' => Partner::query()
@@ -156,17 +175,17 @@ class ProjectController extends Controller implements HasMiddleware
                 ->with('partner:id,name')
                 ->latest('invested_at')
                 ->limit(50)
-                ->get(['id', 'partner_id', 'amount', 'currency', 'invested_at']),
+                ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at']),
             'expenses' => $expensesQuery
                 ->latest('expense_date')
                 ->limit(50)
-                ->get(['id', 'expense_no', 'expense_date', 'paid_to', 'description', 'amount', 'currency', 'purchase_id']),
+                ->get(['id', 'expense_no', 'expense_date', 'paid_to', 'description', 'amount', 'amount_base', 'currency', 'purchase_id']),
             'expense_categories' => $this->expenseCategories(),
             'purchases' => $purchasesQuery
                 ->with('supplier:id,name')
                 ->latest('purchase_date')
                 ->limit(50)
-                ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'paid_amount', 'currency', 'status']),
+                ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'total_amount_base', 'paid_amount', 'paid_amount_base', 'currency', 'status']),
             'stock' => $stock->map(function ($row) {
                 return [
                     'material_id' => (int) $row->material_id,
@@ -194,6 +213,7 @@ class ProjectController extends Controller implements HasMiddleware
             'expense_date' => 'required|date',
             'paid_to' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
+            'currency' => 'nullable|string|size:3',
             'description' => 'required|string|max:1000',
             'expense_category_id' => [
                 'nullable',
@@ -251,16 +271,23 @@ class ProjectController extends Controller implements HasMiddleware
 
         $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
+            'currency' => 'nullable|string|size:3',
             'invested_at' => 'required|date',
             'reference_no' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
 
+        $currency = strtoupper($data['currency'] ?? CurrencyService::baseCurrency());
+        $exchangeRate = FinanceDefaults::exchangeRate($currency, Carbon::parse($data['invested_at']));
+        $amount = round((float) $data['amount'], 2);
+
         PartnerInvestment::create([
             'project_id' => $project->id,
             'partner_id' => $partner->id,
-            'amount' => $data['amount'],
-            'currency' => 'USD',
+            'amount' => $amount,
+            'amount_base' => round($amount * $exchangeRate, 2),
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
             'agreed_share_percentage' => $partner->ownershipOnProject($project->id),
             'invested_at' => $data['invested_at'],
             'type' => 'investment',
@@ -292,16 +319,23 @@ class ProjectController extends Controller implements HasMiddleware
 
         $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
+            'currency' => 'nullable|string|size:3',
             'distributed_at' => 'required|date',
             'reference_no' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
 
+        $currency = strtoupper($data['currency'] ?? CurrencyService::baseCurrency());
+        $exchangeRate = FinanceDefaults::exchangeRate($currency, Carbon::parse($data['distributed_at']));
+        $amount = round((float) $data['amount'], 2);
+
         PartnerDistribution::create([
             'project_id' => $project->id,
             'partner_id' => $partner->id,
-            'amount' => $data['amount'],
-            'currency' => 'USD',
+            'amount' => $amount,
+            'amount_base' => round($amount * $exchangeRate, 2),
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
             'type' => 'profit',
             'distributed_at' => $data['distributed_at'],
             'reference_no' => $data['reference_no'] ?? null,
@@ -309,6 +343,35 @@ class ProjectController extends Controller implements HasMiddleware
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Payout recorded.']);
+
+        return redirect()->route('projects.show', $project);
+    }
+
+    public function payPurchaseRemaining(Request $request, Project $project, Purchase $purchase): RedirectResponse
+    {
+        abort_unless($purchase->project_id === $project->id, 404);
+
+        $data = $request->validate([
+            'payment_method' => 'nullable|string|max:50',
+            'reference_no' => 'nullable|string|max:100',
+            'paid_at' => 'nullable|date',
+            'notes' => 'nullable|string',
+        ]);
+
+        $remaining = (float) $purchase->remaining_amount;
+
+        if ($remaining <= 0) {
+            return back()->withErrors(['amount' => 'This purchase has no remaining balance.']);
+        }
+
+        PurchaseService::recordPayment($purchase, $remaining, [
+            'payment_method' => $data['payment_method'] ?? 'cash',
+            'reference_no' => $data['reference_no'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'paid_at' => $data['paid_at'] ?? now(),
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Supplier payment recorded.']);
 
         return redirect()->route('projects.show', $project);
     }

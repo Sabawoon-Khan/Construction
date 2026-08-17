@@ -96,6 +96,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('projects/{project}/contributions/{investment}', [ProjectController::class, 'showContribution'])
         ->middleware('permission:projects.view')
         ->name('projects.contributions.show');
+    Route::post('projects/{project}/purchases/{purchase}/pay-remaining', [ProjectController::class, 'payPurchaseRemaining'])
+        ->middleware('permission:purchases.edit')
+        ->name('projects.purchases.payRemaining');
     Route::resource('units', UnitController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('partners', PartnerController::class);

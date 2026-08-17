@@ -19,7 +19,9 @@ class Material extends Model
         'material_unit_id',
         'minimum_stock',
         'unit_cost',
+        'unit_cost_base',
         'currency',
+        'exchange_rate',
         'is_active',
     ];
 
@@ -31,6 +33,8 @@ class Material extends Model
         return [
             'minimum_stock' => 'decimal:3',
             'unit_cost' => 'decimal:2',
+            'unit_cost_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'is_active' => 'boolean',
         ];
     }
@@ -38,7 +42,9 @@ class Material extends Model
     protected $attributes = [
         'minimum_stock' => 0,
         'unit_cost' => 0,
+        'unit_cost_base' => 0,
         'currency' => 'USD',
+        'exchange_rate' => 1,
         'is_active' => true,
     ];
 

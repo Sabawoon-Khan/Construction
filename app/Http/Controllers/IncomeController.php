@@ -32,11 +32,15 @@ class IncomeController extends Controller implements HasMiddleware
 
         $count = (clone $query)->count();
         $totalAmount = (float) (clone $query)->sum('amount');
+        $totalAmountBase = (float) (clone $query)->sum('amount_base');
         $totals = [
             'count' => $count,
             'amount' => $totalAmount,
+            'amount_base' => $totalAmountBase,
             'this_month' => (float) (clone $query)->where('income_date', '>=', now()->startOfMonth())->sum('amount'),
+            'this_month_base' => (float) (clone $query)->where('income_date', '>=', now()->startOfMonth())->sum('amount_base'),
             'average' => $count > 0 ? $totalAmount / $count : 0,
+            'average_base' => $count > 0 ? $totalAmountBase / $count : 0,
         ];
 
         return Inertia::render('Incomes/Index', [
@@ -74,7 +78,7 @@ class IncomeController extends Controller implements HasMiddleware
 
     public function update(Request $request, Income $income): RedirectResponse
     {
-        $income->update($this->validated($request));
+        $income->update(FinanceDefaults::incomeAttributes($this->validated($request)));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Income updated.']);
 
@@ -96,6 +100,7 @@ class IncomeController extends Controller implements HasMiddleware
         return $request->validate([
             'income_date' => 'required|date',
             'amount' => 'required|numeric|min:0',
+            'currency' => 'nullable|string|size:3',
             'description' => 'required|string|max:1000',
         ]);
     }

@@ -10,6 +10,7 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -18,10 +19,11 @@ import { money } from '@/lib/utils';
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; total_price: number; remaining: number };
+    totals: { count: number; total_price: number; total_price_base: number; remaining: number; remaining_base: number };
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
 const { viewAction, editAction, can } = useMisPage();
 
 defineOptions({
@@ -94,8 +96,8 @@ function rowActions(item: any): RowActionItem[] {
 
         <MisStatGrid :columns="3">
             <MisStatCard :label="t('Contracts')" :value="totals.count" :hint="t('All matching sales')" />
-            <MisStatCard :label="t('Sales total')" :value="money(totals.total_price)" />
-            <MisStatCard :label="t('Remaining')" :value="money(totals.remaining)" tone="warning" />
+            <MisStatCard :label="t('Sales total')" :value="money(totals.total_price_base ?? totals.total_price, baseCurrency)" />
+            <MisStatCard :label="t('Remaining')" :value="money(totals.remaining_base ?? totals.remaining, baseCurrency)" tone="warning" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -123,10 +125,10 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3">{{ item.customer?.name }}</td>
                             <td class="px-4 py-3">{{ item.project?.name }}</td>
                             <td class="px-4 py-3">{{ item.unit?.unit_no }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.unit?.list_price, item.currency || 'USD') }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.discount, item.currency || 'USD') }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(saleTotal(item), item.currency || 'USD') }}</td>
-                            <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(saleRemaining(item), item.currency || 'USD') }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.unit?.list_price, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.discount, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(saleTotal(item), item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(saleRemaining(item), item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">

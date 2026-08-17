@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Project;
 use App\Models\Unit;
+use App\Services\CurrencyService;
+use App\Services\FinanceDefaults;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -75,6 +78,11 @@ class UnitController extends Controller implements HasMiddleware
         DB::transaction(function () use ($data) {
             Project::query()->findOrFail($data['project_id']);
 
+            $currency = strtoupper($data['currency'] ?? CurrencyService::baseCurrency());
+            $exchangeRate = FinanceDefaults::exchangeRate($currency, now());
+            $costPrice = round((float) ($data['cost_price'] ?? 0), 2);
+            $listPrice = round((float) ($data['list_price'] ?? 0), 2);
+
             Unit::create([
                 'project_id' => $data['project_id'],
                 'floor_number' => (int) ($data['floor_number'] ?? 1),
@@ -87,9 +95,12 @@ class UnitController extends Controller implements HasMiddleware
                 'halls' => $data['halls'] ?? null,
                 'kitchens' => $data['kitchens'] ?? null,
                 'balconies' => $data['balconies'] ?? null,
-                'cost_price' => $data['cost_price'] ?? 0,
-                'list_price' => $data['list_price'] ?? 0,
-                'currency' => $data['currency'] ?? 'USD',
+                'cost_price' => $costPrice,
+                'cost_price_base' => round($costPrice * $exchangeRate, 2),
+                'list_price' => $listPrice,
+                'list_price_base' => round($listPrice * $exchangeRate, 2),
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
                 'status' => $data['status'] ?? 'available',
                 'description' => $data['description'] ?? null,
             ]);
@@ -132,6 +143,11 @@ class UnitController extends Controller implements HasMiddleware
     {
         $data = $this->validated($request);
 
+        $currency = strtoupper($data['currency'] ?? $unit->currency ?? CurrencyService::baseCurrency());
+        $exchangeRate = FinanceDefaults::exchangeRate($currency, now());
+        $costPrice = round((float) ($data['cost_price'] ?? $unit->cost_price ?? 0), 2);
+        $listPrice = round((float) ($data['list_price'] ?? $unit->list_price ?? 0), 2);
+
         $unit->update([
             'unit_no' => $data['unit_no'],
             'floor_number' => (int) ($data['floor_number'] ?? $unit->floor_number),
@@ -143,9 +159,12 @@ class UnitController extends Controller implements HasMiddleware
             'halls' => $data['halls'] ?? null,
             'kitchens' => $data['kitchens'] ?? null,
             'balconies' => $data['balconies'] ?? null,
-            'cost_price' => $data['cost_price'] ?? 0,
-            'list_price' => $data['list_price'] ?? 0,
-            'currency' => $data['currency'] ?? 'USD',
+            'cost_price' => $costPrice,
+            'cost_price_base' => round($costPrice * $exchangeRate, 2),
+            'list_price' => $listPrice,
+            'list_price_base' => round($listPrice * $exchangeRate, 2),
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
             'status' => $data['status'] ?? 'available',
             'description' => $data['description'] ?? null,
         ]);

@@ -10,6 +10,7 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -18,10 +19,11 @@ import { money } from '@/lib/utils';
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; amount: number; paid_out?: number; this_month: number; cash: number };
+    totals: { count: number; amount: number; amount_base: number; paid_out?: number; paid_out_base?: number; this_month: number; this_month_base: number; cash: number; cash_base: number };
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
 const { formatDate } = useMisPage();
 
 defineOptions({
@@ -58,9 +60,9 @@ function rowActions(item: any): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Entries')" :value="totals.count" />
-            <MisStatCard :label="t('Collected')" :value="money(totals.amount)" tone="success" />
-            <MisStatCard :label="t('Paid to suppliers')" :value="money(totals.paid_out ?? 0)" tone="danger" />
-            <MisStatCard :label="t('This month')" :value="money(totals.this_month)" />
+            <MisStatCard :label="t('Collected')" :value="money(totals.amount_base ?? totals.amount, baseCurrency)" tone="success" />
+            <MisStatCard :label="t('Paid to suppliers')" :value="money(totals.paid_out_base ?? totals.paid_out ?? 0, baseCurrency)" tone="danger" />
+            <MisStatCard :label="t('This month')" :value="money(totals.this_month_base ?? totals.this_month, baseCurrency)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -88,7 +90,7 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 capitalize">{{ item.type === 'disbursement' ? t('Paid out') : t('Receipt') }}</td>
                             <td class="px-4 py-3">{{ item.supplier?.name || item.customer?.name || '—' }}</td>
                             <td class="px-4 py-3">{{ item.purchase?.purchase_no || item.sale?.sale_no || '—' }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.amount) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3 capitalize">{{ item.payment_method }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3">

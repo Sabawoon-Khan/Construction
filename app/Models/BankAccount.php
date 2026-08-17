@@ -13,7 +13,9 @@ class BankAccount extends Model
         'account_number',
         'iban',
         'currency',
+        'exchange_rate',
         'opening_balance',
+        'opening_balance_base',
         'is_cash',
         'is_active',
     ];
@@ -25,6 +27,8 @@ class BankAccount extends Model
     {
         return [
             'opening_balance' => 'decimal:2',
+            'opening_balance_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'is_cash' => 'boolean',
             'is_active' => 'boolean',
         ];

@@ -13,7 +13,9 @@ class FinancialTransaction extends Model
         'bank_account_id',
         'type',
         'amount',
+        'amount_base',
         'currency',
+        'exchange_rate',
         'transaction_date',
         'reference_no',
         'description',
@@ -26,6 +28,8 @@ class FinancialTransaction extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'transaction_date' => 'datetime',
         ];
     }

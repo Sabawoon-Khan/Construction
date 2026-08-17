@@ -10,16 +10,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
+import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
 const props = defineProps<{
     purchase: any;
     paid_amount: number;
+    paid_amount_base: number;
     remaining_amount: number;
+    remaining_amount_base: number;
     total_amount: number;
+    total_amount_base: number;
 }>();
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
@@ -79,15 +84,18 @@ defineOptions({
         <div class="grid gap-4 md:grid-cols-3">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Purchase total') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(total_amount, purchase.currency || 'USD') }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(total_amount, purchase.currency || baseCurrency) }}</div>
+                <div class="text-xs text-muted-foreground tabular-nums">{{ money(total_amount_base, baseCurrency) }} {{ t('base') }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Paid') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(paid_amount) }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(paid_amount, purchase.currency || baseCurrency) }}</div>
+                <div class="text-xs text-muted-foreground tabular-nums">{{ money(paid_amount_base, baseCurrency) }} {{ t('base') }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Remaining owed') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-amber-700">{{ money(remaining_amount) }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums text-amber-700">{{ money(remaining_amount, purchase.currency || baseCurrency) }}</div>
+                <div class="text-xs text-muted-foreground tabular-nums">{{ money(remaining_amount_base, baseCurrency) }} {{ t('base') }}</div>
             </div>
         </div>
 
@@ -187,7 +195,7 @@ defineOptions({
                             <Link :href="`/payments/${payment.id}`" class="hover:underline">{{ payment.payment_no }}</Link>
                         </td>
                         <td class="px-4 py-3">{{ formatDate(payment.paid_at) }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(payment.amount, payment.currency || 'USD') }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(payment.amount, payment.currency || baseCurrency) }}</td>
                         <td class="px-4 py-3 capitalize">{{ payment.payment_method }}</td>
                     </tr>
                     <tr v-if="!purchase.payments?.length">

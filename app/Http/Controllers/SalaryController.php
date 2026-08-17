@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Employee;
 use App\Models\Salary;
+use App\Services\CurrencyService;
+use App\Services\FinanceDefaults;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -47,9 +50,13 @@ class SalaryController extends Controller implements HasMiddleware
         $totals = [
             'count' => (clone $query)->count(),
             'basic_total' => (float) (clone $query)->sum('basic_salary'),
+            'basic_total_base' => (float) (clone $query)->sum('basic_salary_base'),
             'bonus_total' => (float) (clone $query)->sum('bonus'),
+            'bonus_total_base' => (float) (clone $query)->sum('bonus_base'),
             'deduction_total' => (float) (clone $query)->sum('deduction'),
+            'deduction_total_base' => (float) (clone $query)->sum('deduction_base'),
             'net_total' => (float) (clone $query)->sum('net_salary'),
+            'net_total_base' => (float) (clone $query)->sum('net_salary_base'),
         ];
 
         return Inertia::render('Salaries/Index', [
@@ -61,7 +68,7 @@ class SalaryController extends Controller implements HasMiddleware
                 'year' => $year ?: null,
             ],
             'totals' => $totals,
-            'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary']),
+            'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary', 'currency']),
         ]);
     }
 
@@ -69,7 +76,7 @@ class SalaryController extends Controller implements HasMiddleware
     {
         return Inertia::render('Salaries/Form', [
             'item' => null,
-            'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary']),
+            'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary', 'currency']),
         ]);
     }
 
@@ -88,7 +95,7 @@ class SalaryController extends Controller implements HasMiddleware
     {
         return Inertia::render('Salaries/Form', [
             'item' => $salary,
-            'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary']),
+            'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary', 'currency']),
         ]);
     }
 
@@ -125,8 +132,26 @@ class SalaryController extends Controller implements HasMiddleware
             'notes' => 'nullable|string',
         ]);
 
-        $data['bonus'] = $data['bonus'] ?? 0;
-        $data['deduction'] = $data['deduction'] ?? 0;
+        $employee = Employee::query()->findOrFail($data['employee_id']);
+        $currency = strtoupper($employee->currency ?? CurrencyService::baseCurrency());
+        $paymentDate = isset($data['payment_date']) ? Carbon::parse($data['payment_date']) : now();
+        $exchangeRate = FinanceDefaults::exchangeRate($currency, $paymentDate);
+
+        $basicSalary = round((float) $data['basic_salary'], 2);
+        $bonus = round((float) ($data['bonus'] ?? 0), 2);
+        $deduction = round((float) ($data['deduction'] ?? 0), 2);
+        $netSalary = max(0, round($basicSalary + $bonus - $deduction, 2));
+
+        $data['currency'] = $currency;
+        $data['exchange_rate'] = $exchangeRate;
+        $data['basic_salary'] = $basicSalary;
+        $data['basic_salary_base'] = round($basicSalary * $exchangeRate, 2);
+        $data['bonus'] = $bonus;
+        $data['bonus_base'] = round($bonus * $exchangeRate, 2);
+        $data['deduction'] = $deduction;
+        $data['deduction_base'] = round($deduction * $exchangeRate, 2);
+        $data['net_salary'] = $netSalary;
+        $data['net_salary_base'] = round($netSalary * $exchangeRate, 2);
 
         if (blank($data['status'] ?? null)) {
             $data['status'] = 'pending';

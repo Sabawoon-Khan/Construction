@@ -29,7 +29,7 @@ class ShareholderProfitService
             $salesQuery->where('sales.project_id', $projectId);
         }
 
-        $salesTotal = Sale::sumTotalPrice($salesQuery);
+        $salesTotal = Sale::sumTotalPriceBase($salesQuery);
         $expenseTotal = self::expenseTotal($from, $to, $projectId);
         $salaryTotal = self::salaryTotal($from, $to, $projectId);
         $incomeTotal = self::incomeTotal($from, $to, $projectId);
@@ -64,7 +64,7 @@ class ShareholderProfitService
             $query->where('project_id', $projectId);
         }
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     public static function salaryTotal(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): float
@@ -88,7 +88,7 @@ class ShareholderProfitService
             $query->where('project_id', $projectId);
         }
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     public static function incomeTotal(?CarbonInterface $from = null, ?CarbonInterface $to = null, ?int $projectId = null): float
@@ -106,7 +106,7 @@ class ShareholderProfitService
                 ->whereDate('income_date', '<=', $to->toDateString());
         }
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     public static function distributionsTotal(Partner $partner, int $projectId, ?CarbonInterface $from = null, ?CarbonInterface $to = null): float
@@ -118,7 +118,7 @@ class ShareholderProfitService
                 ->whereDate('distributed_at', '<=', $to->toDateString());
         }
 
-        return (float) $query->sum('amount');
+        return (float) $query->sum('amount_base');
     }
 
     /**
@@ -159,7 +159,7 @@ class ShareholderProfitService
                     'ownership_percentage' => $share['ownership_percentage'],
                     'contributed_total' => (float) $partner->investments()
                         ->where('project_id', $project->id)
-                        ->sum('amount'),
+                        ->sum('amount_base'),
                     'entitled_share' => $share['entitled_share'],
                     'paid_total' => $share['paid_total'],
                     'balance_owed' => $share['balance_owed'],

@@ -50,12 +50,17 @@ class PurchaseController extends Controller implements HasMiddleware
         }
 
         $totalAmount = (float) (clone $query)->sum('total_amount');
+        $totalAmountBase = (float) (clone $query)->sum('total_amount_base');
         $paid = (float) (clone $query)->sum('paid_amount');
+        $paidBase = (float) (clone $query)->sum('paid_amount_base');
         $totals = [
             'count' => (clone $query)->count(),
             'total_amount' => $totalAmount,
+            'total_amount_base' => $totalAmountBase,
             'paid' => $paid,
+            'paid_base' => $paidBase,
             'remaining' => max(0, $totalAmount - $paid),
+            'remaining_base' => max(0, $totalAmountBase - $paidBase),
         ];
 
         return Inertia::render('Purchases/Index', [
@@ -90,15 +95,18 @@ class PurchaseController extends Controller implements HasMiddleware
             'supplier',
             'project',
             'items.material.unit:id,unit_name',
-            'expense:id,purchase_id,expense_no,amount',
+            'expense:id,purchase_id,expense_no,amount,amount_base,currency',
             'payments' => fn ($q) => $q->latest('paid_at'),
         ]);
 
         return Inertia::render('Purchases/Show', [
             'purchase' => $purchase,
             'paid_amount' => (float) $purchase->paid_amount,
+            'paid_amount_base' => (float) $purchase->paid_amount_base,
             'remaining_amount' => $purchase->remaining_amount,
+            'remaining_amount_base' => $purchase->remaining_amount_base,
             'total_amount' => (float) $purchase->total_amount,
+            'total_amount_base' => (float) $purchase->total_amount_base,
         ]);
     }
 
@@ -166,6 +174,7 @@ class PurchaseController extends Controller implements HasMiddleware
             'purchase_date' => 'required|date',
             'reference_no' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
+            'currency' => 'nullable|string|size:3',
             'paid_now' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string|max:50',
             'items' => 'required|array|min:1',

@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -31,16 +32,23 @@ class PurchaseService
     public static function create(array $data): Purchase
     {
         return DB::transaction(function () use ($data) {
+            $currency = strtoupper($data['currency'] ?? CurrencyService::baseCurrency());
+            $purchaseDate = Carbon::parse($data['purchase_date']);
+            $exchangeRate = FinanceDefaults::exchangeRate($currency, $purchaseDate);
+
             $items = collect($data['items'] ?? [])
-                ->map(function (array $row) {
+                ->map(function (array $row) use ($exchangeRate) {
                     $quantity = round((float) $row['quantity'], 3);
                     $unitCost = round((float) $row['unit_cost'], 2);
+                    $totalCost = round($quantity * $unitCost, 2);
 
                     return [
                         'material_id' => (int) $row['material_id'],
                         'quantity' => $quantity,
                         'unit_cost' => $unitCost,
-                        'total_cost' => round($quantity * $unitCost, 2),
+                        'unit_cost_base' => round($unitCost * $exchangeRate, 2),
+                        'total_cost' => $totalCost,
+                        'total_cost_base' => round($totalCost * $exchangeRate, 2),
                     ];
                 })
                 ->filter(fn (array $row) => $row['quantity'] > 0)
@@ -53,7 +61,9 @@ class PurchaseService
             }
 
             $total = round((float) $items->sum('total_cost'), 2);
+            $totalBase = round((float) $items->sum('total_cost_base'), 2);
             $paidNow = round((float) ($data['paid_now'] ?? 0), 2);
+            $paidNowBase = round($paidNow * $exchangeRate, 2);
 
             if ($paidNow < 0 || $paidNow > $total) {
                 throw ValidationException::withMessages([
@@ -69,8 +79,11 @@ class PurchaseService
                 'purchase_no' => 'PUR-'.Str::upper(Str::random(8)),
                 'purchase_date' => $data['purchase_date'],
                 'total_amount' => $total,
+                'total_amount_base' => $totalBase,
                 'paid_amount' => 0,
-                'currency' => $data['currency'] ?? 'USD',
+                'paid_amount_base' => 0,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
                 'status' => 'unpaid',
                 'reference_no' => $data['reference_no'] ?? null,
                 'notes' => $data['notes'] ?? null,
@@ -95,9 +108,18 @@ class PurchaseService
                 'reference_no' => $data['reference_no'] ?? $purchase->purchase_no,
                 'expense_category_id' => self::materialsCategoryId(),
                 'purchase_id' => $purchase->id,
+                'currency' => $currency,
             ], (int) $purchase->project_id));
 
-            $expense->forceFill(['purchase_id' => $purchase->id, 'amount' => $total])->save();
+            $expense->forceFill([
+                'purchase_id' => $purchase->id,
+                'amount' => $total,
+                'amount_base' => $totalBase,
+                'per_price' => $total,
+                'per_price_base' => $totalBase,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+            ])->save();
 
             foreach ($purchase->items()->get() as $item) {
                 InventoryTransaction::query()->create([
@@ -109,8 +131,11 @@ class PurchaseService
                     'type' => InventoryTransaction::TYPE_PURCHASE,
                     'quantity' => $item->quantity,
                     'unit_cost' => $item->unit_cost,
+                    'unit_cost_base' => $item->unit_cost_base,
                     'total_cost' => $item->total_cost,
+                    'total_cost_base' => $item->total_cost_base,
                     'currency' => $purchase->currency,
+                    'exchange_rate' => $purchase->exchange_rate,
                     'transaction_date' => $purchase->purchase_date,
                     'reference_no' => $purchase->purchase_no,
                     'notes' => null,
@@ -141,6 +166,8 @@ class PurchaseService
             $purchase->refresh();
             $remaining = $purchase->remaining_amount;
             $amount = round($amount, 2);
+            $exchangeRate = (float) $purchase->exchange_rate;
+            $amountBase = round($amount * $exchangeRate, 2);
 
             if ($amount <= 0) {
                 throw ValidationException::withMessages([
@@ -162,7 +189,9 @@ class PurchaseService
                 'payment_no' => 'PAY-'.Str::upper(Str::random(8)),
                 'type' => 'disbursement',
                 'amount' => $amount,
-                'currency' => $purchase->currency ?? 'USD',
+                'amount_base' => $amountBase,
+                'currency' => $purchase->currency,
+                'exchange_rate' => $exchangeRate,
                 'paid_at' => $meta['paid_at'] ?? now(),
                 'payment_method' => $meta['payment_method'] ?? 'cash',
                 'reference_no' => $meta['reference_no'] ?? null,
@@ -171,6 +200,7 @@ class PurchaseService
             ]);
 
             $purchase->paid_amount = round((float) $purchase->paid_amount + $amount, 2);
+            $purchase->paid_amount_base = round((float) $purchase->paid_amount_base + $amountBase, 2);
             self::syncStatus($purchase);
         });
     }
@@ -197,7 +227,9 @@ class PurchaseService
                 ]);
             }
 
-            $unitCost = self::averageUnitCost($projectId, $materialId);
+            $unitCostBase = self::averageUnitCostBase($projectId, $materialId);
+            $totalCostBase = round($quantity * $unitCostBase, 2);
+            $baseCurrency = CurrencyService::baseCurrency();
 
             return InventoryTransaction::query()->create([
                 'project_id' => $projectId,
@@ -207,9 +239,12 @@ class PurchaseService
                 'purchase_id' => null,
                 'type' => InventoryTransaction::TYPE_ISSUE,
                 'quantity' => $quantity,
-                'unit_cost' => $unitCost,
-                'total_cost' => round($quantity * $unitCost, 2),
-                'currency' => 'USD',
+                'unit_cost' => $unitCostBase,
+                'unit_cost_base' => $unitCostBase,
+                'total_cost' => $totalCostBase,
+                'total_cost_base' => $totalCostBase,
+                'currency' => $baseCurrency,
+                'exchange_rate' => 1,
                 'transaction_date' => $meta['transaction_date'] ?? now(),
                 'reference_no' => $meta['reference_no'] ?? null,
                 'notes' => $meta['notes'] ?? null,
@@ -267,13 +302,13 @@ class PurchaseService
         return 'Purchase '.$purchase->purchase_no.': '.$list;
     }
 
-    private static function averageUnitCost(int $projectId, int $materialId): float
+    private static function averageUnitCostBase(int $projectId, int $materialId): float
     {
         $purchased = InventoryTransaction::query()
             ->where('project_id', $projectId)
             ->where('material_id', $materialId)
             ->where('type', InventoryTransaction::TYPE_PURCHASE)
-            ->selectRaw('COALESCE(SUM(quantity), 0) as qty, COALESCE(SUM(total_cost), 0) as cost')
+            ->selectRaw('COALESCE(SUM(quantity), 0) as qty, COALESCE(SUM(total_cost_base), 0) as cost')
             ->first();
 
         $qty = (float) ($purchased?->qty ?? 0);

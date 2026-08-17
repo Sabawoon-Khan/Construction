@@ -54,6 +54,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/company', [CompanyController::class, 'edit'])->name('settings.company.edit');
     Route::put('settings/company', [CompanyController::class, 'update'])->name('settings.company.update');
+    Route::post('settings/company/exchange-rates', [CompanyController::class, 'storeExchangeRate'])->name('settings.company.exchange-rates.store');
+    Route::put('settings/company/exchange-rates/{rate}', [CompanyController::class, 'updateExchangeRate'])->name('settings.company.exchange-rates.update');
+    Route::delete('settings/company/exchange-rates/{rate}', [CompanyController::class, 'destroyExchangeRate'])->name('settings.company.exchange-rates.destroy');
 
     Route::get('settings/offline', [OfflineSettingsController::class, 'edit'])->name('settings.offline.edit');
     Route::put('settings/offline', [OfflineSettingsController::class, 'update'])->name('settings.offline.update');

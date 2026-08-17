@@ -36,11 +36,15 @@ class ExpenseController extends Controller implements HasMiddleware
 
         $count = (clone $query)->count();
         $totalAmount = (float) (clone $query)->sum('amount');
+        $totalAmountBase = (float) (clone $query)->sum('amount_base');
         $totals = [
             'count' => $count,
             'amount' => $totalAmount,
+            'amount_base' => $totalAmountBase,
             'this_month' => (float) (clone $query)->where('expense_date', '>=', now()->startOfMonth())->sum('amount'),
+            'this_month_base' => (float) (clone $query)->where('expense_date', '>=', now()->startOfMonth())->sum('amount_base'),
             'average' => $count > 0 ? $totalAmount / $count : 0,
+            'average_base' => $count > 0 ? $totalAmountBase / $count : 0,
         ];
 
         return Inertia::render('Expenses/Index', [
@@ -72,6 +76,35 @@ class ExpenseController extends Controller implements HasMiddleware
         return redirect()->route('expenses.index');
     }
 
+    public function update(Request $request, Expense $expense): RedirectResponse|Response
+    {
+        if ($expense->purchase_id) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Edit this through the purchase, not as a standalone expense.']);
+
+            return redirect()->route('purchases.show', $expense->purchase_id);
+        }
+
+        if ($expense->project_id) {
+            return redirect()->route('projects.show', $expense->project_id);
+        }
+
+        $data = $this->validated($request);
+        unset($data['documents']);
+
+        $expense->update([
+            ...FinanceDefaults::expenseAttributes($data),
+            'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
+            'expense_unit_id' => $request->integer('expense_unit_id') ?: null,
+            'reference_no' => $request->input('reference_no'),
+        ]);
+
+        $this->storeDocuments($request, $expense);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
+
+        return redirect()->route('expenses.index');
+    }
+
     public function show(Expense $expense): Response
     {
         $expense->load(['project:id,name', 'expenseUnit:id,unit_name', 'attachments', 'purchase:id,purchase_no']);
@@ -98,35 +131,6 @@ class ExpenseController extends Controller implements HasMiddleware
             'categories' => $this->categories(),
             'units' => ExpenseUnit::options(),
         ]);
-    }
-
-    public function update(Request $request, Expense $expense): RedirectResponse
-    {
-        if ($expense->purchase_id) {
-            Inertia::flash('toast', ['type' => 'error', 'message' => 'Edit this through the purchase, not as a standalone expense.']);
-
-            return redirect()->route('purchases.show', $expense->purchase_id);
-        }
-
-        if ($expense->project_id) {
-            return redirect()->route('projects.show', $expense->project_id);
-        }
-
-        $data = $this->validated($request);
-        unset($data['documents']);
-
-        $expense->update([
-            ...$data,
-            'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
-            'expense_unit_id' => $request->integer('expense_unit_id') ?: null,
-            'reference_no' => $request->input('reference_no'),
-        ]);
-
-        $this->storeDocuments($request, $expense);
-
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
-
-        return redirect()->route('expenses.index');
     }
 
     public function destroy(Request $request, Expense $expense): RedirectResponse
@@ -165,6 +169,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'expense_unit_id' => 'nullable|exists:expense_units,id',
             'description' => 'required|string|max:1000',
             'expense_category_id' => 'nullable|exists:expense_categories,id',
+            'currency' => 'nullable|string|size:3',
             'reference_no' => 'nullable|string|max:100',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',

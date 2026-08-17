@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import CurrencySelect from '@/components/CurrencySelect.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 
 const props = defineProps<{
@@ -16,6 +18,8 @@ const props = defineProps<{
 
 const isEdit = computed(() => !!props.item);
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
+const currency = ref(props.item?.currency ?? baseCurrency.value);
 
 defineOptions({
     layout: {
@@ -76,6 +80,12 @@ defineOptions({
                     <Label for="minimum_stock">{{ t('Minimum stock') }}</Label>
                     <Input id="minimum_stock" name="minimum_stock" type="number" step="0.001" min="0" :default-value="item?.minimum_stock ?? 0" />
                     <InputError :message="errors.minimum_stock" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="currency">{{ t('Currency') }}</Label>
+                    <CurrencySelect id="currency" v-model="currency" />
+                    <input type="hidden" name="currency" :value="currency" />
+                    <InputError :message="errors.currency" />
                 </div>
                 <div class="flex items-center gap-2 sm:col-span-2">
                     <input type="hidden" name="is_active" value="0" />

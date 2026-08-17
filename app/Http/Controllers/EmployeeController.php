@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Employee;
+use App\Services\CurrencyService;
+use App\Services\FinanceDefaults;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -119,7 +122,7 @@ class EmployeeController extends Controller implements HasMiddleware
             'designation' => 'nullable|string|max:100',
             'joining_date' => 'nullable|date',
             'basic_salary' => 'nullable|numeric|min:0',
-            'currency' => 'nullable|string|max:3',
+            'currency' => 'nullable|string|size:3',
             'status' => 'nullable|string|in:active,inactive,on_leave',
             'notes' => 'nullable|string',
         ]);
@@ -128,9 +131,14 @@ class EmployeeController extends Controller implements HasMiddleware
             $data['employee_no'] = 'EMP-'.Str::upper(Str::random(8));
         }
 
-        if (blank($data['currency'] ?? null)) {
-            $data['currency'] = 'USD';
-        }
+        $currency = strtoupper($data['currency'] ?? CurrencyService::baseCurrency());
+        $exchangeRate = FinanceDefaults::exchangeRate($currency, isset($data['joining_date']) ? Carbon::parse($data['joining_date']) : now());
+        $basicSalary = round((float) ($data['basic_salary'] ?? 0), 2);
+
+        $data['currency'] = $currency;
+        $data['exchange_rate'] = $exchangeRate;
+        $data['basic_salary'] = $basicSalary;
+        $data['basic_salary_base'] = round($basicSalary * $exchangeRate, 2);
 
         if (blank($data['status'] ?? null)) {
             $data['status'] = 'active';

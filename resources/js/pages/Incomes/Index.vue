@@ -9,6 +9,7 @@ import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -17,11 +18,12 @@ import { money } from '@/lib/utils';
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; amount: number; this_month: number; average: number };
+    totals: { count: number; amount: number; amount_base: number; this_month: number; this_month_base: number; average: number; average_base: number };
 }>();
 
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
 const { viewAction, editAction, can, formatDate } = useMisPage();
 
 defineOptions({
@@ -72,9 +74,9 @@ function rowActions(item: any): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Entries')" :value="totals.count" :hint="t('Approved income')" />
-            <MisStatCard :label="t('Total income')" :value="money(totals.amount)" tone="success" />
-            <MisStatCard :label="t('This month')" :value="money(totals.this_month)" />
-            <MisStatCard :label="t('Average')" :value="money(totals.average)" />
+            <MisStatCard :label="t('Total income')" :value="money(totals.amount_base ?? totals.amount, baseCurrency)" tone="success" />
+            <MisStatCard :label="t('This month')" :value="money(totals.this_month_base ?? totals.this_month, baseCurrency)" />
+            <MisStatCard :label="t('Average')" :value="money(totals.average_base ?? totals.average, baseCurrency)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -92,7 +94,7 @@ function rowActions(item: any): RowActionItem[] {
                         <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
                             <td class="px-4 py-3">{{ formatDate(item.income_date) }}</td>
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.amount) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />

@@ -10,6 +10,7 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -18,10 +19,11 @@ import { money } from '@/lib/utils';
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; total_amount: number; paid: number; remaining: number };
+    totals: { count: number; total_amount: number; total_amount_base: number; paid: number; paid_base: number; remaining: number; remaining_base: number };
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
 const { viewAction, editAction, can, formatDate } = useMisPage();
 
 defineOptions({
@@ -77,9 +79,9 @@ function rowActions(item: any): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Bills')" :value="totals.count" />
-            <MisStatCard :label="t('Purchase total')" :value="money(totals.total_amount)" />
-            <MisStatCard :label="t('Paid')" :value="money(totals.paid)" tone="success" />
-            <MisStatCard :label="t('Remaining owed')" :value="money(totals.remaining)" tone="warning" />
+            <MisStatCard :label="t('Purchase total')" :value="money(totals.total_amount_base ?? totals.total_amount, baseCurrency)" />
+            <MisStatCard :label="t('Paid')" :value="money(totals.paid_base ?? totals.paid, baseCurrency)" tone="success" />
+            <MisStatCard :label="t('Remaining owed')" :value="money(totals.remaining_base ?? totals.remaining, baseCurrency)" tone="warning" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
@@ -106,9 +108,9 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3">{{ formatDate(item.purchase_date) }}</td>
                             <td class="px-4 py-3">{{ item.project?.name }}</td>
                             <td class="px-4 py-3">{{ item.supplier?.name }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.total_amount, item.currency || 'USD') }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.paid_amount, item.currency || 'USD') }}</td>
-                            <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(item.remaining_amount, item.currency || 'USD') }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.total_amount, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.paid_amount, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(item.remaining_amount, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">

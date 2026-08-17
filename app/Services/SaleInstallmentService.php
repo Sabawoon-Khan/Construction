@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Payment;
 use App\Models\Sale;
 use App\Models\SaleInstallment;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -18,6 +19,9 @@ class SaleInstallmentService
         DB::transaction(function () use ($sale, $startInstallment, $amount, $meta) {
             $sale->loadMissing('unit');
             $installments = $sale->installments()->orderBy('installment_no')->get();
+            $currency = strtoupper($sale->currency ?? CurrencyService::baseCurrency());
+            $paidAt = isset($meta['paid_at']) ? Carbon::parse($meta['paid_at']) : now();
+            $exchangeRate = FinanceDefaults::exchangeRate($currency, $paidAt);
 
             self::allocateAmount($installments, $amount, $startInstallment->id);
 
@@ -31,6 +35,8 @@ class SaleInstallmentService
                 $installment->save();
             }
 
+            $amountBase = round($amount * $exchangeRate, 2);
+
             Payment::create([
                 'project_id' => $sale->project_id,
                 'sale_id' => $sale->id,
@@ -40,7 +46,9 @@ class SaleInstallmentService
                 'payment_no' => 'PAY-'.Str::upper(Str::random(8)),
                 'type' => 'receipt',
                 'amount' => $amount,
-                'currency' => $sale->currency ?? 'USD',
+                'amount_base' => $amountBase,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
                 'paid_at' => $meta['paid_at'] ?? now(),
                 'payment_method' => $meta['payment_method'] ?? 'cash',
                 'reference_no' => $meta['reference_no'] ?? null,
@@ -76,6 +84,7 @@ class SaleInstallmentService
 
         $remaining = $amount;
         $startIndex = 0;
+        $exchangeRate = $installments->first()->exchange_rate ?? 1;
 
         if ($startInstallmentId) {
             $index = $installments->search(fn ($i) => $i->id === $startInstallmentId);
@@ -94,11 +103,14 @@ class SaleInstallmentService
 
             $apply = min($remaining, $due);
             $installment->paid_amount = (float) $installment->paid_amount + $apply;
+            $installment->paid_amount_base = round((float) $installment->paid_amount_base + ($apply * $exchangeRate), 2);
             $remaining -= $apply;
         }
 
         if ($remaining > 0) {
-            $installments->last()->paid_amount = (float) $installments->last()->paid_amount + $remaining;
+            $last = $installments->last();
+            $last->paid_amount = (float) $last->paid_amount + $remaining;
+            $last->paid_amount_base = round((float) $last->paid_amount_base + ($remaining * $exchangeRate), 2);
         }
     }
 }

@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import CurrencySelect from '@/components/CurrencySelect.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 
 const props = defineProps<{ item: Record<string, any> | null }>();
 const isEdit = computed(() => !!props.item);
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
+const currency = ref(props.item?.currency ?? baseCurrency.value);
 
 defineOptions({
     layout: {
@@ -70,6 +74,11 @@ defineOptions({
                     <Label for="amount">{{ t('Total amount') }}</Label>
                     <Input id="amount" name="amount" type="number" step="0.01" min="0" required :default-value="item?.amount ?? ''" />
                     <InputError :message="errors.amount" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="currency">{{ t('Currency') }}</Label>
+                    <CurrencySelect id="currency" v-model="currency" />
+                    <input type="hidden" name="currency" :value="currency" />
                 </div>
             </div>
             <div class="flex gap-2">

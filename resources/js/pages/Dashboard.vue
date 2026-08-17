@@ -13,6 +13,7 @@ import Can from '@/components/Can.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCalendar } from '@/composables/useCalendar';
+import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 import { dashboard } from '@/routes';
 
@@ -25,6 +26,7 @@ const props = defineProps<{
 }>();
 const { t } = useTranslations();
 const calendar = useCalendar();
+const { baseCurrency } = useCurrency();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
 defineOptions({
@@ -40,10 +42,10 @@ const kpis = computed(() =>
     props.mode === 'shareholder' ? props.stats.kpis : props.stats.kpis,
 );
 
-const money = (v: unknown) =>
+const money = (v: unknown, currency = baseCurrency.value) =>
     new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency: 'USD',
+        currency,
         maximumFractionDigits: 0,
     }).format(Number(v ?? 0));
 
@@ -231,6 +233,41 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
             </div>
         </div>
 
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-muted-foreground">{{ t('AFN account') }}</span>
+                    <span class="text-xs font-semibold rounded-full bg-muted px-2 py-1">AFN</span>
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-xs text-muted-foreground">{{ t('Expenses') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-rose-700">{{ money(stats.kpis?.expenses_by_currency?.AFN ?? 0, 'AFN') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-muted-foreground">{{ t('Incomes') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-emerald-700">{{ money(stats.kpis?.incomes_by_currency?.AFN ?? 0, 'AFN') }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-muted-foreground">{{ t('USD account') }}</span>
+                    <span class="text-xs font-semibold rounded-full bg-muted px-2 py-1">USD</span>
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-4">
+                    <div>
+                        <div class="text-xs text-muted-foreground">{{ t('Expenses') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-rose-700">{{ money(stats.kpis?.expenses_by_currency?.USD ?? 0, 'USD') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-muted-foreground">{{ t('Incomes') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-emerald-700">{{ money(stats.kpis?.incomes_by_currency?.USD ?? 0, 'USD') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="grid gap-4 xl:grid-cols-3">
             <div class="rounded-2xl border bg-card xl:col-span-2">
                 <div class="flex items-center justify-between border-b px-5 py-4">
@@ -351,7 +388,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                                 {{ sale.project?.name }} · {{ sale.unit?.unit_no }}
                             </div>
                         </div>
-                        <div class="font-medium tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency || 'USD') }}</div>
+                        <div class="font-medium tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price_base ?? 0) - Number(sale.discount_base ?? 0))) }}</div>
                     </div>
                 </div>
             </div>
@@ -377,7 +414,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                                 {{ formatDate(String(expense.expense_date ?? '')) }}
                             </div>
                         </div>
-                        <div class="font-medium tabular-nums">{{ money(expense.amount) }}</div>
+                        <div class="font-medium tabular-nums">{{ money(expense.amount_base ?? expense.amount) }}</div>
                     </div>
                 </div>
             </div>

@@ -18,7 +18,9 @@ class Voucher extends Model
         'voucher_date',
         'party_name',
         'amount',
+        'amount_base',
         'currency',
+        'exchange_rate',
         'payment_method',
         'reference_no',
         'status',
@@ -36,6 +38,8 @@ class Voucher extends Model
         return [
             'voucher_date' => 'date',
             'amount' => 'decimal:2',
+            'amount_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
             'approved_at' => 'datetime',
         ];
     }

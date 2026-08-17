@@ -7,6 +7,7 @@
     @if (!empty($filters['project_id']))
         · {{ __('Project') }} #{{ $filters['project_id'] }}
     @endif
+    · {{ $report_currency ?? ($filters['currency'] ?? 'USD') }}
 @endsection
 
 @section('content')

@@ -21,7 +21,9 @@ class Employee extends Model
         'designation',
         'joining_date',
         'basic_salary',
+        'basic_salary_base',
         'currency',
+        'exchange_rate',
         'status',
         'notes',
     ];
@@ -34,11 +36,14 @@ class Employee extends Model
         return [
             'joining_date' => 'date',
             'basic_salary' => 'decimal:2',
+            'basic_salary_base' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 
     protected $attributes = [
         'currency' => 'USD',
+        'exchange_rate' => 1,
         'status' => 'active',
     ];
 

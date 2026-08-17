@@ -8,12 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import CurrencySelect from '@/components/CurrencySelect.vue';
+import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 
 const props = defineProps<{
-    filters: { as_of: string; project_id?: number | null };
+    filters: { as_of: string; project_id?: number | null; currency?: string };
     restricted?: boolean;
     projects: { id: number; name: string }[];
+    report_currency?: string;
     balance_sheet: {
         as_of: string;
         project_id: number | null;
@@ -48,11 +51,13 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const { baseCurrency } = useCurrency();
 const asOf = ref(props.filters.as_of);
 const projectId = ref(String(props.filters.project_id ?? ''));
+const reportCurrency = ref(props.report_currency ?? props.filters.currency ?? baseCurrency.value);
 
 const money = (v: unknown) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(v ?? 0));
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: reportCurrency.value }).format(Number(v ?? 0));
 
 const isBalanced = computed(() => Math.abs(props.balance_sheet.metrics.balance_check) < 0.01);
 
@@ -62,6 +67,7 @@ function apply() {
         {
             as_of: asOf.value || undefined,
             project_id: projectId.value || undefined,
+            currency: reportCurrency.value || undefined,
         },
         { preserveState: true, replace: true },
     );
@@ -75,6 +81,10 @@ function exportUrl(format: string) {
 
     if (projectId.value) {
         params.set('project_id', projectId.value);
+    }
+
+    if (reportCurrency.value) {
+        params.set('currency', reportCurrency.value);
     }
 
     return `/balance-sheet/export?${params.toString()}`;
@@ -106,6 +116,11 @@ function exportUrl(format: string) {
                         {{ p.name }}
                     </option>
                 </select>
+
+                <div class="grid gap-1">
+                    <label class="text-xs text-muted-foreground">{{ t('Currency') }}</label>
+                    <CurrencySelect v-model="reportCurrency" />
+                </div>
 
                 <Button variant="secondary" class="self-end" @click="apply">{{ t('Filter') }}</Button>
 

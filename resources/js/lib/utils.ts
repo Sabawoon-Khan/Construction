@@ -24,3 +24,16 @@ export function formatNumber(value: unknown, digits = 2) {
         maximumFractionDigits: digits,
     }).format(Number(value ?? 0));
 }
+
+export function moneyBase(value: unknown, baseCurrency = 'USD') {
+    return money(value, baseCurrency);
+}
+
+export function formatDual(
+    original: unknown,
+    base: unknown,
+    originalCurrency: string,
+    baseCurrency: string,
+): string {
+    return `${money(original, originalCurrency)} (${moneyBase(base, baseCurrency)})`;
+}

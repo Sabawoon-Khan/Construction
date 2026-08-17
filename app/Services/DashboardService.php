@@ -35,29 +35,45 @@ class DashboardService
 
         $salesQuery = Sale::query()->where('sales.status', '!=', 'cancelled');
 
-        $periodSales = Sale::sumTotalPrice(
+        $periodSales = Sale::sumTotalPriceBase(
             (clone $salesQuery)
                 ->whereDate('sales.contract_date', '>=', $from->toDateString())
                 ->whereDate('sales.contract_date', '<=', $to->toDateString())
         );
 
-        $totalSales = Sale::sumTotalPrice(clone $salesQuery);
+        $totalSales = Sale::sumTotalPriceBase(clone $salesQuery);
 
         $expensesQuery = Expense::query()->where('status', 'approved');
 
         $periodExpenses = (clone $expensesQuery)
             ->whereDate('expense_date', '>=', $from->toDateString())
             ->whereDate('expense_date', '<=', $to->toDateString())
-            ->sum('amount');
+            ->sum('amount_base');
 
-        $totalExpenses = (clone $expensesQuery)->sum('amount');
+        $totalExpenses = (clone $expensesQuery)->sum('amount_base');
+
+        $expensesByCurrency = (clone $expensesQuery)
+            ->whereDate('expense_date', '>=', $from->toDateString())
+            ->whereDate('expense_date', '<=', $to->toDateString())
+            ->selectRaw('currency, COALESCE(SUM(amount), 0) as total')
+            ->groupBy('currency')
+            ->pluck('total', 'currency')
+            ->toArray();
 
         $incomesQuery = Income::query()->where('status', 'approved');
 
         $periodIncomes = (clone $incomesQuery)
             ->whereDate('income_date', '>=', $from->toDateString())
             ->whereDate('income_date', '<=', $to->toDateString())
-            ->sum('amount');
+            ->sum('amount_base');
+
+        $incomesByCurrency = (clone $incomesQuery)
+            ->whereDate('income_date', '>=', $from->toDateString())
+            ->whereDate('income_date', '<=', $to->toDateString())
+            ->selectRaw('currency, COALESCE(SUM(amount), 0) as total')
+            ->groupBy('currency')
+            ->pluck('total', 'currency')
+            ->toArray();
 
         $periodSalaries = ShareholderProfitService::salaryTotal($from, $to);
         $totalSalaries = ShareholderProfitService::salaryTotal();
@@ -67,7 +83,7 @@ class DashboardService
             ->where('type', 'receipt')
             ->where('status', 'posted')
             ->whereBetween('paid_at', [$from, $to])
-            ->sum('amount');
+            ->sum('amount_base');
 
         $netProfitPeriod = ShareholderProfitService::netProfit($from, $to);
         $netProfitTotal = ShareholderProfitService::netProfit();
@@ -75,7 +91,7 @@ class DashboardService
         $partners = ShareholderProfitService::allPartners($from, $to);
 
         $recentSales = Sale::query()
-            ->with(['customer:id,name', 'unit:id,unit_no,list_price', 'project:id,name'])
+            ->with(['customer:id,name', 'unit:id,unit_no,list_price,list_price_base', 'project:id,name'])
             ->latest('contract_date')
             ->limit(6)
             ->get();
@@ -89,13 +105,13 @@ class DashboardService
         $salesByProject = Sale::query()
             ->join('units', 'units.id', '=', 'sales.unit_id')
             ->where('sales.status', '!=', 'cancelled')
-            ->selectRaw('sales.project_id, SUM(units.list_price - COALESCE(sales.discount, 0)) as total')
+            ->selectRaw('sales.project_id, SUM(units.list_price_base - COALESCE(sales.discount_base, 0)) as total')
             ->groupBy('sales.project_id')
-            ->pluck('total', 'project_id');
+            ->pluck('total', 'sales.project_id');
 
         $projects = Project::query()
             ->withCount(['units', 'sales', 'expenses'])
-            ->withSum(['expenses as project_expenses_sum' => fn ($q) => $q->where('status', 'approved')], 'amount')
+            ->withSum(['expenses as project_expenses_sum' => fn ($q) => $q->where('status', 'approved')], 'amount_base')
             ->orderByDesc('updated_at')
             ->limit(8)
             ->get()
@@ -139,6 +155,8 @@ class DashboardService
                 'period_receipts' => (float) $receipts,
                 'net_profit_period' => $netProfitPeriod,
                 'net_profit_total' => $netProfitTotal,
+                'expenses_by_currency' => $expensesByCurrency,
+                'incomes_by_currency' => $incomesByCurrency,
             ],
             'partners' => $partners,
             'recent_sales' => $recentSales,

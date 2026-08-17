@@ -9,7 +9,10 @@ use App\Models\Project;
 use App\Models\Sale;
 use App\Models\SaleInstallment;
 use App\Models\Unit;
+use App\Services\CurrencyService;
+use App\Services\FinanceDefaults;
 use App\Services\SaleInstallmentService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +32,8 @@ class SaleController extends Controller implements HasMiddleware
     {
         $query = Sale::query()
             ->with(['customer:id,name', 'project:id,name', 'unit:id,unit_no,list_price,currency'])
-            ->withSum('installments as paid_total', 'paid_amount');
+            ->withSum('installments as paid_total', 'paid_amount')
+            ->withSum('installments as paid_total_base', 'paid_amount_base');
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
@@ -39,12 +43,17 @@ class SaleController extends Controller implements HasMiddleware
         }
 
         $totalPrice = Sale::sumTotalPrice(clone $query);
+        $totalPriceBase = Sale::sumTotalPriceBase(clone $query);
         $paid = Sale::sumPaidAmount(clone $query);
+        $paidBase = Sale::sumPaidAmountBase(clone $query);
         $totals = [
             'count' => (clone $query)->count(),
             'total_price' => $totalPrice,
+            'total_price_base' => $totalPriceBase,
             'paid' => $paid,
+            'paid_base' => $paidBase,
             'remaining' => max(0, $totalPrice - $paid),
+            'remaining_base' => max(0, $totalPriceBase - $paidBase),
         ];
 
         return Inertia::render('Sales/Index', [
@@ -69,11 +78,19 @@ class SaleController extends Controller implements HasMiddleware
         $this->ensureUnitHasListPrice((int) $data['unit_id']);
 
         $sale = DB::transaction(function () use ($request, $data) {
+            $unit = Unit::query()->findOrFail($data['unit_id']);
+            $currency = strtoupper($data['currency'] ?? $unit->currency ?? CurrencyService::baseCurrency());
+            $contractDate = Carbon::parse($data['contract_date'] ?? now());
+            $exchangeRate = FinanceDefaults::exchangeRate($currency, $contractDate);
+            $discount = round((float) ($data['discount'] ?? 0), 2);
+
             $sale = Sale::create([
                 ...$data,
                 'sale_no' => 'SAL-'.Str::upper(Str::random(8)),
-                'discount' => $data['discount'] ?? 0,
-                'currency' => $data['currency'] ?? 'USD',
+                'discount' => $discount,
+                'discount_base' => round($discount * $exchangeRate, 2),
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
             ]);
 
             Unit::whereKey($sale->unit_id)->update(['status' => 'sold']);
@@ -126,10 +143,18 @@ class SaleController extends Controller implements HasMiddleware
         unset($data['installments'], $data['documents'], $data['sale_no']);
         $this->ensureUnitHasListPrice((int) $data['unit_id']);
 
+        $unit = Unit::query()->findOrFail($data['unit_id']);
+        $currency = strtoupper($data['currency'] ?? $unit->currency ?? $sale->currency ?? CurrencyService::baseCurrency());
+        $contractDate = Carbon::parse($data['contract_date'] ?? $sale->contract_date ?? now());
+        $exchangeRate = FinanceDefaults::exchangeRate($currency, $contractDate);
+        $discount = round((float) ($data['discount'] ?? 0), 2);
+
         $sale->update([
             ...$data,
-            'discount' => $data['discount'] ?? 0,
-            'currency' => $data['currency'] ?? 'USD',
+            'discount' => $discount,
+            'discount_base' => round($discount * $exchangeRate, 2),
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
         ]);
 
         $this->storeDocuments($request, $sale);
@@ -208,6 +233,9 @@ class SaleController extends Controller implements HasMiddleware
             ->filter(fn ($row) => filled($row['amount'] ?? null) && (float) $row['amount'] > 0)
             ->values();
 
+        $currency = strtoupper($sale->currency ?? CurrencyService::baseCurrency());
+        $exchangeRate = (float) $sale->exchange_rate;
+
         if ($rows->isEmpty()) {
             $rows = collect([[
                 'due_date' => $sale->contract_date?->toDateString() ?? now()->toDateString(),
@@ -218,12 +246,19 @@ class SaleController extends Controller implements HasMiddleware
         }
 
         foreach ($rows as $index => $row) {
+            $amount = round((float) $row['amount'], 2);
+            $amountBase = round($amount * $exchangeRate, 2);
+
             $installment = SaleInstallment::create([
                 'sale_id' => $sale->id,
                 'installment_no' => $index + 1,
                 'due_date' => $row['due_date'] ?? now()->addMonths($index + 1)->toDateString(),
-                'amount' => $row['amount'],
+                'amount' => $amount,
+                'amount_base' => $amountBase,
                 'paid_amount' => 0,
+                'paid_amount_base' => 0,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
                 'status' => 'pending',
                 'notes' => $row['notes'] ?? null,
             ]);
