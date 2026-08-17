@@ -28,6 +28,25 @@ class Project extends Model
         'description',
     ];
 
+    protected $attributes = [
+        'type' => 'apartment',
+        'status' => 'planning',
+        'estimated_budget' => 0,
+        'estimated_revenue' => 0,
+        'progress_percent' => 0,
+    ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $project): void {
+            $project->type ??= 'apartment';
+            $project->status ??= 'planning';
+            $project->estimated_budget ??= 0;
+            $project->estimated_revenue ??= 0;
+            $project->progress_percent ??= 0;
+        });
+    }
+
     /**
      * @return array<string, string>
      */

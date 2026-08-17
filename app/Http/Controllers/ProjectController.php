@@ -89,7 +89,7 @@ class ProjectController extends Controller implements HasMiddleware
             'description' => 'nullable|string',
         ]);
 
-        Project::create(array_merge(['type' => 'apartment', 'status' => 'planning', 'estimated_budget' => 0, 'estimated_revenue' => 0, 'progress_percent' => 0], $data));
+        Project::create($this->withProjectDefaults($data));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects created.']);
 
@@ -399,7 +399,7 @@ class ProjectController extends Controller implements HasMiddleware
             'description' => 'nullable|string',
         ]);
 
-        $project->update($data);
+        $project->update($this->withProjectDefaults($data));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects updated.']);
 
@@ -413,6 +413,23 @@ class ProjectController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects deleted.']);
 
         return redirect()->route('projects.index');
+    }
+
+    /**
+     * Empty form fields arrive as null and would overwrite DB defaults.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function withProjectDefaults(array $data): array
+    {
+        $data['type'] = $data['type'] ?? 'apartment';
+        $data['status'] = $data['status'] ?? 'planning';
+        $data['estimated_budget'] = $data['estimated_budget'] ?? 0;
+        $data['estimated_revenue'] = $data['estimated_revenue'] ?? 0;
+        $data['progress_percent'] = $data['progress_percent'] ?? 0;
+
+        return $data;
     }
 
     /** @return Collection<int, ExpenseCategory> */

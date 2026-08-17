@@ -77,14 +77,13 @@ class TranslationFileService
     public function updateValues(string $locale, array $updates): void
     {
         $sourceKeys = $this->sourceKeys();
+        $current = $this->load($locale);
 
         foreach (array_keys($updates) as $key) {
-            if (! in_array($key, $sourceKeys, true)) {
+            if (! in_array($key, $sourceKeys, true) && ! array_key_exists($key, $current)) {
                 throw new InvalidArgumentException("Unknown translation key: {$key}");
             }
         }
-
-        $current = $this->load($locale);
 
         foreach ($updates as $key => $value) {
             $current[$key] = (string) $value;
@@ -100,11 +99,13 @@ class TranslationFileService
     {
         $source = $this->load('en');
         $translations = $this->load($locale);
+        $allKeys = array_unique(array_merge(array_keys($source), array_keys($translations)));
 
-        $entries = collect($source)
-            ->map(function (string $englishValue, string $key) use ($locale, $translations): array {
+        $entries = collect($allKeys)
+            ->map(function (string $key) use ($locale, $source, $translations): array {
+                $englishValue = $source[$key] ?? $key;
                 $value = $translations[$key] ?? $englishValue;
-                $missing = $locale !== 'en' && (! array_key_exists($key, $translations) || $value === $key);
+                $missing = $locale !== 'en' && (! array_key_exists($key, $translations) || $value === $key || $value === $englishValue);
 
                 return [
                     'key' => $key,
@@ -142,10 +143,18 @@ class TranslationFileService
     private function save(string $locale, array $translations): void
     {
         $ordered = [];
+        $sourceKeys = $this->sourceKeys();
 
-        foreach ($this->sourceKeys() as $key) {
+        foreach ($sourceKeys as $key) {
             if (array_key_exists($key, $translations)) {
                 $ordered[$key] = $translations[$key];
+            }
+        }
+
+        // Preserve locale-only keys that do not exist in the English source.
+        foreach ($translations as $key => $value) {
+            if (! in_array($key, $sourceKeys, true)) {
+                $ordered[$key] = $value;
             }
         }
 
