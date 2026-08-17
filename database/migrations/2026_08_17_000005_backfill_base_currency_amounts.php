@@ -61,7 +61,7 @@ return new class extends Migration
         foreach ($columns as $column) {
             $baseColumn = $column.'_base';
             if (Schema::hasColumn($table, $baseColumn)) {
-                $set[$baseColumn] = DB::raw($column);
+                $set[$baseColumn] = DB::raw("COALESCE(`{$column}`, 0)");
             }
         }
 
