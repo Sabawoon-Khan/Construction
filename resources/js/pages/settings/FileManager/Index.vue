@@ -546,9 +546,6 @@ defineOptions({
                             {{ root.file_count + root.folder_count }}
                         </Badge>
                     </div>
-                    <p class="mt-1 text-xs text-muted-foreground">
-                        {{ t(root.description) }}
-                    </p>
                     <p class="mt-2 text-[11px] text-muted-foreground">
                         {{ formatBytes(root.total_bytes) }}
                     </p>
@@ -581,11 +578,6 @@ defineOptions({
                         :concurrency="limits.concurrency"
                         :chunk-bytes="limits.chunk_bytes"
                         :compute-file-checksum="Boolean(limits.require_file_checksum)"
-                        :hint="t('Max :max · :chunk chunks · concurrent :n', {
-                            max: formatBytes(limits.max_upload_bytes),
-                            chunk: formatBytes(limits.chunk_bytes ?? 5 * 1024 * 1024),
-                            n: String(limits.concurrency ?? 3),
-                        })"
                         preview="none"
                         @complete="onUploadComplete"
                         @error="onUploadError"
@@ -668,13 +660,6 @@ defineOptions({
                                         : t('This folder is empty')
                                 }}
                             </p>
-                            <p class="max-w-sm text-xs text-muted-foreground">
-                                {{
-                                    filters.search
-                                        ? t('Try another search term, or clear the search to browse again.')
-                                        : t('Upload a file or create a folder to get started.')
-                                }}
-                            </p>
                         </div>
 
                         <div v-else class="divide-y divide-border/60">
@@ -733,9 +718,6 @@ defineOptions({
                         >
                             <Eye class="size-8 text-muted-foreground/40" />
                             <p class="text-sm font-medium">{{ t('File preview') }}</p>
-                            <p class="text-xs text-muted-foreground">
-                                {{ t('Select a file to preview its contents here.') }}
-                            </p>
                         </div>
 
                         <div v-else class="flex h-full flex-col">
@@ -780,9 +762,6 @@ defineOptions({
                                     <File class="mx-auto size-8 text-muted-foreground/40" />
                                     <p class="mt-2 text-sm font-medium">
                                         {{ t('Preview not available') }}
-                                    </p>
-                                    <p class="mt-1 text-xs text-muted-foreground">
-                                        {{ t('Download this file to open it on your device.') }}
                                     </p>
                                 </div>
                             </div>

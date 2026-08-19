@@ -73,7 +73,7 @@ function rowActions(item: any): RowActionItem[] {
         </div>
 
         <MisStatGrid :columns="4">
-            <MisStatCard :label="t('Entries')" :value="totals.count" :hint="t('Approved income')" />
+            <MisStatCard :label="t('Entries')" :value="totals.count" />
             <MisStatCard :label="t('Total income')" :value="money(totals.amount_base ?? totals.amount, baseCurrency)" tone="success" />
             <MisStatCard :label="t('This month')" :value="money(totals.this_month_base ?? totals.this_month, baseCurrency)" />
             <MisStatCard :label="t('Average')" :value="money(totals.average_base ?? totals.average, baseCurrency)" />

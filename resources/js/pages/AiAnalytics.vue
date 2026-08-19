@@ -1011,7 +1011,6 @@ watch(
                                     :key="kpi.id"
                                     :label="kpi.label"
                                     :value="kpi.value"
-                                    :hint="kpi.hint"
                                 />
                             </MisStatGrid>
                         </div>

@@ -167,9 +167,6 @@ defineOptions({
                                 <div class="font-medium">
                                     {{ t(item.label) }}
                                 </div>
-                                <div class="text-sm text-muted-foreground">
-                                    {{ t(item.help) }}
-                                </div>
                             </div>
                             <button
                                 type="button"
@@ -234,9 +231,6 @@ defineOptions({
                             >
                                 {{ module.enabled ? t('On') : t('Off') }}
                             </Badge>
-                        </div>
-                        <div class="text-sm text-muted-foreground">
-                            {{ t(module.help) }}
                         </div>
                     </div>
                     <Button as-child variant="outline" size="sm">

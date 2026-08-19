@@ -54,7 +54,6 @@ const props = withDefaults(
         maxBytes?: number | null;
         accept?: string;
         label?: string;
-        hint?: string;
         error?: string;
         disabled?: boolean;
         required?: boolean;
@@ -86,7 +85,6 @@ const props = withDefaults(
         maxBytes: null,
         accept: undefined,
         label: undefined,
-        hint: undefined,
         error: undefined,
         disabled: false,
         required: false,
@@ -178,14 +176,6 @@ const effectiveAccept = computed(() => {
 });
 
 const displayError = computed(() => props.error || localError.value);
-
-const hintText = computed(() => {
-    if (props.hint) {
-        return props.hint;
-    }
-
-    return t('Max :max', { max: formatBytes(effectiveMaxBytes.value) });
-});
 
 function formatBytes(bytes: number): string {
     if (bytes < 1024) {
@@ -513,9 +503,8 @@ defineExpose({
 
 <template>
     <component
-        :is="label || error || hintText ? MisField : 'div'"
+        :is="label || error ? MisField : 'div'"
         :label="label"
-        :hint="label || error || (!hidePicker && hintText) ? hintText : undefined"
         :error="displayError ?? undefined"
         :required="required"
         :class="cn('w-full', props.class)"

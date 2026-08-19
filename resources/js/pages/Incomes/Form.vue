@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import Heading from '@/components/Heading.vue';
@@ -84,6 +84,12 @@ defineOptions({
             <div class="flex gap-2">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save income') }}</Button>
                 <Button as-child variant="secondary"><Link href="/incomes">{{ t('Cancel') }}</Link></Button>
+                <Form v-if="isEdit" :action="`/incomes/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
+                    <Button type="submit" variant="destructive" :disabled="deleting">
+                        <Trash2 class="size-4" />
+                        {{ deleting ? t('Deleting…') : t('Delete') }}
+                    </Button>
+                </Form>
             </div>
         </Form>
     </div>

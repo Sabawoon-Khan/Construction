@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -33,6 +33,14 @@ function submit() {
     } else {
         form.post('/attendance');
     }
+}
+
+function removeAttendance() {
+    if (!isEdit.value) {
+        return;
+    }
+
+    form.delete(`/attendance/${props.item!.id}`);
 }
 
 defineOptions({
@@ -132,6 +140,10 @@ defineOptions({
                 <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
                 <Button as-child variant="secondary">
                     <Link href="/attendance">{{ t('Cancel') }}</Link>
+                </Button>
+                <Button v-if="isEdit" type="button" variant="destructive" class="ml-auto" :disabled="form.processing" @click="removeAttendance">
+                    <Trash2 class="size-4" />
+                    {{ form.processing ? t('Deleting…') : t('Delete') }}
                 </Button>
             </div>
         </form>

@@ -6,14 +6,12 @@ withDefaults(
     defineProps<{
         label: string;
         value: string | number;
-        hint?: string | null;
         icon?: Component;
         /** Visual tone for KPI emphasis. */
         tone?: 'default' | 'muted' | 'success' | 'warning' | 'danger';
         class?: string;
     }>(),
     {
-        hint: null,
         icon: undefined,
         tone: 'default',
         class: undefined,
@@ -53,9 +51,6 @@ const toneClass: Record<string, string> = {
         </div>
         <p class="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
             {{ value }}
-        </p>
-        <p v-if="hint" class="mt-0.5 text-xs text-muted-foreground">
-            {{ hint }}
         </p>
         <slot />
     </div>

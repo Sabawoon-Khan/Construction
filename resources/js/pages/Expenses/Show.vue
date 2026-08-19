@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Printer } from '@lucide/vue';
+import { Form, Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft, Pencil, Printer, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
+import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
@@ -29,6 +30,7 @@ const existingReceipts = computed<ExistingUploadFile[]>(() =>
         url: file.download_url,
     })),
 );
+const canEditExpense = computed(() => !props.item.purchase_id && !props.item.project_id);
 
 defineOptions({
     layout: {
@@ -51,9 +53,23 @@ defineOptions({
                 </Button>
                 <Heading :title="item.expense_no" :description="item.project?.name || t('General expense')" />
             </div>
-            <Button variant="outline" @click="printPage">
-                <Printer class="size-4" /> {{ t('Print voucher') }}
-            </Button>
+            <div class="flex flex-wrap items-center gap-2">
+                <Button variant="outline" @click="printPage">
+                    <Printer class="size-4" /> {{ t('Print voucher') }}
+                </Button>
+                <Can permission="expenses.edit">
+                    <Button v-if="canEditExpense" as-child>
+                        <Link :href="`/expenses/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
+                <Can permission="expenses.delete">
+                    <Form v-if="!item.purchase_id" :action="`/expenses/${item.id}`" method="delete" v-slot="{ processing }">
+                        <Button type="submit" variant="destructive" :disabled="processing">
+                            <Trash2 class="size-4" /> {{ processing ? t('Deleting…') : t('Delete') }}
+                        </Button>
+                    </Form>
+                </Can>
+            </div>
         </div>
 
         <div class="print:hidden">
@@ -98,7 +114,6 @@ defineOptions({
                 multiple
                 :max-files="10"
                 accept="application/pdf,image/jpeg,image/png,image/webp"
-                :hint="t('Upload or download receipt photos and PDFs.')"
                 :existing="existingReceipts"
             />
         </div>

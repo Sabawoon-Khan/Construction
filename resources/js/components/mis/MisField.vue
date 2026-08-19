@@ -6,7 +6,6 @@ withDefaults(
     defineProps<{
         label?: string;
         htmlFor?: string;
-        hint?: string;
         error?: string;
         class?: string;
         required?: boolean;
@@ -14,7 +13,6 @@ withDefaults(
     {
         label: undefined,
         htmlFor: undefined,
-        hint: undefined,
         error: undefined,
         class: undefined,
         required: false,
@@ -35,9 +33,6 @@ withDefaults(
             </slot>
         </Label>
         <slot />
-        <p v-if="hint && !error" class="text-xs text-muted-foreground">
-            {{ hint }}
-        </p>
         <p v-if="error" class="text-xs text-destructive">
             {{ error }}
         </p>

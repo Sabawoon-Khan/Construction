@@ -401,9 +401,6 @@ function exportUrl(format: string) {
                                 {{ t('No stock on hand.') }}
                             </div>
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('Inventory is shown as a memo because materials are expensed at purchase in this MIS.') }}
-                        </p>
                     </CardContent>
                 </Card>
             </div>

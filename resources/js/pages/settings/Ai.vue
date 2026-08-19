@@ -746,14 +746,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Models') }}
                             </h2>
-                            <p class="mt-0.5 text-xs text-muted-foreground">
-                                {{
-                                    t(':count of :max', {
-                                        count: String(state.models.length),
-                                        max: String(maxModels),
-                                    })
-                                }}
-                            </p>
                         </div>
                         <Button
                             type="button"
@@ -958,13 +950,6 @@ defineOptions({
                         <h2 class="text-sm font-semibold">
                             {{ t('Ctrl+K panel size') }}
                         </h2>
-                        <p class="mt-0.5 text-xs text-muted-foreground">
-                            {{
-                                t(
-                                    'Default size for the AI edit window. Users can still switch while editing.',
-                                )
-                            }}
-                        </p>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <button
@@ -1107,13 +1092,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Field editing') }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    t(
-                                        'Ctrl+K / sparkle on text fields. Turn off to disable field AI entirely.',
-                                    )
-                                }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1147,9 +1125,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Fill form') }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{ featureDescription('fill_form') }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1183,13 +1158,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Provider failover') }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    t(
-                                        'If the selected model fails, try the next saved models (with API keys) in list order.',
-                                    )
-                                }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1224,9 +1192,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t(action.label) }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{ featureDescription(action.id) }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1274,13 +1239,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Task management AI') }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    t(
-                                        'General Chat in the header — ask the agent to help with platform tasks.',
-                                    )
-                                }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1310,13 +1268,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Allow creating & updating records') }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    t(
-                                        'Lets the agent create and update any registered catalog resource (reports, users, roles, lookups, …). Runs immediately when On — still requires the user’s own permissions.',
-                                    )
-                                }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1348,13 +1299,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Allow deleting records') }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    t(
-                                        'High impact. Deletes always need Approve in the chat panel, plus the user’s delete permission.',
-                                    )
-                                }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1386,13 +1330,6 @@ defineOptions({
                             <h2 class="text-sm font-semibold">
                                 {{ t('Allow analytics (read-only SQL)') }}
                             </h2>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    t(
-                                        'Lets the agent answer reporting questions by running read-only SELECT queries. Never writes to the database.',
-                                    )
-                                }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1421,13 +1358,6 @@ defineOptions({
                         </button>
                     </div>
 
-                    <p class="py-4 text-xs text-muted-foreground">
-                        {{
-                            t(
-                                'Risk: turn Off any capability you do not want the model to reach. Creates/updates run when On; deletes always pause for Approve. Jailbreak-style prompts are blocked server-side.',
-                            )
-                        }}
-                    </p>
                 </section>
 
                 <section class="mt-8 space-y-4 border-t border-border/70 pt-6">
@@ -1435,13 +1365,6 @@ defineOptions({
                         <h2 class="text-sm font-semibold">
                             {{ t('Observability (Langfuse)') }}
                         </h2>
-                        <p class="mt-0.5 text-xs text-muted-foreground">
-                            {{
-                                t(
-                                    'Trace General Chat, Ctrl+K assist, and agent tools. Open the same Langfuse region as your Base URL (US projects use https://us.cloud.langfuse.com). Leave secret blank to keep the existing key.',
-                                )
-                            }}
-                        </p>
                     </div>
 
                     <div class="flex items-start justify-between gap-4">
@@ -1449,18 +1372,6 @@ defineOptions({
                             <h3 class="text-sm font-medium">
                                 {{ t('Enable Langfuse') }}
                             </h3>
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    props.settings?.langfuse_public_key_set &&
-                                    props.settings?.langfuse_secret_key_set
-                                        ? t(
-                                              'Keys are saved. Save settings, then use Test connection or send a chat message.',
-                                          )
-                                        : t(
-                                              'Add public and secret keys from your Langfuse project, then Save.',
-                                          )
-                                }}
-                            </p>
                         </div>
                         <button
                             type="button"
@@ -1540,13 +1451,6 @@ defineOptions({
                                 placeholder="https://us.cloud.langfuse.com"
                                 :disabled="!state.langfuse_enabled"
                             />
-                            <p class="text-xs text-muted-foreground">
-                                {{
-                                    t(
-                                        'EU cloud: https://cloud.langfuse.com — US cloud: https://us.cloud.langfuse.com — or your self-hosted host.',
-                                    )
-                                }}
-                            </p>
                             <InputError
                                 :message="form.errors.langfuse_base_url"
                             />
@@ -1604,46 +1508,24 @@ defineOptions({
                     class="flex flex-wrap gap-x-10 gap-y-4 border-b border-border/70 pb-4"
                 >
                     <div>
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('Today') }}
-                        </p>
                         <p
                             class="mt-1 text-lg font-semibold tracking-tight tabular-nums"
                         >
                             {{ formatNumber(summary?.today_tokens ?? 0) }}
                         </p>
-                        <p class="text-xs text-muted-foreground">
-                            {{ formatCost(summary?.today_cost_usd ?? 0) }}
-                        </p>
                     </div>
                     <div>
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('This month') }}
-                        </p>
                         <p
                             class="mt-1 text-lg font-semibold tracking-tight tabular-nums"
                         >
                             {{ formatNumber(summary?.month_tokens ?? 0) }}
                         </p>
-                        <p class="text-xs text-muted-foreground">
-                            {{ formatCost(summary?.month_cost_usd ?? 0) }}
-                        </p>
                     </div>
                     <div>
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('Matching requests') }}
-                        </p>
                         <p
                             class="mt-1 text-lg font-semibold tracking-tight tabular-nums"
                         >
                             {{ formatNumber(summary?.requests ?? 0) }}
-                        </p>
-                        <p class="text-xs text-muted-foreground">
-                            {{ formatNumber(summary?.success ?? 0) }}
-                            {{ t('ok') }}
-                            ·
-                            {{ formatNumber(summary?.failed ?? 0) }}
-                            {{ t('failed') }}
                         </p>
                     </div>
                 </div>

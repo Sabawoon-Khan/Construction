@@ -123,7 +123,6 @@ function exportUrl(format: string) {
             <div class="rounded-2xl border bg-card p-6">
                 <div class="text-sm text-muted-foreground">Sales</div>
                 <div class="mt-3 text-3xl font-semibold tabular-nums">{{ money(summary.sales_total) }}</div>
-                <div class="mt-1 text-sm text-muted-foreground">{{ summary.sales_count }} contracts</div>
             </div>
             <div class="rounded-2xl border bg-card p-6">
                 <div class="text-sm text-muted-foreground">Total revenue</div>

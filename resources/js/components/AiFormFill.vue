@@ -154,14 +154,6 @@ onUnmounted(() => {
                 </div>
 
                 <div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
-                    <p class="text-xs text-muted-foreground">
-                        {{
-                            t(
-                                'Describe the person or record in plain language. AI maps names, places, gender, and similar details onto the labelled fields — it does not send existing field values.',
-                            )
-                        }}
-                    </p>
-
                     <textarea
                         ref="promptRef"
                         v-model="prompt"

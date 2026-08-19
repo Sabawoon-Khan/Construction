@@ -84,15 +84,13 @@ class ExpenseController extends Controller implements HasMiddleware
             return redirect()->route('purchases.show', $expense->purchase_id);
         }
 
-        if ($expense->project_id) {
-            return redirect()->route('projects.show', $expense->project_id);
-        }
+        $projectId = $expense->project_id;
 
         $data = $this->validated($request);
         unset($data['documents']);
 
         $expense->update([
-            ...FinanceDefaults::expenseAttributes($data),
+            ...FinanceDefaults::expenseAttributes($data, $projectId),
             'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
             'expense_unit_id' => $request->integer('expense_unit_id') ?: null,
             'reference_no' => $request->input('reference_no'),
@@ -101,6 +99,10 @@ class ExpenseController extends Controller implements HasMiddleware
         $this->storeDocuments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
+
+        if ($projectId) {
+            return redirect()->route('projects.show', $projectId);
+        }
 
         return redirect()->route('expenses.index');
     }
@@ -120,11 +122,7 @@ class ExpenseController extends Controller implements HasMiddleware
             return redirect()->route('purchases.show', $expense->purchase_id);
         }
 
-        if ($expense->project_id) {
-            return redirect()->route('projects.show', $expense->project_id);
-        }
-
-        $expense->load('attachments');
+        $expense->load(['attachments', 'project:id,name']);
 
         return Inertia::render('Expenses/Form', [
             'item' => $expense,

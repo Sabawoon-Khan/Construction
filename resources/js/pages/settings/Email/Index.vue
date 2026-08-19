@@ -388,10 +388,6 @@ defineOptions({
                                         {{ item }}
                                     </option>
                                 </select>
-                                <p class="text-xs text-muted-foreground">
-                                    {{ t('Environment default') }}:
-                                    {{ settings.env_mailer }}
-                                </p>
                                 <InputError :message="form.errors.mailer" />
                             </div>
 
@@ -443,9 +439,6 @@ defineOptions({
                                     <option value="tls">{{ t('TLS (STARTTLS)') }}</option>
                                     <option value="ssl">{{ t('SSL (SMTPS)') }}</option>
                                 </select>
-                                <p class="text-xs text-muted-foreground">
-                                    {{ t('Use TLS for port 587, or SSL for port 465') }}
-                                </p>
                                 <InputError :message="form.errors.encryption" />
                             </div>
                             <div class="grid gap-2">

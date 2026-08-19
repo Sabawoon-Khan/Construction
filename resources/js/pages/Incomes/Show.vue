@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Pencil, Printer } from '@lucide/vue';
+import { Form, Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft, Pencil, Printer, Trash2 } from '@lucide/vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
@@ -45,6 +45,13 @@ defineOptions({
                     <Button as-child>
                         <Link :href="`/incomes/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
                     </Button>
+                </Can>
+                <Can permission="incomes.delete">
+                    <Form :action="`/incomes/${item.id}`" method="delete" v-slot="{ processing }">
+                        <Button type="submit" variant="destructive" :disabled="processing">
+                            <Trash2 class="size-4" /> {{ processing ? t('Deleting…') : t('Delete') }}
+                        </Button>
+                    </Form>
                 </Can>
             </div>
         </div>

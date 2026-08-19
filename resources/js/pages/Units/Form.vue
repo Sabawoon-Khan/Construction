@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import Heading from '@/components/Heading.vue';
@@ -39,13 +39,13 @@ defineOptions({ layout: { breadcrumbs: [{ title: 'Dashboard', href: '/dashboard'
         <div class="grid gap-2"><Label>{{ t('Halls') }}</Label><Input name="halls" type="number" :default-value="item?.halls ?? ''" /></div>
         <div class="grid gap-2"><Label>{{ t('Kitchens') }}</Label><Input name="kitchens" type="number" :default-value="item?.kitchens ?? ''" /></div>
         <div class="grid gap-2"><Label>{{ t('Balconies') }}</Label><Input name="balconies" type="number" :default-value="item?.balconies ?? ''" /></div>
-        <div class="grid gap-2"><Label>{{ t('Planned unit cost') }}</Label><Input name="cost_price" type="number" step="0.01" :default-value="item?.cost_price ?? 0" /><p class="text-xs text-muted-foreground">{{ t('Target build cost for this unit — not project expenses.') }}</p></div>
+        <div class="grid gap-2"><Label>{{ t('Planned unit cost') }}</Label><Input name="cost_price" type="number" step="0.01" :default-value="item?.cost_price ?? 0" /></div>
         <div class="grid gap-2"><Label>{{ t('Sale price') }}</Label><Input name="list_price" type="number" step="0.01" :default-value="item?.list_price ?? 0" /></div>
         <div class="grid gap-2"><Label>{{ t('Currency') }}</Label><CurrencySelect v-model="currency" /><input type="hidden" name="currency" :value="currency" /></div>
         <div class="grid gap-2"><Label>{{ t('Status') }}</Label><select name="status" class="h-9 rounded-md border px-3 text-sm" :value="item?.status ?? 'available'"><option value="available">{{ t('Available') }}</option><option value="reserved">{{ t('Reserved') }}</option><option value="sold">{{ t('Sold') }}</option></select></div>
         <div class="grid gap-2 sm:col-span-2"><Label>{{ t('Description') }}</Label><textarea name="description" rows="3" class="rounded-md border px-3 py-2 text-sm" :value="item?.description ?? ''"></textarea></div>
       </div>
-      <div class="flex gap-2"><Button type="submit" :disabled="processing">{{ t('Save') }}</Button><Button as-child variant="secondary"><Link href="/units">{{ t('Cancel') }}</Link></Button></div>
+      <div class="flex gap-2"><Button type="submit" :disabled="processing">{{ t('Save') }}</Button><Button as-child variant="secondary"><Link href="/units">{{ t('Cancel') }}</Link></Button><Form v-if="isEdit" :action="`/units/${item.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }"><Button type="submit" variant="destructive" :disabled="deleting"><Trash2 class="size-4" />{{ deleting ? t('Deleting…') : t('Delete') }}</Button></Form></div>
     </Form>
   </div>
 </template>

@@ -6,15 +6,12 @@ import {
     CircleDollarSign,
     ClipboardList,
     Clock,
-    DatabaseBackup,
     FolderKanban,
-    Handshake,
     LayoutGrid,
     Package,
     Receipt,
     Scale,
     Settings,
-    Shield,
     Truck,
     Users,
     Warehouse,
@@ -32,7 +29,7 @@ function item(title: string, href: NavItem['href'], icon: NavItem['icon']): NavI
 
 export function useAppNavigation() {
     const { t } = useTranslations();
-    const { can, canAny } = usePermissions();
+    const { can } = usePermissions();
 
     const navGroups = computed(() => {
         const groups: NavGroup[] = [];
@@ -137,51 +134,44 @@ export function useAppNavigation() {
             groups.push({ label: t('HR'), items: hr });
         }
 
-        if (can('partners.view')) {
-            groups.push({
-                label: t('Shareholders'),
-                items: [item(t('Shareholders'), '/partners', Handshake)],
-            });
-        }
-
-        const administration: NavItem[] = [];
-
         if (
             can('settings.manage') ||
             can('users.view') ||
             can('roles.view') ||
             can('backups.view') ||
-            can('storage.view')
+            can('storage.view') ||
+            can('companies.view') ||
+            can('companies.edit') ||
+            can('trash.view') ||
+            can('audit.view') ||
+            can('partners.view')
         ) {
-            administration.push({
-                title: t('Settings'),
-                href: can('settings.manage')
-                    ? '/settings/appearance'
-                    : can('users.view')
-                      ? '/settings/users'
-                      : can('roles.view')
-                        ? '/settings/roles'
-                        : can('backups.view')
-                          ? '/settings/backups'
-                          : '/settings/file-manager',
-                icon: Settings,
+            groups.push({
+                label: t('Administration'),
+                items: [
+                    {
+                        title: t('Settings'),
+                        href: can('settings.manage')
+                            ? '/settings/appearance'
+                            : can('users.view')
+                              ? '/settings/users'
+                              : can('roles.view')
+                                ? '/settings/roles'
+                                : can('backups.view')
+                                  ? '/settings/backups'
+                                  : can('storage.view')
+                                    ? '/settings/file-manager'
+                                    : can('companies.view') || can('companies.edit')
+                                      ? '/settings/company'
+                                      : can('trash.view')
+                                        ? '/settings/trash'
+                                        : can('partners.view')
+                                          ? '/partners'
+                                          : '/settings/login-logs',
+                        icon: Settings,
+                    },
+                ],
             });
-        }
-
-        if (can('users.view')) {
-            administration.push(item(t('Users'), '/settings/users', Users));
-        }
-
-        if (can('roles.view')) {
-            administration.push(item(t('Roles'), '/settings/roles', Shield));
-        }
-
-        if (can('backups.view') || canAny(['backups.run', 'backups.download'])) {
-            administration.push(item(t('Backups'), '/settings/backups', DatabaseBackup));
-        }
-
-        if (administration.length) {
-            groups.push({ label: t('Administration'), items: administration });
         }
 
         return groups;

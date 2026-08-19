@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -20,7 +20,7 @@ const { t } = useTranslations();
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Settings', href: '/settings/appearance' },
             { title: 'Shareholders', href: '/partners' },
             { title: 'Form', href: '/partners/create' },
         ],
@@ -80,7 +80,6 @@ defineOptions({
                         <option value="">{{ t('No login — view-only record') }}</option>
                         <option v-for="u in users || []" :key="u.id" :value="u.id">{{ u.name }} · {{ u.email }}</option>
                     </select>
-                    <p class="text-xs text-muted-foreground">{{ t('Linked users see only their profit share and assigned projects.') }}</p>
                     <InputError :message="errors.user_id" />
                 </div>
                 <div class="grid gap-2">
@@ -105,6 +104,12 @@ defineOptions({
                 <Button as-child variant="secondary">
                     <Link href="/partners">{{ t('Cancel') }}</Link>
                 </Button>
+                <Form v-if="isEdit" :action="`/partners/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
+                    <Button type="submit" variant="destructive" :disabled="deleting">
+                        <Trash2 class="size-4" />
+                        {{ deleting ? t('Deleting…') : t('Delete') }}
+                    </Button>
+                </Form>
             </div>
         </Form>
     </div>

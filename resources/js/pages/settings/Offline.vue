@@ -300,9 +300,6 @@ defineOptions({
                         >
                             <div>
                                 <div class="font-medium">{{ item.label }}</div>
-                                <div class="text-sm text-muted-foreground">
-                                    {{ item.help }}
-                                </div>
                             </div>
                             <button
                                 type="button"
@@ -355,9 +352,6 @@ defineOptions({
                         >
                             <div>
                                 <div class="font-medium">{{ item.label }}</div>
-                                <div class="text-sm text-muted-foreground">
-                                    {{ item.help }}
-                                </div>
                             </div>
                             <button
                                 type="button"
@@ -398,9 +392,6 @@ defineOptions({
                                     max="200"
                                     :disabled="!form.enabled"
                                 />
-                                <p class="text-xs text-muted-foreground">
-                                    {{ t('Items sent per flush (1–200)') }}
-                                </p>
                                 <InputError
                                     :message="form.errors.max_batch_size"
                                 />
@@ -418,13 +409,6 @@ defineOptions({
                                     max="5000"
                                     :disabled="!form.enabled"
                                 />
-                                <p class="text-xs text-muted-foreground">
-                                    {{
-                                        t(
-                                            'Queued mutations before sync is blocked',
-                                        )
-                                    }}
-                                </p>
                                 <InputError
                                     :message="form.errors.max_outbox_size"
                                 />
@@ -445,13 +429,6 @@ defineOptions({
                                         !form.attachments_enabled
                                     "
                                 />
-                                <p class="text-xs text-muted-foreground">
-                                    {{
-                                        formatBytes(
-                                            form.attachment_max_bytes || 0,
-                                        )
-                                    }}
-                                </p>
                                 <InputError
                                     :message="form.errors.attachment_max_bytes"
                                 />
@@ -469,13 +446,6 @@ defineOptions({
                                     max="60000"
                                     :disabled="!form.enabled"
                                 />
-                                <p class="text-xs text-muted-foreground">
-                                    {{
-                                        t(
-                                            'Logged when sync takes longer than this',
-                                        )
-                                    }}
-                                </p>
                                 <InputError
                                     :message="form.errors.slow_request_ms"
                                 />

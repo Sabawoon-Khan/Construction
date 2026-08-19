@@ -4,6 +4,7 @@ import {
     Building2,
     DatabaseBackup,
     FolderOpen,
+    Handshake,
     History,
     Languages,
     Palette,
@@ -168,6 +169,15 @@ const navItems = computed<SettingsNavItem[]>(() => {
         });
     }
 
+    if (can('partners.view')) {
+        items.push({
+            title: t('Shareholders'),
+            href: '/partners',
+            icon: Handshake,
+            group: 'administration',
+        });
+    }
+
     if (can('backups.view')) {
         items.push({
             title: t('Backups'),
@@ -244,6 +254,10 @@ const pageTitle = computed(() => {
 
     if (component.includes('Roles')) {
         return t('Roles');
+    }
+
+    if (component.includes('Partners')) {
+        return t('Shareholders');
     }
 
     if (component.includes('Backups')) {

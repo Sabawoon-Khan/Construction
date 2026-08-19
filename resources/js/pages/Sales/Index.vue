@@ -95,7 +95,7 @@ function rowActions(item: any): RowActionItem[] {
         </div>
 
         <MisStatGrid :columns="3">
-            <MisStatCard :label="t('Contracts')" :value="totals.count" :hint="t('All matching sales')" />
+            <MisStatCard :label="t('Contracts')" :value="totals.count" />
             <MisStatCard :label="t('Sales total')" :value="money(totals.total_price_base ?? totals.total_price, baseCurrency)" />
             <MisStatCard :label="t('Remaining')" :value="money(totals.remaining_base ?? totals.remaining, baseCurrency)" tone="warning" />
         </MisStatGrid>

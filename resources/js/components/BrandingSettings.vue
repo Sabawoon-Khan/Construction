@@ -81,17 +81,14 @@ const calendarOptions = computed(() => [
     {
         value: 'jalali' as const,
         label: t('Jalali (Shamsi)'),
-        hint: t('Solar Hijri calendar'),
     },
     {
         value: 'hijri' as const,
         label: t('Hijri (Lunar)'),
-        hint: t('Islamic lunar calendar (Umm al-Qura)'),
     },
     {
         value: 'gregorian' as const,
         label: t('Gregorian'),
-        hint: t('International civil calendar (CE)'),
     },
 ]);
 
@@ -209,13 +206,6 @@ function submit(): void {
                                 </option>
                             </select>
                         </div>
-                        <p class="text-xs text-muted-foreground">
-                            {{
-                                t(
-                                    'Used when a visitor has no language cookie yet.',
-                                )
-                            }}
-                        </p>
                         <InputError :message="form.errors.default_locale" />
                     </div>
                 </div>
@@ -226,7 +216,6 @@ function submit(): void {
                         accept="image/*"
                         preview="image"
                         :label="t('Logo')"
-                        :hint="t('PNG or JPG up to 2MB.')"
                         :max-bytes="2 * 1024 * 1024"
                         :existing="existingLogo"
                         :disabled="!canEdit"
@@ -240,7 +229,6 @@ function submit(): void {
                         accept="image/*,.ico"
                         preview="image"
                         :label="t('Favicon')"
-                        :hint="t('Browser tab icon. PNG, SVG, or ICO up to 1MB.')"
                         :max-bytes="1024 * 1024"
                         :existing="existingFavicon"
                         :disabled="!canEdit"
@@ -253,13 +241,6 @@ function submit(): void {
                 <div class="space-y-3">
                     <div>
                         <Label>{{ t('Default calendar') }}</Label>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            {{
-                                t(
-                                    'Dates across the app are shown and picked in this calendar. Values are still stored as Gregorian.',
-                                )
-                            }}
-                        </p>
                     </div>
                     <div class="grid gap-2 sm:grid-cols-3">
                         <label
@@ -278,11 +259,6 @@ function submit(): void {
                             <span class="min-w-0">
                                 <span class="block text-sm font-medium">
                                     {{ t(option.label) }}
-                                </span>
-                                <span
-                                    class="mt-0.5 block text-xs leading-relaxed text-muted-foreground"
-                                >
-                                    {{ t(option.hint) }}
                                 </span>
                             </span>
                         </label>

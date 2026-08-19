@@ -100,7 +100,6 @@ const {
             :max-files="5"
             accept="image/jpeg,image/png,image/webp,application/pdf"
             :label="t('Attachments')"
-            :hint="t('Optional. Up to 5 files.')"
             @update:deferred="(files) => (deferredAttachments = files)"
         />
     </OfflineResourceForm>

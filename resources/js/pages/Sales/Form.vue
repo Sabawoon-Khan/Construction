@@ -261,13 +261,6 @@ function removeRow(index: number) {
             <div v-show="tab === 'schedule'" class="space-y-3">
                 <template v-if="!isEdit">
                     <div class="flex items-center justify-between">
-                        <p class="text-sm text-muted-foreground">
-                            {{
-                                t(
-                                    'Split the sale price into due dates. Use Paid now if money is received today.',
-                                )
-                            }}
-                        </p>
                         <Button type="button" variant="outline" size="sm" @click="addRow">
                             {{ t('Add row') }}
                         </Button>
@@ -325,13 +318,6 @@ function removeRow(index: number) {
                     <InputError :message="errors.installments" />
                 </template>
                 <template v-else>
-                    <p class="text-sm text-muted-foreground">
-                        {{
-                            t(
-                                'Receive more money from the sale view page. The schedule is set when the sale is created.',
-                            )
-                        }}
-                    </p>
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/40 text-left text-muted-foreground">
                             <tr>
@@ -377,13 +363,6 @@ function removeRow(index: number) {
             </div>
 
             <div v-show="tab === 'documents'" class="space-y-3">
-                <p class="text-sm text-muted-foreground">
-                    {{
-                        t(
-                            'Upload the signed contract and related files (ID copies, receipts).',
-                        )
-                    }}
-                </p>
                 <FileUploadField
                     v-if="isEdit"
                     mode="chunked"
@@ -412,6 +391,12 @@ function removeRow(index: number) {
                 <Button as-child variant="secondary">
                     <Link href="/sales">{{ t('Cancel') }}</Link>
                 </Button>
+                <Form v-if="isEdit" :action="`/sales/${item.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
+                    <Button type="submit" variant="destructive" :disabled="deleting">
+                        <Trash2 class="size-4" />
+                        {{ deleting ? t('Deleting…') : t('Delete') }}
+                    </Button>
+                </Form>
             </div>
         </Form>
     </div>

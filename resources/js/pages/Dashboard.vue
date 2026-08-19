@@ -167,9 +167,6 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                     <Building2 class="size-4 text-muted-foreground" />
                 </div>
                 <div class="mt-3 text-3xl font-semibold">{{ kpis.active_projects }}</div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    {{ t('of :count total', { count: String(kpis.total_projects) }) }}
-                </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
@@ -178,9 +175,6 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 </div>
                 <div class="mt-3 text-3xl font-semibold tabular-nums">
                     {{ money(kpis.period_sales) }}
-                </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    {{ t(':sold units sold · :available available', { sold: String(kpis.units_sold), available: String(kpis.units_available) }) }}
                 </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
@@ -191,9 +185,6 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 <div class="mt-3 text-3xl font-semibold tabular-nums">
                     {{ money(kpis.period_revenue) }}
                 </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    {{ t('Sales + other income') }}
-                </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
@@ -203,9 +194,6 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 <div class="mt-3 text-3xl font-semibold tabular-nums">
                     {{ money(kpis.period_expenses) }}
                 </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    {{ t('All-time :amount', { amount: money(kpis.total_expenses) }) }}
-                </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
@@ -214,9 +202,6 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 </div>
                 <div class="mt-3 text-3xl font-semibold tabular-nums">
                     {{ money(kpis.period_salaries) }}
-                </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    {{ t('All-time :amount', { amount: money(kpis.total_salaries) }) }}
                 </div>
             </div>
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40">

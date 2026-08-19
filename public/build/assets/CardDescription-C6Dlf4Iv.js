@@ -1,1 +1,0 @@
-import{cn as e,gt as t,hr as n,n as r,st as i,tn as a,vr as o}from"./button-Bazp6Oio.js";var s=t({__name:`CardDescription`,props:{class:{type:[Boolean,null,String,Object,Array]}},setup(t){let s=t;return(t,c)=>(a(),i(`p`,{"data-slot":`card-description`,class:o(n(r)(`text-muted-foreground text-sm`,s.class))},[e(t.$slots,`default`)],2))}});export{s as t};

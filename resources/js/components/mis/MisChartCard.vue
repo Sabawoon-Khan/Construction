@@ -11,12 +11,10 @@ withDefaults(
         labels: string[];
         datasets: MisChartDataset[];
         icon?: Component;
-        description?: string;
         class?: string;
     }>(),
     {
         icon: undefined,
-        description: undefined,
         class: undefined,
     },
 );
@@ -43,12 +41,6 @@ withDefaults(
                         {{ title }}
                     </h3>
                 </div>
-                <p
-                    v-if="description"
-                    class="text-xs text-muted-foreground"
-                >
-                    {{ description }}
-                </p>
             </div>
             <div v-if="$slots.actions" class="shrink-0">
                 <slot name="actions" />

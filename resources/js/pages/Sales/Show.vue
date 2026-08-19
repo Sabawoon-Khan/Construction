@@ -172,7 +172,6 @@ function submitPayment() {
         <div id="receive-payment" v-if="remaining_amount > 0" class="space-y-4 rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm">
             <div>
                 <h3 class="text-sm font-semibold">{{ t('Receive payment') }}</h3>
-                <p class="text-sm text-muted-foreground">{{ t('Record money collected against this sale. It posts a receipt under Payments.') }}</p>
             </div>
             <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitPayment">
                 <div class="grid gap-2">
@@ -284,7 +283,6 @@ function submitPayment() {
                 multiple
                 :max-files="10"
                 accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
-                :hint="t('Signed contract and related files.')"
                 :existing="existingDocuments"
             />
         </div>

@@ -243,10 +243,6 @@ function rowActions(row: LookupRow): RowActionItem[] {
                 </div>
                 <div v-else class="min-w-0">
                     <p class="font-medium">{{ row.name }}</p>
-                    <p class="text-xs text-muted-foreground">
-                        #{{ row.sort_order }} ·
-                        {{ row.is_active ? t('Active') : t('Disabled') }}
-                    </p>
                 </div>
                 <RowActionsMenu
                     v-if="editingId !== row.id"

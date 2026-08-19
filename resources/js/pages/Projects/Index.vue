@@ -98,7 +98,7 @@ function rowActions(item: Item): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Projects')" :value="totals.count" />
-            <MisStatCard :label="t('Active')" :value="totals.active" :hint="t('Planning, construction, ready')" />
+            <MisStatCard :label="t('Active')" :value="totals.active" />
             <MisStatCard :label="t('Units')" :value="totals.units" />
             <MisStatCard :label="t('Sales total')" :value="money(totals.sales_total)" tone="success" />
         </MisStatGrid>

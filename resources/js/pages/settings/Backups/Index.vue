@@ -412,9 +412,6 @@ defineOptions({
                         <p class="text-2xl font-semibold tabular-nums tracking-tight">
                             {{ summary.total }}
                         </p>
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('Completed backups') }}
-                        </p>
                     </div>
                 </div>
             </div>

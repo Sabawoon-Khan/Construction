@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -95,6 +95,12 @@ defineOptions({
                 <Button as-child variant="secondary">
                     <Link href="/customers">{{ t('Cancel') }}</Link>
                 </Button>
+                <Form v-if="isEdit" :action="`/customers/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
+                    <Button type="submit" variant="destructive" :disabled="deleting">
+                        <Trash2 class="size-4" />
+                        {{ deleting ? t('Deleting…') : t('Delete') }}
+                    </Button>
+                </Form>
             </div>
         </Form>
     </div>

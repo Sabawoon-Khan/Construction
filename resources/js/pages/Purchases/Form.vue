@@ -89,6 +89,14 @@ function submit() {
     form.post('/purchases');
 }
 
+function removePurchase() {
+    if (!isEdit.value) {
+        return;
+    }
+
+    form.delete(`/purchases/${props.item.id}`);
+}
+
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -205,7 +213,6 @@ defineOptions({
                 <div v-if="!isEdit" class="grid gap-2">
                     <Label>{{ t('Paid now') }}</Label>
                     <Input v-model="form.paid_now" type="number" step="0.01" min="0" />
-                    <p class="text-xs text-muted-foreground">{{ t('Leave 0 if you will pay the supplier later.') }}</p>
                     <InputError :message="form.errors.paid_now" />
                 </div>
                 <div v-if="!isEdit" class="grid gap-2">
@@ -231,6 +238,10 @@ defineOptions({
                 <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
                 <Button as-child variant="secondary">
                     <Link href="/purchases">{{ t('Cancel') }}</Link>
+                </Button>
+                <Button v-if="isEdit" type="button" variant="destructive" class="ml-auto" :disabled="form.processing" @click="removePurchase">
+                    <Trash2 class="size-4" />
+                    {{ form.processing ? t('Deleting…') : t('Delete') }}
                 </Button>
             </div>
         </form>

@@ -27,7 +27,7 @@ const search = ref(props.filters.search ?? '');
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Settings', href: '/settings/appearance' },
             { title: 'Shareholders', href: '/partners' },
         ],
     },

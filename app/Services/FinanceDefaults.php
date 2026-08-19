@@ -62,6 +62,16 @@ class FinanceDefaults
             ? round((float) $data['amount'], 2)
             : self::totalCost($data);
 
+        // Some flows (e.g. project expense quick add) provide only `amount`.
+        // Ensure item/per fields are always populated for NOT NULL DB columns.
+        if (($itemAmount === null || $itemAmount <= 0) && $amount >= 0) {
+            $itemAmount = 1.0;
+        }
+
+        if ($perPrice === null) {
+            $perPrice = $itemAmount > 0 ? round($amount / $itemAmount, 2) : $amount;
+        }
+
         return [
             'project_id' => $projectId,
             'expense_category_id' => ! empty($data['expense_category_id'])
@@ -73,7 +83,7 @@ class FinanceDefaults
             'item_amount' => $itemAmount,
             'item_amount_base' => $itemAmount,
             'per_price' => $perPrice,
-            'per_price_base' => $perPrice !== null ? round($perPrice * $exchangeRate, 2) : null,
+            'per_price_base' => round($perPrice * $exchangeRate, 2),
             'amount' => $amount,
             'amount_base' => round($amount * $exchangeRate, 2),
             'description' => $data['description'] ?? null,

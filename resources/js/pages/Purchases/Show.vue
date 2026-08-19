@@ -144,7 +144,6 @@ defineOptions({
         <div id="pay" v-if="remaining_amount > 0" class="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
             <div>
                 <h3 class="text-sm font-semibold">{{ t('Pay supplier') }}</h3>
-                <p class="text-sm text-muted-foreground">{{ t('Record money you pay back. This does not change the project expense.') }}</p>
             </div>
             <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitPayment">
                 <div class="grid gap-2">

@@ -110,12 +110,6 @@ onMounted(async () => {
                             {{ code }}
                         </div>
                     </div>
-                    <p class="text-xs text-muted-foreground select-none">
-                        Each recovery code can be used once to access your
-                        account and will be removed after use. If you need more,
-                        click
-                        <span class="font-bold">Regenerate codes</span> above.
-                    </p>
                 </div>
             </div>
         </CardContent>

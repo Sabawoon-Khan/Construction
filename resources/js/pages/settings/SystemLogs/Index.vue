@@ -262,14 +262,6 @@ defineOptions({
                         :label="t('Matches')"
                         :value="scan.matched"
                         tone="muted"
-                        :hint="
-                            scan.truncated
-                                ? t('Scanned last :scanned of :total', {
-                                      scanned: formatBytes(scan.bytes_scanned),
-                                      total: formatBytes(scan.file_size),
-                                  })
-                                : null
-                        "
                     />
                 </MisStatGrid>
 

@@ -9,6 +9,7 @@ import {
     Pencil,
     Printer,
     Receipt,
+    Trash2,
     Warehouse,
 } from '@lucide/vue';
 import { ref } from 'vue';
@@ -153,6 +154,13 @@ defineOptions({
                             ><Pencil class="size-4" /> {{ t('Edit') }}</Link
                         >
                     </Button>
+                </Can>
+                <Can permission="projects.delete">
+                    <Form :action="`/projects/${item.id}`" method="delete" v-slot="{ processing }">
+                        <Button type="submit" variant="destructive" :disabled="processing">
+                            <Trash2 class="size-4" /> {{ processing ? t('Deleting…') : t('Delete') }}
+                        </Button>
+                    </Form>
                 </Can>
             </div>
         </div>
@@ -317,13 +325,6 @@ defineOptions({
         >
             <div class="border-b px-5 py-4">
                 <h3 class="text-sm font-semibold">{{ t('Shareholders') }}</h3>
-                <p class="text-xs text-muted-foreground">
-                    {{
-                        t(
-                            'Money they put in is capital, not an expense. Profit share is calculated from sales minus project spend. Payouts are tracked separately.',
-                        )
-                    }}
-                </p>
             </div>
 
             <Form
@@ -352,19 +353,6 @@ defineOptions({
                         </option>
                     </select>
                     <InputError :message="errors.partner_id" />
-                    <p
-                        v-if="!available_shareholders.length"
-                        class="text-xs text-muted-foreground"
-                    >
-                        {{ t('All shareholders are already on this project.') }}
-                        <Can permission="partners.create">
-                            <Link
-                                href="/partners/create"
-                                class="text-primary hover:underline"
-                                >{{ t('Add a new shareholder') }}</Link
-                            >
-                        </Can>
-                    </p>
                 </div>
                 <div class="grid gap-2">
                     <Label for="ownership_percentage">{{
@@ -692,13 +680,6 @@ defineOptions({
                     <h3 class="text-sm font-semibold">
                         {{ t('Project expenses') }}
                     </h3>
-                    <p class="text-xs text-muted-foreground">
-                        {{
-                            t(
-                                'Labor, transport, salaries, and other project spend — not materials. Materials go through Purchases so stock and remaining balance are tracked.',
-                            )
-                        }}
-                    </p>
                 </div>
                 <Can permission="purchases.create">
                     <Button as-child size="sm" variant="outline">
@@ -830,7 +811,7 @@ defineOptions({
                                 {{ t('Amount') }}
                             </th>
                             <th class="px-4 py-3 text-right font-medium">
-                                {{ t('Voucher') }}
+                                {{ t('Actions') }}
                             </th>
                         </tr>
                     </thead>
@@ -862,13 +843,47 @@ defineOptions({
                                     )
                                 }}
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <Button as-child variant="ghost" size="sm">
-                                    <Link :href="`/expenses/${expense.id}`"
-                                        ><Printer class="size-4" />
-                                        {{ t('Print') }}</Link
-                                    >
-                                </Button>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    <Button as-child variant="ghost" size="sm">
+                                        <Link :href="`/expenses/${expense.id}`"
+                                            ><Printer class="size-4" />
+                                            {{ t('Print') }}</Link
+                                        >
+                                    </Button>
+                                    <Can permission="expenses.edit">
+                                        <Button
+                                            v-if="!expense.purchase_id"
+                                            as-child
+                                            variant="ghost"
+                                            size="sm"
+                                        >
+                                            <Link :href="`/expenses/${expense.id}/edit`"
+                                                ><Pencil class="size-4" />
+                                                {{ t('Edit') }}</Link
+                                            >
+                                        </Button>
+                                    </Can>
+                                    <Can permission="expenses.delete">
+                                        <Form
+                                            v-if="!expense.purchase_id"
+                                            :action="`/expenses/${expense.id}`"
+                                            method="delete"
+                                            v-slot="{ processing }"
+                                        >
+                                            <Button
+                                                type="submit"
+                                                variant="ghost"
+                                                size="sm"
+                                                class="text-destructive hover:text-destructive"
+                                                :disabled="processing"
+                                            >
+                                                <Trash2 class="size-4" />
+                                                {{ processing ? t('Deleting…') : t('Delete') }}
+                                            </Button>
+                                        </Form>
+                                    </Can>
+                                </div>
                             </td>
                         </tr>
                         <tr v-if="!expenses.length">
@@ -895,13 +910,6 @@ defineOptions({
                     <h3 class="text-sm font-semibold">
                         {{ t('Project purchases') }}
                     </h3>
-                    <p class="text-xs text-muted-foreground">
-                        {{
-                            t(
-                                'Full amount is already in project expenses. Remaining is what you still owe the supplier.',
-                            )
-                        }}
-                    </p>
                 </div>
                 <Can permission="purchases.create">
                     <Button as-child size="sm">
@@ -1095,13 +1103,6 @@ defineOptions({
                         <h3 class="text-sm font-semibold">
                             {{ t('Stock on hand') }}
                         </h3>
-                        <p class="text-xs text-muted-foreground">
-                            {{
-                                t(
-                                    'Current quantity available for each material.',
-                                )
-                            }}
-                        </p>
                     </div>
                     <table class="min-w-full text-sm">
                         <thead
@@ -1162,9 +1163,6 @@ defineOptions({
                         <h3 class="text-sm font-semibold">
                             {{ t('Stock issue dates') }}
                         </h3>
-                        <p class="text-xs text-muted-foreground">
-                            {{ t('All stock issue entries with their dates.') }}
-                        </p>
                     </div>
                     <table class="min-w-full text-sm">
                         <thead

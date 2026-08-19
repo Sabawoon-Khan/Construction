@@ -276,7 +276,6 @@ const tableRows = [
                     :value="96"
                     :icon="MailCheck"
                     tone="success"
-                    hint="Last 7 days"
                 />
                 <MisStatCard :label="t('Failed')" :value="4" tone="danger" />
                 <MisStatCard :label="t('Pending')" :value="12" tone="warning" />

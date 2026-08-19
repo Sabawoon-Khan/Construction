@@ -228,13 +228,6 @@ const previewRadius = computed(() => {
                         <h3 class="text-sm font-semibold tracking-tight">
                             {{ t('Presets') }}
                         </h3>
-                        <p class="text-xs text-muted-foreground">
-                            {{
-                                t(
-                                    'Start from a curated palette, then fine-tune below.',
-                                )
-                            }}
-                        </p>
                     </div>
                     <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         <button
@@ -562,9 +555,6 @@ const previewRadius = computed(() => {
                         <Label :for="`theme-${field.key}`">{{
                             t(field.labelKey)
                         }}</Label>
-                        <p class="text-xs text-muted-foreground">
-                            {{ t(field.descriptionKey) }}
-                        </p>
                         <div class="flex items-center gap-2">
                             <div
                                 class="relative size-10 shrink-0 overflow-hidden rounded-xl border border-border shadow-sm"

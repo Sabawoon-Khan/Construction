@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { ArrowLeft, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
@@ -32,6 +32,9 @@ const totalCost = computed(() => {
 
     return (qty * price).toFixed(2);
 });
+const backHref = computed(() =>
+    props.item?.project_id ? `/projects/${props.item.project_id}` : '/expenses',
+);
 const existingReceipts = computed<ExistingUploadFile[]>(() =>
     (props.item?.attachments ?? []).map((file: any) => ({
         id: file.id,
@@ -58,7 +61,7 @@ defineOptions({
     <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
         <div class="space-y-3">
             <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/expenses"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
+                <Link :href="backHref"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
             </Button>
             <Heading
                 :title="isEdit ? t('Edit expense') : t('Record expense')"
@@ -160,7 +163,6 @@ defineOptions({
                         multiple
                         :max-files="10"
                         accept="application/pdf,image/jpeg,image/png,image/webp"
-                        :hint="t('Upload receipt photos or PDFs.')"
                         :existing="existingReceipts"
                     />
                     <div v-else class="grid gap-2">
@@ -171,14 +173,19 @@ defineOptions({
                             accept=".pdf,.jpg,.jpeg,.png,.webp"
                             class="text-sm"
                         />
-                        <p class="text-xs text-muted-foreground">{{ t('Optional. PDF or image of the receipt.') }}</p>
                         <InputError :message="errors.documents" />
                     </div>
                 </div>
             </div>
             <div class="flex gap-2">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save expense') }}</Button>
-                <Button as-child variant="secondary"><Link href="/expenses">{{ t('Cancel') }}</Link></Button>
+                <Button as-child variant="secondary"><Link :href="backHref">{{ t('Cancel') }}</Link></Button>
+                <Form v-if="isEdit" :action="`/expenses/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
+                    <Button type="submit" variant="destructive" :disabled="deleting">
+                        <Trash2 class="size-4" />
+                        {{ deleting ? t('Deleting…') : t('Delete') }}
+                    </Button>
+                </Form>
             </div>
         </Form>
     </div>

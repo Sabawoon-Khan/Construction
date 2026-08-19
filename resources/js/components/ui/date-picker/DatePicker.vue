@@ -97,13 +97,6 @@ const displayValue = computed(() => {
     return formatCalendarParts(selectedParts.value, system.value, locale.value);
 });
 
-const secondaryHint = computed(() => {
-    if (!props.modelValue) return '';
-    const alt: CalendarSystem =
-        system.value === 'gregorian' ? 'jalali' : 'gregorian';
-    return formatDate(props.modelValue, alt, locale.value);
-});
-
 const viewYear = ref(today.value.year);
 const viewMonth = ref(today.value.month);
 
@@ -318,19 +311,11 @@ onBeforeUnmount(() => {
                 <div
                     class="from-primary/12 via-primary/5 to-transparent border-b bg-gradient-to-br px-3 pt-3 pb-2.5"
                 >
-                    <div class="flex items-center justify-between gap-2">
                         <p
                             class="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase"
                         >
                             {{ systemLabel }}
                         </p>
-                        <p
-                            v-if="secondaryHint"
-                            class="text-muted-foreground text-[10px] tabular-nums"
-                        >
-                            {{ secondaryHint }}
-                        </p>
-                    </div>
 
                     <div class="mt-2 flex items-center gap-1">
                         <button

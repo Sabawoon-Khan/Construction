@@ -25,7 +25,7 @@ const { t } = useTranslations();
 defineOptions({
     layout: {
         breadcrumbs: [
-            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Settings', href: '/settings/appearance' },
             { title: 'Shareholders', href: '/partners' },
             { title: 'Details', href: '#' },
         ],

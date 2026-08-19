@@ -94,13 +94,6 @@ const hasFinished = () =>
             <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-medium">{{ item.file.name }}</p>
-                    <p class="mt-0.5 text-xs text-muted-foreground">
-                        {{ statusLabel(item.status) }}
-                        · {{ formatBytes(item.loadedBytes) }} / {{ formatBytes(item.totalBytes) }}
-                        <span v-if="item.speedBps > 0 && item.status === 'uploading'">
-                            · {{ formatSpeed(item.speedBps) }}
-                        </span>
-                    </p>
                 </div>
                 <div class="flex shrink-0 items-center gap-1">
                     <Button

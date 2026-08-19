@@ -14,7 +14,6 @@ withDefaults(
     defineProps<{
         id?: string;
         label?: string;
-        hint?: string;
         error?: string;
         options: MisSelectOption[];
         placeholder?: string;
@@ -26,7 +25,6 @@ withDefaults(
     {
         id: undefined,
         label: undefined,
-        hint: undefined,
         error: undefined,
         placeholder: undefined,
         disabled: false,
@@ -41,7 +39,6 @@ withDefaults(
     <MisField
         :label="label"
         :html-for="id"
-        :hint="hint"
         :error="error"
         :required="required"
         :class="$props.class"
