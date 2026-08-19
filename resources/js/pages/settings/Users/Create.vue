@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
-import Heading from '@/components/Heading.vue';
+import { Head, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
+import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,34 +38,28 @@ defineOptions({
 <template>
     <Head :title="t('Create user')" />
 
-    <div class="space-y-6">
-        <div class="space-y-3">
-            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/settings/users"><ArrowLeft class="size-4" /> Back</Link>
-            </Button>
-            <Heading variant="small" :title="t('Create user')" />
-        </div>
-
-        <form class="space-y-4" @submit.prevent="submit">
-            <div class="space-y-2">
+    <MisFormPage :title="t('Create user')" back-href="/settings/users">
+        <form class="mis-form-card" @submit.prevent="submit">
+            <div class="mis-form-grid">
+            <div class="grid gap-2">
                 <Label for="name">{{ t('Name') }}</Label>
                 <Input id="name" v-model="form.name" required />
                 <InputError :message="form.errors.name" />
             </div>
 
-            <div class="space-y-2">
+            <div class="grid gap-2">
                 <Label for="email">{{ t('Email') }}</Label>
                 <Input id="email" v-model="form.email" type="email" required />
                 <InputError :message="form.errors.email" />
             </div>
 
-            <div class="space-y-2">
+            <div class="grid gap-2">
                 <Label for="password">{{ t('Password') }}</Label>
                 <Input id="password" v-model="form.password" type="password" required />
                 <InputError :message="form.errors.password" />
             </div>
 
-            <div class="space-y-2">
+            <div class="grid gap-2">
                 <Label for="password_confirmation">{{ t('Password') }}</Label>
                 <Input
                     id="password_confirmation"
@@ -76,20 +69,22 @@ defineOptions({
                 />
             </div>
 
-            <div class="space-y-2">
+            <div class="grid gap-2 mis-form-span">
                 <Label>{{ t('Assign roles') }}</Label>
                 <select
                     v-model="form.roles"
                     multiple
-                    class="min-h-24 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    class="mis-form-select min-h-24 py-2"
                 >
                     <option v-for="role in roles" :key="role.id" :value="role.name">
                         {{ role.name }}
                     </option>
                 </select>
             </div>
-
+            </div>
+            <div class="mis-form-actions">
             <Button type="submit" :disabled="form.processing">{{ t('Save') }}</Button>
+            </div>
         </form>
-    </div>
+    </MisFormPage>
 </template>

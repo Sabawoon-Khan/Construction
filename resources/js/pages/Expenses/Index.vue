@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Printer, Search, Trash2 } from '@lucide/vue';
+import { Head, router } from '@inertiajs/vue3';
+import { Eye, Pencil, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Heading from '@/components/Heading.vue';
-import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
+import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
+import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
@@ -19,12 +17,16 @@ const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
     totals: { count: number; amount: number; amount_base: number; this_month: number; this_month_base: number; average: number; average_base: number };
+    categories?: { id: number; name: string; code: string }[];
+    units?: { id: number; unit_name: string }[];
 }>();
 
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
 const { baseCurrency } = useCurrency();
-const { viewAction, editAction, can, formatDate } = useMisPage();
+const { can, formatDate } = useMisPage();
+const dialogOpen = ref(false);
+const selected = ref<Record<string, any> | null>(null);
 
 defineOptions({
     layout: {
@@ -39,11 +41,20 @@ function applyFilters() {
     router.get('/expenses', { search: search.value || undefined }, { preserveState: true, replace: true });
 }
 
+function clearFilters() {
+    search.value = '';
+    applyFilters();
+}
+
+function openRecord(item: Record<string, any> | null) {
+    selected.value = item;
+    dialogOpen.value = true;
+}
+
 function rowActions(item: any): RowActionItem[] {
     return [
-        viewAction(`/expenses/${item.id}`),
-        { label: t('Print'), icon: Printer, href: `/expenses/${item.id}` },
-        editAction(`/expenses/${item.id}/edit`, 'expenses.edit'),
+        { label: t('View'), icon: Eye, onClick: () => openRecord(item) },
+        { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item), hidden: !can('expenses.edit') || !!item.purchase_id },
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -51,7 +62,7 @@ function rowActions(item: any): RowActionItem[] {
             method: 'delete',
             href: `/expenses/${item.id}`,
             variant: 'destructive' as const,
-            hidden: !can('expenses.delete'),
+            hidden: !can('expenses.delete') || !!item.purchase_id,
             confirm: {
                 title: t('Delete expense'),
                 description: t('Are you sure you want to delete this expense? This action cannot be undone.'),
@@ -64,15 +75,10 @@ function rowActions(item: any): RowActionItem[] {
 
 <template>
     <Head :title="t('Expenses')" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <Heading :title="t('General Expenses')" :description="t('Company-wide costs not tied to a project. Use the project page for project expenses.')" />
-            <div class="flex flex-wrap gap-2">
-                <Input v-model="search" class="min-w-[180px]" :placeholder="t('Search...')" @keyup.enter="applyFilters" />
-                <Button variant="secondary" @click="applyFilters"><Search class="size-4" /> {{ t('Filter') }}</Button>
-                <MisCreateButton href="/expenses/create" permission="expenses.create">{{ t('Add expense') }}</MisCreateButton>
-            </div>
-        </div>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="applyFilters" @clear="clearFilters">
+            <MisSearchInput v-model="search" class="min-w-[220px] flex-1" :placeholder="t('Search...')" />
+        </MisFilterBar>
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Entries')" :value="totals.count" />
@@ -81,10 +87,10 @@ function rowActions(item: any): RowActionItem[] {
             <MisStatCard :label="t('Average')" :value="money(totals.average_base ?? totals.average, baseCurrency)" />
         </MisStatGrid>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
@@ -97,7 +103,12 @@ function rowActions(item: any): RowActionItem[] {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr
+                            v-for="item in items.data"
+                            :key="item.id"
+                            class="cursor-pointer border-b last:border-0 transition-colors hover:bg-muted/30"
+                            @click="openRecord(item)"
+                        >
                             <td class="px-4 py-3">{{ formatDate(item.expense_date) }}</td>
                             <td class="px-4 py-3">{{ item.paid_to || '—' }}</td>
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
@@ -105,7 +116,7 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ item.item_amount ?? '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ item.per_price != null ? money(item.per_price, item.currency || baseCurrency) : '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3" @click.stop>
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
@@ -117,5 +128,12 @@ function rowActions(item: any): RowActionItem[] {
             </div>
             <Pagination :paginator="items" />
         </div>
+
+        <ExpenseRecordDialog
+            v-model:open="dialogOpen"
+            :item="selected"
+            :categories="categories"
+            :units="units"
+        />
     </div>
 </template>

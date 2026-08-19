@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, CalendarClock, FileText, Info, Trash2 } from '@lucide/vue';
+import { CalendarClock, FileText, Info, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import { MisTabs } from '@/components/mis';
+import { MisFormPage, MisTabs } from '@/components/mis';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -121,32 +120,23 @@ function removeRow(index: number) {
 
 <template>
     <Head :title="isEdit ? t('Edit sale') : t('Create sale')" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="space-y-3">
-            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/sales"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-            </Button>
-            <Heading
-                :title="isEdit ? t('Edit sale') : t('Create sale')"
-                :description="t('Sell a unit to a customer. Sale price is the contract total.')"
-            />
-        </div>
+    <MisFormPage :title="isEdit ? t('Edit sale') : t('Create sale')" back-href="/sales">
         <Form
             :action="isEdit ? `/sales/${item.id}` : '/sales'"
             :method="isEdit ? 'put' : 'post'"
-            class="max-w-4xl space-y-6 rounded-xl border bg-card p-6"
+            class="mis-form-card"
             v-slot="{ errors, processing }"
         >
             <MisTabs v-model="tab" :tabs="tabs" />
 
-            <div v-show="tab === 'info'" class="grid gap-4 sm:grid-cols-2">
+            <div v-show="tab === 'info'" class="mis-form-grid">
                 <div class="grid gap-2">
                     <Label>{{ t('Project') }}</Label>
                     <select
                         v-model="projectId"
                         name="project_id"
                         required
-                        class="h-9 rounded-md border px-3 text-sm"
+                        class="mis-form-select"
                     >
                         <option value="" disabled>{{ t('Select') }}</option>
                         <option v-for="p in projects" :key="p.id" :value="String(p.id)">
@@ -161,7 +151,7 @@ function removeRow(index: number) {
                         v-model="unitId"
                         name="unit_id"
                         required
-                        class="h-9 rounded-md border px-3 text-sm"
+                        class="mis-form-select"
                         :disabled="!projectId"
                     >
                         <option value="" disabled>
@@ -180,7 +170,7 @@ function removeRow(index: number) {
                 </div>
                 <div
                     v-if="selectedUnit"
-                    class="sm:col-span-2 rounded-lg border bg-muted/30 px-4 py-3 text-sm"
+                    class="mis-form-span rounded-xl border bg-muted/30 px-4 py-3 text-sm"
                 >
                     {{ t('Sale price') }}:
                     <span class="font-semibold tabular-nums">
@@ -199,7 +189,7 @@ function removeRow(index: number) {
                         v-model="customerId"
                         name="customer_id"
                         required
-                        class="h-9 rounded-md border px-3 text-sm"
+                        class="mis-form-select"
                     >
                         <option value="" disabled>{{ t('Select') }}</option>
                         <option
@@ -222,24 +212,23 @@ function removeRow(index: number) {
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ t('Discount') }}</Label>
-                    <Input
-                        v-model="discount"
-                        name="discount"
-                        type="number"
-                        step="0.01"
-                    />
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Currency') }}</Label>
-                    <CurrencySelect v-model="currency" />
-                    <input type="hidden" name="currency" :value="currency" />
+                    <div class="flex gap-2">
+                        <Input
+                            v-model="discount"
+                            name="discount"
+                            type="number"
+                            step="0.01"
+                            class="min-w-0 flex-1"
+                        />
+                        <CurrencySelect v-model="currency" name="currency" class="w-[9rem] shrink-0" />
+                    </div>
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ t('Status') }}</Label>
                     <select
                         v-model="status"
                         name="status"
-                        class="h-9 rounded-md border px-3 text-sm"
+                        class="mis-form-select"
                     >
                         <option value="draft">{{ t('draft') }}</option>
                         <option value="active">{{ t('active') }}</option>
@@ -247,13 +236,13 @@ function removeRow(index: number) {
                         <option value="cancelled">{{ t('cancelled') }}</option>
                     </select>
                 </div>
-                <div class="grid gap-2 sm:col-span-2">
+                <div class="grid gap-2 mis-form-span">
                     <Label>{{ t('Notes') }}</Label>
                     <textarea
                         v-model="notes"
                         name="notes"
                         rows="2"
-                        class="rounded-md border px-3 py-2 text-sm"
+                        class="mis-form-textarea"
                     />
                 </div>
             </div>
@@ -386,7 +375,7 @@ function removeRow(index: number) {
                 </div>
             </div>
 
-            <div class="flex gap-2">
+            <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ t('Save sale') }}</Button>
                 <Button as-child variant="secondary">
                     <Link href="/sales">{{ t('Cancel') }}</Link>
@@ -399,5 +388,5 @@ function removeRow(index: number) {
                 </Form>
             </div>
         </Form>
-    </div>
+    </MisFormPage>
 </template>

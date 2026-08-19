@@ -22,7 +22,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { useAppNavigation } from '@/composables/useAppNavigation';
+import { isNavItemActive, useAppNavigation } from '@/composables/useAppNavigation';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useInitials } from '@/composables/useInitials';
 import { useTranslations } from '@/composables/useTranslations';
@@ -42,7 +42,7 @@ withDefaults(
 const page = usePage();
 const { t } = useTranslations();
 const { getInitials } = useInitials();
-const { isCurrentOrParentUrl } = useCurrentUrl();
+const { currentUrl } = useCurrentUrl();
 const { navGroups } = useAppNavigation();
 
 const user = computed(() => page.props.auth.user);
@@ -95,7 +95,7 @@ const showAvatar = computed(() =>
                                     :href="item.href"
                                     class="flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-medium transition"
                                     :class="
-                                        isCurrentOrParentUrl(item.href)
+                                        isNavItemActive(item, currentUrl)
                                             ? 'bg-primary text-primary-foreground'
                                             : 'text-foreground/80 hover:bg-muted'
                                     "
@@ -145,7 +145,7 @@ const showAvatar = computed(() =>
                         :href="item.href"
                         class="inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-control)] px-2.5 py-2 text-sm font-medium transition xl:px-3"
                         :class="
-                            isCurrentOrParentUrl(item.href)
+                            isNavItemActive(item, currentUrl)
                                 ? 'bg-primary/10 text-primary'
                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                         "

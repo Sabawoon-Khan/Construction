@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Search, Trash2 } from '@lucide/vue';
+import { Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Heading from '@/components/Heading.vue';
-import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -39,6 +36,11 @@ function applySearch() {
     router.get('/employees', { search: search.value || undefined }, { preserveState: true, replace: true });
 }
 
+function clearFilters() {
+    search.value = '';
+    applySearch();
+}
+
 function rowActions(item: Item): RowActionItem[] {
     return [
         viewAction(`/employees/${item.id}`),
@@ -64,18 +66,10 @@ function rowActions(item: Item): RowActionItem[] {
 <template>
     <Head :title="t('Employees')" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading :title="t('Employees')" :description="t('Manage staff, their attendance, and salary records.')" />
-            <div class="flex flex-wrap gap-2">
-                <div class="relative min-w-[220px] flex-1">
-                    <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input v-model="search" class="pl-9" :placeholder="t('Search employees...')" @keyup.enter="applySearch" />
-                </div>
-                <Button variant="secondary" @click="applySearch">{{ t('Search') }}</Button>
-                <MisCreateButton href="/employees/create" permission="employees.create">{{ t('Add employee') }}</MisCreateButton>
-            </div>
-        </div>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="applySearch" @clear="clearFilters">
+            <MisSearchInput v-model="search" class="min-w-[220px] flex-1" :placeholder="t('Search employees...')" />
+        </MisFilterBar>
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Total')" :value="totals.count" />
@@ -83,10 +77,10 @@ function rowActions(item: Item): RowActionItem[] {
             <MisStatCard :label="t('Inactive')" :value="totals.inactive" tone="warning" />
         </MisStatGrid>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Employee No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>

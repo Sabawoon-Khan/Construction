@@ -74,7 +74,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('field-reports', FieldReportController::class)
         ->parameters(['field-reports' => 'fieldReport'])
-        ->except(['show']);
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show']);
 
     Route::resource('field-notes', FieldNoteController::class)
         ->parameters(['field-notes' => 'fieldNote'])

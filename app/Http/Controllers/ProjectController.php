@@ -177,9 +177,26 @@ class ProjectController extends Controller implements HasMiddleware
                 ->limit(50)
                 ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at']),
             'expenses' => $expensesQuery
+                ->with('expenseUnit:id,unit_name')
                 ->latest('expense_date')
                 ->limit(50)
-                ->get(['id', 'expense_no', 'expense_date', 'paid_to', 'description', 'amount', 'amount_base', 'currency', 'purchase_id']),
+                ->get([
+                    'id',
+                    'expense_no',
+                    'expense_date',
+                    'paid_to',
+                    'description',
+                    'amount',
+                    'amount_base',
+                    'currency',
+                    'purchase_id',
+                    'project_id',
+                    'item_amount',
+                    'per_price',
+                    'reference_no',
+                    'expense_unit_id',
+                    'expense_category_id',
+                ]),
             'expense_categories' => $this->expenseCategories(),
             'purchases' => $purchasesQuery
                 ->with('supplier:id,name')
@@ -242,7 +259,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Project expense recorded.']);
 
-        return redirect()->route('projects.show', $project);
+        return redirect()->to(route('projects.show', $project).'#expenses');
     }
 
     public function storeShareholder(Request $request, Project $project): RedirectResponse

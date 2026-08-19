@@ -3,13 +3,10 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Eye, Printer } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Heading from '@/components/Heading.vue';
-import { MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
@@ -36,6 +33,10 @@ defineOptions({
 });
 
 const apply = () => router.get('/payments', { search: search.value || undefined }, { preserveState: true, replace: true });
+const clearFilters = () => {
+    search.value = '';
+    apply();
+};
 
 function rowActions(item: any): RowActionItem[] {
     return [
@@ -47,16 +48,10 @@ function rowActions(item: any): RowActionItem[] {
 
 <template>
     <Head :title="t('Payments')" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading :title="t('Payments')" :description="t('Money in from sales and money out to suppliers.')" />
-            <div class="flex flex-wrap gap-2">
-                <Input v-model="search" :placeholder="t('Search...')" @keyup.enter="apply" />
-                <Button variant="secondary" @click="apply">{{ t('Search') }}</Button>
-                <Button as-child variant="outline"><Link href="/sales">{{ t('Go to sales') }}</Link></Button>
-                <Button as-child variant="outline"><Link href="/purchases">{{ t('Go to purchases') }}</Link></Button>
-            </div>
-        </div>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="apply" @clear="clearFilters">
+            <MisSearchInput v-model="search" class="min-w-[220px] flex-1" :placeholder="t('Search...')" />
+        </MisFilterBar>
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Entries')" :value="totals.count" />
@@ -65,10 +60,10 @@ function rowActions(item: any): RowActionItem[] {
             <MisStatCard :label="t('This month')" :value="money(totals.this_month_base ?? totals.this_month, baseCurrency)" />
         </MisStatGrid>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>

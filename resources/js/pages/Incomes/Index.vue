@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Printer, Trash2 } from '@lucide/vue';
+import { Head, router } from '@inertiajs/vue3';
+import { Eye, Pencil, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Heading from '@/components/Heading.vue';
-import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
+import IncomeRecordDialog from '@/components/IncomeRecordDialog.vue';
+import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
@@ -24,7 +22,9 @@ const props = defineProps<{
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
 const { baseCurrency } = useCurrency();
-const { viewAction, editAction, can, formatDate } = useMisPage();
+const { can, formatDate } = useMisPage();
+const dialogOpen = ref(false);
+const selected = ref<Record<string, any> | null>(null);
 
 defineOptions({
     layout: {
@@ -36,12 +36,20 @@ defineOptions({
 });
 
 const apply = () => router.get('/incomes', { search: search.value || undefined }, { preserveState: true, replace: true });
+const clearFilters = () => {
+    search.value = '';
+    apply();
+};
+
+function openRecord(item: Record<string, any> | null) {
+    selected.value = item;
+    dialogOpen.value = true;
+}
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        viewAction(`/incomes/${item.id}`),
-        { label: t('Print'), icon: Printer, href: `/incomes/${item.id}` },
-        editAction(`/incomes/${item.id}/edit`, 'incomes.edit'),
+        { label: t('View'), icon: Eye, onClick: () => openRecord(item) },
+        { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item), hidden: !can('incomes.edit') },
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -62,15 +70,10 @@ function rowActions(item: any): RowActionItem[] {
 
 <template>
     <Head :title="t('Incomes')" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading :title="t('General income')" :description="t('Company-wide income not tied to a project.')" />
-            <div class="flex flex-wrap gap-2">
-                <Input v-model="search" :placeholder="t('Search...')" @keyup.enter="apply" />
-                <Button variant="secondary" @click="apply">{{ t('Search') }}</Button>
-                <MisCreateButton href="/incomes/create" permission="incomes.create">{{ t('Add income') }}</MisCreateButton>
-            </div>
-        </div>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="apply" @clear="clearFilters">
+            <MisSearchInput v-model="search" class="min-w-[220px] flex-1" :placeholder="t('Search...')" />
+        </MisFilterBar>
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Entries')" :value="totals.count" />
@@ -79,10 +82,10 @@ function rowActions(item: any): RowActionItem[] {
             <MisStatCard :label="t('Average')" :value="money(totals.average_base ?? totals.average, baseCurrency)" />
         </MisStatGrid>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
@@ -91,11 +94,16 @@ function rowActions(item: any): RowActionItem[] {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr
+                            v-for="item in items.data"
+                            :key="item.id"
+                            class="cursor-pointer border-b last:border-0 transition-colors hover:bg-muted/30"
+                            @click="openRecord(item)"
+                        >
                             <td class="px-4 py-3">{{ formatDate(item.income_date) }}</td>
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3" @click.stop>
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
@@ -107,5 +115,7 @@ function rowActions(item: any): RowActionItem[] {
             </div>
             <Pagination :paginator="items" />
         </div>
+
+        <IncomeRecordDialog v-model:open="dialogOpen" :item="selected" />
     </div>
 </template>

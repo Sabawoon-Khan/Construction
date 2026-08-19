@@ -11,15 +11,34 @@ export type MisTabItem = {
     icon?: Component;
 };
 
-defineProps<{
-    tabs: MisTabItem[];
-}>();
+withDefaults(
+    defineProps<{
+        tabs: MisTabItem[];
+        class?: string;
+        nowrap?: boolean;
+    }>(),
+    {
+        class: undefined,
+        nowrap: false,
+    },
+);
 
 const model = defineModel<string>({ required: true });
 </script>
 
 <template>
-    <div class="flex flex-wrap gap-1 border-b border-border/70 pb-0" role="tablist">
+    <div
+        :class="cn('flex items-end justify-between gap-2 border-b border-border/70 pb-0', $props.class)"
+    >
+        <div
+            class="min-w-0 flex-1"
+            :class="nowrap ? 'overflow-x-auto' : undefined"
+        >
+            <div
+                class="flex gap-1"
+                :class="nowrap ? 'flex-nowrap' : 'flex-wrap'"
+                role="tablist"
+            >
         <Link
             v-for="tab in tabs.filter((t) => t.href)"
             :key="tab.id"
@@ -29,9 +48,9 @@ const model = defineModel<string>({ required: true });
             :aria-selected="model === tab.id"
             :class="
                 cn(
-                    'inline-flex items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition -mb-px',
+                    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition -mb-px',
                     model === tab.id
-                        ? 'border-primary text-foreground'
+                        ? 'border-primary text-primary'
                         : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground',
                 )
             "
@@ -61,5 +80,10 @@ const model = defineModel<string>({ required: true });
             <component :is="tab.icon" v-if="tab.icon" class="size-4 shrink-0" />
             {{ tab.label }}
         </Button>
+            </div>
+        </div>
+        <div v-if="$slots.actions" class="mb-1.5 shrink-0">
+            <slot name="actions" />
+        </div>
     </div>
 </template>

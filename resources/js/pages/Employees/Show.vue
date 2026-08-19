@@ -28,7 +28,7 @@ defineOptions({
 <template>
     <Head :title="item.name" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
+    <div class="flex h-full flex-1 flex-col gap-4">
         <div class="space-y-3">
             <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
                 <Link href="/employees"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>

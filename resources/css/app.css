@@ -107,6 +107,18 @@
     html[dir='rtl'] .group\/sidebar-wrapper {
         flex-direction: row-reverse;
     }
+
+    html[dir='rtl'] .text-left {
+        text-align: start;
+    }
+
+    html[dir='rtl'] .text-right {
+        text-align: end;
+    }
+
+    html[dir='rtl'] table th {
+        letter-spacing: normal;
+    }
 }
 
 @layer utilities {
@@ -116,6 +128,34 @@
             'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif,
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
+    }
+
+    .mis-form-card {
+        @apply w-full space-y-6 rounded-2xl border border-border/80 bg-card p-5 shadow-soft md:p-6;
+    }
+
+    .mis-form-grid {
+        @apply grid gap-x-5 gap-y-5 sm:grid-cols-2;
+    }
+
+    .mis-form-span {
+        @apply sm:col-span-2;
+    }
+
+    .mis-form-actions {
+        @apply flex flex-wrap items-center gap-2 border-t border-border/60 pt-5;
+    }
+
+    .mis-form-card [data-slot='input'] {
+        @apply h-10 rounded-lg;
+    }
+
+    .mis-form-select {
+        @apply flex h-10 w-full rounded-lg border border-input bg-transparent px-3 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .mis-form-textarea {
+        @apply flex min-h-[96px] w-full rounded-lg border border-input bg-transparent px-3 py-2.5 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50;
     }
 
     .ui-surface {

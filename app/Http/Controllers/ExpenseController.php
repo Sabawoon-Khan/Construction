@@ -51,6 +51,8 @@ class ExpenseController extends Controller implements HasMiddleware
             'items' => $query->with('expenseUnit:id,unit_name')->latest('expense_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'categories' => $this->categories(),
+            'units' => ExpenseUnit::options(),
         ]);
     }
 
@@ -101,7 +103,7 @@ class ExpenseController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
 
         if ($projectId) {
-            return redirect()->route('projects.show', $projectId);
+            return redirect()->to(route('projects.show', $projectId).'#expenses');
         }
 
         return redirect()->route('expenses.index');
@@ -145,7 +147,7 @@ class ExpenseController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense deleted.']);
 
         if ($projectId) {
-            return redirect()->route('projects.show', $projectId);
+            return redirect()->to(route('projects.show', $projectId).'#expenses');
         }
 
         return redirect()->route('expenses.index');
@@ -162,8 +164,9 @@ class ExpenseController extends Controller implements HasMiddleware
         $data = $request->validate([
             'expense_date' => 'required|date',
             'paid_to' => 'required|string|max:255',
-            'item_amount' => 'required|numeric|min:0',
-            'per_price' => 'required|numeric|min:0',
+            'item_amount' => 'nullable|numeric|min:0',
+            'per_price' => 'nullable|numeric|min:0',
+            'amount' => 'nullable|numeric|min:0',
             'expense_unit_id' => 'nullable|exists:expense_units,id',
             'description' => 'required|string|max:1000',
             'expense_category_id' => 'nullable|exists:expense_categories,id',
@@ -173,7 +176,9 @@ class ExpenseController extends Controller implements HasMiddleware
             'documents.*' => 'nullable|file|max:20480',
         ]);
 
-        $data['amount'] = FinanceDefaults::totalCost($data);
+        if (! empty($data['item_amount']) && isset($data['per_price'])) {
+            $data['amount'] = FinanceDefaults::totalCost($data);
+        }
 
         return $data;
     }

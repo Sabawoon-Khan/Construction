@@ -58,9 +58,11 @@ const {
         @submit="onSubmit"
         @attachment-stored="onAttachmentStored"
     >
-        <div class="space-y-2">
-            <Label for="name">{{ t('Name') }}</Label>
-            <Input id="name" v-model="local.name" required />
+        <div class="mis-form-grid">
+            <div class="grid gap-2">
+                <Label for="name">{{ t('Name') }}</Label>
+                <Input id="name" v-model="local.name" required />
+            </div>
         </div>
     </OfflineResourceForm>
 </template>

@@ -18,6 +18,7 @@ const props = withDefaults(
         backHref?: string;
         showAttachments?: boolean;
         submitLabel?: string;
+        fullWidth?: boolean;
     }>(),
     {
         offlineEnabled: false,
@@ -26,6 +27,7 @@ const props = withDefaults(
         backHref: undefined,
         showAttachments: true,
         submitLabel: undefined,
+        fullWidth: false,
     },
 );
 
@@ -54,41 +56,49 @@ function onOfflineComplete(payload: { offlineBlobId?: string | null; item: { fil
 </script>
 
 <template>
-    <form class="mx-auto flex max-w-lg flex-col gap-4 p-4" @submit.prevent="emit('submit')">
-        <div class="space-y-1">
-            <Button v-if="backHref" as-child variant="ghost" size="sm" class="-ml-2 mb-2 w-fit">
-                <Link :href="backHref"><ArrowLeft class="size-4" /> Back</Link>
+    <form
+        class="flex w-full min-w-0 flex-1 flex-col gap-5"
+        @submit.prevent="emit('submit')"
+    >
+        <header class="flex min-w-0 items-center gap-2">
+            <Button
+                v-if="backHref"
+                as-child
+                variant="ghost"
+                size="sm"
+                class="-ml-2 shrink-0 text-muted-foreground hover:text-foreground"
+            >
+                <Link :href="backHref">
+                    <ArrowLeft class="size-4" />
+                    {{ t('Back') }}
+                </Link>
             </Button>
-            <h1 class="text-xl font-semibold">{{ title }}</h1>
-            <p v-if="offlineEnabled" class="text-sm text-muted-foreground">
-                {{
-                    online
-                        ? t('Online — submits immediately.')
-                        : t('Offline — queues to outbox.')
-                }}
-            </p>
-            <slot name="description" />
+            <h1 class="truncate text-lg font-semibold tracking-tight">{{ title }}</h1>
+        </header>
+
+        <div class="mis-form-card">
+            <slot />
+
+            <FileUploadField
+                v-if="attachmentsVisible"
+                mode="offline"
+                :client-uuid="clientUuid"
+                :resource="resource"
+                :max-bytes="settings.attachment_max_bytes"
+                :accept="settings.allowed_mimes.join(',')"
+                :label="t('Attachment')"
+                :multiple="false"
+                @complete="onOfflineComplete"
+            />
+
+            <div class="mis-form-actions">
+                <slot name="actions">
+                    <Button type="submit" :disabled="processing">
+                        {{ submitLabel || t('Save') }}
+                    </Button>
+                </slot>
+            </div>
         </div>
-
-        <slot />
-
-        <FileUploadField
-            v-if="attachmentsVisible"
-            mode="offline"
-            :client-uuid="clientUuid"
-            :resource="resource"
-            :max-bytes="settings.attachment_max_bytes"
-            :accept="settings.allowed_mimes.join(',')"
-            :label="t('Attachment')"
-            :multiple="false"
-            @complete="onOfflineComplete"
-        />
-
-        <slot name="actions">
-            <Button type="submit" :disabled="processing">
-                {{ submitLabel || t('Save') }}
-            </Button>
-        </slot>
 
         <slot v-if="slots.footer" name="footer" />
     </form>

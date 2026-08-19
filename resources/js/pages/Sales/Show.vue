@@ -110,7 +110,7 @@ function submitPayment() {
 
 <template>
     <Head :title="`${t('Sale')} ${sale.sale_no}`" />
-    <div class="voucher-print-page flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-0 print:p-0">
+    <div class="voucher-print-page flex h-full flex-1 flex-col gap-4 print:gap-0 print:p-0">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
             <div class="space-y-3">
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
@@ -201,7 +201,7 @@ function submitPayment() {
             </form>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Installments') }}</h3>
             </div>
@@ -241,7 +241,7 @@ function submitPayment() {
             </table>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Receipts') }}</h3>
             </div>

@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import AppContent from '@/components/AppContent.vue';
 import AppHeader from '@/components/AppHeader.vue';
+import AppModuleTabs from '@/components/AppModuleTabs.vue';
 import AppShell from '@/components/AppShell.vue';
 import OfflineBanner from '@/components/OfflineBanner.vue';
 import OfflineConflictPanel from '@/components/OfflineConflictPanel.vue';
@@ -35,7 +36,10 @@ const toasterPosition = computed(() =>
         <AppHeader class="print:hidden" :breadcrumbs="breadcrumbs" />
         <AppContent variant="header">
             <OfflineBanner class="print:hidden" :enabled="offlineEnabled" />
-            <div class="mx-auto flex w-full max-w-[90rem] flex-1 flex-col space-y-6 px-4 py-6 md:px-6 md:pb-12 print:p-0">
+            <div class="mx-auto flex w-full max-w-[90rem] flex-col px-4 pt-4 md:px-6 print:hidden">
+                <AppModuleTabs />
+            </div>
+            <div class="mx-auto flex w-full max-w-[90rem] flex-1 flex-col space-y-6 px-4 py-6 pt-4 md:px-6 md:pb-12 print:p-0">
                 <OfflineConflictPanel v-if="offlineEnabled" />
                 <slot />
             </div>

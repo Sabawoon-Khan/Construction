@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Trash2 } from '@lucide/vue';
+import { Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,35 +30,14 @@ defineOptions({
 
 <template>
     <Head :title="isEdit ? t('Edit income') : t('Record income')" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="space-y-3">
-            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/incomes"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-            </Button>
-            <Heading
-                :title="isEdit ? t('Edit income') : t('Record income')"
-                :description="t('Company-wide income not tied to a project.')"
-            />
-        </div>
+    <MisFormPage :title="isEdit ? t('Edit income') : t('Record income')" back-href="/incomes">
         <Form
             :action="isEdit ? `/incomes/${item!.id}` : '/incomes'"
             :method="isEdit ? 'put' : 'post'"
-            class="max-w-3xl space-y-6 rounded-xl border bg-card p-6"
+            class="mis-form-card"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div class="grid gap-2 sm:col-span-2">
-                    <Label for="description">{{ t('Description') }}</Label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="3"
-                        required
-                        class="rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                        :value="item?.description ?? ''"
-                    />
-                    <InputError :message="errors.description" />
-                </div>
+            <div class="mis-form-grid">
                 <div class="grid gap-2">
                     <Label for="income_date">{{ t('Date') }}</Label>
                     <Input
@@ -72,16 +51,27 @@ defineOptions({
                 </div>
                 <div class="grid gap-2">
                     <Label for="amount">{{ t('Total amount') }}</Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" min="0" required :default-value="item?.amount ?? ''" />
+                    <div class="flex gap-2">
+                        <Input id="amount" name="amount" type="number" step="0.01" min="0" required :default-value="item?.amount ?? ''" class="min-w-0 flex-1" />
+                        <CurrencySelect id="currency" v-model="currency" name="currency" class="w-[9rem] shrink-0" />
+                    </div>
                     <InputError :message="errors.amount" />
+                    <InputError :message="errors.currency" />
                 </div>
-                <div class="grid gap-2">
-                    <Label for="currency">{{ t('Currency') }}</Label>
-                    <CurrencySelect id="currency" v-model="currency" />
-                    <input type="hidden" name="currency" :value="currency" />
+                <div class="grid gap-2 mis-form-span">
+                    <Label for="description">{{ t('Description') }}</Label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        rows="3"
+                        required
+                        class="mis-form-textarea"
+                        :value="item?.description ?? ''"
+                    />
+                    <InputError :message="errors.description" />
                 </div>
             </div>
-            <div class="flex gap-2">
+            <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save income') }}</Button>
                 <Button as-child variant="secondary"><Link href="/incomes">{{ t('Cancel') }}</Link></Button>
                 <Form v-if="isEdit" :action="`/incomes/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
@@ -92,5 +82,5 @@ defineOptions({
                 </Form>
             </div>
         </Form>
-    </div>
+    </MisFormPage>
 </template>

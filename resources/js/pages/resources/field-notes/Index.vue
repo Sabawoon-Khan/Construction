@@ -2,7 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, toRef, watch } from 'vue';
 import Can from '@/components/Can.vue';
-import { MisCreateButton, MisSearchInput } from '@/components/mis';
+import { MisFilterBar, MisSearchInput } from '@/components/mis';
 import MisPagination from '@/components/MisPagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/composables/useTranslations';
@@ -57,20 +57,16 @@ watch(search, (value) => {
 <template>
     <Head :title="t('FieldNote')" />
 
-    <div class="flex flex-col gap-4 p-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="text-xl font-semibold">{{ t('FieldNote') }}</h1>
-            <MisCreateButton href="/field-notes/create" permission="field_notes.create">
-                {{ t('Create') }}
-            </MisCreateButton>
-        </div>
+    <div class="flex flex-col gap-4">
 
-        <MisSearchInput
-            v-model="search"
-            class="max-w-sm"
-            :aria-label="t('Search')"
-            :placeholder="t('Search...')"
-        />
+        <MisFilterBar :show-actions="false">
+            <MisSearchInput
+                v-model="search"
+                class="min-w-[220px] flex-1"
+                :aria-label="t('Search')"
+                :placeholder="t('Search...')"
+            />
+        </MisFilterBar>
 
         <p
             v-if="showingOfflineCache"
@@ -79,7 +75,7 @@ watch(search, (value) => {
             {{ t('Showing cached and queued records from this device.') }}
         </p>
 
-        <div class="rounded-md border">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <ul class="divide-y">
                 <li
                     v-for="item in displayItems"

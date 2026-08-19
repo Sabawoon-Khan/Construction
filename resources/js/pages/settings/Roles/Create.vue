@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft } from '@lucide/vue';
+import { Head, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -67,19 +66,14 @@ defineOptions({
 <template>
     <Head :title="t('Create role')" />
 
-    <div class="space-y-6">
-        <div class="space-y-3">
-            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/settings/roles"><ArrowLeft class="size-4" /> Back</Link>
-            </Button>
-            <Heading variant="small" :title="t('Create role')" />
-        </div>
-
-        <form class="space-y-4" @submit.prevent="submit">
-            <div class="space-y-2">
+    <MisFormPage :title="t('Create role')" back-href="/settings/roles">
+        <form class="mis-form-card" @submit.prevent="submit">
+            <div class="mis-form-grid">
+            <div class="grid gap-2">
                 <Label for="name">{{ t('Name') }}</Label>
                 <Input id="name" v-model="form.name" required />
                 <InputError :message="form.errors.name" />
+            </div>
             </div>
 
             <div class="space-y-4">
@@ -106,7 +100,9 @@ defineOptions({
                 </div>
             </div>
 
+            <div class="mis-form-actions">
             <Button type="submit" :disabled="form.processing">{{ t('Save') }}</Button>
+            </div>
         </form>
-    </div>
+    </MisFormPage>
 </template>

@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Search, Trash2 } from '@lucide/vue';
+import { Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Heading from '@/components/Heading.vue';
-import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -45,6 +42,13 @@ function applyFilters() {
     }, { preserveState: true, replace: true });
 }
 
+function clearFilters() {
+    search.value = '';
+    employeeId.value = '';
+    date.value = '';
+    applyFilters();
+}
+
 function rowActions(item: Item): RowActionItem[] {
     return [
         editAction(`/attendance/${item.id}/edit`, 'attendance.edit'),
@@ -69,23 +73,15 @@ function rowActions(item: Item): RowActionItem[] {
 <template>
     <Head :title="t('Attendance')" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading :title="t('Attendance')" :description="t('Daily check-in and check-out records for employees.')" />
-            <div class="flex flex-wrap gap-2">
-                <div class="relative min-w-[180px] flex-1">
-                    <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input v-model="search" class="pl-9" :placeholder="t('Search...')" @keyup.enter="applyFilters" />
-                </div>
-                <select v-model="employeeId" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm" @change="applyFilters">
-                    <option value="">{{ t('All employees') }}</option>
-                    <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
-                </select>
-                <Input v-model="date" type="date" class="w-[150px]" @change="applyFilters" />
-                <Button variant="secondary" @click="applyFilters">{{ t('Filter') }}</Button>
-                <MisCreateButton href="/attendance/create" permission="attendance.create">{{ t('Record attendance') }}</MisCreateButton>
-            </div>
-        </div>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="applyFilters" @clear="clearFilters">
+            <MisSearchInput v-model="search" class="min-w-[180px] flex-1" :placeholder="t('Search...')" />
+            <select v-model="employeeId" class="h-9 min-w-[160px] rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">{{ t('All employees') }}</option>
+                <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
+            </select>
+            <input v-model="date" type="date" class="h-9 w-[150px] rounded-md border border-input bg-background px-3 text-sm" />
+        </MisFilterBar>
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Total records')" :value="totals.count" />
@@ -94,10 +90,10 @@ function rowActions(item: Item): RowActionItem[] {
             <MisStatCard :label="t('Leave')" :value="totals.leave" tone="warning" />
         </MisStatGrid>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Employee') }}</th>

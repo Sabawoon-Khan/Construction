@@ -12,10 +12,11 @@ import {
     Trash2,
     Warehouse,
 } from '@lucide/vue';
-import { ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { MisTabs } from '@/components/mis';
@@ -28,7 +29,7 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money } from '@/lib/utils';
 
-defineProps<{
+const props = defineProps<{
     item: Record<string, any>;
     stats: Record<string, number>;
     shareholders: {
@@ -93,14 +94,20 @@ defineProps<{
     }[];
 }>();
 
+const expenseDialogOpen = ref(false);
+const selectedExpense = ref<Record<string, any> | null>(null);
 const contributionPartnerId = ref('');
 const payoutPartnerId = ref('');
 const tab = ref('info');
 const { t } = useTranslations();
 const { baseCurrency } = useCurrency();
-const expenseCurrency = ref(baseCurrency.value);
 const contributionCurrency = ref(baseCurrency.value);
 const payoutCurrency = ref(baseCurrency.value);
+
+function openExpense(expense: Record<string, any> | null) {
+    selectedExpense.value = expense;
+    expenseDialogOpen.value = true;
+}
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
@@ -112,6 +119,21 @@ const tabs = [
     { id: 'stock', label: t('Stock'), icon: Warehouse },
     { id: 'sales', label: t('Sales'), icon: Banknote },
 ];
+const tabIds = new Set(tabs.map((entry) => entry.id));
+
+onMounted(() => {
+    const hashTab = window.location.hash.replace('#', '');
+    if (hashTab && tabIds.has(hashTab)) {
+        tab.value = hashTab;
+    }
+});
+
+watch(tab, (value) => {
+    if (!tabIds.has(value) || window.location.hash === `#${value}`) {
+        return;
+    }
+    window.history.replaceState(null, '', `#${value}`);
+});
 
 defineOptions({
     layout: {
@@ -126,7 +148,7 @@ defineOptions({
 
 <template>
     <Head :title="item.name" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
+    <div class="flex h-full flex-1 flex-col gap-4">
         <div
             class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
         >
@@ -225,17 +247,72 @@ defineOptions({
 
         <MisTabs v-model="tab" :tabs="tabs" />
 
-        <div v-show="tab === 'info'" class="grid gap-4 lg:grid-cols-2">
+        <div v-show="tab === 'info'" class="grid gap-4 xl:grid-cols-3">
+            <div class="space-y-4 xl:col-span-2">
+                <div class="rounded-xl border bg-card p-5 shadow-sm">
+                    <div
+                        class="flex flex-wrap items-start justify-between gap-4 border-b pb-4"
+                    >
+                        <div>
+                            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {{ t('Project overview') }}
+                            </p>
+                            <h3 class="mt-1 text-lg font-semibold tracking-tight">
+                                {{ item.name }}
+                            </h3>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                {{ item.location || t('No location') }}
+                            </p>
+                        </div>
+                        <StatusBadge :status="item.status" />
+                    </div>
+
+                    <div class="mt-4 rounded-lg border bg-muted/20 p-4">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm font-medium">{{ t('Progress') }}</p>
+                            <p class="text-sm font-semibold tabular-nums">
+                                {{ formatNumber(item.progress_percent) }}%
+                            </p>
+                        </div>
+                        <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
+                            <div
+                                class="h-full rounded-full bg-primary transition-all"
+                                :style="{
+                                    width: `${Math.max(0, Math.min(100, Number(item.progress_percent || 0)))}%`,
+                                }"
+                            />
+                        </div>
+                    </div>
+
+                    <dl class="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div class="rounded-lg border bg-background/70 p-3">
+                            <dt class="text-xs uppercase tracking-wide text-muted-foreground">
+                                {{ t('Code') }}
+                            </dt>
+                            <dd class="mt-1 text-sm font-medium">{{ item.code || '—' }}</dd>
+                        </div>
+                        <div class="rounded-lg border bg-background/70 p-3">
+                            <dt class="text-xs uppercase tracking-wide text-muted-foreground">
+                                {{ t('Type') }}
+                            </dt>
+                            <dd class="mt-1 text-sm font-medium">{{ item.type || '—' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="rounded-xl border bg-card p-5 shadow-sm">
+                    <h3 class="text-sm font-semibold tracking-tight">
+                        {{ t('Description') }}
+                    </h3>
+                    <p class="mt-3 text-sm leading-6 text-muted-foreground">
+                        {{ item.description || '—' }}
+                    </p>
+                </div>
+            </div>
+
             <DetailGrid
-                :title="t('Project details')"
+                :title="t('Financial and schedule')"
                 :items="[
-                    { label: t('Code'), value: item.code },
-                    { label: t('Type'), value: item.type },
-                    { label: t('Location'), value: item.location },
-                    {
-                        label: t('Progress'),
-                        value: `${formatNumber(item.progress_percent)}%`,
-                    },
                     {
                         label: t('Start date'),
                         value: formatDate(item.start_date),
@@ -251,11 +328,6 @@ defineOptions({
                     {
                         label: t('Estimated revenue'),
                         value: money(item.estimated_revenue),
-                    },
-                    {
-                        label: t('Description'),
-                        value: item.description,
-                        span: true,
                     },
                 ]"
             />
@@ -681,118 +753,24 @@ defineOptions({
                         {{ t('Project expenses') }}
                     </h3>
                 </div>
-                <Can permission="purchases.create">
-                    <Button as-child size="sm" variant="outline">
-                        <Link
-                            :href="`/purchases/create?project_id=${item.id}`"
-                            >{{
-                                t('Buying materials? Record a purchase')
-                            }}</Link
-                        >
-                    </Button>
-                </Can>
+                <div class="flex flex-wrap gap-2">
+                    <Can permission="purchases.create">
+                        <Button as-child size="sm" variant="outline">
+                            <Link
+                                :href="`/purchases/create?project_id=${item.id}`"
+                                >{{
+                                    t('Buying materials? Record a purchase')
+                                }}</Link
+                            >
+                        </Button>
+                    </Can>
+                    <Can permission="expenses.create">
+                        <Button size="sm" @click="openExpense(null)">{{
+                            t('Add expense')
+                        }}</Button>
+                    </Can>
+                </div>
             </div>
-
-            <Form
-                :action="`/projects/${item.id}/expenses`"
-                method="post"
-                class="grid gap-4 border-b bg-muted/20 p-5 sm:grid-cols-4"
-                v-slot="{ errors, processing }"
-            >
-                <div class="grid gap-2 sm:col-span-2">
-                    <Label for="description">{{ t('Description') }}</Label>
-                    <Input
-                        id="description"
-                        name="description"
-                        required
-                        :placeholder="t('e.g. site labor, transport, salary')"
-                    />
-                    <InputError :message="errors.description" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="amount">{{ t('Amount') }}</Label>
-                    <Input
-                        id="amount"
-                        name="amount"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        required
-                    />
-                    <InputError :message="errors.amount" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="currency">{{ t('Currency') }}</Label>
-                    <CurrencySelect id="currency" v-model="expenseCurrency" />
-                    <input
-                        type="hidden"
-                        name="currency"
-                        :value="expenseCurrency"
-                    />
-                    <InputError :message="errors.currency" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="paid_to">{{ t('Paid to') }}</Label>
-                    <Input
-                        id="paid_to"
-                        name="paid_to"
-                        required
-                        :placeholder="t('Worker, contractor, or payee')"
-                    />
-                    <InputError :message="errors.paid_to" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="expense_date">{{ t('Date') }}</Label>
-                    <Input
-                        id="expense_date"
-                        name="expense_date"
-                        type="date"
-                        required
-                        :default-value="new Date().toISOString().slice(0, 10)"
-                    />
-                    <InputError :message="errors.expense_date" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="expense_category_id">{{ t('Category') }}</Label>
-                    <select
-                        id="expense_category_id"
-                        name="expense_category_id"
-                        class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                    >
-                        <option value="">{{ t('General') }}</option>
-                        <option
-                            v-for="c in expense_categories || []"
-                            :key="c.id"
-                            :value="c.id"
-                        >
-                            {{ c.name }}
-                        </option>
-                    </select>
-                </div>
-                <div class="grid gap-2">
-                    <Label for="reference_no">{{
-                        t('Receipt / reference')
-                    }}</Label>
-                    <Input id="reference_no" name="reference_no" />
-                </div>
-                <div class="grid gap-2 sm:col-span-2">
-                    <Label for="documents">{{ t('Receipt file') }}</Label>
-                    <input
-                        id="documents"
-                        type="file"
-                        name="documents[]"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                        class="text-sm"
-                    />
-                    <InputError :message="errors.documents" />
-                </div>
-                <div class="sm:col-span-4">
-                    <Button type="submit" :disabled="processing">{{
-                        processing ? t('Saving…') : t('Add expense')
-                    }}</Button>
-                </div>
-            </Form>
 
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
@@ -819,7 +797,8 @@ defineOptions({
                         <tr
                             v-for="expense in expenses"
                             :key="expense.id"
-                            class="border-t hover:bg-muted/30"
+                            class="cursor-pointer border-t hover:bg-muted/30"
+                            @click="openExpense(expense)"
                         >
                             <td class="px-4 py-3">
                                 {{ formatDate(expense.expense_date) }}
@@ -843,31 +822,38 @@ defineOptions({
                                     )
                                 }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3" @click.stop>
                                 <div class="flex flex-wrap justify-end gap-1">
-                                    <Button as-child variant="ghost" size="sm">
-                                        <Link :href="`/expenses/${expense.id}`"
-                                            ><Printer class="size-4" />
-                                            {{ t('Print') }}</Link
-                                        >
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        @click="openExpense(expense)"
+                                    >
+                                        {{ t('Open') }}
                                     </Button>
-                                    <Can permission="expenses.edit">
-                                        <Button
-                                            v-if="!expense.purchase_id"
-                                            as-child
-                                            variant="ghost"
-                                            size="sm"
-                                        >
-                                            <Link :href="`/expenses/${expense.id}/edit`"
-                                                ><Pencil class="size-4" />
-                                                {{ t('Edit') }}</Link
-                                            >
-                                        </Button>
-                                    </Can>
                                     <Can permission="expenses.delete">
                                         <Form
                                             v-if="!expense.purchase_id"
                                             :action="`/expenses/${expense.id}`"
+                                            method="delete"
+                                            v-slot="{ processing }"
+                                        >
+                                            <Button
+                                                type="submit"
+                                                variant="ghost"
+                                                size="sm"
+                                                class="text-destructive hover:text-destructive"
+                                                :disabled="processing"
+                                            >
+                                                <Trash2 class="size-4" />
+                                                {{ processing ? t('Deleting…') : t('Delete') }}
+                                            </Button>
+                                        </Form>
+                                    </Can>
+                                    <Can permission="purchases.delete">
+                                        <Form
+                                            v-if="expense.purchase_id"
+                                            :action="`/purchases/${expense.purchase_id}`"
                                             method="delete"
                                             v-slot="{ processing }"
                                         >
@@ -1220,4 +1206,11 @@ defineOptions({
             </div>
         </div>
     </div>
+
+    <ExpenseRecordDialog
+        v-model:open="expenseDialogOpen"
+        :item="selectedExpense"
+        :project-id="item.id"
+        :categories="expense_categories"
+    />
 </template>

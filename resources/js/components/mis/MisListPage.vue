@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 withDefaults(
     defineProps<{
-        title: string;
+        title?: string;
         description?: string;
         icon?: Component;
         /** Hide the outer Card and render a flat section instead. */
@@ -22,6 +22,7 @@ withDefaults(
         headerClass?: string;
     }>(),
     {
+        title: undefined,
         description: undefined,
         icon: undefined,
         flat: false,
@@ -33,9 +34,10 @@ withDefaults(
 </script>
 
 <template>
-    <div :class="cn('space-y-6', $props.class)">
+    <div :class="cn('space-y-4', $props.class)">
         <component :is="flat ? 'section' : Card" :class="flat ? 'space-y-4' : undefined">
             <component
+                v-if="title || description || $slots.description || $slots.actions || $slots.toolbar"
                 :is="flat ? 'div' : CardHeader"
                 :class="cn(flat && 'space-y-1', headerClass)"
             >
@@ -56,7 +58,7 @@ withDefaults(
                                 )
                             "
                         >
-                            <component :is="icon" v-if="icon" class="size-5" />
+                            <component :is="icon" v-if="icon && title" class="size-5" />
                             {{ title }}
                         </component>
                         <component

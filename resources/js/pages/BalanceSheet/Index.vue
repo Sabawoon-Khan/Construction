@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { AlertCircle, FileSpreadsheet, Scale } from '@lucide/vue';
+import { AlertCircle, FileSpreadsheet, Printer, Scale } from '@lucide/vue';
 import { computed, ref } from 'vue';
-import Heading from '@/components/Heading.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -94,48 +93,69 @@ function exportUrl(format: string) {
 <template>
     <Head :title="t('Balance Sheet')" />
 
-    <div class="print-document flex h-full flex-1 flex-col gap-6 p-4 md:p-6 print:gap-4 print:p-0">
+    <div class="print-document mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 print:gap-4 print:p-0">
         <div class="space-y-4 print:hidden">
-            <Heading
-                title="Balance Sheet"
-                description="A snapshot of assets, liabilities, and equity as of a chosen date."
-            />
-
-            <div class="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-4">
-                <div class="grid gap-1">
+            <div class="rounded-2xl border border-border/70 bg-card p-3">
+                <div class="flex flex-wrap items-end gap-2">
+                    <div class="grid min-w-[170px] flex-1 gap-1">
                     <label class="text-xs text-muted-foreground">{{ t('As of') }}</label>
-                    <Input v-model="asOf" type="date" class="w-auto" />
+                    <Input v-model="asOf" type="date" class="bg-background/80" />
+                    </div>
+
+                    <div class="grid min-w-[190px] flex-1 gap-1">
+                        <label class="text-xs text-muted-foreground">{{ t('Project') }}</label>
+                        <select
+                            v-model="projectId"
+                            class="h-9 w-full rounded-md border border-input bg-background/80 px-3 text-sm"
+                        >
+                            <option value="">{{ t('All projects') }}</option>
+                            <option v-for="p in projects" :key="p.id" :value="String(p.id)">
+                                {{ p.name }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="grid min-w-[170px] flex-1 gap-1">
+                        <label class="text-xs text-muted-foreground">{{ t('Currency') }}</label>
+                        <CurrencySelect v-model="reportCurrency" />
+                    </div>
+
+                    <Button @click="apply">{{ t('Apply') }}</Button>
+
+                    <div class="ms-auto flex flex-wrap items-end gap-2">
+                        <Button as-child variant="outline">
+                            <a :href="exportUrl('xlsx')" class="inline-flex items-center gap-2">
+                                <FileSpreadsheet class="size-4" />
+                                {{ t('Excel') }}
+                            </a>
+                        </Button>
+                        <Button as-child>
+                            <a
+                                :href="exportUrl('print').replace('/balance-sheet/export', '/balance-sheet/print')"
+                                target="_blank"
+                                class="inline-flex items-center gap-2"
+                            >
+                                <Printer class="size-4" />
+                                {{ t('Print / PDF') }}
+                            </a>
+                        </Button>
+                    </div>
                 </div>
+            </div>
 
-                <select
-                    v-model="projectId"
-                    class="h-9 min-w-44 rounded-md border border-input bg-transparent px-3 text-sm"
-                >
-                    <option value="">{{ t('All projects') }}</option>
-                    <option v-for="p in projects" :key="p.id" :value="String(p.id)">
-                        {{ p.name }}
-                    </option>
-                </select>
-
-                <div class="grid gap-1">
-                    <label class="text-xs text-muted-foreground">{{ t('Currency') }}</label>
-                    <CurrencySelect v-model="reportCurrency" />
-                </div>
-
-                <Button variant="secondary" class="self-end" @click="apply">{{ t('Filter') }}</Button>
-
-                <div class="ms-auto flex flex-wrap gap-2">
-                    <Button as-child variant="outline">
-                        <a :href="exportUrl('xlsx')">
-                            <FileSpreadsheet class="me-1 size-4" />
-                            {{ t('Excel') }}
-                        </a>
-                    </Button>
-                    <Button as-child>
-                        <a :href="exportUrl('print').replace('/balance-sheet/export', '/balance-sheet/print')" target="_blank">
-                            {{ t('Print / PDF') }}
-                        </a>
-                    </Button>
+            <div
+                class="relative overflow-hidden rounded-2xl border border-sidebar-border/70 bg-[radial-gradient(circle_at_top_left,rgba(180_83%_40%/0.14),transparent_40%),linear-gradient(135deg,oklch(0.98_0.01_85),oklch(0.96_0.02_145))] p-6 dark:bg-[radial-gradient(circle_at_top_left,rgba(180_60%_45%/0.18),transparent_45%),linear-gradient(135deg,oklch(0.24_0.02_145),oklch(0.2_0.02_85))]"
+            >
+                <div class="max-w-2xl space-y-2">
+                    <p class="text-sm font-medium tracking-wide text-emerald-800 uppercase dark:text-emerald-300">
+                        {{ t('Reports') }}
+                    </p>
+                    <h1 class="font-serif text-3xl tracking-tight text-foreground md:text-4xl">
+                        {{ t('Balance Sheet') }}
+                    </h1>
+                    <p class="text-muted-foreground">
+                        {{ t('A snapshot of assets, liabilities, and equity as of a chosen date.') }}
+                    </p>
                 </div>
             </div>
         </div>

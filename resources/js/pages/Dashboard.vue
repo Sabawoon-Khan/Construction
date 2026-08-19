@@ -65,12 +65,46 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
 <template>
     <Head :title="t('Dashboard')" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 md:p-6">
+    <div class="mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6">
+        <div class="rounded-2xl border border-border/70 bg-card p-3">
+            <div class="flex flex-wrap items-end gap-2">
+                <Button
+                    variant="outline"
+                    :class="preset === 'today' ? 'border-emerald-600' : ''"
+                    @click="applyPeriod('today')"
+                >
+                    {{ t('Today') }}
+                </Button>
+                <Button
+                    variant="outline"
+                    :class="preset === 'month' ? 'border-emerald-600' : ''"
+                    @click="applyPeriod('month')"
+                >
+                    {{ t('This month') }}
+                </Button>
+                <Button
+                    variant="outline"
+                    :class="preset === 'year' ? 'border-emerald-600' : ''"
+                    @click="applyPeriod('year')"
+                >
+                    {{ t('This year') }}
+                </Button>
+                <div class="grid min-w-[150px] flex-1 gap-1">
+                    <label class="text-xs text-muted-foreground">{{ t('From') }}</label>
+                    <Input v-model="from" type="date" class="bg-background/80" />
+                </div>
+                <div class="grid min-w-[150px] flex-1 gap-1">
+                    <label class="text-xs text-muted-foreground">{{ t('To') }}</label>
+                    <Input v-model="to" type="date" class="bg-background/80" />
+                </div>
+                <Button @click="applyPeriod('custom')">{{ t('Apply') }}</Button>
+            </div>
+        </div>
+
         <div
             class="relative overflow-hidden rounded-2xl border border-sidebar-border/70 bg-[radial-gradient(circle_at_top_left,rgba(180_83%_40%/0.14),transparent_40%),linear-gradient(135deg,oklch(0.98_0.01_85),oklch(0.96_0.02_145))] p-6 dark:bg-[radial-gradient(circle_at_top_left,rgba(180_60%_45%/0.18),transparent_45%),linear-gradient(135deg,oklch(0.24_0.02_145),oklch(0.2_0.02_85))]"
         >
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div class="max-w-2xl space-y-2">
+            <div class="max-w-2xl space-y-2">
                     <p class="text-sm font-medium tracking-wide text-emerald-800 uppercase dark:text-emerald-300">
                         {{ t('Construction MIS') }}
                     </p>
@@ -88,39 +122,6 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                                 : t('Track active builds, home sales, expenses and shareholder profit in real time.')
                         }}
                     </p>
-                </div>
-                <div class="flex flex-wrap items-end gap-2">
-                    <Button
-                        variant="outline"
-                        :class="preset === 'today' ? 'border-emerald-600' : ''"
-                        @click="applyPeriod('today')"
-                    >
-                        {{ t('Today') }}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        :class="preset === 'month' ? 'border-emerald-600' : ''"
-                        @click="applyPeriod('month')"
-                    >
-                        {{ t('This month') }}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        :class="preset === 'year' ? 'border-emerald-600' : ''"
-                        @click="applyPeriod('year')"
-                    >
-                        {{ t('This year') }}
-                    </Button>
-                    <div class="grid gap-1">
-                        <label class="text-xs text-muted-foreground">{{ t('From') }}</label>
-                        <Input v-model="from" type="date" class="bg-background/80" />
-                    </div>
-                    <div class="grid gap-1">
-                        <label class="text-xs text-muted-foreground">{{ t('To') }}</label>
-                        <Input v-model="to" type="date" class="bg-background/80" />
-                    </div>
-                    <Button @click="applyPeriod('custom')">{{ t('Apply') }}</Button>
-                </div>
             </div>
         </div>
 
@@ -265,11 +266,11 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-left text-muted-foreground">
                             <tr>
-                                <th class="px-5 py-3">{{ t('Project') }}</th>
-                                <th class="px-5 py-3">{{ t('Progress') }}</th>
-                                <th class="px-5 py-3">{{ t('Revenue') }}</th>
-                                <th class="px-5 py-3">{{ t('Expenses') }}</th>
-                                <th class="px-5 py-3">{{ t('Profit') }}</th>
+                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Project') }}</th>
+                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Progress') }}</th>
+                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Revenue') }}</th>
+                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Expenses') }}</th>
+                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Profit') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -375,6 +376,12 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                         </div>
                         <div class="font-medium tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price_base ?? 0) - Number(sale.discount_base ?? 0))) }}</div>
                     </div>
+                    <div
+                        v-if="!(stats.recent_sales || []).length"
+                        class="px-5 py-6 text-sm text-muted-foreground"
+                    >
+                        {{ t('No recent sales.') }}
+                    </div>
                 </div>
             </div>
             <div class="rounded-2xl border bg-card">
@@ -401,13 +408,19 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                         </div>
                         <div class="font-medium tabular-nums">{{ money(expense.amount_base ?? expense.amount) }}</div>
                     </div>
+                    <div
+                        v-if="!(stats.recent_expenses || []).length"
+                        class="px-5 py-6 text-sm text-muted-foreground"
+                    >
+                        {{ t('No recent expenses.') }}
+                    </div>
                 </div>
             </div>
         </div>
 
         <div
             v-if="mode !== 'shareholder'"
-            class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
         >
             <Can permission="expenses.create">
                 <Button as-child variant="outline" class="justify-between">

@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Heading from '@/components/Heading.vue';
-import { MisCreateButton, MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisFilterBar, MisSearchInput, MisSelectField, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -46,6 +43,18 @@ const apply = () =>
         },
         { preserveState: true, replace: true },
     );
+
+function clearFilters() {
+    search.value = '';
+    projectId.value = '';
+    status.value = '';
+    apply();
+}
+
+const projectOptions = computed(() => [
+    { value: '', label: t('All projects') },
+    ...props.projects.map((p: any) => ({ value: String(p.id), label: p.name })),
+]);
 
 const unitStatuses = ['available', 'reserved', 'sold'];
 
@@ -85,25 +94,27 @@ function rowActions(item: any): RowActionItem[] {
 
 <template>
     <Head :title="t('Units & Homes')" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <Heading :title="t('Units & Homes')" :description="t('List prices, specs, and sale status for every unit.')" />
-            <div class="flex flex-wrap gap-2">
-                <Input v-model="search" :placeholder="t('Unit no...')" @keyup.enter="apply" />
-                <select v-model="projectId" class="h-9 rounded-md border border-input bg-background px-3 text-sm" @change="apply">
-                    <option value="">{{ t('All projects') }}</option>
-                    <option v-for="p in projects" :key="p.id" :value="String(p.id)">{{ p.name }}</option>
-                </select>
-                <select v-model="status" class="h-9 rounded-md border border-input bg-background px-3 text-sm" @change="apply">
-                    <option value="">{{ t('All statuses') }}</option>
-                    <option value="available">{{ t('Available') }}</option>
-                    <option value="reserved">{{ t('Reserved') }}</option>
-                    <option value="sold">{{ t('Sold') }}</option>
-                </select>
-                <Button variant="secondary" @click="apply">{{ t('Filter') }}</Button>
-                <MisCreateButton href="/units/create" permission="units.create">{{ t('Add unit') }}</MisCreateButton>
-            </div>
-        </div>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="apply" @clear="clearFilters">
+            <MisSearchInput v-model="search" class="min-w-[180px] flex-1" :placeholder="t('Unit no...')" />
+            <MisSelectField
+                v-model="projectId"
+                class="min-w-[160px]"
+                :label="t('Project')"
+                :options="projectOptions"
+            />
+            <MisSelectField
+                v-model="status"
+                class="min-w-[160px]"
+                :label="t('Status')"
+                :options="[
+                    { value: '', label: t('All statuses') },
+                    { value: 'available', label: t('Available') },
+                    { value: 'reserved', label: t('Reserved') },
+                    { value: 'sold', label: t('Sold') },
+                ]"
+            />
+        </MisFilterBar>
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Units')" :value="totals.count" />
@@ -112,10 +123,10 @@ function rowActions(item: any): RowActionItem[] {
             <MisStatCard :label="t('Sold')" :value="totals.sold" />
         </MisStatGrid>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>

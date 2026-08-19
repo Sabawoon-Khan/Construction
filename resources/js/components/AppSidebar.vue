@@ -85,7 +85,7 @@ const sidebarVariant = computed(() => {
         </SidebarHeader>
 
         <SidebarContent
-            class="px-3 transition-[padding] duration-300 ease-in-out group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0"
+            class="px-3.5 transition-[padding] duration-300 ease-in-out group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0"
             data-tour="sidebar-nav"
         >
             <NavMain

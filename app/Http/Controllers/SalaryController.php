@@ -130,10 +130,11 @@ class SalaryController extends Controller implements HasMiddleware
             'payment_date' => 'nullable|date',
             'status' => 'nullable|string|in:pending,paid,cancelled',
             'notes' => 'nullable|string',
+            'currency' => 'nullable|string|in:AFN,USD',
         ]);
 
         $employee = Employee::query()->findOrFail($data['employee_id']);
-        $currency = strtoupper($employee->currency ?? CurrencyService::baseCurrency());
+        $currency = strtoupper($data['currency'] ?? $employee->currency ?? CurrencyService::baseCurrency());
         $paymentDate = isset($data['payment_date']) ? Carbon::parse($data['payment_date']) : now();
         $exchangeRate = FinanceDefaults::exchangeRate($currency, $paymentDate);
 

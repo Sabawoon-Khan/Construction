@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { Form, Head, Link, router } from '@inertiajs/vue3';
-import { Search } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import { MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +56,12 @@ function applyFilter() {
     }, { preserveState: true, replace: true });
 }
 
+function clearFilters() {
+    search.value = '';
+    projectId.value = '';
+    applyFilter();
+}
+
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -70,22 +74,14 @@ defineOptions({
 
 <template>
     <Head :title="t('Stock')" />
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <Heading :title="t('Stock')" :description="t('On-hand materials by project. Issuing reduces quantity only — cost already hit the project at purchase.')" />
-            <div class="flex flex-wrap gap-2">
-                <div class="relative min-w-[200px] flex-1">
-                    <Search class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input v-model="search" class="pl-9" :placeholder="t('Search...')" @keyup.enter="applyFilter" />
-                </div>
-                <select v-model="projectId" class="h-9 rounded-md border px-3 text-sm" @change="applyFilter">
-                    <option value="">{{ t('All projects') }}</option>
-                    <option v-for="project in projects" :key="project.id" :value="String(project.id)">{{ project.name }}</option>
-                </select>
-                <Button variant="secondary" @click="applyFilter">{{ t('Search') }}</Button>
-                <Button as-child variant="outline"><Link href="/purchases/create">{{ t('New purchase') }}</Link></Button>
-            </div>
-        </div>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="applyFilter" @clear="clearFilters">
+            <MisSearchInput v-model="search" class="min-w-[200px] flex-1" :placeholder="t('Search...')" />
+            <select v-model="projectId" class="h-9 min-w-[160px] rounded-md border border-input bg-background px-3 text-sm">
+                <option value="">{{ t('All projects') }}</option>
+                <option v-for="project in projects" :key="project.id" :value="String(project.id)">{{ project.name }}</option>
+            </select>
+        </MisFilterBar>
 
         <MisStatGrid :columns="2">
             <MisStatCard :label="t('Stock rows')" :value="totals.rows" />
@@ -132,10 +128,10 @@ defineOptions({
         </Form>
         </Can>
 
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-left text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Material') }}</th>

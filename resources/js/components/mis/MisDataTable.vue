@@ -95,7 +95,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                             :key="column.key"
                             :class="
                                 cn(
-                                    'font-semibold tracking-[0.12em] text-muted-foreground uppercase',
+                                    'font-semibold tracking-[0.12em] text-muted-foreground uppercase rtl:tracking-normal',
                                     density === 'compact'
                                         ? 'px-3 py-2 text-[10px]'
                                         : 'px-4 py-3 text-[11px]',

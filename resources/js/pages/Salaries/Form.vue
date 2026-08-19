@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, Trash2 } from '@lucide/vue';
+import { Trash2 } from '@lucide/vue';
 import { computed, watch } from 'vue';
-import Heading from '@/components/Heading.vue';
+import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,12 +29,10 @@ const form = useForm({
     payment_date: props.item?.payment_date?.slice?.(0, 10) ?? '',
     status: props.item?.status ?? 'pending',
     notes: props.item?.notes ?? '',
+    currency: props.item?.currency ?? '',
 });
 
-const currency = computed(() => {
-    const employee = props.employees.find((e: { id: number; currency?: string }) => String(e.id) === form.employee_id);
-    return employee?.currency || 'USD';
-});
+const currency = computed(() => form.currency || 'USD');
 
 const netSalary = computed(() => {
     const basic = Number(form.basic_salary) || 0;
@@ -43,10 +42,17 @@ const netSalary = computed(() => {
 });
 
 watch(() => form.employee_id, (id: string) => {
-    if (isEdit.value) return;
-    const employee = props.employees.find((e: { id: number; basic_salary: number | null }) => String(e.id) === id);
-    if (employee && employee.basic_salary !== null && employee.basic_salary !== undefined) {
+    const employee = props.employees.find((e: { id: number; basic_salary: number | null; currency?: string }) => String(e.id) === id);
+    if (!employee) {
+        return;
+    }
+
+    if (!isEdit.value && employee.basic_salary !== null && employee.basic_salary !== undefined) {
         form.basic_salary = String(employee.basic_salary);
+    }
+
+    if (!form.currency) {
+        form.currency = employee.currency || 'USD';
     }
 }, { immediate: true });
 
@@ -80,22 +86,12 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit salary') : t('Add salary')" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="space-y-3">
-            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/salaries"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-            </Button>
-            <Heading
-                :title="isEdit ? t('Edit salary') : t('Add salary')"
-                :description="t('Create a fixed monthly salary record for an employee.')"
-            />
-        </div>
-
-        <form class="max-w-3xl space-y-6 rounded-xl border border-sidebar-border/70 bg-card p-6" @submit.prevent="submit">
-            <div class="grid gap-4 sm:grid-cols-2">
+    <MisFormPage :title="isEdit ? t('Edit salary') : t('Add salary')" back-href="/salaries">
+        <form class="mis-form-card" @submit.prevent="submit">
+            <div class="mis-form-grid">
                 <div class="grid gap-2">
                     <Label for="employee_id">{{ t('Employee') }}</Label>
-                    <select id="employee_id" v-model="form.employee_id" required class="h-9 rounded-md border border-input bg-transparent px-3 text-sm" :disabled="isEdit">
+                    <select id="employee_id" v-model="form.employee_id" required class="mis-form-select" :disabled="isEdit">
                         <option value="" disabled>{{ t('Select employee') }}</option>
                         <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
                     </select>
@@ -108,7 +104,7 @@ defineOptions({
                 </div>
                 <div class="grid gap-2">
                     <Label for="month">{{ t('Month') }}</Label>
-                    <select id="month" v-model="form.month" required class="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+                    <select id="month" v-model="form.month" required class="mis-form-select">
                         <option v-for="m in 12" :key="m" :value="m">{{ m }}</option>
                     </select>
                     <InputError :message="form.errors.month" />
@@ -120,8 +116,12 @@ defineOptions({
                 </div>
                 <div class="grid gap-2">
                     <Label for="basic_salary">{{ t('Basic Salary') }}</Label>
-                    <Input id="basic_salary" v-model="form.basic_salary" type="number" step="0.01" min="0" required />
+                    <div class="flex gap-2">
+                        <Input id="basic_salary" v-model="form.basic_salary" type="number" step="0.01" min="0" required class="min-w-0 flex-1" />
+                        <CurrencySelect v-model="form.currency" class="w-[9rem] shrink-0" />
+                    </div>
                     <InputError :message="form.errors.basic_salary" />
+                    <InputError :message="form.errors.currency" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="bonus">{{ t('Bonus') }}</Label>
@@ -135,16 +135,16 @@ defineOptions({
                 </div>
                 <div class="grid gap-2">
                     <Label for="status">{{ t('Status') }}</Label>
-                    <select id="status" v-model="form.status" class="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+                    <select id="status" v-model="form.status" class="mis-form-select">
                         <option value="pending">{{ t('Pending') }}</option>
                         <option value="paid">{{ t('Paid') }}</option>
                         <option value="cancelled">{{ t('Cancelled') }}</option>
                     </select>
                     <InputError :message="form.errors.status" />
                 </div>
-                <div class="grid gap-2 sm:col-span-2">
+                <div class="grid gap-2 mis-form-span">
                     <Label for="notes">{{ t('Notes') }}</Label>
-                    <textarea id="notes" v-model="form.notes" rows="3" class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"></textarea>
+                    <textarea id="notes" v-model="form.notes" rows="3" class="mis-form-textarea"></textarea>
                     <InputError :message="form.errors.notes" />
                 </div>
             </div>
@@ -154,7 +154,7 @@ defineOptions({
                 <span class="text-lg font-semibold tabular-nums">{{ money(netSalary, currency) }}</span>
             </div>
 
-            <div class="flex gap-2">
+            <div class="mis-form-actions">
                 <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
                 <Button as-child variant="secondary">
                     <Link href="/salaries">{{ t('Cancel') }}</Link>
@@ -165,5 +165,5 @@ defineOptions({
                 </Button>
             </div>
         </form>
-    </div>
+    </MisFormPage>
 </template>

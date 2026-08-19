@@ -28,6 +28,7 @@ class FieldReportController extends Controller
         $this->authorizePermission($request, 'field_reports.view');
 
         $search = $request->string('search')->toString();
+        $status = $request->string('status')->toString();
 
         $query = FieldReport::query()
             ->where('user_id', $request->user()->id);
@@ -40,6 +41,10 @@ class FieldReportController extends Controller
             });
         }
 
+        if (in_array($status, ['draft', 'submitted'], true)) {
+            $query->where('status', $status);
+        }
+
         $items = $query
             ->latest()
             ->paginate(20)
@@ -47,7 +52,10 @@ class FieldReportController extends Controller
 
         return Inertia::render('resources/field-reports/Index', [
             'items' => $this->inertiaPagination($items),
-            'filters' => ['search' => $search],
+            'filters' => [
+                'search' => $search,
+                'status' => in_array($status, ['draft', 'submitted'], true) ? $status : '',
+            ],
             ...$this->offlineInertiaProps('field_reports'),
         ]);
     }
@@ -98,6 +106,28 @@ class FieldReportController extends Controller
         $fieldReport->load('attachments');
 
         return Inertia::render('resources/field-reports/Edit', [
+            'item' => [
+                ...$fieldReport->toArray(),
+                'attachments' => $fieldReport->attachments->map(fn ($attachment) => [
+                    'id' => $attachment->id,
+                    'original_filename' => $attachment->original_filename,
+                    'mime_type' => $attachment->mime_type,
+                    'file_size' => $attachment->file_size,
+                    'download_url' => $attachment->download_url,
+                ]),
+            ],
+            ...$this->offlineInertiaProps('field_reports'),
+        ]);
+    }
+
+    public function show(Request $request, FieldReport $fieldReport): Response
+    {
+        $this->authorizePermission($request, 'field_reports.view');
+        abort_unless($fieldReport->user_id === $request->user()->id, 404);
+
+        $fieldReport->load('attachments');
+
+        return Inertia::render('resources/field-reports/Show', [
             'item' => [
                 ...$fieldReport->toArray(),
                 'attachments' => $fieldReport->attachments->map(fn ($attachment) => [

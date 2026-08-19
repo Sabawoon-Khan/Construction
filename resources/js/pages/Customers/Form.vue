@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Trash2 } from '@lucide/vue';
+import { Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,33 +30,23 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit customer') : t('Create customer')" />
 
-    <div class="flex h-full flex-1 flex-col gap-6 p-4 md:p-6">
-        <div class="space-y-3">
-            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/customers"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-            </Button>
-            <Heading
-                :title="isEdit ? t('Edit customer') : t('Create customer')"
-                :description="t('Fill in the details below and save.')"
-            />
-        </div>
-
+    <MisFormPage :title="isEdit ? t('Edit customer') : t('Create customer')" back-href="/customers">
         <Form
             :action="isEdit ? `/customers/${item!.id}` : '/customers'"
             :method="isEdit ? 'put' : 'post'"
-            class="max-w-3xl space-y-6 rounded-xl border border-sidebar-border/70 bg-card p-6"
+            class="mis-form-card"
             v-slot="{ errors, processing }"
         >
-            <div class="grid gap-4 sm:grid-cols-2">
-            <div class="grid gap-2">
-                <Label for="customer_no">{{ t('Customer No') }}</Label>
-                <Input id="customer_no" name="customer_no" type="text" required :default-value="item?.customer_no ?? ''" />
-                <InputError :message="errors.customer_no" />
-            </div>
+            <div class="mis-form-grid">
             <div class="grid gap-2">
                 <Label for="name">{{ t('Name') }}</Label>
                 <Input id="name" name="name" type="text" required :default-value="item?.name ?? ''" />
                 <InputError :message="errors.name" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="customer_no">{{ t('Customer No') }}</Label>
+                <Input id="customer_no" name="customer_no" type="text" required :default-value="item?.customer_no ?? ''" />
+                <InputError :message="errors.customer_no" />
             </div>
             <div class="grid gap-2">
                 <Label for="father_name">{{ t('Father name') }}</Label>
@@ -78,19 +68,19 @@ defineOptions({
                 <Input id="national_id" name="national_id" type="text" :default-value="item?.national_id ?? ''" />
                 <InputError :message="errors.national_id" />
             </div>
-            <div class="grid gap-2 sm:col-span-2">
+            <div class="grid gap-2 mis-form-span">
                 <Label for="address">{{ t('Address') }}</Label>
-                <textarea id="address" name="address" rows="3" class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs" :value="item?.address ?? ''"></textarea>
+                <textarea id="address" name="address" rows="3" class="mis-form-textarea" :value="item?.address ?? ''"></textarea>
                 <InputError :message="errors.address" />
             </div>
-            <div class="grid gap-2 sm:col-span-2">
+            <div class="grid gap-2 mis-form-span">
                 <Label for="notes">{{ t('Notes') }}</Label>
-                <textarea id="notes" name="notes" rows="3" class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs" :value="item?.notes ?? ''"></textarea>
+                <textarea id="notes" name="notes" rows="3" class="mis-form-textarea" :value="item?.notes ?? ''"></textarea>
                 <InputError :message="errors.notes" />
             </div>
             </div>
 
-            <div class="flex gap-2">
+            <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save') }}</Button>
                 <Button as-child variant="secondary">
                     <Link href="/customers">{{ t('Cancel') }}</Link>
@@ -103,5 +93,5 @@ defineOptions({
                 </Form>
             </div>
         </Form>
-    </div>
+    </MisFormPage>
 </template>
