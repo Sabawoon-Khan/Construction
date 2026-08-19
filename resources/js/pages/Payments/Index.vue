@@ -11,12 +11,12 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { money } from '@/lib/utils';
+import { money, moneyByCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; amount: number; amount_base: number; paid_out?: number; paid_out_base?: number; this_month: number; this_month_base: number; cash: number; cash_base: number };
+    totals: { count: number; amount: number; amount_base: number; paid_out?: number; paid_out_base?: number; this_month: number; this_month_base: number; cash: number; cash_base: number; amount_by_currency?: Record<string, number>; paid_out_by_currency?: Record<string, number>; this_month_by_currency?: Record<string, number> };
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
@@ -55,15 +55,15 @@ function rowActions(item: any): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Entries')" :value="totals.count" />
-            <MisStatCard :label="t('Collected')" :value="money(totals.amount_base ?? totals.amount, baseCurrency)" tone="success" />
-            <MisStatCard :label="t('Paid to suppliers')" :value="money(totals.paid_out_base ?? totals.paid_out ?? 0, baseCurrency)" tone="danger" />
-            <MisStatCard :label="t('This month')" :value="money(totals.this_month_base ?? totals.this_month, baseCurrency)" />
+            <MisStatCard :label="t('Collected')" :value="moneyByCurrency(totals.amount_by_currency, totals.amount)" tone="success" />
+            <MisStatCard :label="t('Paid to suppliers')" :value="moneyByCurrency(totals.paid_out_by_currency, totals.paid_out ?? 0)" tone="danger" />
+            <MisStatCard :label="t('This month')" :value="moneyByCurrency(totals.this_month_by_currency, totals.this_month)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
@@ -73,7 +73,7 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Method') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>

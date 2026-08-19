@@ -1,0 +1,1 @@
+import{at as e,o as t,y as n}from"./button-YbVcEkZ2.js";function r(){let r=n();return{baseCurrency:e(()=>t(r.props.company?.base_currency??`USD`))}}export{r as t};

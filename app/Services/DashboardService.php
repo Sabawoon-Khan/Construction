@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\Sale;
 use App\Models\Unit;
 use App\Models\User;
+use App\Support\CurrencyAmounts;
 use Carbon\CarbonInterface;
 
 class DashboardService
@@ -45,35 +46,19 @@ class DashboardService
 
         $expensesQuery = Expense::query()->where('status', 'approved');
 
-        $periodExpenses = (clone $expensesQuery)
+        $periodExpensesQuery = (clone $expensesQuery)
             ->whereDate('expense_date', '>=', $from->toDateString())
-            ->whereDate('expense_date', '<=', $to->toDateString())
-            ->sum('amount_base');
-
+            ->whereDate('expense_date', '<=', $to->toDateString());
+        $periodExpenses = (clone $periodExpensesQuery)->sum('amount_base');
         $totalExpenses = (clone $expensesQuery)->sum('amount_base');
-
-        $expensesByCurrency = (clone $expensesQuery)
-            ->whereDate('expense_date', '>=', $from->toDateString())
-            ->whereDate('expense_date', '<=', $to->toDateString())
-            ->selectRaw('currency, COALESCE(SUM(amount), 0) as total')
-            ->groupBy('currency')
-            ->pluck('total', 'currency')
-            ->toArray();
+        $expensesByCurrency = CurrencyAmounts::sum($periodExpensesQuery);
 
         $incomesQuery = Income::query()->where('status', 'approved');
-
-        $periodIncomes = (clone $incomesQuery)
+        $periodIncomesQuery = (clone $incomesQuery)
             ->whereDate('income_date', '>=', $from->toDateString())
-            ->whereDate('income_date', '<=', $to->toDateString())
-            ->sum('amount_base');
-
-        $incomesByCurrency = (clone $incomesQuery)
-            ->whereDate('income_date', '>=', $from->toDateString())
-            ->whereDate('income_date', '<=', $to->toDateString())
-            ->selectRaw('currency, COALESCE(SUM(amount), 0) as total')
-            ->groupBy('currency')
-            ->pluck('total', 'currency')
-            ->toArray();
+            ->whereDate('income_date', '<=', $to->toDateString());
+        $periodIncomes = (clone $periodIncomesQuery)->sum('amount_base');
+        $incomesByCurrency = CurrencyAmounts::sum($periodIncomesQuery);
 
         $periodSalaries = ShareholderProfitService::salaryTotal($from, $to);
         $totalSalaries = ShareholderProfitService::salaryTotal();

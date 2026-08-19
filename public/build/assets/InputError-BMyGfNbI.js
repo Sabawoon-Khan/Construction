@@ -1,1 +1,0 @@
-import{In as e,gt as t,it as n,st as r,tn as i,xr as a,z as o}from"./button-Bazp6Oio.js";var s={class:`text-sm text-red-600 dark:text-red-500`},c=t({__name:`InputError`,props:{message:{}},setup(t){return(c,l)=>e((i(),r(`div`,null,[n(`p`,s,a(t.message),1)],512)),[[o,t.message]])}});export{c as t};

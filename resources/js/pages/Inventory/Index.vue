@@ -131,7 +131,7 @@ defineOptions({
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Material') }}</th>

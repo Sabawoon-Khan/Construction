@@ -5,6 +5,7 @@ import Heading from '@/components/Heading.vue';
 import { MisStatCard, MisStatGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
+import { translateStatus } from '@/lib/translateStatus';
 import { money } from '@/lib/utils';
 
 const props = defineProps<{
@@ -42,7 +43,7 @@ defineOptions({
         <MisStatGrid :columns="3">
             <MisStatCard :label="t('Attendance records')" :value="stats.attendance_count" />
             <MisStatCard :label="t('Salary records')" :value="stats.salaries_count" />
-            <MisStatCard :label="t('Basic salary')" :value="item.basic_salary ? money(item.basic_salary) : '—'" />
+            <MisStatCard :label="t('Basic salary')" :value="item.basic_salary ? money(item.basic_salary, item.currency) : '—'" />
         </MisStatGrid>
 
         <div class="grid gap-6 lg:grid-cols-2">
@@ -53,7 +54,7 @@ defineOptions({
                         <User class="size-4 text-muted-foreground" />
                         <div>
                             <p class="text-xs text-muted-foreground">{{ t('Status') }}</p>
-                            <p class="capitalize">{{ item.status }}</p>
+                            <p>{{ translateStatus(item.status, t) }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">

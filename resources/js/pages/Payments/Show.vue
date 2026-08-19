@@ -49,7 +49,7 @@ defineOptions({
             <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Amount') }}</div>
                 <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
-                    {{ money(item.amount, item.currency || 'USD') }}
+                    {{ money(item.amount, item.currency) }}
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@ defineOptions({
                 :party-label="item.type === 'disbursement' ? t('Paid to') : t('Received from')"
                 :party-name="item.supplier?.name || item.customer?.name"
                 :amount="item.amount"
-                :currency="item.currency || 'USD'"
+                :currency="item.currency"
                 :payment-method="item.payment_method"
                 :reference-no="item.reference_no"
                 :project-name="item.project?.name"

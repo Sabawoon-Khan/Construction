@@ -75,13 +75,13 @@ function rowActions(item: Item): RowActionItem[] {
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Partner No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Phone') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Projects') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>

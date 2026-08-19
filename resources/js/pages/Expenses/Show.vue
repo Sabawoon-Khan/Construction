@@ -76,7 +76,7 @@ defineOptions({
             <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Total cost') }}</div>
                 <div class="mt-1 text-3xl font-semibold tabular-nums text-rose-700">
-                    {{ money(item.amount, item.currency || 'USD') }}
+                    {{ money(item.amount, item.currency) }}
                 </div>
             </div>
         </div>
@@ -91,7 +91,7 @@ defineOptions({
                     { label: t('Purchase'), value: item.purchase?.purchase_no || '—' },
                     { label: t('Unit'), value: item.expense_unit?.unit_name || '—' },
                     { label: t('Item amount'), value: item.item_amount ?? '—' },
-                    { label: t('Per price'), value: item.per_price != null ? money(item.per_price, item.currency || 'USD') : '—' },
+                    { label: t('Per price'), value: item.per_price != null ? money(item.per_price, item.currency) : '—' },
                     { label: t('Reference'), value: item.reference_no || '—' },
                     { label: t('Description'), value: item.description, span: true },
                 ]"
@@ -126,7 +126,7 @@ defineOptions({
             :party-label="t('Paid to')"
             :party-name="item.paid_to || item.project?.name || t('Company-wide')"
             :amount="item.amount"
-            :currency="item.currency || 'USD'"
+            :currency="item.currency"
             :payment-method="item.payment_method"
             :project-name="item.project?.name"
             :description="item.description"

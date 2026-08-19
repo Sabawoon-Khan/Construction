@@ -119,14 +119,6 @@ function rowActions(item: (typeof displayItems.value)[number]): RowActionItem[] 
     ];
 }
 
-function statusLabel(value: string): string {
-    if (!value) {
-        return '';
-    }
-
-    return value.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
 defineOptions({
     layout: {
         breadcrumbs: [{ title: 'Field reports', href: '/field-reports' }],
@@ -175,7 +167,7 @@ defineOptions({
         >
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3">{{ t('Title') }}</th>
                             <th class="px-4 py-3">{{ t('Location') }}</th>
@@ -207,7 +199,6 @@ defineOptions({
                                 <MisStatusBadge
                                     v-if="item.status"
                                     :status="item.status"
-                                    :label="t(statusLabel(item.status))"
                                     :map="{ submitted: 'default', draft: 'outline' }"
                                 />
                             </td>

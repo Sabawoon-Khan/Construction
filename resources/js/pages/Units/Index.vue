@@ -126,7 +126,7 @@ function rowActions(item: any): RowActionItem[] {
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
@@ -138,7 +138,7 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Sale price') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Buyer') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -151,8 +151,8 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 capitalize">{{ item.type }}</td>
                             <td class="px-4 py-3">{{ item.area ?? '—' }}</td>
                             <td class="px-4 py-3">{{ item.bedrooms ?? '—' }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.cost_price, item.currency || 'USD') }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ money(item.list_price, item.currency || 'USD') }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.cost_price, item.currency) }}</td>
+                            <td class="px-4 py-3 tabular-nums">{{ money(item.list_price, item.currency) }}</td>
                             <td class="px-4 py-3">{{ item.sales?.[0]?.customer?.name || '—' }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3">

@@ -1690,5 +1690,18 @@
     "Go home": "بازگشت به صفحه اصلی",
     "Go back": "بازگشت",
     "Access denied": "دسترسی غیرمجاز",
-    "You do not have permission to view this page.": "شما اجازه مشاهده این صفحه را ندارید."
+    "You do not have permission to view this page.": "شما اجازه مشاهده این صفحه را ندارید.",
+    "available": "موجود",
+    "reserved": "رزرف",
+    "inactive": "غیرفعال",
+    "submitted": "ارسال‌شده",
+    "paid": "پرداخت‌شده",
+    "partial": "جزئی",
+    "overdue": "معوق",
+    "posted": "ثبت‌شده",
+    "present": "حاضر",
+    "absent": "غیرحاضر",
+    "leave": "رخصتی",
+    "half day": "نیم روز",
+    "on leave": "مرخصی"
 }

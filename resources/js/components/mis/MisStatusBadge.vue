@@ -2,6 +2,8 @@
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
 import type { BadgeVariants } from '@/components/ui/badge';
+import { translateStatus } from '@/lib/translateStatus';
+import { useTranslations } from '@/composables/useTranslations';
 
 type StatusTone = NonNullable<BadgeVariants['variant']>;
 
@@ -50,7 +52,9 @@ const resolved = computed(() => {
     return props.map?.[key] ?? props.map?.[props.status] ?? defaults[key] ?? 'outline';
 });
 
-const display = computed(() => props.label ?? props.status.replace(/_/g, ' '));
+const { t } = useTranslations();
+
+const display = computed(() => props.label ?? translateStatus(props.status, t));
 </script>
 
 <template>

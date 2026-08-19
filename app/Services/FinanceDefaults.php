@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\ExpenseCategory;
 use App\Models\IncomeCategory;
-use App\Support\CurrentCompany;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -53,7 +52,7 @@ class FinanceDefaults
     {
         ExpenseCategory::ensureDefaults();
 
-        $currency = strtoupper($data['currency'] ?? self::baseCurrency());
+        $currency = CurrencyService::normalize($data['currency'] ?? null, self::baseCurrency());
         $date = isset($data['expense_date']) ? Carbon::parse($data['expense_date']) : now();
         $exchangeRate = self::exchangeRate($currency, $date);
         $itemAmount = isset($data['item_amount']) ? (float) $data['item_amount'] : null;
@@ -105,7 +104,7 @@ class FinanceDefaults
     /** @return array<string, mixed> */
     public static function incomeAttributes(array $data): array
     {
-        $currency = strtoupper($data['currency'] ?? self::baseCurrency());
+        $currency = CurrencyService::normalize($data['currency'] ?? null, self::baseCurrency());
         $date = isset($data['income_date']) ? Carbon::parse($data['income_date']) : now();
         $exchangeRate = self::exchangeRate($currency, $date);
         $amount = round((float) $data['amount'], 2);
@@ -127,13 +126,14 @@ class FinanceDefaults
 
     public static function baseCurrency(): string
     {
-        return strtoupper(CurrentCompany::get()?->base_currency ?? 'USD');
+        return CurrencyService::baseCurrency();
     }
 
     public static function exchangeRate(string $currency, ?Carbon $date = null): float
     {
         $date ??= now();
         $baseCurrency = self::baseCurrency();
+        $currency = CurrencyService::normalize($currency, $baseCurrency);
 
         if ($currency === $baseCurrency) {
             return 1.0;

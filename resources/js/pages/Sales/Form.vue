@@ -162,7 +162,7 @@ function removeRow(index: number) {
                             :key="u.id"
                             :value="String(u.id)"
                         >
-                            {{ u.unit_no }} — {{ money(u.list_price, u.currency || 'USD') }}
+                            {{ u.unit_no }} — {{ money(u.list_price, u.currency) }}
                             ({{ t(u.status) }})
                         </option>
                     </select>
@@ -174,7 +174,7 @@ function removeRow(index: number) {
                 >
                     {{ t('Sale price') }}:
                     <span class="font-semibold tabular-nums">
-                        {{ money(selectedUnit.list_price, selectedUnit.currency || 'USD') }}
+                        {{ money(selectedUnit.list_price, selectedUnit.currency) }}
                     </span>
                     <span
                         v-if="Number(selectedUnit.list_price) <= 0"
@@ -308,7 +308,7 @@ function removeRow(index: number) {
                 </template>
                 <template v-else>
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/40 text-left text-muted-foreground">
+                        <thead class="bg-muted/40 text-start text-muted-foreground">
                             <tr>
                                 <th class="px-3 py-2 font-medium">{{ t('Due') }}</th>
                                 <th class="px-3 py-2 font-medium">{{ t('Amount') }}</th>

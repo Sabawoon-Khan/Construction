@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseUnit;
 use App\Services\FinanceDefaults;
+use App\Support\CurrencyAmounts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -45,6 +46,10 @@ class ExpenseController extends Controller implements HasMiddleware
             'this_month_base' => (float) (clone $query)->where('expense_date', '>=', now()->startOfMonth())->sum('amount_base'),
             'average' => $count > 0 ? $totalAmount / $count : 0,
             'average_base' => $count > 0 ? $totalAmountBase / $count : 0,
+            'amount_by_currency' => CurrencyAmounts::sum(clone $query),
+            'this_month_by_currency' => CurrencyAmounts::sum(
+                (clone $query)->where('expense_date', '>=', now()->startOfMonth())
+            ),
         ];
 
         return Inertia::render('Expenses/Index', [

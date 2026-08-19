@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Http\Middleware\Concerns\ResolvesRequestLocale;
 use App\Models\OrgSetting;
+use App\Services\CurrencyService;
 use App\Services\LocaleRegistry;
 use App\Services\NotificationService;
 use App\Support\AiSettings;
@@ -63,7 +64,7 @@ class HandleInertiaRequests extends Middleware
                     'phone' => $companyModel->phone,
                     'email' => $companyModel->email,
                     'address' => $companyModel->address,
-                    'base_currency' => $companyModel->base_currency,
+                    'base_currency' => CurrencyService::normalize($companyModel->base_currency),
                     'logo_path' => $companyModel->logo_path,
                 ];
             } catch (Throwable) {

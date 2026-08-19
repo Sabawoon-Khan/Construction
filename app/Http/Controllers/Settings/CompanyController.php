@@ -26,7 +26,7 @@ class CompanyController extends Controller
         ]);
 
         $currencies = ['USD', 'AFN'];
-        $baseCurrency = strtoupper($company->base_currency ?? 'USD');
+        $baseCurrency = CurrencyService::normalize($company->base_currency ?? 'USD');
         $pairs = collect($currencies)
             ->crossJoin($currencies)
             ->filter(fn (array $pair) => $pair[0] !== $pair[1] && $pair[0] === $baseCurrency)
@@ -60,6 +60,8 @@ class CompanyController extends Controller
             'address' => 'nullable|string',
             'base_currency' => 'required|string|size:3',
         ]);
+
+        $data['base_currency'] = CurrencyService::normalize($data['base_currency']);
 
         CurrentCompany::get()->update($data);
 

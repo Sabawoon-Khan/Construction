@@ -1,0 +1,1 @@
+import{at as e,ct as t,un as n,vt as r}from"./button-YbVcEkZ2.js";import{t as i}from"./usePermissions-6jWXc_iy.js";var a=r({__name:`Can`,props:{permission:{}},setup(r){let a=r,{can:o,canAny:s}=i(),c=e(()=>Array.isArray(a.permission)?s(a.permission):o(a.permission));return(e,r)=>c.value?n(e.$slots,`default`,{},void 0,void 0,0):t(``,!0)}});export{a as t};

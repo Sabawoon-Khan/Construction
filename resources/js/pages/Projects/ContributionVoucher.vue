@@ -55,7 +55,7 @@ defineOptions({
             <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Amount') }}</div>
                 <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
-                    {{ money(item.amount, item.currency || 'USD') }}
+                    {{ money(item.amount, item.currency) }}
                 </div>
             </div>
         </div>
@@ -69,7 +69,7 @@ defineOptions({
                     { label: t('Project'), value: project.name },
                     {
                         label: t('Amount'),
-                        value: money(item.amount, item.currency || 'USD'),
+                        value: money(item.amount, item.currency),
                     },
                 ]"
             />
@@ -83,7 +83,7 @@ defineOptions({
             :party-label="t('Received from')"
             :party-name="item.partner?.name"
             :amount="item.amount"
-            :currency="item.currency || 'USD'"
+            :currency="item.currency"
             :project-name="project.name"
             :status="item.status"
             :fields="[

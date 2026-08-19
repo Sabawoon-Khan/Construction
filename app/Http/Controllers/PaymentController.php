@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Payment;
+use App\Support\CurrencyAmounts;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
@@ -45,6 +46,11 @@ class PaymentController extends Controller implements HasMiddleware
             'this_month_base' => (float) (clone $query)->where('paid_at', '>=', now()->startOfMonth())->sum('amount_base'),
             'cash' => (float) (clone $query)->where('payment_method', 'cash')->sum('amount'),
             'cash_base' => (float) (clone $query)->where('payment_method', 'cash')->sum('amount_base'),
+            'amount_by_currency' => CurrencyAmounts::sum(clone $receipts),
+            'paid_out_by_currency' => CurrencyAmounts::sum(clone $disbursements),
+            'this_month_by_currency' => CurrencyAmounts::sum(
+                (clone $query)->where('paid_at', '>=', now()->startOfMonth())
+            ),
         ];
 
         return Inertia::render('Payments/Index', [

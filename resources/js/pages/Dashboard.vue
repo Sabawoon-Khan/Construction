@@ -12,6 +12,8 @@ import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { translateStatus } from '@/lib/translateStatus';
+import { moneyByCurrency, resolveCurrency } from '@/lib/utils';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
@@ -45,7 +47,7 @@ const kpis = computed(() =>
 const money = (v: unknown, currency = baseCurrency.value) =>
     new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency,
+        currency: resolveCurrency(currency),
         maximumFractionDigits: 0,
     }).format(Number(v ?? 0));
 
@@ -193,7 +195,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                     <Wallet class="size-4 text-muted-foreground" />
                 </div>
                 <div class="mt-3 text-3xl font-semibold tabular-nums">
-                    {{ money(kpis.period_expenses) }}
+                    {{ moneyByCurrency(kpis.expenses_by_currency, kpis.period_expenses) }}
                 </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
@@ -264,7 +266,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/30 text-left text-muted-foreground">
+                        <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
                                 <th class="px-5 py-3 whitespace-nowrap">{{ t('Project') }}</th>
                                 <th class="px-5 py-3 whitespace-nowrap">{{ t('Progress') }}</th>
@@ -281,8 +283,8 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                             >
                                 <td class="px-5 py-3">
                                     <div class="font-medium">{{ p.name }}</div>
-                                    <div class="text-xs text-muted-foreground capitalize">
-                                        {{ String(p.status).replaceAll('_', ' ') }}
+                                    <div class="text-xs text-muted-foreground">
+                                        {{ translateStatus(p.status, t) }}
                                     </div>
                                 </td>
                                 <td class="px-5 py-3">
@@ -406,7 +408,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                                 {{ formatDate(String(expense.expense_date ?? '')) }}
                             </div>
                         </div>
-                        <div class="font-medium tabular-nums">{{ money(expense.amount_base ?? expense.amount) }}</div>
+                        <div class="font-medium tabular-nums">{{ money(expense.amount, expense.currency) }}</div>
                     </div>
                     <div
                         v-if="!(stats.recent_expenses || []).length"

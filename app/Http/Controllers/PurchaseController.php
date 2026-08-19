@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Services\PurchaseService;
+use App\Support\CurrencyAmounts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -53,6 +54,13 @@ class PurchaseController extends Controller implements HasMiddleware
         $totalAmountBase = (float) (clone $query)->sum('total_amount_base');
         $paid = (float) (clone $query)->sum('paid_amount');
         $paidBase = (float) (clone $query)->sum('paid_amount_base');
+        $totalByCurrency = CurrencyAmounts::sum(clone $query, 'total_amount');
+        $paidByCurrency = CurrencyAmounts::sum(clone $query, 'paid_amount');
+        $remainingByCurrency = [];
+        foreach (array_unique([...array_keys($totalByCurrency), ...array_keys($paidByCurrency)]) as $code) {
+            $remainingByCurrency[$code] = round(($totalByCurrency[$code] ?? 0) - ($paidByCurrency[$code] ?? 0), 2);
+        }
+
         $totals = [
             'count' => (clone $query)->count(),
             'total_amount' => $totalAmount,
@@ -61,6 +69,9 @@ class PurchaseController extends Controller implements HasMiddleware
             'paid_base' => $paidBase,
             'remaining' => max(0, $totalAmount - $paid),
             'remaining_base' => max(0, $totalAmountBase - $paidBase),
+            'total_by_currency' => $totalByCurrency,
+            'paid_by_currency' => $paidByCurrency,
+            'remaining_by_currency' => $remainingByCurrency,
         ];
 
         return Inertia::render('Purchases/Index', [

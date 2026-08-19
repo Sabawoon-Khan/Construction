@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
+import { translateStatus } from '@/lib/translateStatus';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
@@ -71,7 +72,7 @@ const payForm = useForm({
 const statementLines = computed(() =>
     (props.sale.installments ?? []).map((i: any) => ({
         description: `${t('Installment')} #${i.installment_no}`,
-        meta: `${t('Due')} ${formatDate(i.due_date)} · ${t(String(i.status || '').replaceAll('_', ' '))}`,
+        meta: `${t('Due')} ${formatDate(i.due_date)} · ${translateStatus(i.status, t)}`,
         amount: Number(i.amount ?? 0),
     })),
 );
@@ -139,7 +140,7 @@ function submitPayment() {
         <div v-show="tab === 'info'" class="grid gap-4 md:grid-cols-3 print:hidden">
             <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Total due') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(total_price, sale.currency || 'USD') }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(total_price, sale.currency) }}</div>
             </div>
             <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Paid') }}</div>
@@ -158,9 +159,9 @@ function submitPayment() {
                     { label: t('Customer'), value: sale.customer?.name },
                     { label: t('Project'), value: sale.project?.name },
                     { label: t('Unit'), value: sale.unit?.unit_no },
-                    { label: t('Sale price'), value: money(sale.unit?.list_price, sale.currency || 'USD') },
-                    { label: t('Discount'), value: money(sale.discount, sale.currency || 'USD') },
-                    { label: t('Currency'), value: sale.currency || 'USD' },
+                    { label: t('Sale price'), value: money(sale.unit?.list_price, sale.currency) },
+                    { label: t('Discount'), value: money(sale.discount, sale.currency) },
+                    { label: t('Currency'), value: sale.currency },
                     { label: t('Contract date'), value: formatDate(sale.contract_date) },
                     { label: t('Terms'), value: sale.terms, span: true },
                     { label: t('Notes'), value: sale.notes, span: true },
@@ -206,14 +207,14 @@ function submitPayment() {
                 <h3 class="text-sm font-semibold">{{ t('Installments') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">#</th>
                         <th class="px-4 py-3 font-medium">{{ t('Due') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Paid') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('Action') }}</th>
+                        <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -230,7 +231,7 @@ function submitPayment() {
                                 variant="outline"
                                 @click="fillInstallment(i)"
                             >
-                                {{ t('Receive') }} {{ money(installmentRemaining(i), sale.currency || 'USD') }}
+                                {{ t('Receive') }} {{ money(installmentRemaining(i), sale.currency) }}
                             </Button>
                         </td>
                     </tr>
@@ -246,19 +247,19 @@ function submitPayment() {
                 <h3 class="text-sm font-semibold">{{ t('Receipts') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
-                        <th class="px-4 py-3 font-medium text-right">{{ t('Action') }}</th>
+                        <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="p in sale.payments" :key="p.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
                         <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency || 'USD') }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency) }}</td>
                         <td class="px-4 py-3 text-right">
                             <Button as-child size="sm" variant="outline">
                                 <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
@@ -295,20 +296,20 @@ function submitPayment() {
             :party-label="t('Customer')"
             :party-name="sale.customer?.name"
             :amount="remaining_amount"
-            :currency="sale.currency || 'USD'"
+            :currency="sale.currency"
             :project-name="sale.project?.name"
             :description="sale.notes || sale.terms"
             :status="sale.status"
             :fields="[
                 { label: t('Unit'), value: sale.unit?.unit_no },
-                { label: t('Sale price'), value: money(sale.unit?.list_price, sale.currency || 'USD') },
-                { label: t('Discount'), value: money(sale.discount, sale.currency || 'USD') },
+                { label: t('Sale price'), value: money(sale.unit?.list_price, sale.currency) },
+                { label: t('Discount'), value: money(sale.discount, sale.currency) },
             ]"
             :lines="statementLines"
             :totals="[
-                { label: t('Total due'), value: money(total_price, sale.currency || 'USD') },
-                { label: t('Paid to date'), value: money(paid_amount, sale.currency || 'USD') },
-                { label: t('Balance due'), value: money(remaining_amount, sale.currency || 'USD') },
+                { label: t('Total due'), value: money(total_price, sale.currency) },
+                { label: t('Paid to date'), value: money(paid_amount, sale.currency) },
+                { label: t('Balance due'), value: money(remaining_amount, sale.currency) },
             ]"
         />
     </div>

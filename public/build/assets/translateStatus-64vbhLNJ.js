@@ -1,0 +1,1 @@
+function e(e,t){let n=String(e||``).trim();if(!n||n===`—`)return`—`;let r=n.replaceAll(`_`,` `).toLowerCase(),i=r.charAt(0).toUpperCase()+r.slice(1),a=r.replace(/\b\w/g,e=>e.toUpperCase());for(let e of[r,i,a,n]){let n=t(e);if(n!==e)return n}return i}export{e as t};

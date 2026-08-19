@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { resolveCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     filters: { from: string; to: string; project_id?: number | null; preset?: string; currency?: string };
@@ -59,7 +60,7 @@ defineOptions({
 const money = (v: unknown, currency = baseCurrency.value) =>
     new Intl.NumberFormat('en-US', {
         style: 'currency',
-        currency,
+        currency: resolveCurrency(currency),
         maximumFractionDigits: 0,
     }).format(Number(v ?? 0));
 
@@ -291,7 +292,7 @@ function exportUrl(format: string) {
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/30 text-left text-muted-foreground">
+                        <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Category') }}</th>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Count') }}</th>
@@ -322,7 +323,7 @@ function exportUrl(format: string) {
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/30 text-left text-muted-foreground">
+                        <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Shareholder') }}</th>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Project') }}</th>
@@ -371,7 +372,7 @@ function exportUrl(format: string) {
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/30 text-left text-muted-foreground">
+                        <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Date') }}</th>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Buyer') }}</th>
@@ -410,7 +411,7 @@ function exportUrl(format: string) {
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/30 text-left text-muted-foreground">
+                        <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Date') }}</th>
                                 <th class="whitespace-nowrap px-5 py-3">{{ t('Category') }}</th>
@@ -446,7 +447,7 @@ function exportUrl(format: string) {
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="whitespace-nowrap px-5 py-3">{{ t('Date') }}</th>
                             <th class="whitespace-nowrap px-5 py-3">{{ t('Project') }}</th>

@@ -122,7 +122,7 @@ defineOptions({
                 <h3 class="text-sm font-semibold">{{ t('Materials (in stock)') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('Material') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Qty') }}</th>
@@ -134,8 +134,8 @@ defineOptions({
                     <tr v-for="line in purchase.items" :key="line.id" class="border-t">
                         <td class="px-4 py-3">{{ line.material?.name }} {{ line.material?.unit?.unit_name ? `(${line.material.unit.unit_name})` : '' }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ line.quantity }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(line.unit_cost, purchase.currency || 'USD') }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(line.total_cost, purchase.currency || 'USD') }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(line.unit_cost, purchase.currency) }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(line.total_cost, purchase.currency) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -180,7 +180,7 @@ defineOptions({
                 <h3 class="text-sm font-semibold">{{ t('Payments to supplier') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>

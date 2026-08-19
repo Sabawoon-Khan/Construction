@@ -203,7 +203,7 @@ defineOptions({
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
-                        <tr class="border-b text-left text-muted-foreground">
+                        <tr class="border-b text-start text-muted-foreground">
                             <th class="py-2 pr-4">From</th>
                             <th class="py-2 pr-4">To</th>
                             <th class="py-2 pr-4">Rate</th>

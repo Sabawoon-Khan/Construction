@@ -10,14 +10,15 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { money } from '@/lib/utils';
+import { translateStatus } from '@/lib/translateStatus';
+import { money, moneyByCurrency } from '@/lib/utils';
 
 type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
     filters: { search?: string; employee_id?: number | null; month?: number | null; year?: number | null };
-    totals: { count: number; basic_total: number; basic_total_base: number; bonus_total: number; bonus_total_base: number; deduction_total: number; deduction_total_base: number; net_total: number; net_total_base: number };
+    totals: { count: number; basic_total: number; basic_total_base: number; bonus_total: number; bonus_total_base: number; deduction_total: number; deduction_total_base: number; net_total: number; net_total_base: number; basic_by_currency?: Record<string, number>; bonus_by_currency?: Record<string, number>; deduction_by_currency?: Record<string, number>; net_by_currency?: Record<string, number> };
     employees: { id: number; name: string; employee_no: string; basic_salary: number | null; currency?: string }[];
 }>();
 
@@ -95,16 +96,16 @@ function rowActions(item: Item): RowActionItem[] {
 
         <MisStatGrid :columns="5">
             <MisStatCard :label="t('Records')" :value="totals.count" />
-            <MisStatCard :label="t('Basic total')" :value="money(totals.basic_total_base ?? totals.basic_total, baseCurrency)" />
-            <MisStatCard :label="t('Bonus total')" :value="money(totals.bonus_total_base ?? totals.bonus_total, baseCurrency)" tone="success" />
-            <MisStatCard :label="t('Deduction total')" :value="money(totals.deduction_total_base ?? totals.deduction_total, baseCurrency)" tone="warning" />
-            <MisStatCard :label="t('Net total')" :value="money(totals.net_total_base ?? totals.net_total, baseCurrency)" />
+            <MisStatCard :label="t('Basic total')" :value="moneyByCurrency(totals.basic_by_currency, totals.basic_total)" />
+            <MisStatCard :label="t('Bonus total')" :value="moneyByCurrency(totals.bonus_by_currency, totals.bonus_total)" tone="success" />
+            <MisStatCard :label="t('Deduction total')" :value="moneyByCurrency(totals.deduction_by_currency, totals.deduction_total)" tone="warning" />
+            <MisStatCard :label="t('Net total')" :value="moneyByCurrency(totals.net_by_currency, totals.net_total)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Employee') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Month') }}</th>
@@ -114,7 +115,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Deduction') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Net Salary') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -135,7 +136,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ money(item.bonus, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.deduction, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3 tabular-nums font-medium">{{ money(item.net_salary, item.currency || baseCurrency) }}</td>
-                            <td class="px-4 py-3 capitalize">{{ item.status || '—' }}</td>
+                            <td class="px-4 py-3">{{ translateStatus(item.status, t) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />

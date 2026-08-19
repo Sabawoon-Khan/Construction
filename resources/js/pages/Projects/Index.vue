@@ -7,6 +7,7 @@ import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/compon
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import { translateStatus } from '@/lib/translateStatus';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -45,7 +46,7 @@ function clearFilters() {
 const projectStatuses = ['planning', 'under_construction', 'ready_for_sale', 'sold', 'completed', 'on_hold'];
 
 function statusLabel(status: string): string {
-    return status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return translateStatus(status, t);
 }
 
 function rowActions(item: Item): RowActionItem[] {
@@ -100,7 +101,7 @@ function rowActions(item: Item): RowActionItem[] {
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Code') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
@@ -108,7 +109,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Progress') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Units') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>

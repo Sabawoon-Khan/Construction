@@ -4,6 +4,7 @@ import { ArrowLeft, MapPin, Paperclip } from '@lucide/vue';
 import { ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { MisTabs } from '@/components/mis';
+import { translateStatus } from '@/lib/translateStatus';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
@@ -58,13 +59,6 @@ function formatBytes(bytes: number | null | undefined): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function statusLabel(status: string): string {
-    if (!status) {
-        return '';
-    }
-
-    return status.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-}
 </script>
 
 <template>
@@ -80,7 +74,7 @@ function statusLabel(status: string): string {
 
             <div class="mt-4 flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
-                    {{ t(statusLabel(item.status)) }}
+                    {{ translateStatus(item.status, t) }}
                 </Badge>
                 <span v-if="item.location" class="inline-flex items-center gap-1 text-sm text-muted-foreground">
                     <MapPin class="size-4" />

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { cn } from '@/lib/utils';
+import { cn, resolveCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     modelValue: string;
@@ -20,13 +20,12 @@ const currencies = [
     { code: 'USD', label: 'USD' },
 ] as const;
 
-const baseCurrency = computed(() => usePage().props.company?.base_currency ?? 'USD');
+const baseCurrency = computed(() => resolveCurrency(usePage().props.company?.base_currency));
 
 const value = computed({
     get() {
-        const current = (props.modelValue || baseCurrency.value).toUpperCase();
-
-        return current === 'AFN' || current === 'USD' ? current : baseCurrency.value;
+        const current = resolveCurrency(props.modelValue || baseCurrency.value);
+        return current === 'AFN' || current === 'USD' ? current : resolveCurrency(baseCurrency.value);
     },
     set(val: string) {
         emit('update:modelValue', val);

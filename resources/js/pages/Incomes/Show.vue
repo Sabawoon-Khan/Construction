@@ -60,7 +60,7 @@ defineOptions({
             <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Total amount') }}</div>
                 <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
-                    {{ money(item.amount, item.currency || 'USD') }}
+                    {{ money(item.amount, item.currency) }}
                 </div>
             </div>
         </div>
@@ -83,7 +83,7 @@ defineOptions({
             :party-label="t('Received for')"
             :party-name="t('Company-wide')"
             :amount="item.amount"
-            :currency="item.currency || 'USD'"
+            :currency="item.currency"
             :payment-method="item.payment_method"
             :description="item.description"
             :status="item.status"

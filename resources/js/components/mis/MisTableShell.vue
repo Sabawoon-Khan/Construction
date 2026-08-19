@@ -22,7 +22,7 @@ withDefaults(
     >
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/30 text-left text-muted-foreground">
+                <thead class="bg-muted/30 text-start text-muted-foreground">
                     <slot name="head" />
                 </thead>
                 <tbody>

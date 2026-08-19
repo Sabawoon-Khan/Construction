@@ -87,7 +87,7 @@ defineOptions({
                 <h3 class="text-sm font-semibold">{{ t('Recent sales') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
@@ -103,7 +103,7 @@ defineOptions({
                         </td>
                         <td class="px-4 py-3">{{ sale.project?.name || '—' }}</td>
                         <td class="px-4 py-3">{{ sale.unit?.unit_no || '—' }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency || 'USD') }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="sale.status" /></td>
                     </tr>
                     <tr v-if="!item.sales?.length">

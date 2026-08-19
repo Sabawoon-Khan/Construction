@@ -11,12 +11,12 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { money } from '@/lib/utils';
+import { money, moneyByCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; total_amount: number; total_amount_base: number; paid: number; paid_base: number; remaining: number; remaining_base: number };
+    totals: { count: number; total_amount: number; total_amount_base: number; paid: number; paid_base: number; remaining: number; remaining_base: number; total_by_currency?: Record<string, number>; paid_by_currency?: Record<string, number>; remaining_by_currency?: Record<string, number> };
 }>();
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
@@ -75,15 +75,15 @@ function rowActions(item: any): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Bills')" :value="totals.count" />
-            <MisStatCard :label="t('Purchase total')" :value="money(totals.total_amount_base ?? totals.total_amount, baseCurrency)" />
-            <MisStatCard :label="t('Paid')" :value="money(totals.paid_base ?? totals.paid, baseCurrency)" tone="success" />
-            <MisStatCard :label="t('Remaining owed')" :value="money(totals.remaining_base ?? totals.remaining, baseCurrency)" tone="warning" />
+            <MisStatCard :label="t('Purchase total')" :value="moneyByCurrency(totals.total_by_currency, totals.total_amount)" />
+            <MisStatCard :label="t('Paid')" :value="moneyByCurrency(totals.paid_by_currency, totals.paid)" tone="success" />
+            <MisStatCard :label="t('Remaining owed')" :value="moneyByCurrency(totals.remaining_by_currency, totals.remaining)" tone="warning" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Purchase No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
@@ -93,7 +93,7 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Paid') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Remaining') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>

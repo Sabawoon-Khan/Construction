@@ -11,12 +11,12 @@ import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { money } from '@/lib/utils';
+import { money, moneyByCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; amount: number; amount_base: number; this_month: number; this_month_base: number; average: number; average_base: number };
+    totals: { count: number; amount: number; amount_base: number; this_month: number; this_month_base: number; average: number; average_base: number; amount_by_currency?: Record<string, number>; this_month_by_currency?: Record<string, number> };
     categories?: { id: number; name: string; code: string }[];
     units?: { id: number; unit_name: string }[];
 }>();
@@ -82,15 +82,15 @@ function rowActions(item: any): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Entries')" :value="totals.count" />
-            <MisStatCard :label="t('Total spent')" :value="money(totals.amount_base ?? totals.amount, baseCurrency)" tone="danger" />
-            <MisStatCard :label="t('This month')" :value="money(totals.this_month_base ?? totals.this_month, baseCurrency)" />
-            <MisStatCard :label="t('Average')" :value="money(totals.average_base ?? totals.average, baseCurrency)" />
+            <MisStatCard :label="t('Total spent')" :value="moneyByCurrency(totals.amount_by_currency, totals.amount)" tone="danger" />
+            <MisStatCard :label="t('This month')" :value="moneyByCurrency(totals.this_month_by_currency, totals.this_month)" />
+            <MisStatCard :label="t('Average')" :value="moneyByCurrency(totals.amount_by_currency, totals.average)" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
@@ -99,7 +99,7 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Item amount') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Per price') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>

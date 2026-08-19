@@ -53,11 +53,11 @@ defineOptions({
         <div class="grid gap-4 sm:grid-cols-4">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Planned unit cost') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(item.cost_price, item.currency || 'USD') }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(item.cost_price, item.currency) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Sale price') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(item.list_price, item.currency || 'USD') }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(item.list_price, item.currency) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Area') }}</div>
@@ -95,7 +95,7 @@ defineOptions({
                 <h3 class="text-sm font-semibold">{{ t('Sales history') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Customer') }}</th>
@@ -109,7 +109,7 @@ defineOptions({
                             <Link :href="`/sales/${sale.id}`" class="font-medium text-primary hover:underline">{{ sale.sale_no }}</Link>
                         </td>
                         <td class="px-4 py-3">{{ sale.customer?.name || '—' }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency || 'USD') }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="sale.status" /></td>
                     </tr>
                     <tr v-if="!item.sales?.length">

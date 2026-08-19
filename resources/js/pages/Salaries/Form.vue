@@ -32,7 +32,7 @@ const form = useForm({
     currency: props.item?.currency ?? '',
 });
 
-const currency = computed(() => form.currency || 'USD');
+const currency = computed(() => form.currency);
 
 const netSalary = computed(() => {
     const basic = Number(form.basic_salary) || 0;
@@ -52,7 +52,7 @@ watch(() => form.employee_id, (id: string) => {
     }
 
     if (!form.currency) {
-        form.currency = employee.currency || 'USD';
+        form.currency = employee.currency;
     }
 }, { immediate: true });
 

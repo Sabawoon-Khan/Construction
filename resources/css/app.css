@@ -116,8 +116,42 @@
         text-align: end;
     }
 
+    html[dir='rtl'] .justify-end {
+        justify-content: flex-end;
+    }
+
     html[dir='rtl'] table th {
         letter-spacing: normal;
+    }
+
+    /*
+     * RTL + overflow-x:auto is misaligned in Blink/WebKit: headers and
+     * cells drift. Keep the scrollport LTR and the table RTL.
+     */
+    html[dir='rtl'] .overflow-x-auto:has(> table) {
+        direction: ltr;
+    }
+
+    html[dir='rtl'] .overflow-x-auto:has(> table) > table {
+        direction: rtl;
+        width: 100%;
+    }
+
+    html[dir='rtl'] table {
+        text-align: start;
+    }
+
+    html[dir='rtl'] table th,
+    html[dir='rtl'] table td {
+        unicode-bidi: isolate;
+        text-align: start;
+        vertical-align: middle;
+    }
+
+    html[dir='rtl'] table th.text-right,
+    html[dir='rtl'] table td.text-right,
+    html[dir='rtl'] table .text-right {
+        text-align: end;
     }
 }
 

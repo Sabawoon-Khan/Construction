@@ -1,14 +1,22 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
 import { Pencil, Plus, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
-import { MisSearchInput } from '@/components/mis';
+import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -16,12 +24,15 @@ import type { RowActionItem } from '@/lib/row-actions';
 const props = defineProps<{
     items: { id: number; unit_name: string }[];
     filters?: { search?: string };
+    totals?: { count: number };
 }>();
 
 const { t } = useTranslations();
 const { can } = useMisPage();
-const editingId = ref<number | null>(null);
 const search = ref(props.filters?.search ?? '');
+const dialogOpen = ref(false);
+const editing = ref<{ id: number; unit_name: string } | null>(null);
+const isEdit = computed(() => !!editing.value);
 
 defineOptions({
     layout: {
@@ -41,14 +52,22 @@ function clearFilters() {
     applySearch();
 }
 
+function openCreate() {
+    editing.value = null;
+    dialogOpen.value = true;
+}
+
+function openEdit(item: { id: number; unit_name: string }) {
+    editing.value = item;
+    dialogOpen.value = true;
+}
+
 function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
     return [
         {
             label: t('Edit'),
             icon: Pencil,
-            onClick: () => {
-                editingId.value = item.id;
-            },
+            onClick: () => openEdit(item),
             hidden: !can('expenses.edit'),
         },
         { separator: true, isLabel: true, label: t('Danger') },
@@ -73,55 +92,37 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
     <Head :title="t('Expense units')" />
 
     <div class="flex h-full flex-1 flex-col gap-4">
-        <div
-            class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/80 bg-card p-4 shadow-soft"
-        >
-            <form class="flex min-w-0 flex-1 flex-wrap items-center gap-2" @submit.prevent="applySearch">
-                <MisSearchInput
-                    v-model="search"
-                    class="min-w-[220px] max-w-sm flex-1"
-                    :placeholder="t('Search...')"
-                    @submit="applySearch"
-                    @clear="clearFilters"
-                />
+        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="applySearch" @clear="clearFilters">
+            <MisSearchInput
+                v-model="search"
+                class="min-w-[220px] flex-1"
+                :placeholder="t('Search...')"
+            />
+            <template #actions>
                 <Button type="submit" size="sm">{{ t('Apply') }}</Button>
                 <Button type="button" size="sm" variant="outline" @click="clearFilters">
                     {{ t('All') }}
                 </Button>
-            </form>
-
-            <Can permission="expenses.create">
-                <Form
-                    action="/expense-units"
-                    method="post"
-                    class="flex items-center gap-2"
-                    v-slot="{ errors, processing }"
-                >
-                    <div class="grid gap-1">
-                        <Input
-                            id="unit_name"
-                            name="unit_name"
-                            required
-                            class="h-9 w-44 sm:w-52"
-                            :placeholder="t('Unit name')"
-                        />
-                        <InputError :message="errors.unit_name" />
-                    </div>
-                    <Button type="submit" size="sm" class="shrink-0" :disabled="processing">
+                <Can permission="expenses.create">
+                    <Button type="button" size="sm" @click="openCreate">
                         <Plus class="size-4" />
-                        {{ processing ? t('Saving…') : t('Add') }}
+                        {{ t('Add') }}
                     </Button>
-                </Form>
-            </Can>
-        </div>
+                </Can>
+            </template>
+        </MisFilterBar>
+
+        <MisStatGrid :columns="1">
+            <MisStatCard :label="t('Units')" :value="totals?.count ?? items.length" />
+        </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Unit name') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -130,23 +131,7 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
-                            <td class="px-4 py-3">
-                                <Form
-                                    v-if="editingId === item.id"
-                                    :action="`/expense-units/${item.id}`"
-                                    method="put"
-                                    class="flex max-w-md items-center gap-2"
-                                    v-slot="{ errors, processing }"
-                                >
-                                    <Input name="unit_name" required :default-value="item.unit_name" />
-                                    <Button type="submit" size="sm" :disabled="processing">{{ t('Save') }}</Button>
-                                    <Button type="button" size="sm" variant="ghost" @click="editingId = null">
-                                        {{ t('Cancel') }}
-                                    </Button>
-                                    <InputError :message="errors.unit_name" />
-                                </Form>
-                                <span v-else class="font-medium">{{ item.unit_name }}</span>
-                            </td>
+                            <td class="px-4 py-3 font-medium">{{ item.unit_name }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -159,4 +144,38 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
             </div>
         </div>
     </div>
+
+    <Dialog v-model:open="dialogOpen">
+        <DialogContent class="sm:max-w-md">
+            <Form
+                :action="isEdit ? `/expense-units/${editing!.id}` : '/expense-units'"
+                :method="isEdit ? 'put' : 'post'"
+                class="grid gap-4"
+                :key="editing?.id ?? 'create'"
+                v-slot="{ errors, processing }"
+            >
+                <DialogHeader>
+                    <DialogTitle>{{ isEdit ? t('Edit') : t('Add') }} {{ t('Expense units') }}</DialogTitle>
+                </DialogHeader>
+                <div class="grid gap-2">
+                    <Label for="unit_name">{{ t('Unit name') }}</Label>
+                    <Input
+                        id="unit_name"
+                        name="unit_name"
+                        required
+                        :default-value="editing?.unit_name ?? ''"
+                    />
+                    <InputError :message="errors.unit_name" />
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="outline" @click="dialogOpen = false">
+                        {{ t('Cancel') }}
+                    </Button>
+                    <Button type="submit" :disabled="processing">
+                        {{ processing ? t('Saving…') : t('Save') }}
+                    </Button>
+                </DialogFooter>
+            </Form>
+        </DialogContent>
+    </Dialog>
 </template>

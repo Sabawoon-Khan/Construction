@@ -341,7 +341,7 @@ defineOptions({
                 <h3 class="text-sm font-semibold">{{ t('Recent sales') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
                         <th class="px-4 py-3 font-medium">
@@ -374,7 +374,7 @@ defineOptions({
                                         Number(sale.unit?.list_price ?? 0) -
                                             Number(sale.discount ?? 0),
                                     ),
-                                    sale.currency || 'USD',
+                                    sale.currency,
                                 )
                             }}
                         </td>
@@ -460,7 +460,7 @@ defineOptions({
 
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">
                                 {{ t('Name') }}
@@ -681,7 +681,7 @@ defineOptions({
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
                         <thead
-                            class="bg-muted/40 text-left text-muted-foreground"
+                            class="bg-muted/40 text-start text-muted-foreground"
                         >
                             <tr>
                                 <th class="px-4 py-3 font-medium">
@@ -693,7 +693,7 @@ defineOptions({
                                 <th class="px-4 py-3 font-medium">
                                     {{ t('Amount') }}
                                 </th>
-                                <th class="px-4 py-3 text-right font-medium">
+                                <th class="px-4 py-3 text-end font-medium">
                                     {{ t('Actions') }}
                                 </th>
                             </tr>
@@ -774,7 +774,7 @@ defineOptions({
 
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">
                                 {{ t('Date') }}
@@ -788,7 +788,7 @@ defineOptions({
                             <th class="px-4 py-3 font-medium">
                                 {{ t('Amount') }}
                             </th>
-                            <th class="px-4 py-3 text-right font-medium">
+                            <th class="px-4 py-3 text-end font-medium">
                                 {{ t('Actions') }}
                             </th>
                         </tr>
@@ -908,7 +908,7 @@ defineOptions({
             </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-left text-muted-foreground">
+                    <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">
                                 {{ t('Purchase') }}
@@ -928,7 +928,7 @@ defineOptions({
                             <th class="px-4 py-3 font-medium">
                                 {{ t('Status') }}
                             </th>
-                            <th class="px-4 py-3 font-medium text-right">
+                            <th class="px-4 py-3 font-medium text-end">
                                 {{ t('Pay') }}
                             </th>
                         </tr>
@@ -1092,7 +1092,7 @@ defineOptions({
                     </div>
                     <table class="min-w-full text-sm">
                         <thead
-                            class="bg-muted/40 text-left text-muted-foreground"
+                            class="bg-muted/40 text-start text-muted-foreground"
                         >
                             <tr>
                                 <th class="px-4 py-3 font-medium">
@@ -1152,7 +1152,7 @@ defineOptions({
                     </div>
                     <table class="min-w-full text-sm">
                         <thead
-                            class="bg-muted/40 text-left text-muted-foreground"
+                            class="bg-muted/40 text-start text-muted-foreground"
                         >
                             <tr>
                                 <th class="px-4 py-3 font-medium">

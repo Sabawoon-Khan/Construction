@@ -75,7 +75,7 @@ defineOptions({
                 <h3 class="text-sm font-semibold">{{ t('Project shares') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Share') }}</th>

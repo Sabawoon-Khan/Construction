@@ -7,6 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { translateStatus } from '@/lib/translateStatus';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 
@@ -35,13 +36,7 @@ const statusLabel = (status: string | null): string => {
         return t('Initial');
     }
 
-    const labels: Record<string, string> = {
-        active: t('Active'),
-        inactive: t('Inactive'),
-        disabled: t('Disabled'),
-    };
-
-    return labels[status] ?? status;
+    return translateStatus(status, t);
 };
 
 const statusVariant = (

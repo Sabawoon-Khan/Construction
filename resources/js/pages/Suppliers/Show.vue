@@ -76,7 +76,7 @@ defineOptions({
                 <h3 class="text-sm font-semibold">{{ t('Recent purchases') }}</h3>
             </div>
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-muted-foreground">
+                <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3 font-medium">{{ t('Purchase') }}</th>
                         <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
@@ -91,8 +91,8 @@ defineOptions({
                             <Link :href="`/purchases/${purchase.id}`" class="font-medium text-primary hover:underline">{{ purchase.purchase_no }}</Link>
                         </td>
                         <td class="px-4 py-3">{{ purchase.project?.name || '—' }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(purchase.total_amount, purchase.currency || 'USD') }}</td>
-                        <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(purchase.remaining_amount, purchase.currency || 'USD') }}</td>
+                        <td class="px-4 py-3 tabular-nums">{{ money(purchase.total_amount, purchase.currency) }}</td>
+                        <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(purchase.remaining_amount, purchase.currency) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="purchase.status" /></td>
                     </tr>
                     <tr v-if="!item.purchases?.length">

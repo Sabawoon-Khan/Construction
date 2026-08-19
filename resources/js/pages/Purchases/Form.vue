@@ -156,7 +156,7 @@ defineOptions({
                 <InputError :message="form.errors.items" />
                 <div class="overflow-x-auto rounded-xl border border-border/80">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/40 text-left text-muted-foreground">
+                        <thead class="bg-muted/40 text-start text-muted-foreground">
                             <tr>
                                 <th class="px-3 py-2 font-medium">{{ t('Material') }}</th>
                                 <th class="px-3 py-2 font-medium">{{ t('Qty') }}</th>

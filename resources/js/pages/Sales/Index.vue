@@ -99,7 +99,7 @@ function rowActions(item: any): RowActionItem[] {
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-left text-muted-foreground">
+                    <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Sale No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Customer') }}</th>
@@ -110,7 +110,7 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Total') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Remaining') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>

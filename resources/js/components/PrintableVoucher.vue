@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { translateStatus } from '@/lib/translateStatus';
 import { useCalendar } from '@/composables/useCalendar';
+import { useTranslations } from '@/composables/useTranslations';
 import { amountInWords, type VoucherField, type VoucherKind, type VoucherLine } from '@/lib/voucher';
 import { money } from '@/lib/utils';
 
@@ -26,7 +28,7 @@ const props = withDefaults(
         totals?: VoucherField[];
     }>(),
     {
-        currency: 'USD',
+        currency: undefined,
         fields: () => [],
         lines: () => [],
         totals: () => [],
@@ -34,6 +36,7 @@ const props = withDefaults(
 );
 
 const page = usePage();
+const { t } = useTranslations();
 const calendar = useCalendar();
 const company = computed(() => page.props.company);
 const companyName = computed(
@@ -105,7 +108,7 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                     </div>
                     <div v-if="status" class="mt-2 flex justify-between gap-6">
                         <span class="text-slate-500">Status</span>
-                        <span class="font-medium capitalize">{{ String(status).replaceAll('_', ' ') }}</span>
+                        <span class="font-medium">{{ translateStatus(status, t) }}</span>
                     </div>
                 </div>
             </div>

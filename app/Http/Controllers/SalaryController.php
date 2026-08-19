@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Salary;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
+use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,6 +58,10 @@ class SalaryController extends Controller implements HasMiddleware
             'deduction_total_base' => (float) (clone $query)->sum('deduction_base'),
             'net_total' => (float) (clone $query)->sum('net_salary'),
             'net_total_base' => (float) (clone $query)->sum('net_salary_base'),
+            'basic_by_currency' => CurrencyAmounts::sum(clone $query, 'basic_salary'),
+            'bonus_by_currency' => CurrencyAmounts::sum(clone $query, 'bonus'),
+            'deduction_by_currency' => CurrencyAmounts::sum(clone $query, 'deduction'),
+            'net_by_currency' => CurrencyAmounts::sum(clone $query, 'net_salary'),
         ];
 
         return Inertia::render('Salaries/Index', [

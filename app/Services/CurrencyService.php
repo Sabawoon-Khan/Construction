@@ -9,6 +9,17 @@ use Illuminate\Support\Facades\Log;
 
 class CurrencyService
 {
+    public static function normalize(?string $code, ?string $fallback = null): string
+    {
+        $raw = strtoupper(trim((string) ($code ?: $fallback ?: 'USD')));
+
+        if ($raw === 'AFG') {
+            $raw = 'AFN';
+        }
+
+        return preg_match('/^[A-Z]{3}$/', $raw) === 1 ? $raw : 'USD';
+    }
+
     /**
      * Convert an amount from one currency to another.
      *
@@ -16,8 +27,8 @@ class CurrencyService
      */
     public static function convert(float $amount, string $fromCurrency, string $toCurrency, ?CarbonInterface $date = null): ?float
     {
-        $fromCurrency = strtoupper($fromCurrency);
-        $toCurrency = strtoupper($toCurrency);
+        $fromCurrency = self::normalize($fromCurrency);
+        $toCurrency = self::normalize($toCurrency);
 
         if ($fromCurrency === $toCurrency) {
             return round($amount, 2);
@@ -48,7 +59,7 @@ class CurrencyService
 
     public static function baseCurrency(): string
     {
-        return strtoupper(CurrentCompany::get()?->base_currency ?? 'USD');
+        return self::normalize(CurrentCompany::get()?->base_currency, 'USD');
     }
 
     /**
