@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         applyLabel?: string;
         clearLabel?: string;
@@ -12,13 +14,16 @@ withDefaults(
         class?: string;
     }>(),
     {
-        applyLabel: 'Apply',
-        clearLabel: 'Clear',
         showActions: true,
         variant: 'card',
         class: undefined,
     },
 );
+
+const { t } = useTranslations();
+
+const resolvedApplyLabel = computed(() => props.applyLabel ?? t('Apply'));
+const resolvedClearLabel = computed(() => props.clearLabel ?? t('Clear'));
 
 const emit = defineEmits<{
     apply: [];
@@ -46,7 +51,7 @@ const emit = defineEmits<{
             >
                 <slot name="actions">
                     <Button type="submit" size="sm">
-                        {{ applyLabel }}
+                        {{ resolvedApplyLabel }}
                     </Button>
                     <Button
                         type="button"
@@ -54,7 +59,7 @@ const emit = defineEmits<{
                         size="sm"
                         @click="emit('clear')"
                     >
-                        {{ clearLabel }}
+                        {{ resolvedClearLabel }}
                     </Button>
                 </slot>
             </div>

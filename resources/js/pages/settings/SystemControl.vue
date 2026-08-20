@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -141,13 +140,6 @@ defineOptions({
                     <Settings2 class="size-5" />
                     {{ t('System Control') }}
                 </CardTitle>
-                <CardDescription class="mt-1">
-                    {{
-                        t(
-                            'Turn core product features on or off without editing .env files.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="space-y-8 pt-6">
                 <form class="space-y-8" @submit.prevent="submit">
@@ -207,13 +199,6 @@ defineOptions({
         <Card>
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Related modules') }}</CardTitle>
-                <CardDescription class="mt-1">
-                    {{
-                        t(
-                            'These modules have their own settings pages for credentials and options.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="space-y-3 pt-6">
                 <div

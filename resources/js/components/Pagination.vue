@@ -41,6 +41,20 @@ const total = computed(() => props.paginator.meta?.total ?? props.paginator.tota
 const lastPage = computed(() => props.paginator.meta?.last_page ?? props.paginator.last_page ?? 0);
 const visibleLinks = computed(() => links.value.filter((link) => link.label));
 const show = computed(() => lastPage.value > 1 || links.value.length > 3);
+
+function translateLinkLabel(label: string): string {
+    const plain = label.replace(/&laquo;|&raquo;|<[^>]+>/g, '').trim().toLowerCase();
+
+    if (plain === 'previous') {
+        return t('Previous');
+    }
+
+    if (plain === 'next') {
+        return t('Next');
+    }
+
+    return label;
+}
 </script>
 
 <template>
@@ -68,7 +82,9 @@ const show = computed(() => lastPage.value > 1 || links.value.length > 3);
                     :variant="link.active ? 'default' : 'outline'"
                     class="min-w-9 px-2.5"
                 >
-                    <Link :href="link.url" preserve-scroll v-html="link.label" />
+                    <Link :href="link.url" preserve-scroll>{{
+                        translateLinkLabel(link.label)
+                    }}</Link>
                 </Button>
                 <span
                     v-else
@@ -78,8 +94,8 @@ const show = computed(() => lastPage.value > 1 || links.value.length > 3);
                             link.active && 'border-primary bg-primary text-primary-foreground',
                         )
                     "
-                    v-html="link.label"
-                />
+                    >{{ translateLinkLabel(link.label) }}</span
+                >
             </template>
         </div>
     </div>

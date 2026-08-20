@@ -4,9 +4,9 @@ import { ArrowLeft, Pencil, Printer, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
-import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
@@ -20,15 +20,6 @@ const formatDate = (value: string | null | undefined) => calendar.format(value) 
 
 const backHref = computed(() =>
     props.item.project_id ? `/projects/${props.item.project_id}` : '/expenses',
-);
-const existingReceipts = computed<ExistingUploadFile[]>(() =>
-    (props.item.attachments ?? []).map((file: any) => ({
-        id: file.id,
-        name: file.original_filename || file.title || t('Receipt'),
-        size: file.file_size,
-        mime: file.mime_type,
-        url: file.download_url,
-    })),
 );
 const canEditExpense = computed(() => !props.item.purchase_id && !props.item.project_id);
 
@@ -104,19 +95,14 @@ defineOptions({
             </DetailGrid>
         </div>
 
-        <div class="space-y-3 rounded-xl border bg-card p-5 shadow-sm print:hidden sm:max-w-xl">
-            <h3 class="text-sm font-semibold">{{ t('Receipt files') }}</h3>
-            <FileUploadField
-                mode="chunked"
-                destination="attachment"
-                attachable="expenses"
-                :attachable-id="item.id"
-                multiple
-                :max-files="10"
-                accept="application/pdf,image/jpeg,image/png,image/webp"
-                :existing="existingReceipts"
-            />
-        </div>
+        <RecordAttachments
+            boxed
+            attachable="expenses"
+            :attachable-id="item.id"
+            :attachments="item.attachments"
+            :label="t('Receipt files')"
+            accept="application/pdf,image/jpeg,image/png,image/webp"
+        />
 
         <PrintableVoucher
             kind="payment"

@@ -116,9 +116,9 @@ function formatBytes(bytes: number | null | undefined): string {
                 <a
                     v-for="file in item.attachments"
                     :key="file.id"
-                    :href="file.download_url"
+                    :href="file.download_url || `/attachments/${file.id}/download`"
                     target="_blank"
-                    rel="noopener"
+                    rel="noopener noreferrer"
                     class="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 hover:bg-muted/50"
                 >
                     <span class="inline-flex min-w-0 items-center gap-2">

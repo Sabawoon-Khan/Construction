@@ -63,6 +63,8 @@ const props = withDefaults(
         computeFileChecksum?: boolean;
         /** Hide the built-in choose button (use triggerPicker from parent). */
         hidePicker?: boolean;
+        /** Show existing files as links only (no upload or delete). */
+        readonly?: boolean;
         /** Offline mode */
         clientUuid?: string;
         resource?: string;
@@ -93,6 +95,7 @@ const props = withDefaults(
         chunkBytes: undefined,
         computeFileChecksum: false,
         hidePicker: false,
+        readonly: false,
         clientUuid: undefined,
         resource: undefined,
         class: undefined,
@@ -179,7 +182,20 @@ const effectiveAccept = computed(() => {
 
 const displayError = computed(() => props.error || localError.value);
 
-const canPick = computed(() => !props.disabled && !isUploading.value);
+const canPick = computed(() => !props.disabled && !props.readonly && !isUploading.value);
+const pickerHidden = computed(() => props.hidePicker || props.readonly);
+
+function fileHref(file: ExistingUploadFile): string | null {
+    if (file.url) {
+        return file.url;
+    }
+
+    if (file.id != null) {
+        return `/attachments/${file.id}/download`;
+    }
+
+    return null;
+}
 
 const pickerLabel = computed(() => {
     if (isUploading.value) {
@@ -611,11 +627,12 @@ defineExpose({
                     </div>
                     <div class="min-w-0 flex-1">
                         <a
-                            v-if="file.url"
-                            :href="file.url"
-                            class="block truncate text-sm font-medium text-foreground underline-offset-2 hover:underline"
+                            v-if="fileHref(file)"
+                            :href="fileHref(file)!"
+                            class="block truncate text-sm font-medium text-primary underline-offset-2 hover:underline"
                             target="_blank"
-                            rel="noopener"
+                            rel="noopener noreferrer"
+                            @click.stop
                         >
                             {{ file.name }}
                         </a>
@@ -625,6 +642,7 @@ defineExpose({
                         </p>
                     </div>
                     <Button
+                        v-if="!readonly"
                         type="button"
                         variant="ghost"
                         size="icon"
@@ -675,8 +693,15 @@ defineExpose({
                 </div>
             </div>
 
+            <p
+                v-if="readonly && existingFiles.length === 0 && deferredFiles.length === 0 && offlineFiles.length === 0"
+                class="text-sm text-muted-foreground"
+            >
+                {{ t('No attachments.') }}
+            </p>
+
             <div
-                v-if="!hidePicker"
+                v-if="!pickerHidden"
                 role="button"
                 tabindex="0"
                 class="group relative flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

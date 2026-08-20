@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Support\CurrencyAmounts;
@@ -18,6 +19,7 @@ class SupplierController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'suppliers';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -66,8 +68,10 @@ class SupplierController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
-        Supplier::query()->create($data);
+        $supplier = Supplier::query()->create($data);
+        $this->storeRecordAttachments($request, $supplier);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Supplier created.']);
 
@@ -77,6 +81,7 @@ class SupplierController extends Controller implements HasMiddleware
     public function show(Supplier $supplier): Response
     {
         $supplier->load([
+            'attachments',
             'purchases' => fn ($q) => $q->with('project:id,name')->latest('purchase_date')->limit(20),
         ]);
 
@@ -100,6 +105,8 @@ class SupplierController extends Controller implements HasMiddleware
 
     public function edit(Supplier $supplier): Response
     {
+        $supplier->load('attachments');
+
         return Inertia::render('Suppliers/Form', [
             'item' => $supplier,
         ]);
@@ -107,7 +114,11 @@ class SupplierController extends Controller implements HasMiddleware
 
     public function update(Request $request, Supplier $supplier): RedirectResponse
     {
-        $supplier->update($this->validated($request, $supplier->id));
+        $data = $this->validated($request, $supplier->id);
+        unset($data['documents']);
+
+        $supplier->update($data);
+        $this->storeRecordAttachments($request, $supplier);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Supplier updated.']);
 
@@ -140,6 +151,7 @@ class SupplierController extends Controller implements HasMiddleware
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
 
         if (blank($data['supplier_no'] ?? null)) {

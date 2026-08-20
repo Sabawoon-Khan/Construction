@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -96,9 +95,6 @@ const hasSearch = computed(
                     <Languages class="size-4" />
                     {{ t('Translations') }}
                 </CardTitle>
-                <CardDescription class="text-xs">
-                    {{ t('Edit application translations. Keys cannot be changed.') }}
-                </CardDescription>
             </div>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

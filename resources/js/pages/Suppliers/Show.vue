@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Pencil } from '@lucide/vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,13 @@ defineOptions({
                 { label: t('Address'), value: item.address, span: true },
                 { label: t('Notes'), value: item.notes, span: true },
             ]"
+        />
+
+        <RecordAttachments
+            attachable="suppliers"
+            :attachable-id="item.id"
+            :attachments="item.attachments"
+            boxed
         />
 
         <div class="overflow-hidden rounded-xl border bg-card shadow-sm">

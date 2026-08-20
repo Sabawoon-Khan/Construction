@@ -63,6 +63,7 @@ class PaymentController extends Controller implements HasMiddleware
     public function show(Payment $payment): Response
     {
         $payment->load([
+            'attachments',
             'customer:id,name',
             'supplier:id,name',
             'project:id,name',

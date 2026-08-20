@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ class AttendanceController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'attendance';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -89,14 +91,18 @@ class AttendanceController extends Controller implements HasMiddleware
     public function edit(Attendance $attendance): Response
     {
         return Inertia::render('Attendance/Form', [
-            'item' => $attendance,
+            'item' => $attendance->load('attachments'),
             'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no']),
         ]);
     }
 
     public function update(Request $request, Attendance $attendance): RedirectResponse
     {
-        $attendance->update($this->validated($request, $attendance->id));
+        $data = $this->validated($request, $attendance->id);
+        unset($data['documents']);
+
+        $attendance->update($data);
+        $this->storeRecordAttachments($request, $attendance);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Attendance updated.']);
 
@@ -122,6 +128,7 @@ class AttendanceController extends Controller implements HasMiddleware
             'check_out' => 'nullable|date_format:H:i|after_or_equal:check_in',
             'status' => 'required|string|in:present,absent,leave,half_day',
             'notes' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
     }
 

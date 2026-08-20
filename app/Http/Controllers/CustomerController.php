@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Sale;
 use App\Support\CurrencyAmounts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,7 +19,7 @@ class CustomerController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'customers';
 
     use AuthorizesResourcePermissions;
-
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -72,9 +73,12 @@ class CustomerController extends Controller implements HasMiddleware
             'national_id' => 'nullable|string|max:100',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
+        unset($data['documents']);
 
-        Customer::create(array_merge([], $data));
+        $customer = Customer::create($data);
+        $this->storeRecordAttachments($request, $customer);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Customers created.']);
 
@@ -84,6 +88,7 @@ class CustomerController extends Controller implements HasMiddleware
     public function show(Customer $customer): Response
     {
         $customer->load([
+            'attachments',
             'sales:id,customer_id,sale_no,project_id,unit_id,status,contract_date,discount,currency',
             'sales.project:id,name',
             'sales.unit:id,unit_no,list_price,currency',
@@ -110,6 +115,7 @@ class CustomerController extends Controller implements HasMiddleware
 
     public function edit(Request $request, Customer $customer): Response
     {
+        $customer->load('attachments');
 
         return Inertia::render('Customers/Form', [
             'item' => $customer,
@@ -128,9 +134,12 @@ class CustomerController extends Controller implements HasMiddleware
             'national_id' => 'nullable|string|max:100',
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
+        unset($data['documents']);
 
         $customer->update($data);
+        $this->storeRecordAttachments($request, $customer);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Customers updated.']);
 

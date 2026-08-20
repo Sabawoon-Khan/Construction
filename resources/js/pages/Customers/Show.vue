@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Banknote, Info, Pencil } from '@lucide/vue';
+import { ArrowLeft, Banknote, Info, Paperclip, Pencil } from '@lucide/vue';
 import { ref } from 'vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import { MisTabs } from '@/components/mis';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
@@ -16,6 +17,7 @@ const { t } = useTranslations();
 const tabs = [
     { id: 'info', label: t('Customer info'), icon: Info },
     { id: 'sales', label: t('Sales'), icon: Banknote },
+    { id: 'attachments', label: t('Attachments'), icon: Paperclip },
 ];
 
 const props = defineProps<{
@@ -117,6 +119,15 @@ defineOptions({
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div v-show="tab === 'attachments'">
+            <RecordAttachments
+                boxed
+                attachable="customers"
+                :attachable-id="item.id"
+                :attachments="item.attachments"
+            />
         </div>
     </div>
 </template>

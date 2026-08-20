@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -242,14 +243,17 @@ function removeExpense() {
                     </div>
                 </section>
 
-                <section v-if="isCreate" class="grid gap-3">
+                <section class="grid gap-3">
                     <h4 class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                         {{ t('Attachment') }}
                     </h4>
-                    <div class="grid gap-2">
-                        <Label for="documents">{{ t('Receipt file') }}</Label>
-                        <input id="documents" type="file" name="documents[]" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" class="text-sm" />
-                    </div>
+                    <RecordAttachments
+                        attachable="expenses"
+                        :attachable-id="item?.id"
+                        :attachments="item?.attachments"
+                        :label="t('Receipt file')"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    />
                 </section>
 
                 <DialogFooter class="gap-2 sm:justify-between">
@@ -296,6 +300,16 @@ function removeExpense() {
                     <div class="sm:col-span-2">
                         <dt class="text-muted-foreground">{{ t('Description') }}</dt>
                         <dd class="font-medium whitespace-pre-wrap">{{ item.description || '—' }}</dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <RecordAttachments
+                            attachable="expenses"
+                            :attachable-id="item.id"
+                            :attachments="item.attachments"
+                            :label="t('Receipt file')"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            readonly
+                        />
                     </div>
                 </dl>
                 <DialogFooter class="gap-2 sm:justify-between">

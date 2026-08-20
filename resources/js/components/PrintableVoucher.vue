@@ -40,7 +40,7 @@ const { t } = useTranslations();
 const calendar = useCalendar();
 const company = computed(() => page.props.company);
 const companyName = computed(
-    () => company.value?.legal_name || company.value?.name || page.props.name || 'Company',
+    () => company.value?.legal_name || company.value?.name || page.props.name || t('Company'),
 );
 const printedAt = computed(() =>
     calendar.formatDateTime(new Date()) ||
@@ -55,9 +55,9 @@ const printedAt = computed(() =>
 const displayDate = computed(() => calendar.format(props.date) || '—');
 
 const kindLabel = computed(() => {
-    if (props.kind === 'receipt') return 'Receipt Voucher';
-    if (props.kind === 'payment') return 'Payment Voucher';
-    return 'Account Statement';
+    if (props.kind === 'receipt') return t('Receipt Voucher');
+    if (props.kind === 'payment') return t('Payment Voucher');
+    return t('Account Statement');
 });
 
 const accent = computed(() => {
@@ -89,25 +89,25 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                     <h1 class="text-2xl font-semibold tracking-tight">{{ companyName }}</h1>
                     <p v-if="company?.address" class="max-w-md text-sm text-slate-600">{{ company.address }}</p>
                     <p class="text-sm text-slate-600">
-                        <span v-if="company?.phone">Tel: {{ company.phone }}</span>
+                        <span v-if="company?.phone">{{ t('Tel') }}: {{ company.phone }}</span>
                         <span v-if="company?.phone && company?.email"> · </span>
                         <span v-if="company?.email">{{ company.email }}</span>
                     </p>
                     <p v-if="company?.registration_no" class="text-xs text-slate-500">
-                        Reg. No: {{ company.registration_no }}
+                        {{ t('Reg. No') }}: {{ company.registration_no }}
                     </p>
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm sm:min-w-[200px] print:border-black print:bg-white">
                     <div class="flex justify-between gap-6">
-                        <span class="text-slate-500">Voucher No</span>
+                        <span class="text-slate-500">{{ t('Voucher No') }}</span>
                         <span class="font-semibold">{{ documentNo }}</span>
                     </div>
                     <div class="mt-2 flex justify-between gap-6">
-                        <span class="text-slate-500">Date</span>
+                        <span class="text-slate-500">{{ t('Date') }}</span>
                         <span class="font-medium">{{ displayDate }}</span>
                     </div>
                     <div v-if="status" class="mt-2 flex justify-between gap-6">
-                        <span class="text-slate-500">Status</span>
+                        <span class="text-slate-500">{{ t('Status') }}</span>
                         <span class="font-medium">{{ translateStatus(status, t) }}</span>
                     </div>
                 </div>
@@ -131,7 +131,7 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                 </div>
                 <div class="rounded-lg border border-slate-200 p-4 print:border-black print:p-3">
                     <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">
-                        {{ kind === 'statement' ? 'Balance due' : 'Amount' }}
+                        {{ kind === 'statement' ? t('Balance due') : t('Amount') }}
                     </p>
                     <p class="mt-1 text-2xl font-semibold tabular-nums" :class="amountClass">
                         {{ money(amount, currency) }}
@@ -141,19 +141,19 @@ const words = computed(() => amountInWords(props.amount, props.currency));
 
             <dl class="grid gap-x-6 gap-y-3 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-2 print:border-black print:p-3">
                 <div v-if="projectName">
-                    <dt class="text-xs text-slate-500 uppercase">Project</dt>
+                    <dt class="text-xs text-slate-500 uppercase">{{ t('Project') }}</dt>
                     <dd class="mt-0.5 font-medium">{{ projectName }}</dd>
                 </div>
                 <div v-if="accountName">
-                    <dt class="text-xs text-slate-500 uppercase">Account</dt>
+                    <dt class="text-xs text-slate-500 uppercase">{{ t('Account') }}</dt>
                     <dd class="mt-0.5 font-medium">{{ accountName }}</dd>
                 </div>
                 <div v-if="paymentMethod">
-                    <dt class="text-xs text-slate-500 uppercase">Payment method</dt>
+                    <dt class="text-xs text-slate-500 uppercase">{{ t('Payment method') }}</dt>
                     <dd class="mt-0.5 font-medium capitalize">{{ paymentMethod }}</dd>
                 </div>
                 <div v-if="referenceNo">
-                    <dt class="text-xs text-slate-500 uppercase">Reference</dt>
+                    <dt class="text-xs text-slate-500 uppercase">{{ t('Reference') }}</dt>
                     <dd class="mt-0.5 font-medium">{{ referenceNo }}</dd>
                 </div>
                 <div v-for="field in fields" :key="field.label">
@@ -161,7 +161,7 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                     <dd class="mt-0.5 font-medium">{{ field.value || '—' }}</dd>
                 </div>
                 <div v-if="description" class="sm:col-span-2">
-                    <dt class="text-xs text-slate-500 uppercase">Description / Notes</dt>
+                    <dt class="text-xs text-slate-500 uppercase">{{ t('Description / Notes') }}</dt>
                     <dd class="mt-0.5 font-medium whitespace-pre-wrap">{{ description }}</dd>
                 </div>
             </dl>
@@ -170,9 +170,9 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                 <table class="min-w-full text-sm">
                     <thead class="bg-slate-50 text-start text-slate-600 print:bg-white">
                         <tr>
-                            <th class="px-4 py-2.5 font-medium">Description</th>
-                            <th class="px-4 py-2.5 font-medium">Details</th>
-                            <th class="px-4 py-2.5 text-end font-medium">Amount</th>
+                            <th class="px-4 py-2.5 font-medium">{{ t('Description') }}</th>
+                            <th class="px-4 py-2.5 font-medium">{{ t('Details') }}</th>
+                            <th class="px-4 py-2.5 text-end font-medium">{{ t('Amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -199,31 +199,31 @@ const words = computed(() => amountInWords(props.amount, props.currency));
             </div>
 
             <div class="rounded-lg bg-slate-50 px-4 py-3 text-sm print:border print:border-black print:bg-white print:py-2">
-                <span class="text-slate-500">Amount in words:</span>
+                <span class="text-slate-500">{{ t('Amount in words') }}:</span>
                 <span class="ml-2 font-medium italic">{{ words }}</span>
             </div>
 
             <div class="grid gap-8 pt-4 sm:grid-cols-3 print:gap-6 print:pt-2">
                 <div class="space-y-8">
                     <div class="border-b border-slate-400" />
-                    <p class="text-center text-xs tracking-wide text-slate-500 uppercase">Prepared by</p>
+                    <p class="text-center text-xs tracking-wide text-slate-500 uppercase">{{ t('Prepared by') }}</p>
                 </div>
                 <div class="space-y-8">
                     <div class="border-b border-slate-400" />
-                    <p class="text-center text-xs tracking-wide text-slate-500 uppercase">Checked by</p>
+                    <p class="text-center text-xs tracking-wide text-slate-500 uppercase">{{ t('Checked by') }}</p>
                 </div>
                 <div class="space-y-8">
                     <div class="border-b border-slate-400" />
                     <p class="text-center text-xs tracking-wide text-slate-500 uppercase">
-                        {{ kind === 'payment' ? 'Received by' : 'Authorized by' }}
+                        {{ kind === 'payment' ? t('Received by') : t('Authorized by') }}
                     </p>
                 </div>
             </div>
         </div>
 
         <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs text-slate-500 print:border-black print:bg-white print:px-0 print:py-2">
-            <span>Computer-generated voucher · {{ companyName }}</span>
-            <span>Printed {{ printedAt }}</span>
+            <span>{{ t('Computer-generated voucher') }} · {{ companyName }}</span>
+            <span>{{ t('Printed') }} {{ printedAt }}</span>
         </div>
     </article>
 </template>

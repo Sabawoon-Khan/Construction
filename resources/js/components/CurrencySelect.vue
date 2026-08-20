@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn, resolveCurrency } from '@/lib/utils';
 
 const props = defineProps<{
@@ -14,6 +15,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'update:modelValue', value: string): void;
 }>();
+
+const { t } = useTranslations();
 
 const currencies = [
     { code: 'AFN', label: 'AFN' },
@@ -37,7 +40,7 @@ const value = computed({
     <div
         :id="id"
         role="group"
-        :aria-label="'Currency'"
+        :aria-label="t('Currency')"
         :class="cn('inline-flex h-10 w-full min-w-[8.5rem] rounded-lg border border-input bg-transparent p-0.5 shadow-xs', props.class)"
     >
         <button

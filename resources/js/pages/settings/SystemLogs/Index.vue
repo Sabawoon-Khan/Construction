@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -223,9 +222,6 @@ defineOptions({
                             <ScrollText class="size-5" />
                             {{ t('System logs') }}
                         </CardTitle>
-                        <CardDescription>
-                            {{ t('Search and filter application log entries from large files') }}
-                        </CardDescription>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <Button as-child variant="outline" size="sm">
@@ -426,9 +422,6 @@ defineOptions({
                     <FileText class="size-4" />
                     {{ file || t('No log files yet') }}
                 </CardTitle>
-                <CardDescription>
-                    {{ t('Newest entries first. Click a row to see the full message and stack trace.') }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="p-0">
                 <MisEmptyState v-if="files.length === 0" class="m-6">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseUnit;
@@ -20,6 +21,7 @@ class ExpenseController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'expenses';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -53,7 +55,7 @@ class ExpenseController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Expenses/Index', [
-            'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name'])->latest('expense_date')->paginate(15)->withQueryString(),
+            'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name', 'attachments'])->latest('expense_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'categories' => $this->categories(),
@@ -76,7 +78,7 @@ class ExpenseController extends Controller implements HasMiddleware
         unset($data['documents']);
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data));
-        $this->storeDocuments($request, $expense);
+        $this->storeRecordAttachments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense recorded.']);
 
@@ -104,7 +106,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'payment_method' => $request->input('payment_method', $expense->payment_method) ?: 'cash',
         ]);
 
-        $this->storeDocuments($request, $expense);
+        $this->storeRecordAttachments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
 
@@ -188,21 +190,6 @@ class ExpenseController extends Controller implements HasMiddleware
         }
 
         return $data;
-    }
-
-    private function storeDocuments(Request $request, Expense $expense): void
-    {
-        if (! $request->hasFile('documents')) {
-            return;
-        }
-
-        foreach ($request->file('documents', []) as $file) {
-            if (! $file) {
-                continue;
-            }
-
-            $expense->storeAttachment($file, $file->getClientOriginalName(), $request->user()?->id);
-        }
     }
 
     /** @return Collection<int, ExpenseCategory> */

@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 
 export type MisDataTableColumn = {
@@ -10,7 +12,7 @@ export type MisDataTableColumn = {
     align?: 'start' | 'center' | 'end';
 };
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         columns: MisDataTableColumn[];
         rows: Array<Record<string, unknown>>;
@@ -24,13 +26,15 @@ withDefaults(
     }>(),
     {
         class: undefined,
-        emptyLabel: 'No results',
         loading: false,
         density: 'comfortable',
         rowKey: undefined,
         stickyHeader: false,
     },
 );
+
+const { t } = useTranslations();
+const resolvedEmptyLabel = computed(() => props.emptyLabel ?? t('No results'));
 
 function cellValue(row: Record<string, unknown>, key: string): string {
     const value = row[key];
@@ -115,7 +119,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                             :colspan="columns.length"
                             class="px-4 py-10 text-center text-muted-foreground"
                         >
-                            <slot name="empty">{{ emptyLabel }}</slot>
+                            <slot name="empty">{{ resolvedEmptyLabel }}</slot>
                         </td>
                     </tr>
                     <tr

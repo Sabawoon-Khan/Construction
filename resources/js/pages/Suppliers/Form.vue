@@ -3,6 +3,7 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,6 +75,13 @@ defineOptions({
                     <InputError :message="errors.notes" />
                 </div>
             </div>
+
+            <RecordAttachments
+                attachable="suppliers"
+                :attachable-id="isEdit ? item!.id : null"
+                :attachments="item?.attachments"
+                :error="errors.documents"
+            />
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save') }}</Button>

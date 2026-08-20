@@ -1,5 +1,21 @@
 <?php
 
+use App\Models\Attendance;
+use App\Models\Customer;
+use App\Models\Employee;
+use App\Models\Expense;
+use App\Models\FieldReport;
+use App\Models\Income;
+use App\Models\Material;
+use App\Models\Partner;
+use App\Models\Payment;
+use App\Models\Project;
+use App\Models\Purchase;
+use App\Models\Salary;
+use App\Models\Sale;
+use App\Models\Supplier;
+use App\Models\Unit;
+
 return [
 
     /*
@@ -102,19 +118,79 @@ return [
 
     'attachables' => [
         'field_reports' => [
-            'model' => \App\Models\FieldReport::class,
+            'model' => FieldReport::class,
             'user_scoped' => true,
             'permissions' => ['field_reports.create', 'field_reports.edit'],
         ],
+        'projects' => [
+            'model' => Project::class,
+            'user_scoped' => false,
+            'permissions' => ['projects.create', 'projects.edit'],
+        ],
+        'units' => [
+            'model' => Unit::class,
+            'user_scoped' => false,
+            'permissions' => ['units.create', 'units.edit'],
+        ],
+        'customers' => [
+            'model' => Customer::class,
+            'user_scoped' => false,
+            'permissions' => ['customers.create', 'customers.edit'],
+        ],
+        'partners' => [
+            'model' => Partner::class,
+            'user_scoped' => false,
+            'permissions' => ['partners.create', 'partners.edit'],
+        ],
+        'suppliers' => [
+            'model' => Supplier::class,
+            'user_scoped' => false,
+            'permissions' => ['suppliers.create', 'suppliers.edit'],
+        ],
+        'materials' => [
+            'model' => Material::class,
+            'user_scoped' => false,
+            'permissions' => ['materials.create', 'materials.edit'],
+        ],
+        'purchases' => [
+            'model' => Purchase::class,
+            'user_scoped' => false,
+            'permissions' => ['purchases.create', 'purchases.edit'],
+        ],
         'sales' => [
-            'model' => \App\Models\Sale::class,
+            'model' => Sale::class,
             'user_scoped' => false,
             'permissions' => ['sales.create', 'sales.edit'],
         ],
         'expenses' => [
-            'model' => \App\Models\Expense::class,
+            'model' => Expense::class,
             'user_scoped' => false,
             'permissions' => ['expenses.create', 'expenses.edit'],
+        ],
+        'incomes' => [
+            'model' => Income::class,
+            'user_scoped' => false,
+            'permissions' => ['incomes.create', 'incomes.edit'],
+        ],
+        'payments' => [
+            'model' => Payment::class,
+            'user_scoped' => false,
+            'permissions' => ['payments.view', 'payments.create', 'payments.edit'],
+        ],
+        'employees' => [
+            'model' => Employee::class,
+            'user_scoped' => false,
+            'permissions' => ['employees.create', 'employees.edit'],
+        ],
+        'attendance' => [
+            'model' => Attendance::class,
+            'user_scoped' => false,
+            'permissions' => ['attendance.create', 'attendance.edit'],
+        ],
+        'salaries' => [
+            'model' => Salary::class,
+            'user_scoped' => false,
+            'permissions' => ['salaries.create', 'salaries.edit'],
         ],
     ],
 

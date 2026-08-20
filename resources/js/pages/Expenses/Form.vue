@@ -3,7 +3,7 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
-import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import InputError from '@/components/InputError.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
@@ -34,15 +34,6 @@ const totalCost = computed(() => {
 });
 const backHref = computed(() =>
     props.item?.project_id ? `/projects/${props.item.project_id}` : '/expenses',
-);
-const existingReceipts = computed<ExistingUploadFile[]>(() =>
-    (props.item?.attachments ?? []).map((file: any) => ({
-        id: file.id,
-        name: file.original_filename || file.title || t('Receipt'),
-        size: file.file_size,
-        mime: file.mime_type,
-        url: file.download_url,
-    })),
 );
 
 defineOptions({
@@ -155,28 +146,14 @@ defineOptions({
                     <InputError :message="errors.description" />
                 </div>
                 <div class="grid gap-2 mis-form-span">
-                    <Label>{{ t('Receipt file') }}</Label>
-                    <FileUploadField
-                        v-if="isEdit"
-                        mode="chunked"
-                        destination="attachment"
+                    <RecordAttachments
                         attachable="expenses"
-                        :attachable-id="item!.id"
-                        multiple
-                        :max-files="10"
+                        :attachable-id="isEdit ? item!.id : null"
+                        :attachments="item?.attachments"
+                        :label="t('Receipt file')"
+                        :error="errors.documents"
                         accept="application/pdf,image/jpeg,image/png,image/webp"
-                        :existing="existingReceipts"
                     />
-                    <div v-else class="grid gap-2">
-                        <input
-                            type="file"
-                            name="documents[]"
-                            multiple
-                            accept=".pdf,.jpg,.jpeg,.png,.webp"
-                            class="text-sm"
-                        />
-                        <InputError :message="errors.documents" />
-                    </div>
                 </div>
             </div>
             <div class="mis-form-actions">

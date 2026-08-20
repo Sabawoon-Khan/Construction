@@ -4,6 +4,7 @@ import { Trash2 } from '@lucide/vue';
 import { computed, watch } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ const form = useForm({
     status: props.item?.status ?? 'pending',
     notes: props.item?.notes ?? '',
     currency: props.item?.currency ?? '',
+    documents: [] as File[],
 });
 
 const currency = computed(() => form.currency);
@@ -148,6 +150,14 @@ defineOptions({
                     <InputError :message="form.errors.notes" />
                 </div>
             </div>
+
+            <RecordAttachments
+                attachable="salaries"
+                :attachable-id="isEdit ? item!.id : null"
+                :attachments="item?.attachments"
+                v-model:files="form.documents"
+                :error="form.errors.documents"
+            />
 
             <div class="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
                 <span class="text-sm text-muted-foreground">{{ t('Net salary') }}</span>

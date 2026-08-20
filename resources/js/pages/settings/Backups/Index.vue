@@ -27,7 +27,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -502,9 +501,6 @@ defineOptions({
                     <Archive class="size-5" />
                     {{ t('Backup history') }}
                 </CardTitle>
-                <CardDescription>
-                    {{ t('Filter by type, trigger, status, or date to find the exact backup.') }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="space-y-4">
                 <MisFilterBar

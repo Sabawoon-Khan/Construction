@@ -3,6 +3,7 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Pencil, Printer, Trash2 } from '@lucide/vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ defineOptions({
                 <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
                     <Link href="/incomes"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
                 </Button>
-                <Heading :title="item.income_no" :description="t('General income')" />
+                <Heading :title="item.income_no" />
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <Button variant="outline" @click="printPage">
@@ -74,6 +75,13 @@ defineOptions({
                 ]"
             />
         </div>
+
+        <RecordAttachments
+            attachable="incomes"
+            :attachable-id="item.id"
+            :attachments="item.attachments"
+            boxed
+        />
 
         <PrintableVoucher
             kind="receipt"

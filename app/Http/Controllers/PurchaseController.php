@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Material;
 use App\Models\Project;
 use App\Models\Purchase;
@@ -24,6 +25,7 @@ class PurchaseController extends Controller implements HasMiddleware
     use AuthorizesResourcePermissions {
         middleware as resourceMiddleware;
     }
+    use StoresRecordAttachments;
 
     /**
      * @return list<Middleware>
@@ -89,8 +91,10 @@ class PurchaseController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
         $purchase = PurchaseService::create($data);
+        $this->storeRecordAttachments($request, $purchase);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Purchase recorded. Stock increased and project expense posted.']);
 
@@ -100,6 +104,7 @@ class PurchaseController extends Controller implements HasMiddleware
     public function show(Purchase $purchase): Response
     {
         $purchase->load([
+            'attachments',
             'supplier',
             'project',
             'items.material.unit:id,unit_name',
@@ -120,7 +125,7 @@ class PurchaseController extends Controller implements HasMiddleware
 
     public function edit(Request $request, Purchase $purchase): Response
     {
-        $purchase->load(['items']);
+        $purchase->load(['items', 'attachments']);
 
         return Inertia::render('Purchases/Form', [
             'item' => $purchase,
@@ -134,9 +139,12 @@ class PurchaseController extends Controller implements HasMiddleware
             'purchase_date' => 'required|date',
             'reference_no' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
+        unset($data['documents']);
 
         $purchase->update($data);
+        $this->storeRecordAttachments($request, $purchase);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Purchase updated.']);
 
@@ -189,6 +197,7 @@ class PurchaseController extends Controller implements HasMiddleware
             'items.*.material_id' => 'required|exists:materials,id',
             'items.*.quantity' => 'required|numeric|min:0.001',
             'items.*.unit_cost' => 'required|numeric|min:0',
+            ...$this->attachmentValidationRules(),
         ]);
 
         $materialIds = collect($data['items'])->pluck('material_id');

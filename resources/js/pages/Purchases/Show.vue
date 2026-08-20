@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, Pencil, Printer } from '@lucide/vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -116,6 +117,13 @@ defineOptions({
                 </Button>
             </template>
         </DetailGrid>
+
+        <RecordAttachments
+            attachable="purchases"
+            :attachable-id="purchase.id"
+            :attachments="purchase.attachments"
+            boxed
+        />
 
         <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-3">

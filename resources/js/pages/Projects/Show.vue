@@ -6,6 +6,7 @@ import {
     Handshake,
     Info,
     Package,
+    Paperclip,
     Pencil,
     Printer,
     Receipt,
@@ -16,7 +17,9 @@ import { onMounted, computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
+import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import InputError from '@/components/InputError.vue';
 import { MisSearchInput, MisTabs } from '@/components/mis';
 import ShareholderAddDialog from '@/components/ShareholderAddDialog.vue';
@@ -70,6 +73,12 @@ const props = defineProps<{
         purchase_id?: number | null;
         reference_no?: string | null;
         payment_method?: string | null;
+        attachments?: Array<{
+            id: number;
+            original_filename?: string;
+            title?: string;
+            download_url?: string;
+        }>;
     }[];
     expense_categories?: { id: number; name: string; code: string }[];
     purchases?: {
@@ -221,6 +230,7 @@ const filteredMaterialLines = computed(() => {
 });
 const tabs = [
     { id: 'info', label: t('Project info'), icon: Info },
+    { id: 'attachments', label: t('Attachments'), icon: Paperclip },
     { id: 'shareholders', label: t('Shareholders'), icon: Handshake },
     { id: 'expenses', label: t('Expenses'), icon: Receipt },
     { id: 'purchases', label: t('Purchases'), icon: Package },
@@ -436,6 +446,15 @@ defineOptions({
                         value: money(item.estimated_revenue),
                     },
                 ]"
+            />
+        </div>
+
+        <div v-show="tab === 'attachments'">
+            <RecordAttachments
+                boxed
+                attachable="projects"
+                :attachable-id="item.id"
+                :attachments="item.attachments"
             />
         </div>
 
@@ -729,6 +748,7 @@ defineOptions({
                             <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Paying type') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Attachments') }}</th>
                             <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -769,6 +789,9 @@ defineOptions({
                                         expense.currency || baseCurrency,
                                     )
                                 }}
+                            </td>
+                            <td class="px-4 py-3" @click.stop>
+                                <AttachmentLinks :files="expense.attachments" />
                             </td>
                             <td class="px-4 py-3" @click.stop>
                                 <div class="flex flex-wrap justify-end gap-1">
@@ -830,7 +853,7 @@ defineOptions({
                         </tr>
                         <tr v-if="!filteredExpenses.length">
                             <td
-                                colspan="7"
+                                colspan="8"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{

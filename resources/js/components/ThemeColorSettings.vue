@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -89,13 +88,6 @@ const previewRadius = computed(() => {
                         <Sparkles class="size-4 text-primary" />
                         {{ t('Theme studio') }}
                     </CardTitle>
-                    <CardDescription>
-                        {{
-                            t(
-                                'Preview and tune the admin shell — colors, corners, density, and active sidebar style.',
-                            )
-                        }}
-                    </CardDescription>
                 </div>
                 <div class="flex items-center gap-2">
                     <span
@@ -283,13 +275,6 @@ const previewRadius = computed(() => {
         <Card>
             <CardHeader>
                 <CardTitle>{{ t('App layout') }}</CardTitle>
-                <CardDescription>
-                    {{
-                        t(
-                            'Pick how navigation frames the ERP. Floating is the default look.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent>
                 <div class="grid gap-3 sm:grid-cols-2">
@@ -388,13 +373,6 @@ const previewRadius = computed(() => {
         <Card>
             <CardHeader>
                 <CardTitle>{{ t('Layout & chrome') }}</CardTitle>
-                <CardDescription>
-                    {{
-                        t(
-                            'Control corner radius, spacing density, and how the active sidebar item looks.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="space-y-6">
                 <div class="space-y-2">
@@ -537,13 +515,6 @@ const previewRadius = computed(() => {
         <Card>
             <CardHeader>
                 <CardTitle>{{ t('Theme colors') }}</CardTitle>
-                <CardDescription>
-                    {{
-                        t(
-                            'Customize sidebar, brand, and accent colors across the entire application.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent>
                 <div class="grid gap-5 sm:grid-cols-2">

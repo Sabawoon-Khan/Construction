@@ -4,6 +4,7 @@ import { Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,6 +119,12 @@ defineOptions({
                     <textarea name="description" rows="3" class="mis-form-textarea" :value="item?.description ?? ''" />
                 </div>
             </div>
+            <RecordAttachments
+                attachable="units"
+                :attachable-id="isEdit ? item.id : null"
+                :attachments="item?.attachments"
+                :error="errors.documents"
+            />
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ t('Save') }}</Button>
                 <Button as-child variant="secondary"><Link href="/units">{{ t('Cancel') }}</Link></Button>

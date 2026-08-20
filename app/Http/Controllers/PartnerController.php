@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
@@ -23,6 +24,7 @@ class PartnerController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'partners';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -81,12 +83,15 @@ class PartnerController extends Controller implements HasMiddleware
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'user_id' => 'nullable|exists:users,id|unique:partners,user_id',
+            ...$this->attachmentValidationRules(),
         ]);
+        unset($data['documents']);
 
         $partner = Partner::create([
             ...$data,
             'partner_no' => ($data['partner_no'] ?? null) ?: 'PTR-'.Str::upper(Str::random(8)),
         ]);
+        $this->storeRecordAttachments($request, $partner);
 
         $this->syncShareholderRole($partner);
 
@@ -104,6 +109,7 @@ class PartnerController extends Controller implements HasMiddleware
         );
 
         $partner->load([
+            'attachments',
             'projects:id,name',
             'distributions' => fn ($q) => $q->latest('distributed_at')->limit(20),
             'investments' => fn ($q) => $q->latest('invested_at')->limit(20),
@@ -135,6 +141,8 @@ class PartnerController extends Controller implements HasMiddleware
 
     public function edit(Request $request, Partner $partner): Response
     {
+        $partner->load('attachments');
+
         return Inertia::render('Partners/Form', [
             'item' => $partner,
             'users' => $this->linkableUsers($partner->id),
@@ -154,9 +162,12 @@ class PartnerController extends Controller implements HasMiddleware
             'address' => 'nullable|string',
             'notes' => 'nullable|string',
             'user_id' => 'nullable|exists:users,id|unique:partners,user_id,'.$partner->id,
+            ...$this->attachmentValidationRules(),
         ]);
+        unset($data['documents']);
 
         $partner->update($data);
+        $this->storeRecordAttachments($request, $partner);
         $this->syncShareholderRole($partner);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder updated.']);

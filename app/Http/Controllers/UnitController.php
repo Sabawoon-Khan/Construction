@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Project;
 use App\Models\Unit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -20,6 +20,7 @@ class UnitController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'units';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -75,8 +76,11 @@ class UnitController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
-        DB::transaction(function () use ($data) {
+        $unit = null;
+
+        DB::transaction(function () use ($data, &$unit) {
             Project::query()->findOrFail($data['project_id']);
 
             $currency = strtoupper($data['currency'] ?? CurrencyService::baseCurrency());
@@ -84,7 +88,7 @@ class UnitController extends Controller implements HasMiddleware
             $costPrice = round((float) ($data['cost_price'] ?? 0), 2);
             $listPrice = round((float) ($data['list_price'] ?? 0), 2);
 
-            Unit::create([
+            $unit = Unit::create([
                 'project_id' => $data['project_id'],
                 'floor_number' => (int) ($data['floor_number'] ?? 1),
                 'unit_no' => $data['unit_no'],
@@ -107,6 +111,10 @@ class UnitController extends Controller implements HasMiddleware
             ]);
         });
 
+        if ($unit) {
+            $this->storeRecordAttachments($request, $unit);
+        }
+
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Unit created.']);
 
         return redirect()->route('units.index');
@@ -115,6 +123,7 @@ class UnitController extends Controller implements HasMiddleware
     public function show(Request $request, Unit $unit): Response
     {
         $unit->load([
+            'attachments',
             'project:id,name,code',
             'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest(),
         ]);
@@ -132,10 +141,12 @@ class UnitController extends Controller implements HasMiddleware
 
     public function edit(Request $request, Unit $unit): Response
     {
-        $unit->load('project');
+        $unit->load(['project', 'attachments']);
 
         return Inertia::render('Units/Form', [
-            'item' => $unit->toArray(),
+            'item' => array_merge($unit->toArray(), [
+                'attachments' => $unit->attachments,
+            ]),
             ...$this->formOptions($request),
         ]);
     }
@@ -143,6 +154,7 @@ class UnitController extends Controller implements HasMiddleware
     public function update(Request $request, Unit $unit): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
         $currency = strtoupper($data['currency'] ?? $unit->currency ?? CurrencyService::baseCurrency());
         $exchangeRate = FinanceDefaults::exchangeRate($currency, now());
@@ -169,6 +181,7 @@ class UnitController extends Controller implements HasMiddleware
             'status' => $data['status'] ?? 'available',
             'description' => $data['description'] ?? null,
         ]);
+        $this->storeRecordAttachments($request, $unit);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Unit updated.']);
 
@@ -204,6 +217,7 @@ class UnitController extends Controller implements HasMiddleware
             'currency' => 'required|string|size:3',
             'status' => 'required|string|max:50',
             'description' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
     }
 

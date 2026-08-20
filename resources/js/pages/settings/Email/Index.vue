@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -362,13 +361,6 @@ defineOptions({
                         <Mail class="size-5" />
                         {{ t('Email configuration') }}
                     </CardTitle>
-                    <CardDescription>
-                        {{
-                            t(
-                                'Configure how the system sends mail, including SMTP and alert emails',
-                            )
-                        }}
-                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form class="space-y-6" @submit.prevent="submitSettings">
@@ -496,9 +488,6 @@ defineOptions({
                         <Send class="size-5" />
                         {{ t('Send test email') }}
                     </CardTitle>
-                    <CardDescription>
-                        {{ t('Verify delivery with the current mail configuration') }}
-                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form class="flex flex-wrap items-end gap-3" @submit.prevent="sendTest">

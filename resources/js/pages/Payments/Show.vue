@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Printer } from '@lucide/vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -84,6 +85,13 @@ defineOptions({
                 </template>
             </DetailGrid>
         </div>
+
+        <RecordAttachments
+            attachable="payments"
+            :attachable-id="item.id"
+            :attachments="item.attachments"
+            boxed
+        />
 
         <PrintableVoucher
                 :kind="item.type === 'disbursement' ? 'payment' : 'receipt'"

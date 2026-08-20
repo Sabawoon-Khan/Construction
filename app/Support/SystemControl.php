@@ -89,7 +89,7 @@ class SystemControl
                 'key' => 'attachments',
                 'group' => 'product',
                 'label' => 'Attachments',
-                'help' => 'File attachments on domain records that support them.',
+                'help' => 'File attachments on projects, sales, expenses, and other domain records.',
             ],
             [
                 'key' => 'audit',

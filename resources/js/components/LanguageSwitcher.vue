@@ -10,9 +10,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useLocale } from '@/composables/useLocale';
+import { useTranslations } from '@/composables/useTranslations';
 import type { LocaleCode } from '@/types/locale';
 
 const page = usePage();
+const { t } = useTranslations();
 const { locale, locales, updateLocale } = useLocale();
 
 const multilingual = computed(
@@ -25,7 +27,7 @@ const multilingual = computed(
         <DropdownMenuTrigger as-child>
             <Button variant="ghost" size="icon" class="size-8">
                 <Languages class="size-4" />
-                <span class="sr-only">Language</span>
+                <span class="sr-only">{{ t('Language') }}</span>
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

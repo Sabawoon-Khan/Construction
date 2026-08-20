@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Income;
 use App\Services\FinanceDefaults;
 use App\Support\CurrencyAmounts;
@@ -17,6 +18,7 @@ class IncomeController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'incomes';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -63,8 +65,10 @@ class IncomeController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
-        Income::create(FinanceDefaults::incomeAttributes($data));
+        $income = Income::create(FinanceDefaults::incomeAttributes($data));
+        $this->storeRecordAttachments($request, $income);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Income recorded.']);
 
@@ -73,17 +77,25 @@ class IncomeController extends Controller implements HasMiddleware
 
     public function show(Income $income): Response
     {
+        $income->load('attachments');
+
         return Inertia::render('Incomes/Show', ['item' => $income]);
     }
 
     public function edit(Request $request, Income $income): Response
     {
+        $income->load('attachments');
+
         return Inertia::render('Incomes/Form', ['item' => $income]);
     }
 
     public function update(Request $request, Income $income): RedirectResponse
     {
-        $income->update(FinanceDefaults::incomeAttributes($this->validated($request)));
+        $data = $this->validated($request);
+        unset($data['documents']);
+
+        $income->update(FinanceDefaults::incomeAttributes($data));
+        $this->storeRecordAttachments($request, $income);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Income updated.']);
 
@@ -107,6 +119,7 @@ class IncomeController extends Controller implements HasMiddleware
             'amount' => 'required|numeric|min:0',
             'currency' => 'nullable|string|size:3',
             'description' => 'required|string|max:1000',
+            ...$this->attachmentValidationRules(),
         ]);
     }
 }

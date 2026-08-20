@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -128,9 +127,6 @@ defineOptions({
                     </div>
                     <div class="min-w-0 flex-1 space-y-1">
                         <CardTitle>{{ t('Profile') }}</CardTitle>
-                        <CardDescription>
-                            {{ t('Update your name and email address') }}
-                        </CardDescription>
                         <p class="pt-1 text-sm text-muted-foreground">
                             {{ user.email }}
                         </p>
@@ -220,9 +216,6 @@ defineOptions({
         <Card id="settings-preferences" class="scroll-mt-24 overflow-hidden">
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Preferences') }}</CardTitle>
-                <CardDescription>
-                    {{ t('Choose your language and color mode') }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="space-y-6 pt-6">
                 <div v-if="multilingual" class="grid gap-2">
@@ -253,13 +246,6 @@ defineOptions({
                     :class="multilingual ? 'border-t border-border/50' : ''"
                 >
                     <Label>{{ t('Color mode') }}</Label>
-                    <p class="text-sm text-muted-foreground">
-                        {{
-                            t(
-                                'Select light, dark, or system appearance for the interface.',
-                            )
-                        }}
-                    </p>
                     <AppearanceTabs />
                 </div>
             </CardContent>
@@ -268,13 +254,6 @@ defineOptions({
         <Card id="settings-password" class="scroll-mt-24 overflow-hidden">
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Change password') }}</CardTitle>
-                <CardDescription>
-                    {{
-                        t(
-                            'Ensure your account is using a long, random password to stay secure',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
                 <Form
@@ -350,9 +329,6 @@ defineOptions({
         <Card id="settings-sessions" class="scroll-mt-24 overflow-hidden">
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Browser sessions') }}</CardTitle>
-                <CardDescription>
-                    {{ t('Sign out other devices using your account') }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="space-y-4 pt-6">
                 <div
@@ -410,9 +386,6 @@ defineOptions({
                 <CardTitle class="text-red-700 dark:text-red-200">{{
                     t('Delete account')
                 }}</CardTitle>
-                <CardDescription class="text-red-700/80 dark:text-red-200/70">
-                    {{ t('Delete your account and all of its resources') }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
                 <DeleteUser embedded />

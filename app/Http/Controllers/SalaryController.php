@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Employee;
 use App\Models\Salary;
 use App\Services\CurrencyService;
@@ -20,6 +21,7 @@ class SalaryController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'salaries';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -88,8 +90,10 @@ class SalaryController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
-        Salary::query()->create($data);
+        $salary = Salary::query()->create($data);
+        $this->storeRecordAttachments($request, $salary);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Salary record created.']);
 
@@ -99,14 +103,18 @@ class SalaryController extends Controller implements HasMiddleware
     public function edit(Salary $salary): Response
     {
         return Inertia::render('Salaries/Form', [
-            'item' => $salary,
+            'item' => $salary->load('attachments'),
             'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary', 'currency']),
         ]);
     }
 
     public function update(Request $request, Salary $salary): RedirectResponse
     {
-        $salary->update($this->validated($request, $salary->id));
+        $data = $this->validated($request, $salary->id);
+        unset($data['documents']);
+
+        $salary->update($data);
+        $this->storeRecordAttachments($request, $salary);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Salary record updated.']);
 
@@ -136,6 +144,7 @@ class SalaryController extends Controller implements HasMiddleware
             'status' => 'nullable|string|in:pending,paid,cancelled',
             'notes' => 'nullable|string',
             'currency' => 'nullable|string|in:AFN,USD',
+            ...$this->attachmentValidationRules(),
         ]);
 
         $employee = Employee::query()->findOrFail($data['employee_id']);
@@ -162,6 +171,8 @@ class SalaryController extends Controller implements HasMiddleware
         if (blank($data['status'] ?? null)) {
             $data['status'] = 'pending';
         }
+
+        unset($data['documents']);
 
         return $data;
     }

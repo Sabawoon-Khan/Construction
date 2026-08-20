@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -137,13 +136,6 @@ defineOptions({
                             <KeyRound class="size-5" />
                             {{ t('Google Auth') }}
                         </CardTitle>
-                        <CardDescription class="mt-1">
-                            {{
-                                t(
-                                    'Allow users to sign in or register with their Google account',
-                                )
-                            }}
-                        </CardDescription>
                     </div>
                     <button
                         type="button"

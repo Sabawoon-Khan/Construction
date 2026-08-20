@@ -1,17 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         label?: string;
         class?: string;
     }>(),
     {
-        label: 'Loading…',
         class: undefined,
     },
 );
+
+const { t } = useTranslations();
+const resolvedLabel = computed(() => props.label ?? t('Loading…'));
 </script>
 
 <template>
@@ -27,7 +31,7 @@ withDefaults(
     >
         <Spinner class="size-6 text-muted-foreground" />
         <p class="text-sm text-muted-foreground">
-            <slot>{{ label }}</slot>
+            <slot>{{ resolvedLabel }}</slot>
         </p>
     </div>
 </template>

@@ -49,7 +49,7 @@ const modalConfig = computed<TwoFactorConfigContent>(() => {
     if (props.twoFactorEnabled) {
         return {
             title: t('Two-factor authentication enabled'),
-            description: t('Scan the QR code or enter the setup key.'),
+            description: '',
             buttonText: t('Close'),
         };
     }
@@ -64,7 +64,7 @@ const modalConfig = computed<TwoFactorConfigContent>(() => {
 
     return {
         title: t('Enable two-factor authentication'),
-        description: t('Scan the QR code or enter the setup key.'),
+        description: '',
         buttonText: t('Continue'),
     };
 });
@@ -143,7 +143,10 @@ watch(
                     </div>
                 </div>
                 <DialogTitle>{{ modalConfig.title }}</DialogTitle>
-                <DialogDescription class="text-center">
+                <DialogDescription
+                    v-if="modalConfig.description"
+                    class="text-center"
+                >
                     {{ modalConfig.description }}
                 </DialogDescription>
             </DialogHeader>

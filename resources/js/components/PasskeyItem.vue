@@ -76,7 +76,7 @@ const handleDelete = () => {
             <DialogContent>
                 <DialogTitle>{{ t('Remove passkey') }}</DialogTitle>
                 <DialogDescription>
-                    {{ t('Remove the ":name" passkey?', { name: passkey.name }) }}
+                    {{ t('Remove ":name" passkey?', { name: passkey.name }) }}
                 </DialogDescription>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>

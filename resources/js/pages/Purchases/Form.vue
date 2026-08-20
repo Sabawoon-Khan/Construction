@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Plus, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ const form = useForm({
     currency: props.item?.currency ?? baseCurrency.value,
     paid_now: '0',
     payment_method: 'cash',
+    documents: [] as File[],
     items: (props.item?.items?.map((row: any) => ({
         material_id: String(row.material_id),
         quantity: String(row.quantity),
@@ -212,6 +214,14 @@ defineOptions({
                     <textarea v-model="form.notes" rows="3" class="mis-form-textarea"></textarea>
                 </div>
             </div>
+
+            <RecordAttachments
+                attachable="purchases"
+                :attachable-id="isEdit ? item?.id : null"
+                :attachments="item?.attachments"
+                v-model:files="form.documents"
+                :error="form.errors.documents"
+            />
 
             <div v-if="!isEdit" class="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
                 <span class="text-sm text-muted-foreground">{{ t('Purchase total (project expense)') }}</span>

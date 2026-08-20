@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\HasAttachments;
 use App\Concerns\Trashable;
 use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Material extends Model
 {
+    use HasAttachments;
     use HasCreator;
     use SoftDeletes;
     use Trashable;

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Employee;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
@@ -19,6 +20,7 @@ class EmployeeController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'employees';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -58,8 +60,10 @@ class EmployeeController extends Controller implements HasMiddleware
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['documents']);
 
-        Employee::query()->create($data);
+        $employee = Employee::query()->create($data);
+        $this->storeRecordAttachments($request, $employee);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Employee created.']);
 
@@ -69,6 +73,7 @@ class EmployeeController extends Controller implements HasMiddleware
     public function show(Employee $employee): Response
     {
         $employee->loadCount(['attendance', 'salaries']);
+        $employee->load('attachments');
 
         return Inertia::render('Employees/Show', [
             'item' => $employee,
@@ -81,6 +86,8 @@ class EmployeeController extends Controller implements HasMiddleware
 
     public function edit(Employee $employee): Response
     {
+        $employee->load('attachments');
+
         return Inertia::render('Employees/Form', [
             'item' => $employee,
         ]);
@@ -88,7 +95,11 @@ class EmployeeController extends Controller implements HasMiddleware
 
     public function update(Request $request, Employee $employee): RedirectResponse
     {
-        $employee->update($this->validated($request, $employee->id));
+        $data = $this->validated($request, $employee->id);
+        unset($data['documents']);
+
+        $employee->update($data);
+        $this->storeRecordAttachments($request, $employee);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Employee updated.']);
 
@@ -125,6 +136,7 @@ class EmployeeController extends Controller implements HasMiddleware
             'currency' => 'nullable|string|size:3',
             'status' => 'nullable|string|in:active,inactive,on_leave',
             'notes' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
 
         if (blank($data['employee_no'] ?? null)) {

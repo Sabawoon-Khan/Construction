@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, CalendarDays, Mail, Phone, User } from '@lucide/vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
 import { MisStatCard, MisStatGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
@@ -85,15 +86,23 @@ defineOptions({
                 </div>
             </div>
 
-            <div class="space-y-4 rounded-xl border border-sidebar-border/70 bg-card p-6 shadow-sm">
-                <h3 class="text-sm font-semibold">{{ t('Quick Links') }}</h3>
-                <div class="flex flex-col gap-2">
-                    <Button as-child variant="secondary">
-                        <Link :href="`/attendance?employee_id=${item.id}`">{{ t('View attendance') }}</Link>
-                    </Button>
-                    <Button as-child variant="secondary">
-                        <Link :href="`/salaries?employee_id=${item.id}`">{{ t('View salaries') }}</Link>
-                    </Button>
+            <div class="space-y-4">
+                <RecordAttachments
+                    attachable="employees"
+                    :attachable-id="item.id"
+                    :attachments="item.attachments"
+                    boxed
+                />
+                <div class="space-y-4 rounded-xl border border-sidebar-border/70 bg-card p-6 shadow-sm">
+                    <h3 class="text-sm font-semibold">{{ t('Quick Links') }}</h3>
+                    <div class="flex flex-col gap-2">
+                        <Button as-child variant="secondary">
+                            <Link :href="`/attendance?employee_id=${item.id}`">{{ t('View attendance') }}</Link>
+                        </Button>
+                        <Button as-child variant="secondary">
+                            <Link :href="`/salaries?employee_id=${item.id}`">{{ t('View salaries') }}</Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

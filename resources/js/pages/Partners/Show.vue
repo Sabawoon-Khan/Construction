@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Pencil } from '@lucide/vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
@@ -75,6 +76,13 @@ defineOptions({
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ moneyByCurrency(stats.payouts_by_currency, stats.payouts_total) }}</div>
             </div>
         </div>
+
+        <RecordAttachments
+            attachable="partners"
+            :attachable-id="item.id"
+            :attachments="item.attachments"
+            boxed
+        />
 
         <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
             <div class="border-b px-5 py-3">

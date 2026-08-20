@@ -307,6 +307,10 @@ function onProviderChange(model: AiModelForm): void {
 
 const hasLogs = computed(() => (props.logs?.data.length ?? 0) > 0);
 
+const hasActiveFilters = computed(() =>
+    Boolean(search.value || statusFilter.value || actionFilter.value),
+);
+
 const isConfigTab = computed(
     () =>
         props.tab === 'general' ||

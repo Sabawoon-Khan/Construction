@@ -9,15 +9,35 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttachmentController extends Controller
 {
+    /** @var list<string> */
+    private const INLINE_MIMES = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'text/plain',
+    ];
+
     public function download(Request $request, Attachment $attachment): StreamedResponse
     {
         abort_unless($request->user(), 403);
         abort_unless($attachment->canDownload($request->user()), 403);
         abort_unless(Storage::disk('local')->exists($attachment->file_path), 404);
 
-        return Storage::disk('local')->download(
+        $mime = $attachment->mime_type
+            ?: (Storage::disk('local')->mimeType($attachment->file_path) ?: 'application/octet-stream');
+        $inline = in_array($mime, self::INLINE_MIMES, true)
+            || (str_starts_with($mime, 'image/') && $mime !== 'image/svg+xml');
+
+        return Storage::disk('local')->response(
             $attachment->file_path,
-            $attachment->original_filename,
+            $attachment->original_filename ?: basename($attachment->file_path),
+            [
+                'Content-Type' => $mime,
+                'X-Content-Type-Options' => 'nosniff',
+            ],
+            $inline ? 'inline' : 'attachment',
         );
     }
 

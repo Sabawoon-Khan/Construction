@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -161,13 +160,6 @@ function submit(): void {
                 <ImagePlus class="size-4 text-primary" />
                 {{ t('Branding') }}
             </CardTitle>
-            <CardDescription>
-                {{
-                    t(
-                        'Organization name, logo, favicon, and the default language for new visitors.',
-                    )
-                }}
-            </CardDescription>
         </CardHeader>
         <CardContent>
             <form class="space-y-5" @submit.prevent="submit">

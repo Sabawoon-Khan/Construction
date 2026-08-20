@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\InventoryTransaction;
@@ -34,6 +35,7 @@ class ProjectController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'projects';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -91,9 +93,12 @@ class ProjectController extends Controller implements HasMiddleware
             'progress_percent' => 'nullable|numeric|min:0|max:100',
             'status' => 'required|string|max:50',
             'description' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
+        unset($data['documents']);
 
-        Project::create($this->withProjectDefaults($data));
+        $project = Project::create($this->withProjectDefaults($data));
+        $this->storeRecordAttachments($request, $project);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects created.']);
 
@@ -110,6 +115,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         $project->loadCount(['units', 'sales', 'expenses', 'incomes']);
         $project->load([
+            'attachments',
             'units' => fn ($q) => $q->latest()->limit(8),
             'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest()->limit(8),
         ]);
@@ -189,7 +195,7 @@ class ProjectController extends Controller implements HasMiddleware
                 ->limit(50)
                 ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at']),
             'expenses' => $expensesQuery
-                ->with('expenseUnit:id,unit_name')
+                ->with(['expenseUnit:id,unit_name', 'attachments'])
                 ->latest('expense_date')
                 ->limit(50)
                 ->get([
@@ -261,16 +267,7 @@ class ProjectController extends Controller implements HasMiddleware
         unset($data['documents']);
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
-
-        if ($request->hasFile('documents')) {
-            foreach ($request->file('documents', []) as $file) {
-                if (! $file) {
-                    continue;
-                }
-
-                $expense->storeAttachment($file, $file->getClientOriginalName(), $request->user()?->id);
-            }
-        }
+        $this->storeRecordAttachments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Project expense recorded.']);
 
@@ -410,6 +407,8 @@ class ProjectController extends Controller implements HasMiddleware
 
     public function edit(Request $request, Project $project): Response
     {
+        $project->load('attachments');
+
         return Inertia::render('Projects/Form', [
             'item' => $project,
         ]);
@@ -429,9 +428,12 @@ class ProjectController extends Controller implements HasMiddleware
             'progress_percent' => 'nullable|numeric|min:0|max:100',
             'status' => 'required|string|max:50',
             'description' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
         ]);
+        unset($data['documents']);
 
         $project->update($this->withProjectDefaults($data));
+        $this->storeRecordAttachments($request, $project);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects updated.']);
 

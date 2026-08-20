@@ -4,11 +4,11 @@ import { ArrowLeft, CalendarClock, FileText, Info, Pencil, Printer } from '@luci
 import { computed, onMounted, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
-import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { MisTabs } from '@/components/mis';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,16 +45,6 @@ const tabs = [
     { id: 'schedule', label: t('Payment schedule'), icon: CalendarClock },
     { id: 'documents', label: t('Contract documents'), icon: FileText },
 ];
-
-const existingDocuments = computed<ExistingUploadFile[]>(() =>
-    (props.sale.attachments ?? []).map((file: any) => ({
-        id: file.id,
-        name: file.original_filename || file.title || t('Document'),
-        size: file.file_size,
-        mime: file.mime_type,
-        url: file.download_url,
-    })),
-);
 
 const firstUnpaidId = computed(() => {
     const row = (props.sale.installments ?? []).find((i: any) => installmentRemaining(i) > 0);
@@ -274,17 +264,14 @@ function submitPayment() {
         </div>
         </div>
 
-        <div v-show="tab === 'documents'" class="space-y-3 rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm print:hidden">
-            <h3 class="text-sm font-semibold">{{ t('Contract documents') }}</h3>
-            <FileUploadField
-                mode="chunked"
-                destination="attachment"
+        <div v-show="tab === 'documents'" class="print:hidden">
+            <RecordAttachments
+                boxed
                 attachable="sales"
                 :attachable-id="sale.id"
-                multiple
-                :max-files="10"
+                :attachments="sale.attachments"
+                :label="t('Contract documents')"
                 accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
-                :existing="existingDocuments"
             />
         </div>
 

@@ -3,8 +3,8 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { CalendarClock, FileText, Info, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
-import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import InputError from '@/components/InputError.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage, MisTabs } from '@/components/mis';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -73,16 +73,6 @@ const installments = ref(
         paid_now: '',
         notes: i.notes,
     })) || [{ due_date: '', amount: '', paid_now: '', notes: '' }],
-);
-
-const existingDocuments = computed<ExistingUploadFile[]>(() =>
-    (props.item?.attachments ?? []).map((file: any) => ({
-        id: file.id,
-        name: file.original_filename || file.title || t('Document'),
-        size: file.file_size,
-        mime: file.mime_type,
-        url: file.download_url,
-    })),
 );
 
 const tabs = [
@@ -352,27 +342,14 @@ function removeRow(index: number) {
             </div>
 
             <div v-show="tab === 'documents'" class="space-y-3">
-                <FileUploadField
-                    v-if="isEdit"
-                    mode="chunked"
-                    destination="attachment"
+                <RecordAttachments
                     attachable="sales"
-                    :attachable-id="item.id"
-                    multiple
-                    :max-files="10"
+                    :attachable-id="isEdit ? item.id : null"
+                    :attachments="item?.attachments"
+                    :label="t('Contract documents')"
+                    :error="errors.documents"
                     accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
-                    :existing="existingDocuments"
                 />
-                <div v-else class="grid gap-2">
-                    <input
-                        type="file"
-                        name="documents[]"
-                        multiple
-                        accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
-                        class="text-sm"
-                    />
-                    <InputError :message="errors.documents" />
-                </div>
             </div>
 
             <div class="mis-form-actions">

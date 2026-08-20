@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Material;
 use App\Models\MaterialUnit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -20,6 +20,7 @@ class MaterialController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'materials';
 
     use AuthorizesResourcePermissions;
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -55,7 +56,11 @@ class MaterialController extends Controller implements HasMiddleware
 
     public function store(Request $request): RedirectResponse
     {
-        Material::query()->create($this->validated($request));
+        $data = $this->validated($request);
+        unset($data['documents']);
+
+        $material = Material::query()->create($data);
+        $this->storeRecordAttachments($request, $material);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Material created.']);
 
@@ -64,7 +69,7 @@ class MaterialController extends Controller implements HasMiddleware
 
     public function edit(Material $material): Response
     {
-        $material->load('unit:id,unit_name');
+        $material->load(['unit:id,unit_name', 'attachments']);
 
         return Inertia::render('Materials/Form', [
             'item' => $material,
@@ -74,7 +79,11 @@ class MaterialController extends Controller implements HasMiddleware
 
     public function update(Request $request, Material $material): RedirectResponse
     {
-        $material->update($this->validated($request, $material->id));
+        $data = $this->validated($request, $material->id);
+        unset($data['documents']);
+
+        $material->update($data);
+        $this->storeRecordAttachments($request, $material);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Material updated.']);
 
@@ -107,6 +116,7 @@ class MaterialController extends Controller implements HasMiddleware
             'unit_cost' => 'nullable|numeric|min:0',
             'currency' => 'nullable|string|size:3',
             'is_active' => 'nullable|boolean',
+            ...$this->attachmentValidationRules(),
         ]);
 
         if (blank($data['code'] ?? null)) {

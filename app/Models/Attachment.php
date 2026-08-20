@@ -75,17 +75,9 @@ class Attachment extends Model
             return true;
         }
 
-        $attachable = $this->attachable;
+        $module = $this->attachablePermissionModule();
 
-        if ($attachable instanceof Sale) {
-            return (bool) $user?->can('sales.view');
-        }
-
-        if ($attachable instanceof Expense) {
-            return (bool) $user?->can('expenses.view');
-        }
-
-        return false;
+        return $module !== null && (bool) $user?->can($module.'.view');
     }
 
     public function canDelete(?User $user): bool
@@ -94,17 +86,38 @@ class Attachment extends Model
             return true;
         }
 
-        $attachable = $this->attachable;
+        $module = $this->attachablePermissionModule();
 
-        if ($attachable instanceof Sale) {
-            return (bool) $user?->can('sales.edit');
+        return $module !== null && (bool) $user?->can($module.'.edit');
+    }
+
+    protected function attachablePermissionModule(): ?string
+    {
+        $type = $this->attachable_type;
+        $parent = $this->attachable;
+
+        foreach (config('uploads.attachables', []) as $config) {
+            if (! is_array($config)) {
+                continue;
+            }
+
+            $model = $config['model'] ?? null;
+
+            if ($model !== $type && ! ($parent && is_string($model) && $parent instanceof $model)) {
+                continue;
+            }
+
+            $permissions = $config['permissions'] ?? [];
+            $first = is_array($permissions) && $permissions !== [] ? (string) $permissions[0] : '';
+
+            if ($first === '' || ! str_contains($first, '.')) {
+                return null;
+            }
+
+            return explode('.', $first, 2)[0];
         }
 
-        if ($attachable instanceof Expense) {
-            return (bool) $user?->can('expenses.edit');
-        }
-
-        return false;
+        return null;
     }
 
     public function deleteFile(): void

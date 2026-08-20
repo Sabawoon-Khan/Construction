@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -241,13 +240,6 @@ defineOptions({
                             <Wifi class="size-5" />
                             {{ t('Offline configuration') }}
                         </CardTitle>
-                        <CardDescription class="mt-1">
-                            {{
-                                t(
-                                    'Manage offline forms, progressive web app install, sync, and devices',
-                                )
-                            }}
-                        </CardDescription>
                     </div>
                     <button
                         type="button"
@@ -465,9 +457,6 @@ defineOptions({
         <Card>
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Platform info') }}</CardTitle>
-                <CardDescription>
-                    {{ t('Read-only values from config and this browser.') }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
                 <dl class="grid gap-2 text-sm sm:grid-cols-2">
@@ -550,13 +539,6 @@ defineOptions({
         <Card>
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Sync devices') }}</CardTitle>
-                <CardDescription>
-                    {{
-                        t(
-                            'Revoking a device immediately invalidates its sync token.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
                 <ul v-if="devices.length" class="divide-y rounded-md border">

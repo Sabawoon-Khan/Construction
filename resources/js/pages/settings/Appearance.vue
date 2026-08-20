@@ -7,7 +7,6 @@ import ThemeColorSettings from '@/components/ThemeColorSettings.vue';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -52,13 +51,6 @@ const { t } = useTranslations();
         <Card class="overflow-hidden">
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Color mode') }}</CardTitle>
-                <CardDescription>
-                    {{
-                        t(
-                            'Select light, dark, or system appearance for the interface.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
                 <AppearanceTabs />
@@ -68,13 +60,6 @@ const { t } = useTranslations();
         <Card class="overflow-hidden">
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <CardTitle>{{ t('Interface style') }}</CardTitle>
-                <CardDescription>
-                    {{
-                        t(
-                            'Choose solid surfaces or optional glassmorphism independently from color mode.',
-                        )
-                    }}
-                </CardDescription>
             </CardHeader>
             <CardContent class="pt-6">
                 <InterfaceStyleTabs />

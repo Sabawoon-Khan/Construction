@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
-use Illuminate\Routing\Controllers\HasMiddleware;
+use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Customer;
 use App\Models\Project;
 use App\Models\Sale;
@@ -16,6 +16,7 @@ use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +28,7 @@ class SaleController extends Controller implements HasMiddleware
     protected static string $permissionModule = 'sales';
 
     use AuthorizesResourcePermissions;
-
+    use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
@@ -103,7 +104,7 @@ class SaleController extends Controller implements HasMiddleware
             $sale->load('unit');
 
             $this->storeInstallments($request, $sale);
-            $this->storeDocuments($request, $sale);
+            $this->storeRecordAttachments($request, $sale);
 
             return $sale;
         });
@@ -163,7 +164,7 @@ class SaleController extends Controller implements HasMiddleware
             'exchange_rate' => $exchangeRate,
         ]);
 
-        $this->storeDocuments($request, $sale);
+        $this->storeRecordAttachments($request, $sale);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Sale updated.']);
 
@@ -274,21 +275,6 @@ class SaleController extends Controller implements HasMiddleware
             if ($paidNow > 0) {
                 SaleInstallmentService::recordPayment($sale->fresh(['unit', 'installments']), $installment, $paidNow);
             }
-        }
-    }
-
-    private function storeDocuments(Request $request, Sale $sale): void
-    {
-        if (! $request->hasFile('documents')) {
-            return;
-        }
-
-        foreach ($request->file('documents', []) as $file) {
-            if (! $file) {
-                continue;
-            }
-
-            $sale->storeAttachment($file, $file->getClientOriginalName(), $request->user()?->id);
         }
     }
 

@@ -4,6 +4,7 @@ import { Eye, Pencil, Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
+import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -102,6 +103,7 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Per price') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Attachments') }}</th>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
@@ -121,6 +123,9 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ item.per_price != null ? money(item.per_price, item.currency || baseCurrency) : '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+                            <td class="px-4 py-3" @click.stop>
+                                <AttachmentLinks :files="item.attachments" />
+                            </td>
 
                             <td class="px-4 py-3" @click.stop>
                                 <div class="flex justify-end">
@@ -128,7 +133,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="9" :title="t('No expenses yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No expenses yet')" />
                     </tbody>
                 </table>
             </div>
