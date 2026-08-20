@@ -168,18 +168,18 @@ const words = computed(() => amountInWords(props.amount, props.currency));
 
             <div v-if="lines?.length" class="overflow-hidden rounded-lg border border-slate-200 print:border-black">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 text-left text-slate-600 print:bg-white">
+                    <thead class="bg-slate-50 text-start text-slate-600 print:bg-white">
                         <tr>
                             <th class="px-4 py-2.5 font-medium">Description</th>
                             <th class="px-4 py-2.5 font-medium">Details</th>
-                            <th class="px-4 py-2.5 text-right font-medium">Amount</th>
+                            <th class="px-4 py-2.5 text-end font-medium">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="(line, index) in lines" :key="index" class="border-t border-slate-200">
                             <td class="px-4 py-2.5">{{ line.description }}</td>
                             <td class="px-4 py-2.5 text-slate-600">{{ line.meta || '—' }}</td>
-                            <td class="px-4 py-2.5 text-right tabular-nums">
+                            <td class="px-4 py-2.5 text-end tabular-nums">
                                 {{ line.amount == null ? '—' : money(line.amount, currency) }}
                             </td>
                         </tr>

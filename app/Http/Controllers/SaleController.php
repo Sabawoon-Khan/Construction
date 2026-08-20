@@ -12,6 +12,7 @@ use App\Models\Unit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Services\SaleInstallmentService;
+use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class SaleController extends Controller implements HasMiddleware
     public function index(Request $request): Response
     {
         $query = Sale::query()
-            ->with(['customer:id,name', 'project:id,name', 'unit:id,unit_no,list_price,currency'])
+            ->with(['customer:id,name', 'project:id,name', 'unit:id,unit_no,list_price,currency', 'creator:id,name'])
             ->withSum('installments as paid_total', 'paid_amount')
             ->withSum('installments as paid_total_base', 'paid_amount_base');
 
@@ -46,6 +47,8 @@ class SaleController extends Controller implements HasMiddleware
         $totalPriceBase = Sale::sumTotalPriceBase(clone $query);
         $paid = Sale::sumPaidAmount(clone $query);
         $paidBase = Sale::sumPaidAmountBase(clone $query);
+        $totalByCurrency = Sale::sumTotalPriceByCurrency(clone $query);
+        $paidByCurrency = Sale::sumPaidAmountByCurrency(clone $query);
         $totals = [
             'count' => (clone $query)->count(),
             'total_price' => $totalPrice,
@@ -54,6 +57,9 @@ class SaleController extends Controller implements HasMiddleware
             'paid_base' => $paidBase,
             'remaining' => max(0, $totalPrice - $paid),
             'remaining_base' => max(0, $totalPriceBase - $paidBase),
+            'total_by_currency' => $totalByCurrency,
+            'paid_by_currency' => $paidByCurrency,
+            'remaining_by_currency' => CurrencyAmounts::remaining($totalByCurrency, $paidByCurrency),
         ];
 
         return Inertia::render('Sales/Index', [

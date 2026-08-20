@@ -26,6 +26,7 @@ class UnitController extends Controller implements HasMiddleware
         $query = Unit::query()
             ->with([
                 'project:id,name',
+                'creator:id,name',
                 'sales' => fn ($q) => $q
                     ->where('status', '!=', 'cancelled')
                     ->with('customer:id,name')

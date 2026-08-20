@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Concerns\HasAttachments;
 use App\Concerns\Trashable;
+use App\Models\Concerns\HasCreator;
+use App\Support\CurrencyAmounts;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,11 +16,13 @@ use Illuminate\Support\Facades\DB;
 
 class Sale extends Model
 {
+    use HasCreator;
     use HasAttachments;
     use SoftDeletes;
     use Trashable;
 
     protected $fillable = [
+        'user_id',
         'project_id',
         'unit_id',
         'customer_id',
@@ -188,6 +192,32 @@ class Sale extends Model
             ->sum(DB::raw("units.list_price_base - COALESCE({$table}.discount_base, 0)"));
     }
 
+    /**
+     * @return array<string, float>
+     */
+    public static function sumTotalPriceByCurrency(Builder|HasMany|Relation|null $source = null): array
+    {
+        $query = match (true) {
+            $source instanceof Relation => $source->getQuery()->clone(),
+            $source instanceof Builder => $source->clone(),
+            default => static::query(),
+        };
+
+        $table = $query->getModel()->getTable();
+
+        $rows = static::query()
+            ->whereIn("{$table}.id", $query->select("{$table}.id"))
+            ->join('units', 'units.id', '=', "{$table}.unit_id")
+            ->selectRaw(
+                "UPPER(COALESCE({$table}.currency, units.currency, 'USD')) as code, "
+                ."COALESCE(SUM(units.list_price - COALESCE({$table}.discount, 0)), 0) as total"
+            )
+            ->groupByRaw("UPPER(COALESCE({$table}.currency, units.currency, 'USD'))")
+            ->get();
+
+        return CurrencyAmounts::fromRows($rows);
+    }
+
     public static function sumPaidAmount(Builder|HasMany|Relation|null $source = null): float
     {
         $query = match (true) {
@@ -216,5 +246,24 @@ class Sale extends Model
         return (float) SaleInstallment::query()
             ->whereIn('sale_id', $query->select("{$table}.id"))
             ->sum('paid_amount_base');
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    public static function sumPaidAmountByCurrency(Builder|HasMany|Relation|null $source = null): array
+    {
+        $query = match (true) {
+            $source instanceof Relation => $source->getQuery()->clone(),
+            $source instanceof Builder => $source->clone(),
+            default => static::query(),
+        };
+
+        $table = $query->getModel()->getTable();
+
+        return CurrencyAmounts::sum(
+            SaleInstallment::query()->whereIn('sale_id', $query->select("{$table}.id")),
+            'paid_amount',
+        );
     }
 }

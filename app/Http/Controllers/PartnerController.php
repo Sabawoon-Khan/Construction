@@ -9,6 +9,7 @@ use App\Models\PartnerInvestment;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\ShareholderProfitService;
+use App\Support\CurrencyAmounts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -25,7 +26,7 @@ class PartnerController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = Partner::query()->withCount('projects');
+        $query = Partner::query()->with('creator:id,name')->withCount('projects');
 
         if ($request->user()?->isRestrictedShareholder() && $request->user()->partner) {
             $query->whereKey($request->user()->partner->id);
@@ -41,11 +42,15 @@ class PartnerController extends Controller implements HasMiddleware
         }
 
         $ids = (clone $query)->select('id');
+        $contributionsQuery = PartnerInvestment::query()->whereIn('partner_id', clone $ids);
+        $payoutsQuery = PartnerDistribution::query()->whereIn('partner_id', clone $ids);
         $totals = [
             'count' => (clone $query)->count(),
             'with_projects' => (clone $query)->whereHas('projects')->count(),
-            'contributions' => (float) PartnerInvestment::query()->whereIn('partner_id', clone $ids)->sum('amount'),
-            'payouts' => (float) PartnerDistribution::query()->whereIn('partner_id', clone $ids)->sum('amount'),
+            'contributions' => (float) (clone $contributionsQuery)->sum('amount'),
+            'contributions_by_currency' => CurrencyAmounts::sum(clone $contributionsQuery),
+            'payouts' => (float) (clone $payoutsQuery)->sum('amount'),
+            'payouts_by_currency' => CurrencyAmounts::sum(clone $payoutsQuery),
         ];
 
         return Inertia::render('Partners/Index', [
@@ -121,7 +126,9 @@ class PartnerController extends Controller implements HasMiddleware
             'stats' => [
                 'projects_count' => $partner->projects->count(),
                 'contributions_total' => (float) $partner->investments()->sum('amount'),
+                'contributions_by_currency' => CurrencyAmounts::sum($partner->investments()->getQuery()),
                 'payouts_total' => (float) $partner->distributions()->sum('amount'),
+                'payouts_by_currency' => CurrencyAmounts::sum($partner->distributions()->getQuery()),
             ],
         ]);
     }

@@ -19,7 +19,7 @@ class AttendanceController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = Attendance::query()->with('employee:id,name,employee_no');
+        $query = Attendance::query()->with(['employee:id,name,employee_no', 'creator:id,name']);
 
         if ($employeeId = $request->integer('employee_id')) {
             $query->where('employee_id', $employeeId);

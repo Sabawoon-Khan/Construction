@@ -1,1 +1,0 @@
-import{Cr as e,Rn as t,V as n,lt as r,ot as i,rn as a,vt as o}from"./button-YbVcEkZ2.js";var s={class:`text-sm text-red-600 dark:text-red-500`},c=o({__name:`InputError`,props:{message:{}},setup(o){return(c,l)=>t((a(),r(`div`,null,[i(`p`,s,e(o.message),1)],512)),[[n,o.message]])}});export{c as t};

@@ -87,6 +87,28 @@
         font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     }
 
+    /* Browser default centers <th>; force logical start for LTR + RTL. */
+    table th,
+    table td {
+        text-align: start;
+        vertical-align: middle;
+    }
+
+    table th.text-end,
+    table td.text-end,
+    table .text-end,
+    table th.text-right,
+    table td.text-right,
+    table .text-right {
+        text-align: end;
+    }
+
+    table th.text-center,
+    table td.text-center,
+    table .text-center {
+        text-align: center;
+    }
+
     html[dir='rtl'] body,
     html[dir='rtl'] {
         --font-sans:
@@ -148,10 +170,19 @@
         vertical-align: middle;
     }
 
+    html[dir='rtl'] table th.text-end,
+    html[dir='rtl'] table td.text-end,
+    html[dir='rtl'] table .text-end,
     html[dir='rtl'] table th.text-right,
     html[dir='rtl'] table td.text-right,
     html[dir='rtl'] table .text-right {
         text-align: end;
+    }
+
+    html[dir='rtl'] table th.text-center,
+    html[dir='rtl'] table td.text-center,
+    html[dir='rtl'] table .text-center {
+        text-align: center;
     }
 }
 

@@ -9,7 +9,6 @@ use App\Models\Customer;
 use App\Models\EmailLog;
 use App\Models\Employee;
 use App\Models\Expense;
-use App\Models\FieldNote;
 use App\Models\FieldReport;
 use App\Models\FileTrashEntry;
 use App\Models\Income;
@@ -65,11 +64,6 @@ return [
             'model' => FieldReport::class,
             'label' => 'Field report',
             'title' => 'title',
-        ],
-        'field_notes' => [
-            'model' => FieldNote::class,
-            'label' => 'Field note',
-            'title' => 'name',
         ],
         'lookup_items' => [
             'model' => LookupItem::class,

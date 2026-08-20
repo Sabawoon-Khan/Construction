@@ -85,6 +85,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Unit cost') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Min stock') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -95,13 +97,15 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3">{{ item.unit?.unit_name || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.unit_cost, item.currency) }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ item.minimum_stock }}</td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="6" :title="t('No materials yet')" :description="t('Add cement, steel, and other items before purchasing.')" />
+                        <EmptyState v-if="!items.data.length" :colspan="7" :title="t('No materials yet')" />
                     </tbody>
                 </table>
             </div>

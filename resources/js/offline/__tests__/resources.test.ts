@@ -11,14 +11,14 @@ describe('generic offline resources', () => {
         await bindOfflineUser(31);
 
         await putCacheEntry({
-            resource: 'field_notes',
-            key: 'note-1',
-            payload: { client_uuid: 'note-1', name: 'Alpha' },
+            resource: 'demo_items',
+            key: 'item-1',
+            payload: { client_uuid: 'item-1', name: 'Alpha' },
             pendingLocal: true,
             ttlSeconds: null,
         });
 
-        const items = await listOfflineResource('field_notes');
+        const items = await listOfflineResource('demo_items');
 
         expect(items).toHaveLength(1);
         expect(items[0]?.name).toBe('Alpha');
@@ -27,17 +27,17 @@ describe('generic offline resources', () => {
 
     it('resolves warm/resources lists from settings for pullAllResources', () => {
         setOfflineSettingsCache({
-            resources: ['field_reports', 'field_notes'],
-            warm_resources: ['field_notes'],
+            resources: ['field_reports', 'demo_items'],
+            warm_resources: ['demo_items'],
         });
 
-        expect(registeredOfflineResources()).toEqual(['field_notes']);
+        expect(registeredOfflineResources()).toEqual(['demo_items']);
 
         setOfflineSettingsCache({
-            resources: ['field_reports', 'field_notes'],
+            resources: ['field_reports', 'demo_items'],
             warm_resources: [],
         });
 
-        expect(registeredOfflineResources()).toEqual(['field_reports', 'field_notes']);
+        expect(registeredOfflineResources()).toEqual(['field_reports', 'demo_items']);
     });
 });

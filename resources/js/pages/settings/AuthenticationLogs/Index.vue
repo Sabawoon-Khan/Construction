@@ -262,11 +262,6 @@ defineOptions({
 
     <MisListPage
         :title="t('Login logs')"
-        :description="
-            t(
-                'Security audit trail with location, device, ISP, and request details for every authentication event',
-            )
-        "
         :icon="ShieldAlert"
     >
         <MisFilterBar

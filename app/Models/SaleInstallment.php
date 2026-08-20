@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SaleInstallment extends Model
 {
+    use HasCreator;
+
     protected $fillable = [
+        'user_id',
         'sale_id',
         'installment_no',
         'due_date',

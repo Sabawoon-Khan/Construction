@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\Purchase;
 use App\Models\Supplier;
+use App\Support\CurrencyAmounts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -32,18 +33,24 @@ class SupplierController extends Controller implements HasMiddleware
         }
 
         $ids = (clone $query)->select('id');
-        $purchaseTotal = (float) Purchase::query()->whereIn('supplier_id', clone $ids)->sum('total_amount');
-        $purchasePaid = (float) Purchase::query()->whereIn('supplier_id', clone $ids)->sum('paid_amount');
+        $purchasesQuery = Purchase::query()->whereIn('supplier_id', clone $ids);
+        $purchaseTotal = (float) (clone $purchasesQuery)->sum('total_amount');
+        $purchasePaid = (float) (clone $purchasesQuery)->sum('paid_amount');
+        $totalByCurrency = CurrencyAmounts::sum(clone $purchasesQuery, 'total_amount');
+        $paidByCurrency = CurrencyAmounts::sum(clone $purchasesQuery, 'paid_amount');
 
         $totals = [
             'count' => (clone $query)->count(),
             'purchases_total' => $purchaseTotal,
             'paid_total' => $purchasePaid,
             'remaining_total' => max(0, $purchaseTotal - $purchasePaid),
+            'purchases_by_currency' => $totalByCurrency,
+            'paid_by_currency' => $paidByCurrency,
+            'remaining_by_currency' => CurrencyAmounts::remaining($totalByCurrency, $paidByCurrency),
         ];
 
         return Inertia::render('Suppliers/Index', [
-            'items' => $query->withCount('purchases')->latest()->paginate(12)->withQueryString(),
+            'items' => $query->with('creator:id,name')->withCount('purchases')->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
         ]);
@@ -76,13 +83,17 @@ class SupplierController extends Controller implements HasMiddleware
         $purchases = Purchase::query()->where('supplier_id', $supplier->id);
         $purchasesTotal = (float) (clone $purchases)->sum('total_amount');
         $purchasesPaid = (float) (clone $purchases)->sum('paid_amount');
+        $totalByCurrency = CurrencyAmounts::sum(clone $purchases, 'total_amount');
+        $paidByCurrency = CurrencyAmounts::sum(clone $purchases, 'paid_amount');
 
         return Inertia::render('Suppliers/Show', [
             'item' => $supplier,
             'stats' => [
                 'purchases_count' => (clone $purchases)->count(),
                 'purchases_total' => $purchasesTotal,
+                'purchases_by_currency' => $totalByCurrency,
                 'remaining_total' => max(0, $purchasesTotal - $purchasesPaid),
+                'remaining_by_currency' => CurrencyAmounts::remaining($totalByCurrency, $paidByCurrency),
             ],
         ]);
     }

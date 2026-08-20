@@ -102,6 +102,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Check out') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Notes') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -122,6 +124,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ item.check_out || '—' }}</td>
                             <td class="px-4 py-3">{{ translateStatus(item.status, t) }}</td>
                             <td class="px-4 py-3">{{ item.notes || '—' }}</td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -130,9 +134,8 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="7"
+                            :colspan="8"
                             :title="t('No attendance records')"
-                            :description="t('Record attendance to track employee presence.')"
                         />
                     </tbody>
                 </table>

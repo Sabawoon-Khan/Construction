@@ -125,12 +125,6 @@ function emptyTrash(): void {
 
     <MisListPage
         :title="t('Trash')"
-        :description="
-            t(
-                'Deleted items stay here for :days days, then are permanently removed.',
-                { days: retention_days },
-            )
-        "
         :icon="Trash2"
     >
         <template #actions>
@@ -167,7 +161,6 @@ function emptyTrash(): void {
         <MisEmptyState
             v-if="!hasItems"
             :title="t('Trash is empty')"
-            :description="t('Deleted items will appear here.')"
             :icon="Trash2"
         />
 

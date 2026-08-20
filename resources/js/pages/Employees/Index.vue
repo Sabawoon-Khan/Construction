@@ -90,6 +90,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Phone') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Basic Salary') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -112,6 +114,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3">
                                 <span>{{ translateStatus(item.status, t) }}</span>
                             </td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -120,9 +124,8 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="8"
+                            :colspan="9"
                             :title="t('No employees yet')"
-                            :description="t('Add an employee to start tracking attendance and salary.')"
                         />
                     </tbody>
                 </table>

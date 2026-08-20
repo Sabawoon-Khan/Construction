@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\FieldNoteController;
 use App\Http\Controllers\Admin\FieldReportController;
 use App\Http\Controllers\AiAnalyticsController;
 use App\Http\Controllers\AiAssistController;
@@ -14,6 +13,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseUnitController;
+use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocaleController;
@@ -65,6 +65,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:Owner')
         ->name('dev.gallery');
 
+    Route::get('/search', GlobalSearchController::class)->name('search');
+
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
@@ -75,10 +77,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('field-reports', FieldReportController::class)
         ->parameters(['field-reports' => 'fieldReport'])
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show']);
-
-    Route::resource('field-notes', FieldNoteController::class)
-        ->parameters(['field-notes' => 'fieldNote'])
-        ->except(['show']);
 
     Route::resource('projects', ProjectController::class);
     Route::post('projects/{project}/expenses', [ProjectController::class, 'storeExpense'])

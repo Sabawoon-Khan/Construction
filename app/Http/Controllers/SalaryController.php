@@ -23,7 +23,7 @@ class SalaryController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = Salary::query()->with('employee:id,name,employee_no');
+        $query = Salary::query()->with(['employee:id,name,employee_no', 'creator:id,name']);
         $search = $request->string('search')->toString();
 
         if ($employeeId = $request->integer('employee_id')) {

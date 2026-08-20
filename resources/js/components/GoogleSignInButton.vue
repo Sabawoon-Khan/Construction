@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useTranslations } from '@/composables/useTranslations';
 import { redirect as googleRedirect } from '@/routes/auth/google';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         label?: string;
         showSeparator?: boolean;
         separator?: string;
     }>(),
     {
-        label: 'Continue with Google',
         showSeparator: true,
-        separator: 'Or continue with email',
     },
 );
+
+const { t } = useTranslations();
 </script>
 
 <template>
@@ -43,17 +44,17 @@ withDefaults(
                         d="M12 6c1.5 0 2.8.5 3.8 1.5l2.8-2.8C16.9 3.1 14.7 2 12 2 8.1 2 4.8 4.3 3.1 7.1l3.4 2.7C7 7.8 9.3 6 12 6z"
                     />
                 </svg>
-                {{ label }}
+                {{ props.label ?? t('Continue with Google') }}
             </a>
         </Button>
 
-        <div v-if="showSeparator" class="relative my-6">
+        <div v-if="props.showSeparator" class="relative my-6">
             <div class="absolute inset-0 flex items-center">
                 <Separator class="w-full" />
             </div>
             <div class="relative flex justify-center text-xs uppercase">
                 <span class="bg-background px-2 text-muted-foreground">
-                    {{ separator }}
+                    {{ props.separator ?? t('Or continue with email') }}
                 </span>
             </div>
         </div>

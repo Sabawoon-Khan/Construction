@@ -65,9 +65,6 @@ return [
         'field_reports' => [
             'extra' => [],
         ],
-        'field_notes' => [
-            'extra' => [],
-        ],
         'companies' => [
             'extra' => [],
         ],

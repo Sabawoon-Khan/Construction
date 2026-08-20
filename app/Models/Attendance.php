@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Attendance extends Model
 {
+    use HasCreator;
+
     protected $table = 'attendance';
 
     protected $fillable = [
+        'user_id',
         'employee_id',
         'date',
         'check_in',

@@ -5,6 +5,7 @@ import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import GlobalSearch from '@/components/GlobalSearch.vue';
 import NotificationBell from '@/components/NotificationBell.vue';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import AiHeaderButton from '@/components/AiHeaderButton.vue';
@@ -162,6 +163,7 @@ const showAvatar = computed(() =>
             </nav>
 
             <div class="ms-auto flex shrink-0 items-center gap-1.5">
+                <GlobalSearch />
                 <LanguageSwitcher />
                 <AiHeaderButton />
                 <NotificationBell />

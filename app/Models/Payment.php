@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
+    use HasCreator;
     use SoftDeletes;
 
     protected $fillable = [
+        'user_id',
         'project_id',
         'sale_id',
         'sale_installment_id',

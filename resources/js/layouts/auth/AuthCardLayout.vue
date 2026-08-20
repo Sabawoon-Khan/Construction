@@ -7,11 +7,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useTranslations } from '@/composables/useTranslations';
 
 defineProps<{
     title?: string;
     description?: string;
 }>();
+
+const { t } = useTranslations();
 </script>
 
 <template>
@@ -25,9 +28,9 @@ defineProps<{
 
             <Card class="rounded-xl border-[#14231f]/8 bg-white/75 shadow-soft backdrop-blur-sm dark:bg-card/80">
                 <CardHeader class="px-10 pt-8 pb-0 text-center">
-                    <CardTitle class="text-xl">{{ title }}</CardTitle>
+                    <CardTitle class="text-xl">{{ title ? t(title) : title }}</CardTitle>
                     <CardDescription>
-                        {{ description }}
+                        {{ description ? t(description) : description }}
                     </CardDescription>
                 </CardHeader>
                 <CardContent class="px-10 py-8">

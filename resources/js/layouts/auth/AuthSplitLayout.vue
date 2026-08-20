@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import AuthBrandLogo from '@/components/AuthBrandLogo.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import { useTranslations } from '@/composables/useTranslations';
 
 defineProps<{
     title?: string;
     description?: string;
 }>();
+
+const { t } = useTranslations();
 </script>
 
 <template>
@@ -31,7 +34,7 @@ defineProps<{
                 v-if="description"
                 class="relative z-20 max-w-sm text-sm leading-relaxed text-white/65"
             >
-                {{ description }}
+                {{ t(description) }}
             </p>
         </div>
         <div class="relative lg:p-8">
@@ -46,13 +49,13 @@ defineProps<{
                 </div>
                 <div class="flex flex-col space-y-2 text-center">
                     <h1 v-if="title" class="text-xl font-medium tracking-tight">
-                        {{ title }}
+                        {{ t(title) }}
                     </h1>
                     <p
                         v-if="description"
                         class="text-sm text-muted-foreground lg:hidden"
                     >
-                        {{ description }}
+                        {{ t(description) }}
                     </p>
                 </div>
                 <slot />

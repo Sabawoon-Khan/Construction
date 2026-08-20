@@ -1,0 +1,1 @@
+import{dn as e,lt as t,ot as n,yt as r}from"./useTranslations-gALGlhxK.js";import{t as i}from"./usePermissions-DfAMUMDo.js";var a=r({__name:`Can`,props:{permission:{}},setup(r){let a=r,{can:o,canAny:s}=i(),c=n(()=>Array.isArray(a.permission)?s(a.permission):o(a.permission));return(n,r)=>c.value?e(n.$slots,`default`,{},void 0,void 0,0):t(``,!0)}});export{a as t};

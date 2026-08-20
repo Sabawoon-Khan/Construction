@@ -3,7 +3,6 @@
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Expense;
-use App\Models\FieldNote;
 use App\Models\FieldReport;
 use App\Models\Income;
 use App\Models\LookupItem;
@@ -156,30 +155,6 @@ return [
                 'name' => ['sometimes', 'string', 'max:255'],
                 'sort_order' => ['sometimes', 'nullable', 'integer', 'min:0'],
                 'is_active' => ['sometimes', 'boolean'],
-            ],
-        ],
-        'sensitive' => [],
-    ],
-
-    'field_notes' => [
-        'label' => 'Field notes',
-        'model' => FieldNote::class,
-        'permission' => 'field_notes',
-        'index_route' => 'field-notes.index',
-        'edit_route' => 'field-notes.edit',
-        'user_scoped' => true,
-        'search' => ['name'],
-        'default_order' => ['id', 'desc'],
-        'display' => ['id', 'name'],
-        'title_attribute' => 'name',
-        'fillable' => ['name'],
-        'create_extras' => ['client_uuid', 'client_updated_at', 'user_id'],
-        'rules' => [
-            'create' => [
-                'name' => ['required', 'string', 'max:255'],
-            ],
-            'update' => [
-                'name' => ['sometimes', 'string', 'max:255'],
             ],
         ],
         'sensitive' => [],

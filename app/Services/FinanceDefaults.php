@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ExpenseCategory;
 use App\Models\IncomeCategory;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Str;
 
 class FinanceDefaults
@@ -129,7 +130,7 @@ class FinanceDefaults
         return CurrencyService::baseCurrency();
     }
 
-    public static function exchangeRate(string $currency, ?Carbon $date = null): float
+    public static function exchangeRate(string $currency, ?CarbonInterface $date = null): float
     {
         $date ??= now();
         $baseCurrency = self::baseCurrency();
@@ -142,7 +143,7 @@ class FinanceDefaults
         return CurrencyService::convert(1.0, $currency, $baseCurrency, $date) ?? 1.0;
     }
 
-    public static function convertToBase(float $amount, string $currency, ?Carbon $date = null): float
+    public static function convertToBase(float $amount, string $currency, ?CarbonInterface $date = null): float
     {
         return round($amount * self::exchangeRate($currency, $date), 2);
     }

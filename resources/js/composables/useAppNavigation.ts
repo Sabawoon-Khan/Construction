@@ -12,7 +12,6 @@ import {
     Receipt,
     Scale,
     Settings,
-    StickyNote,
     Truck,
     Users,
     Warehouse,
@@ -73,15 +72,6 @@ export function useAppNavigation() {
                 item(t('Field reports'), '/field-reports', ClipboardList, {
                     href: '/field-reports/create',
                     permission: 'field_reports.create',
-                }),
-            );
-        }
-
-        if (can('field_notes.view')) {
-            fieldWork.push(
-                item(t('Field notes'), '/field-notes', StickyNote, {
-                    href: '/field-notes/create',
-                    permission: 'field_notes.create',
                 }),
             );
         }

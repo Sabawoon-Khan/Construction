@@ -167,7 +167,6 @@ function rowActions(row: LookupRow): RowActionItem[] {
 
     <MisListPage
         :title="t('Lookups')"
-        :description="t('Manage shared reference lists for your MIS modules.')"
     >
         <template #actions>
             <MisSegmentedControl

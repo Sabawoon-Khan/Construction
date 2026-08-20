@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileIcon, Trash2, Upload } from '@lucide/vue';
+import { FileIcon, ImageIcon, Trash2, Upload } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import FileUploadProgress from '@/components/FileUploadProgress.vue';
 import MisField from '@/components/mis/MisField.vue';
@@ -117,6 +117,8 @@ const deferredFiles = ref<File[]>([]);
 const offlineFiles = ref<Array<{ id: string; name: string }>>([]);
 const existingFiles = ref<ExistingUploadFile[]>([]);
 const imagePreviewUrl = ref<string | null>(null);
+const isDragging = ref(false);
+let dragDepth = 0;
 
 watch(
     () => props.existing,
@@ -177,6 +179,32 @@ const effectiveAccept = computed(() => {
 
 const displayError = computed(() => props.error || localError.value);
 
+const canPick = computed(() => !props.disabled && !isUploading.value);
+
+const pickerLabel = computed(() => {
+    if (isUploading.value) {
+        return t('Uploading…');
+    }
+
+    if (existingFiles.value.length && !props.multiple) {
+        return t('Replace file');
+    }
+
+    return props.multiple ? t('Choose files') : t('Choose file');
+});
+
+const hintText = computed(() => {
+    const parts: string[] = [];
+
+    if (props.multiple) {
+        parts.push(t('Up to :n files', { n: String(props.maxFiles) }));
+    }
+
+    parts.push(t('Max :size', { size: formatBytes(effectiveMaxBytes.value) }));
+
+    return parts.join(' · ');
+});
+
 function formatBytes(bytes: number): string {
     if (bytes < 1024) {
         return `${bytes} B`;
@@ -194,11 +222,59 @@ function formatBytes(bytes: number): string {
 }
 
 function triggerPicker(): void {
-    if (props.disabled || isUploading.value) {
+    if (!canPick.value) {
         return;
     }
 
     inputRef.value?.click();
+}
+
+function onDragEnter(event: DragEvent): void {
+    if (!canPick.value) {
+        return;
+    }
+
+    event.preventDefault();
+    dragDepth += 1;
+    isDragging.value = true;
+}
+
+function onDragOver(event: DragEvent): void {
+    if (!canPick.value) {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'copy';
+    }
+}
+
+function onDragLeave(event: DragEvent): void {
+    if (!canPick.value) {
+        return;
+    }
+
+    event.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+
+    if (dragDepth === 0) {
+        isDragging.value = false;
+    }
+}
+
+async function onDrop(event: DragEvent): Promise<void> {
+    if (!canPick.value) {
+        return;
+    }
+
+    event.preventDefault();
+    dragDepth = 0;
+    isDragging.value = false;
+
+    const files = Array.from(event.dataTransfer?.files ?? []);
+    await processFiles(files);
 }
 
 function patchUploadItem(item: ChunkedUploadItem): void {
@@ -229,6 +305,10 @@ async function onFilesSelected(event: Event): Promise<void> {
         inputRef.value.value = '';
     }
 
+    await processFiles(files);
+}
+
+async function processFiles(files: File[]): Promise<void> {
     if (files.length === 0) {
         return;
     }
@@ -512,88 +592,138 @@ defineExpose({
         <div class="space-y-3">
             <div
                 v-if="preview === 'image' && imagePreviewUrl"
-                class="space-y-2"
+                class="overflow-hidden rounded-xl border border-border/70 bg-muted/20"
             >
-                <div class="overflow-hidden rounded-xl border border-border/70 bg-muted/20">
-                    <img :src="imagePreviewUrl" alt="" class="mx-auto max-h-40 object-contain p-3" />
-                </div>
-                <Button
-                    v-if="existingFiles[0] || deferredFiles[0]"
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    class="h-8 px-2 text-destructive"
-                    :disabled="disabled || isUploading"
-                    @click="removeExisting(existingFiles[0] ?? { name: deferredFiles[0]?.name ?? t('File') })"
-                >
-                    <Trash2 class="size-4" />
-                    {{ t('Remove') }}
-                </Button>
+                <img :src="imagePreviewUrl" alt="" class="mx-auto max-h-44 object-contain p-4" />
             </div>
 
             <div
-                v-if="preview === 'list' && existingFiles.length > 0"
+                v-if="preview === 'list' && (existingFiles.length > 0 || deferredFiles.length > 0 || offlineFiles.length > 0)"
                 class="space-y-2"
             >
                 <div
                     v-for="(file, index) in existingFiles"
                     :key="String(file.id ?? file.path ?? file.name) + index"
-                    class="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-card px-3 py-2"
+                    class="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5"
                 >
-                    <div class="flex min-w-0 items-center gap-2">
-                        <FileIcon class="size-4 shrink-0 text-muted-foreground" />
-                        <div class="min-w-0">
-                            <a
-                                v-if="file.url"
-                                :href="file.url"
-                                class="block truncate text-sm font-medium text-primary underline-offset-2 hover:underline"
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                {{ file.name }}
-                            </a>
-                            <p v-else class="truncate text-sm font-medium">{{ file.name }}</p>
-                            <p v-if="file.size" class="text-xs text-muted-foreground">
-                                {{ formatBytes(file.size) }}
-                            </p>
-                        </div>
+                    <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                        <FileIcon class="size-4" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <a
+                            v-if="file.url"
+                            :href="file.url"
+                            class="block truncate text-sm font-medium text-foreground underline-offset-2 hover:underline"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            {{ file.name }}
+                        </a>
+                        <p v-else class="truncate text-sm font-medium">{{ file.name }}</p>
+                        <p v-if="file.size" class="text-xs text-muted-foreground">
+                            {{ formatBytes(file.size) }}
+                        </p>
                     </div>
                     <Button
                         type="button"
                         variant="ghost"
                         size="icon"
-                        class="size-8 shrink-0 text-destructive"
+                        class="size-8 shrink-0 text-muted-foreground hover:text-destructive"
                         :disabled="disabled || isUploading"
                         @click="removeExisting(file)"
                     >
                         <Trash2 class="size-4" />
                     </Button>
                 </div>
+
+                <div
+                    v-for="file in deferredFiles"
+                    :key="`deferred-${file.name}-${file.size}-${file.lastModified}`"
+                    class="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-2.5"
+                >
+                    <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                        <FileIcon class="size-4" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium">{{ file.name }}</p>
+                        <p class="text-xs text-muted-foreground">{{ formatBytes(file.size) }}</p>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        class="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        :disabled="disabled || isUploading"
+                        @click="removeExisting({ name: file.name })"
+                    >
+                        <Trash2 class="size-4" />
+                    </Button>
+                </div>
+
+                <div
+                    v-for="file in offlineFiles"
+                    :key="file.id"
+                    class="flex items-center gap-3 rounded-xl border border-dashed border-border/70 bg-muted/20 px-3 py-2.5"
+                >
+                    <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                        <FileIcon class="size-4" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium">{{ file.name }}</p>
+                        <p class="text-xs text-muted-foreground">{{ t('Saved offline') }}</p>
+                    </div>
+                </div>
             </div>
 
-            <div v-if="!hidePicker" class="flex flex-wrap items-center gap-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    :disabled="disabled || isUploading"
-                    @click="triggerPicker"
+            <div
+                v-if="!hidePicker"
+                role="button"
+                tabindex="0"
+                class="group relative flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-8 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                :class="[
+                    !canPick ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+                    isDragging
+                        ? 'border-primary bg-primary/5'
+                        : displayError
+                          ? 'border-destructive/50 bg-destructive/5 hover:border-destructive'
+                          : 'border-border/80 bg-muted/20 hover:border-border hover:bg-muted/35',
+                ]"
+                @click="triggerPicker"
+                @keydown.enter.prevent="triggerPicker"
+                @keydown.space.prevent="triggerPicker"
+                @dragenter="onDragEnter"
+                @dragover="onDragOver"
+                @dragleave="onDragLeave"
+                @drop="onDrop"
+            >
+                <div
+                    class="flex size-11 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm transition group-hover:text-foreground"
+                    :class="isDragging ? 'border-primary/40 text-primary' : ''"
                 >
-                    <Upload class="size-4" />
-                    {{
-                        isUploading
-                            ? t('Uploading…')
-                            : existingFiles.length && !multiple
-                              ? t('Replace file')
-                              : t('Choose file')
-                    }}
+                    <ImageIcon v-if="preview === 'image'" class="size-5" />
+                    <Upload v-else class="size-5" />
+                </div>
+
+                <div class="space-y-1">
+                    <p class="text-sm font-medium text-foreground">
+                        <span class="text-primary">{{ pickerLabel }}</span>
+                        <span class="text-muted-foreground"> {{ t('or drag and drop') }}</span>
+                    </p>
+                    <p class="text-xs text-muted-foreground">{{ hintText }}</p>
+                </div>
+
+                <Button
+                    v-if="preview === 'image' && (existingFiles[0] || deferredFiles[0])"
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="absolute end-2 top-2 h-8 px-2 text-muted-foreground hover:text-destructive"
+                    :disabled="disabled || isUploading"
+                    @click.stop="removeExisting(existingFiles[0] ?? { name: deferredFiles[0]?.name ?? t('File') })"
+                >
+                    <Trash2 class="size-4" />
+                    {{ t('Remove') }}
                 </Button>
-                <p v-if="mode === 'deferred' && deferredFiles.length" class="text-xs text-muted-foreground">
-                    {{ deferredFiles.map((file) => file.name).join(', ') }}
-                </p>
-                <p v-if="mode === 'offline' && offlineFiles.length" class="text-xs text-muted-foreground">
-                    {{ offlineFiles.map((file) => file.name).join(', ') }}
-                </p>
             </div>
 
             <input

@@ -173,7 +173,7 @@ defineOptions({
                             <th class="px-4 py-3">{{ t('Location') }}</th>
                             <th class="px-4 py-3">{{ t('Status') }}</th>
                             <th class="px-4 py-3">{{ t('Sync') }}</th>
-                            <th class="px-4 py-3 text-right">{{ t('Actions') }}</th>
+                            <th class="px-4 py-3 text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -211,7 +211,7 @@ defineOptions({
                                 </Badge>
                                 <span v-else class="text-muted-foreground">{{ t('Synced') }}</span>
                             </td>
-                            <td class="px-4 py-3 text-right">
+                            <td class="px-4 py-3 text-end">
                                 <div class="inline-flex justify-end">
                                     <RowActionsMenu v-if="item.id" :actions="rowActions(item)" />
                                 </div>

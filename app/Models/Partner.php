@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\Trashable;
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,10 +12,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Partner extends Model
 {
+    use HasCreator;
     use SoftDeletes;
     use Trashable;
 
+    protected string $creatorColumn = 'created_by';
+
     protected $fillable = [
+        'created_by',
         'user_id',
         'partner_no',
         'name',

@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Salary extends Model
 {
+    use HasCreator;
+
     protected $fillable = [
+        'user_id',
         'employee_id',
         'month',
         'year',

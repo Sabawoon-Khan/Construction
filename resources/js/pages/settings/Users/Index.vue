@@ -127,7 +127,6 @@ defineOptions({
 
     <MisListPage
         :title="t('System Users')"
-        :description="t('Manage accounts and roles')"
         :icon="UserCog"
     >
         <template #actions>
@@ -173,9 +172,7 @@ defineOptions({
         <MisEmptyState
             v-if="users.data.length === 0"
             :title="t('No users found')"
-        >
-            {{ t('Try a different search or create a new user.') }}
-        </MisEmptyState>
+        />
 
         <div v-else class="space-y-3">
             <MisListRow v-for="user in users.data" :key="user.id">

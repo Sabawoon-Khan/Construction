@@ -53,7 +53,7 @@ class ExpenseController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Expenses/Index', [
-            'items' => $query->with('expenseUnit:id,unit_name')->latest('expense_date')->paginate(15)->withQueryString(),
+            'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name'])->latest('expense_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'categories' => $this->categories(),
@@ -101,6 +101,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
             'expense_unit_id' => $request->integer('expense_unit_id') ?: null,
             'reference_no' => $request->input('reference_no'),
+            'payment_method' => $request->input('payment_method', $expense->payment_method) ?: 'cash',
         ]);
 
         $this->storeDocuments($request, $expense);
@@ -176,6 +177,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'description' => 'required|string|max:1000',
             'expense_category_id' => 'nullable|exists:expense_categories,id',
             'currency' => 'nullable|string|size:3',
+            'payment_method' => 'nullable|in:cash,bank',
             'reference_no' => 'nullable|string|max:100',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',

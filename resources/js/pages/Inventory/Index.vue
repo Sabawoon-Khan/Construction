@@ -152,7 +152,7 @@ defineOptions({
                             <td class="px-4 py-3 tabular-nums">{{ row.issued }}</td>
                             <td class="px-4 py-3 tabular-nums font-medium" :class="row.on_hand <= 0 ? 'text-muted-foreground' : ''">{{ row.on_hand }}</td>
                         </tr>
-                        <EmptyState v-if="!items.length" :colspan="6" :title="t('No stock yet')" :description="t('Record a purchase to add materials to a project.')" />
+                        <EmptyState v-if="!items.length" :colspan="6" :title="t('No stock yet')" />
                     </tbody>
                 </table>
             </div>

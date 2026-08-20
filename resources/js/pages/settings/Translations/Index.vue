@@ -175,7 +175,7 @@ const hasSearch = computed(
                 <div class="overflow-x-auto">
                     <table class="w-full table-fixed text-xs sm:text-sm">
                         <thead>
-                            <tr class="border-b bg-muted/30 text-left text-xs text-muted-foreground">
+                            <tr class="border-b bg-muted/30 text-start text-xs text-muted-foreground">
                                 <th class="w-[36%] px-3 py-1.5 font-medium sm:w-[34%]">
                                     {{ t('Key') }}
                                 </th>

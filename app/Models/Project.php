@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\Trashable;
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -10,10 +11,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Project extends Model
 {
+    use HasCreator;
     use SoftDeletes;
     use Trashable;
 
     protected $fillable = [
+        'user_id',
         'code',
         'name',
         'type',

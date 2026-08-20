@@ -12,12 +12,14 @@ use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
 use App\Models\Project;
 use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\Unit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Services\PurchaseService;
 use App\Services\ShareholderProfitService;
+use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,16 +53,18 @@ class ProjectController extends Controller implements HasMiddleware
         }
 
         $ids = (clone $query)->select('id');
+        $salesQuery = Sale::query()->whereIn('project_id', clone $ids);
         $totals = [
             'count' => (clone $query)->count(),
             'active' => (clone $query)->whereIn('status', ['planning', 'under_construction', 'ready_for_sale'])->count(),
             'units' => Unit::query()->whereIn('project_id', clone $ids)->count(),
-            'sales_total' => Sale::sumTotalPrice(Sale::query()->whereIn('project_id', clone $ids)),
-            'sales_total_base' => Sale::sumTotalPriceBase(Sale::query()->whereIn('project_id', clone $ids)),
+            'sales_total' => Sale::sumTotalPrice(clone $salesQuery),
+            'sales_total_base' => Sale::sumTotalPriceBase(clone $salesQuery),
+            'sales_by_currency' => Sale::sumTotalPriceByCurrency(clone $salesQuery),
         ];
 
         return Inertia::render('Projects/Index', [
-            'items' => $query->latest()->paginate(12)->withQueryString(),
+            'items' => $query->with('creator:id,name')->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
         ]);
@@ -116,14 +120,19 @@ class ProjectController extends Controller implements HasMiddleware
 
         $expensesTotal = (float) (clone $expensesQuery)->sum('amount');
         $expensesTotalBase = (float) (clone $expensesQuery)->sum('amount_base');
+        $expensesByCurrency = CurrencyAmounts::sum(clone $expensesQuery);
         $salesTotal = Sale::sumTotalPrice($project->sales()->getQuery());
         $salesTotalBase = Sale::sumTotalPriceBase($project->sales()->getQuery());
+        $salesByCurrency = Sale::sumTotalPriceByCurrency($project->sales()->getQuery());
         $netProfit = ShareholderProfitService::netProfit(projectId: $project->id);
         $purchasesQuery = Purchase::query()->where('project_id', $project->id);
         $purchasesTotal = (float) (clone $purchasesQuery)->sum('total_amount');
         $purchasesTotalBase = (float) (clone $purchasesQuery)->sum('total_amount_base');
         $purchasesPaid = (float) (clone $purchasesQuery)->sum('paid_amount');
         $purchasesPaidBase = (float) (clone $purchasesQuery)->sum('paid_amount_base');
+        $purchasesTotalByCurrency = CurrencyAmounts::sum(clone $purchasesQuery, 'total_amount');
+        $purchasesPaidByCurrency = CurrencyAmounts::sum(clone $purchasesQuery, 'paid_amount');
+        $purchasesRemainingByCurrency = CurrencyAmounts::remaining($purchasesTotalByCurrency, $purchasesPaidByCurrency);
         $stock = InventoryTransaction::stockLevels($project->id);
         $stockIssues = InventoryTransaction::query()
             ->where('project_id', $project->id)
@@ -143,10 +152,12 @@ class ProjectController extends Controller implements HasMiddleware
                 'sales_count' => $project->sales_count,
                 'expenses_total' => $expensesTotal,
                 'expenses_total_base' => $expensesTotalBase,
+                'expenses_by_currency' => $expensesByCurrency,
                 'incomes_total' => $project->incomes()->sum('amount'),
                 'incomes_total_base' => $project->incomes()->sum('amount_base'),
                 'sales_total' => $salesTotal,
                 'sales_total_base' => $salesTotalBase,
+                'sales_by_currency' => $salesByCurrency,
                 'net_profit' => $netProfit,
                 'contributions_total' => (float) PartnerInvestment::query()
                     ->where('project_id', $project->id)
@@ -164,6 +175,7 @@ class ProjectController extends Controller implements HasMiddleware
                 'purchases_total_base' => $purchasesTotalBase,
                 'purchases_remaining' => max(0, $purchasesTotal - $purchasesPaid),
                 'purchases_remaining_base' => max(0, $purchasesTotalBase - $purchasesPaidBase),
+                'purchases_remaining_by_currency' => $purchasesRemainingByCurrency,
             ],
             'shareholders' => $shareholders,
             'available_shareholders' => Partner::query()
@@ -194,6 +206,7 @@ class ProjectController extends Controller implements HasMiddleware
                     'item_amount',
                     'per_price',
                     'reference_no',
+                    'payment_method',
                     'expense_unit_id',
                     'expense_category_id',
                 ]),
@@ -203,6 +216,7 @@ class ProjectController extends Controller implements HasMiddleware
                 ->latest('purchase_date')
                 ->limit(50)
                 ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'total_amount_base', 'paid_amount', 'paid_amount_base', 'currency', 'status']),
+            'purchase_materials' => $this->purchaseMaterialsForProject($project),
             'stock' => $stock->map(function ($row) {
                 return [
                     'material_id' => (int) $row->material_id,
@@ -237,6 +251,7 @@ class ProjectController extends Controller implements HasMiddleware
                 'exists:expense_categories,id',
                 Rule::notIn(ExpenseCategory::materialIds()),
             ],
+            'payment_method' => 'nullable|in:cash,bank',
             'reference_no' => 'nullable|string|max:100',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',
@@ -279,7 +294,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder added to project.']);
 
-        return redirect()->route('projects.show', $project);
+        return redirect()->to(route('projects.show', $project).'#shareholders');
     }
 
     public function storeShareholderContribution(Request $request, Project $project, Partner $partner): RedirectResponse
@@ -315,7 +330,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Contribution recorded.']);
 
-        return redirect()->route('projects.show', $project);
+        return redirect()->to(route('projects.show', $project).'#shareholders');
     }
 
     public function showContribution(Project $project, PartnerInvestment $investment): Response
@@ -361,7 +376,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Payout recorded.']);
 
-        return redirect()->route('projects.show', $project);
+        return redirect()->to(route('projects.show', $project).'#shareholders');
     }
 
     public function payPurchaseRemaining(Request $request, Project $project, Purchase $purchase): RedirectResponse
@@ -453,5 +468,74 @@ class ProjectController extends Controller implements HasMiddleware
     private function expenseCategories()
     {
         return ExpenseCategory::nonMaterialOptions();
+    }
+
+    /**
+     * @return list<array{
+     *     material_id: int,
+     *     name: string,
+     *     code: ?string,
+     *     unit: ?string,
+     *     purchase_count: int,
+     *     quantity: float,
+     *     total_cost_base: float,
+     *     total_cost_by_currency: array<string, float>,
+     *     lines: list<array<string, mixed>>
+     * }>
+     */
+    private function purchaseMaterialsForProject(Project $project): array
+    {
+        $items = PurchaseItem::query()
+            ->select('purchase_items.*')
+            ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+            ->where('purchases.project_id', $project->id)
+            ->whereNull('purchases.deleted_at')
+            ->with([
+                'material:id,name,code,material_unit_id',
+                'material.unit:id,unit_name',
+                'purchase:id,purchase_no,purchase_date,supplier_id,currency,status',
+                'purchase.supplier:id,name',
+            ])
+            ->orderByDesc('purchases.purchase_date')
+            ->orderByDesc('purchase_items.id')
+            ->get();
+
+        return $items
+            ->groupBy('material_id')
+            ->map(function (Collection $lines) {
+                $material = $lines->first()?->material;
+                $byCurrency = CurrencyAmounts::fromRows(
+                    $lines->map(fn (PurchaseItem $line) => (object) [
+                        'code' => $line->purchase?->currency,
+                        'total' => $line->total_cost,
+                    ]),
+                );
+
+                return [
+                    'material_id' => (int) $lines->first()->material_id,
+                    'name' => $material?->name ?? '—',
+                    'code' => $material?->code,
+                    'unit' => $material?->unit?->unit_name,
+                    'purchase_count' => $lines->pluck('purchase_id')->unique()->count(),
+                    'quantity' => round((float) $lines->sum('quantity'), 3),
+                    'total_cost_base' => round((float) $lines->sum('total_cost_base'), 2),
+                    'total_cost_by_currency' => $byCurrency,
+                    'lines' => $lines->map(fn (PurchaseItem $line) => [
+                        'id' => $line->id,
+                        'purchase_id' => $line->purchase_id,
+                        'purchase_no' => $line->purchase?->purchase_no,
+                        'purchase_date' => optional($line->purchase?->purchase_date)?->toDateString(),
+                        'supplier' => $line->purchase?->supplier?->name,
+                        'quantity' => (float) $line->quantity,
+                        'unit_cost' => (float) $line->unit_cost,
+                        'total_cost' => (float) $line->total_cost,
+                        'currency' => $line->purchase?->currency,
+                        'status' => $line->purchase?->status,
+                    ])->values()->all(),
+                ];
+            })
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values()
+            ->all();
     }
 }

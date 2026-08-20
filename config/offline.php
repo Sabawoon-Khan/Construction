@@ -54,7 +54,6 @@ return [
         ],
         'resources' => [
             'field_reports' => ['ttl' => 3600],
-            'field_notes' => ['ttl' => 3600],
         ],
     ],
 
@@ -70,7 +69,6 @@ return [
 
     'resources' => [
         'field_reports' => \App\Sync\Handlers\FieldReportSyncHandler::class,
-        'field_notes' => \App\Sync\Handlers\FieldNoteSyncHandler::class,
     ],
 
     /*

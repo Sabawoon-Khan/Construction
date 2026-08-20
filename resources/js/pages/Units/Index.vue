@@ -138,6 +138,8 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Sale price') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Buyer') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -155,13 +157,15 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ money(item.list_price, item.currency) }}</td>
                             <td class="px-4 py-3">{{ item.sales?.[0]?.customer?.name || '—' }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="11" :title="t('No units yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="12" :title="t('No units yet')" />
                     </tbody>
                 </table>
             </div>

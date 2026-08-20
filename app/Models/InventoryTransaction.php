@@ -2,17 +2,21 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
 
 class InventoryTransaction extends Model
 {
+    use HasCreator;
+
     public const TYPE_PURCHASE = 'purchase';
 
     public const TYPE_ISSUE = 'issue';
 
     protected $fillable = [
+        'user_id',
         'project_id',
         'material_id',
         'supplier_id',

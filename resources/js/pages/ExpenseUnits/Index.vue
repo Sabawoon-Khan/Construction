@@ -122,6 +122,8 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Unit name') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -132,13 +134,15 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
                             <td class="px-4 py-3 font-medium">{{ item.unit_name }}</td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.length" :colspan="2" :title="t('No units yet')" />
+                        <EmptyState v-if="!items.length" :colspan="3" :title="t('No units yet')" />
                     </tbody>
                 </table>
             </div>

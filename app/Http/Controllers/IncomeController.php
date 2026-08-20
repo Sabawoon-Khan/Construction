@@ -49,7 +49,7 @@ class IncomeController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Incomes/Index', [
-            'items' => $query->latest('income_date')->paginate(15)->withQueryString(),
+            'items' => $query->with('creator:id,name')->latest('income_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
         ]);

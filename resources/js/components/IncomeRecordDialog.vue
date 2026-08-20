@@ -24,6 +24,7 @@ import { money } from '@/lib/utils';
 const props = defineProps<{
     open: boolean;
     item: Record<string, any> | null;
+    startEditing?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -40,9 +41,9 @@ const editing = ref(false);
 const currency = ref(baseCurrency.value);
 
 watch(
-    () => [props.open, props.item] as const,
+    () => [props.open, props.item, props.startEditing] as const,
     () => {
-        editing.value = !props.item;
+        editing.value = !props.item || !!props.startEditing;
         currency.value = props.item?.currency ?? baseCurrency.value;
     },
     { immediate: true },

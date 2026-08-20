@@ -224,7 +224,7 @@ function submitPayment() {
                         <td class="px-4 py-3 tabular-nums">{{ money(i.amount) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(i.paid_amount) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="i.status" /></td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-end">
                             <Button
                                 v-if="installmentRemaining(i) > 0"
                                 size="sm"
@@ -260,7 +260,7 @@ function submitPayment() {
                         <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
                         <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency) }}</td>
-                        <td class="px-4 py-3 text-right">
+                        <td class="px-4 py-3 text-end">
                             <Button as-child size="sm" variant="outline">
                                 <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
                             </Button>

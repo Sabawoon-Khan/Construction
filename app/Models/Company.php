@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Singleton business profile for this MIS.
@@ -11,7 +13,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Company extends Model
 {
+    use HasCreator;
+
     protected $fillable = [
+        'user_id',
         'name',
         'legal_name',
         'registration_no',

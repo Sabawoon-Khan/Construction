@@ -20,14 +20,14 @@ class ExpenseUnitController extends Controller implements HasMiddleware
     {
         $search = $request->string('search')->toString();
 
-        $query = ExpenseUnit::query()->orderBy('unit_name');
+        $query = ExpenseUnit::query()->with('creator:id,name')->orderBy('unit_name');
 
         if ($search !== '') {
             $query->where('unit_name', 'like', "%{$search}%");
         }
 
         return Inertia::render('ExpenseUnits/Index', [
-            'items' => $query->get(['id', 'unit_name']),
+            'items' => $query->get(['id', 'unit_name', 'user_id']),
             'filters' => ['search' => $search],
             'totals' => [
                 'count' => (clone $query)->count(),

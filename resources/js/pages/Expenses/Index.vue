@@ -27,6 +27,7 @@ const { baseCurrency } = useCurrency();
 const { can, formatDate } = useMisPage();
 const dialogOpen = ref(false);
 const selected = ref<Record<string, any> | null>(null);
+const startEditing = ref(false);
 
 defineOptions({
     layout: {
@@ -46,15 +47,16 @@ function clearFilters() {
     applyFilters();
 }
 
-function openRecord(item: Record<string, any> | null) {
+function openRecord(item: Record<string, any> | null, edit = false) {
     selected.value = item;
+    startEditing.value = edit && !!item && !item.purchase_id;
     dialogOpen.value = true;
 }
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: t('View'), icon: Eye, onClick: () => openRecord(item) },
-        { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item), hidden: !can('expenses.edit') || !!item.purchase_id },
+        { label: t('View'), icon: Eye, onClick: () => openRecord(item, false) },
+        { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item, true), hidden: !can('expenses.edit') || !!item.purchase_id },
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -99,6 +101,8 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Item amount') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Per price') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -116,13 +120,15 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ item.item_amount ?? '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ item.per_price != null ? money(item.per_price, item.currency || baseCurrency) : '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3" @click.stop>
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No expenses yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="9" :title="t('No expenses yet')" />
                     </tbody>
                 </table>
             </div>
@@ -132,6 +138,7 @@ function rowActions(item: any): RowActionItem[] {
         <ExpenseRecordDialog
             v-model:open="dialogOpen"
             :item="selected"
+            :start-editing="startEditing"
             :categories="categories"
             :units="units"
         />

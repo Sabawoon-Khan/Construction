@@ -56,12 +56,7 @@ defineOptions({
         <Heading
             variant="small"
             title="Company"
-            description="This MIS belongs to one construction company. Projects, sales, expenses and incomes all roll up here."
         />
-
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
-            Profit for shareholders is calculated from this company's sales and incomes minus its expenses.
-        </div>
 
         <Form
             action="/settings/company"
@@ -140,7 +135,6 @@ defineOptions({
             <Heading
                 variant="small"
                 title="Exchange rates"
-                description="Set rates from the base currency to other currencies by effective date. Used to convert amounts into the base currency for reporting."
             />
 
             <Form
@@ -208,7 +202,7 @@ defineOptions({
                             <th class="py-2 pr-4">To</th>
                             <th class="py-2 pr-4">Rate</th>
                             <th class="py-2 pr-4">Effective date</th>
-                            <th class="py-2 text-right">Actions</th>
+                            <th class="py-2 text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
@@ -217,7 +211,7 @@ defineOptions({
                             <td class="py-3 pr-4">{{ rate.to_currency }}</td>
                             <td class="py-3 pr-4 tabular-nums">{{ Number(rate.rate).toFixed(6) }}</td>
                             <td class="py-3 pr-4">{{ rate.effective_date }}</td>
-                            <td class="py-3 text-right">
+                            <td class="py-3 text-end">
                                 <Form
                                     :action="`/settings/company/exchange-rates/${rate.id}`"
                                     method="post"

@@ -127,7 +127,19 @@ defineOptions({
                     <InputError :message="errors.currency" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="reference_no">{{ t('Receipt / reference') }}</Label>
+                    <Label for="payment_method">{{ t('Paying type') }}</Label>
+                    <select
+                        id="payment_method"
+                        name="payment_method"
+                        class="mis-form-select"
+                        :value="item?.payment_method === 'bank' ? 'bank' : 'cash'"
+                    >
+                        <option value="cash">{{ t('Cash') }}</option>
+                        <option value="bank">{{ t('Bank payment') }}</option>
+                    </select>
+                </div>
+                <div class="grid gap-2">
+                    <Label for="reference_no">{{ t('Bill number') }}</Label>
                     <Input id="reference_no" name="reference_no" :default-value="item?.reference_no ?? ''" />
                 </div>
                 <div class="grid gap-2 mis-form-span">

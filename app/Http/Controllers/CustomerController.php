@@ -7,6 +7,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Sale;
+use App\Support\CurrencyAmounts;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -33,18 +34,21 @@ class CustomerController extends Controller implements HasMiddleware
         }
 
         $ids = (clone $query)->select('id');
+        $salesQuery = Sale::query()->whereIn('customer_id', clone $ids);
+        $paymentsQuery = Payment::query()
+            ->whereIn('customer_id', clone $ids)
+            ->where(fn ($q) => $q->whereNull('sale_id')->orWhereHas('sale'));
         $totals = [
             'count' => (clone $query)->count(),
             'with_sales' => (clone $query)->whereHas('sales')->count(),
-            'sales_total' => Sale::sumTotalPrice(Sale::query()->whereIn('customer_id', clone $ids)),
-            'payments_total' => (float) Payment::query()
-                ->whereIn('customer_id', clone $ids)
-                ->where(fn ($q) => $q->whereNull('sale_id')->orWhereHas('sale'))
-                ->sum('amount'),
+            'sales_total' => Sale::sumTotalPrice(clone $salesQuery),
+            'sales_by_currency' => Sale::sumTotalPriceByCurrency(clone $salesQuery),
+            'payments_total' => (float) (clone $paymentsQuery)->sum('amount'),
+            'payments_by_currency' => CurrencyAmounts::sum(clone $paymentsQuery),
         ];
 
         return Inertia::render('Customers/Index', [
-            'items' => $query->latest()->paginate(12)->withQueryString(),
+            'items' => $query->with('creator:id,name')->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
         ]);
@@ -91,9 +95,15 @@ class CustomerController extends Controller implements HasMiddleware
             'stats' => [
                 'sales_count' => $customer->sales()->count(),
                 'sales_total' => Sale::sumTotalPrice($customer->sales()->getQuery()),
+                'sales_by_currency' => Sale::sumTotalPriceByCurrency($customer->sales()->getQuery()),
                 'payments_total' => $customer->payments()
                     ->where(fn ($q) => $q->whereNull('sale_id')->orWhereHas('sale'))
                     ->sum('amount'),
+                'payments_by_currency' => CurrencyAmounts::sum(
+                    $customer->payments()
+                        ->where(fn ($q) => $q->whereNull('sale_id')->orWhereHas('sale'))
+                        ->getQuery(),
+                ),
             ],
         ]);
     }

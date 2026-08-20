@@ -12,26 +12,35 @@ import {
     Trash2,
     Warehouse,
 } from '@lucide/vue';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
-import CurrencySelect from '@/components/CurrencySelect.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import { MisTabs } from '@/components/mis';
+import { MisSearchInput, MisTabs } from '@/components/mis';
+import ShareholderAddDialog from '@/components/ShareholderAddDialog.vue';
+import ShareholderContributionDialog from '@/components/ShareholderContributionDialog.vue';
+import ShareholderPayoutDialog from '@/components/ShareholderPayoutDialog.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money } from '@/lib/utils';
+import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     item: Record<string, any>;
-    stats: Record<string, number>;
+    stats: Record<string, any>;
     shareholders: {
         id: number;
         name: string;
@@ -59,6 +68,8 @@ const props = defineProps<{
         amount: number;
         currency?: string;
         purchase_id?: number | null;
+        reference_no?: string | null;
+        payment_method?: string | null;
     }[];
     expense_categories?: { id: number; name: string; code: string }[];
     purchases?: {
@@ -71,6 +82,28 @@ const props = defineProps<{
         currency?: string;
         status: string;
         supplier?: { id: number; name: string };
+    }[];
+    purchase_materials?: {
+        material_id: number;
+        name: string;
+        code?: string | null;
+        unit?: string | null;
+        purchase_count: number;
+        quantity: number;
+        total_cost_base: number;
+        total_cost_by_currency: Record<string, number>;
+        lines: {
+            id: number;
+            purchase_id: number;
+            purchase_no: string;
+            purchase_date: string | null;
+            supplier?: string | null;
+            quantity: number;
+            unit_cost: number;
+            total_cost: number;
+            currency?: string;
+            status?: string;
+        }[];
     }[];
     stock?: {
         material_id: number;
@@ -94,23 +127,98 @@ const props = defineProps<{
     }[];
 }>();
 
+type PurchaseMaterial = NonNullable<typeof props.purchase_materials>[number];
+
 const expenseDialogOpen = ref(false);
 const selectedExpense = ref<Record<string, any> | null>(null);
-const contributionPartnerId = ref('');
-const payoutPartnerId = ref('');
+const expenseStartEditing = ref(false);
+const expenseSearch = ref('');
+const addShareholderOpen = ref(false);
+const contributionDialogOpen = ref(false);
+const payoutDialogOpen = ref(false);
+const materialDialogOpen = ref(false);
+const selectedMaterial = ref<PurchaseMaterial | null>(null);
+const materialQuery = ref('');
+const materialLineQuery = ref('');
 const tab = ref('info');
 const { t } = useTranslations();
 const { baseCurrency } = useCurrency();
-const contributionCurrency = ref(baseCurrency.value);
-const payoutCurrency = ref(baseCurrency.value);
 
-function openExpense(expense: Record<string, any> | null) {
+function openExpense(expense: Record<string, any> | null, edit = false) {
     selectedExpense.value = expense;
+    expenseStartEditing.value = edit && !!expense && !expense.purchase_id;
     expenseDialogOpen.value = true;
+}
+
+function openMaterial(row: PurchaseMaterial) {
+    selectedMaterial.value = row;
+    materialLineQuery.value = '';
+    materialDialogOpen.value = true;
 }
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
+
+const filteredExpenses = computed(() => {
+    const q = expenseSearch.value.trim().toLowerCase();
+    if (!q) {
+        return props.expenses;
+    }
+
+    return props.expenses.filter((expense) => {
+        const method =
+            expense.payment_method === 'bank' ? 'bank payment' : 'cash';
+        const haystack = [
+            expense.expense_no,
+            expense.expense_date,
+            formatDate(expense.expense_date),
+            expense.reference_no,
+            expense.paid_to,
+            expense.description,
+            expense.payment_method,
+            method,
+            expense.amount,
+            expense.currency,
+        ]
+            .filter((v) => v != null && v !== '')
+            .join(' ')
+            .toLowerCase();
+
+        return haystack.includes(q);
+    });
+});
+
+const filteredPurchaseMaterials = computed(() => {
+    const q = materialQuery.value.trim().toLowerCase();
+    const rows = props.purchase_materials ?? [];
+    if (!q) {
+        return rows;
+    }
+
+    return rows.filter((row) =>
+        [row.name, row.code, row.unit]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q),
+    );
+});
+
+const filteredMaterialLines = computed(() => {
+    const lines = selectedMaterial.value?.lines ?? [];
+    const q = materialLineQuery.value.trim().toLowerCase();
+    if (!q) {
+        return lines;
+    }
+
+    return lines.filter((line) =>
+        [line.purchase_no, line.supplier]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q),
+    );
+});
 const tabs = [
     { id: 'info', label: t('Project info'), icon: Info },
     { id: 'shareholders', label: t('Shareholders'), icon: Handshake },
@@ -194,9 +302,9 @@ defineOptions({
                 </div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">
                     {{
-                        money(
-                            stats.sales_total_base ?? stats.sales_total,
-                            baseCurrency,
+                        moneyByCurrency(
+                            stats.sales_by_currency,
+                            stats.sales_total,
                         )
                     }}
                 </div>
@@ -209,9 +317,9 @@ defineOptions({
                     class="mt-1 text-2xl font-semibold text-rose-700 tabular-nums"
                 >
                     {{
-                        money(
-                            stats.expenses_total_base ?? stats.expenses_total,
-                            baseCurrency,
+                        moneyByCurrency(
+                            stats.expenses_by_currency,
+                            stats.expenses_total,
                         )
                     }}
                 </div>
@@ -224,11 +332,9 @@ defineOptions({
                     class="mt-1 text-2xl font-semibold text-amber-700 tabular-nums"
                 >
                     {{
-                        money(
-                            stats.purchases_remaining_base ??
-                                stats.purchases_remaining ??
-                                0,
-                            baseCurrency,
+                        moneyByCurrency(
+                            stats.purchases_remaining_by_currency,
+                            stats.purchases_remaining ?? 0,
                         )
                     }}
                 </div>
@@ -391,292 +497,130 @@ defineOptions({
             </table>
         </div>
 
-        <div
-            v-show="tab === 'shareholders'"
-            class="overflow-hidden rounded-xl border bg-card shadow-sm"
-        >
-            <div class="border-b px-5 py-4">
-                <h3 class="text-sm font-semibold">{{ t('Shareholders') }}</h3>
-            </div>
-
-            <Form
-                :action="`/projects/${item.id}/shareholders`"
-                method="post"
-                class="grid gap-4 border-b bg-muted/20 p-5 sm:grid-cols-4"
-                v-slot="{ errors, processing }"
+        <div v-show="tab === 'shareholders'" class="space-y-4">
+            <div
+                class="overflow-hidden rounded-xl border bg-card shadow-sm"
             >
-                <div class="grid gap-2 sm:col-span-2">
-                    <Label for="partner_id">{{ t('Shareholder') }}</Label>
-                    <select
-                        id="partner_id"
-                        name="partner_id"
-                        required
-                        class="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
-                    >
-                        <option value="" disabled selected>
-                            {{ t('Select from list') }}
-                        </option>
-                        <option
-                            v-for="s in available_shareholders"
-                            :key="s.id"
-                            :value="s.id"
-                        >
-                            {{ s.name }}{{ s.phone ? ` · ${s.phone}` : '' }}
-                        </option>
-                    </select>
-                    <InputError :message="errors.partner_id" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="ownership_percentage">{{
-                        t('Ownership %')
-                    }}</Label>
-                    <Input
-                        id="ownership_percentage"
-                        name="ownership_percentage"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        required
-                    />
-                    <InputError :message="errors.ownership_percentage" />
-                </div>
-                <Can permission="partners.create">
-                    <Button as-child variant="outline" class="w-full">
-                        <Link href="/partners/create">{{
-                            t('New shareholder')
-                        }}</Link>
-                    </Button>
-                </Can>
-                <div class="sm:col-span-4">
-                    <Button
-                        type="submit"
-                        :disabled="processing || !available_shareholders.length"
-                    >
-                        {{ processing ? t('Saving…') : t('Add to project') }}
-                    </Button>
-                </div>
-            </Form>
-
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-start text-muted-foreground">
-                        <tr>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Name') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Share') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Money in') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Profit share') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Paid out') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Still owed') }}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="s in shareholders"
-                            :key="s.id"
-                            class="border-t hover:bg-muted/30"
-                        >
-                            <td class="px-4 py-3 font-medium">{{ s.name }}</td>
-                            <td class="px-4 py-3 tabular-nums">
-                                {{ formatNumber(s.ownership_percentage) }}%
-                            </td>
-                            <td class="px-4 py-3 tabular-nums">
-                                {{ money(s.contributed_total, baseCurrency) }}
-                            </td>
-                            <td class="px-4 py-3 tabular-nums">
-                                {{ money(s.entitled_share, baseCurrency) }}
-                            </td>
-                            <td class="px-4 py-3 text-emerald-700 tabular-nums">
-                                {{ money(s.paid_total, baseCurrency) }}
-                            </td>
-                            <td class="px-4 py-3 text-amber-700 tabular-nums">
-                                {{ money(s.balance_owed, baseCurrency) }}
-                            </td>
-                        </tr>
-                        <tr v-if="!shareholders.length">
-                            <td
-                                colspan="6"
-                                class="px-4 py-10 text-center text-muted-foreground"
+                <div
+                    class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4"
+                >
+                    <div>
+                        <h3 class="text-sm font-semibold">
+                            {{ t('Shareholders') }}
+                        </h3>
+                        <p class="mt-0.5 text-sm text-muted-foreground">
+                            {{ t('Ownership, contributions and payouts') }}
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <Can permission="partners.create">
+                            <Button
+                                v-if="shareholders.length"
+                                size="sm"
+                                variant="outline"
+                                @click="contributionDialogOpen = true"
                             >
-                                {{ t('No shareholders yet') }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                {{ t('Record money in') }}
+                            </Button>
+                            <Button
+                                v-if="shareholders.length"
+                                size="sm"
+                                variant="outline"
+                                @click="payoutDialogOpen = true"
+                            >
+                                {{ t('Record payout') }}
+                            </Button>
+                            <Button
+                                size="sm"
+                                @click="addShareholderOpen = true"
+                            >
+                                {{ t('Add shareholder') }}
+                            </Button>
+                        </Can>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-muted/40 text-start text-muted-foreground">
+                            <tr>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Name') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Share') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Money in') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Profit share') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Paid out') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Still owed') }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="s in shareholders"
+                                :key="s.id"
+                                class="border-t hover:bg-muted/30"
+                            >
+                                <td class="px-4 py-3 font-medium">
+                                    {{ s.name }}
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{ formatNumber(s.ownership_percentage) }}%
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{
+                                        money(
+                                            s.contributed_total,
+                                            baseCurrency,
+                                        )
+                                    }}
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{
+                                        money(s.entitled_share, baseCurrency)
+                                    }}
+                                </td>
+                                <td
+                                    class="px-4 py-3 text-emerald-700 tabular-nums"
+                                >
+                                    {{ money(s.paid_total, baseCurrency) }}
+                                </td>
+                                <td
+                                    class="px-4 py-3 text-amber-700 tabular-nums"
+                                >
+                                    {{ money(s.balance_owed, baseCurrency) }}
+                                </td>
+                            </tr>
+                            <tr v-if="!shareholders.length">
+                                <td
+                                    colspan="6"
+                                    class="px-4 py-10 text-center text-muted-foreground"
+                                >
+                                    {{ t('No shareholders yet') }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div
-                v-if="shareholders.length"
-                class="grid gap-4 border-t bg-muted/10 p-5 lg:grid-cols-2"
+                v-if="contributions.length"
+                class="overflow-hidden rounded-xl border bg-card shadow-sm"
             >
-                <Form
-                    :action="
-                        contributionPartnerId
-                            ? `/projects/${item.id}/shareholders/${contributionPartnerId}/contributions`
-                            : '#'
-                    "
-                    method="post"
-                    class="grid gap-3 rounded-lg border bg-card p-4"
-                    v-slot="{ errors, processing }"
-                >
-                    <h4 class="text-sm font-medium">Record money in</h4>
-                    <div class="grid gap-2">
-                        <Label for="contribution_partner">Shareholder</Label>
-                        <select
-                            id="contribution_partner"
-                            v-model="contributionPartnerId"
-                            class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                            required
-                        >
-                            <option value="" disabled>
-                                Select shareholder
-                            </option>
-                            <option
-                                v-for="s in shareholders"
-                                :key="`c-${s.id}`"
-                                :value="String(s.id)"
-                            >
-                                {{ s.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="grid gap-3 sm:grid-cols-3">
-                        <div class="grid gap-2">
-                            <Label>Date</Label>
-                            <Input
-                                name="invested_at"
-                                type="date"
-                                required
-                                :default-value="
-                                    new Date().toISOString().slice(0, 10)
-                                "
-                            />
-                            <InputError :message="errors.invested_at" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>Amount</Label>
-                            <Input
-                                name="amount"
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                required
-                                placeholder="0.00"
-                            />
-                            <InputError :message="errors.amount" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>Currency</Label>
-                            <CurrencySelect v-model="contributionCurrency" />
-                            <input
-                                type="hidden"
-                                name="currency"
-                                :value="contributionCurrency"
-                            />
-                            <InputError :message="errors.currency" />
-                        </div>
-                    </div>
-                    <Button
-                        type="submit"
-                        size="sm"
-                        :disabled="processing || !contributionPartnerId"
-                        >Record contribution</Button
-                    >
-                </Form>
-
-                <Form
-                    :action="
-                        payoutPartnerId
-                            ? `/projects/${item.id}/shareholders/${payoutPartnerId}/payouts`
-                            : '#'
-                    "
-                    method="post"
-                    class="grid gap-3 rounded-lg border bg-card p-4"
-                    v-slot="{ errors, processing }"
-                >
-                    <h4 class="text-sm font-medium">Record payout</h4>
-                    <div class="grid gap-2">
-                        <Label for="payout_partner">Shareholder</Label>
-                        <select
-                            id="payout_partner"
-                            v-model="payoutPartnerId"
-                            class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                            required
-                        >
-                            <option value="" disabled>
-                                Select shareholder
-                            </option>
-                            <option
-                                v-for="s in shareholders"
-                                :key="`p-${s.id}`"
-                                :value="String(s.id)"
-                            >
-                                {{ s.name }}
-                            </option>
-                        </select>
-                    </div>
-                    <div class="grid gap-3 sm:grid-cols-3">
-                        <div class="grid gap-2">
-                            <Label>Date</Label>
-                            <Input
-                                name="distributed_at"
-                                type="date"
-                                required
-                                :default-value="
-                                    new Date().toISOString().slice(0, 10)
-                                "
-                            />
-                            <InputError :message="errors.distributed_at" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>Amount</Label>
-                            <Input
-                                name="amount"
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                required
-                                placeholder="0.00"
-                            />
-                            <InputError :message="errors.amount" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>Currency</Label>
-                            <CurrencySelect v-model="payoutCurrency" />
-                            <input
-                                type="hidden"
-                                name="currency"
-                                :value="payoutCurrency"
-                            />
-                            <InputError :message="errors.currency" />
-                        </div>
-                    </div>
-                    <Button
-                        type="submit"
-                        size="sm"
-                        :disabled="processing || !payoutPartnerId"
-                        >Record payout</Button
-                    >
-                </Form>
-            </div>
-
-            <div v-if="contributions.length" class="border-t">
-                <div class="border-b px-5 py-3">
-                    <h4 class="text-sm font-semibold">
+                <div class="border-b px-5 py-4">
+                    <h3 class="text-sm font-semibold">
                         {{ t('Contribution history') }}
-                    </h4>
+                    </h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -746,22 +690,17 @@ defineOptions({
             class="overflow-hidden rounded-xl border bg-card shadow-sm"
         >
             <div
-                class="flex flex-wrap items-start justify-between gap-3 border-b px-5 py-4"
+                class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4"
             >
-                <div>
-                    <h3 class="text-sm font-semibold">
-                        {{ t('Project expenses') }}
-                    </h3>
-                </div>
+                <h3 class="text-sm font-semibold">
+                    {{ t('Project expenses') }}
+                </h3>
                 <div class="flex flex-wrap gap-2">
                     <Can permission="purchases.create">
                         <Button as-child size="sm" variant="outline">
                             <Link
                                 :href="`/purchases/create?project_id=${item.id}`"
-                                >{{
-                                    t('Buying materials? Record a purchase')
-                                }}</Link
-                            >
+                            >{{ t('New purchase') }}</Link>
                         </Button>
                     </Can>
                     <Can permission="expenses.create">
@@ -772,49 +711,58 @@ defineOptions({
                 </div>
             </div>
 
+            <div class="border-b px-5 py-3">
+                <MisSearchInput
+                    v-model="expenseSearch"
+                    class="max-w-sm"
+                    :placeholder="t('Search expenses...')"
+                />
+            </div>
+
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Date') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Paid to') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Description') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
-                                {{ t('Amount') }}
-                            </th>
-                            <th class="px-4 py-3 text-end font-medium">
-                                {{ t('Actions') }}
-                            </th>
+                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Bill number') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Paying type') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
+                            <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="expense in expenses"
+                            v-for="expense in filteredExpenses"
                             :key="expense.id"
                             class="cursor-pointer border-t hover:bg-muted/30"
                             @click="openExpense(expense)"
                         >
-                            <td class="px-4 py-3">
+                            <td class="px-4 py-3 whitespace-nowrap">
                                 {{ formatDate(expense.expense_date) }}
+                            </td>
+                            <td class="px-4 py-3 font-medium tabular-nums">
+                                {{ expense.reference_no || '—' }}
                             </td>
                             <td class="px-4 py-3">
                                 {{ expense.paid_to || '—' }}
                             </td>
-                            <td class="px-4 py-3">
+                            <td class="max-w-[16rem] truncate px-4 py-3">
                                 {{ expense.description || '—' }}
                                 <span
                                     v-if="expense.purchase_id"
-                                    class="ml-1 text-xs text-muted-foreground"
-                                    >{{ t('(from purchase)') }}</span
-                                >
+                                    class="ms-1 text-xs text-muted-foreground"
+                                >{{ t('(from purchase)') }}</span>
                             </td>
-                            <td class="px-4 py-3 tabular-nums">
+                            <td class="px-4 py-3">
+                                {{
+                                    expense.payment_method === 'bank'
+                                        ? t('Bank payment')
+                                        : t('Cash')
+                                }}
+                            </td>
+                            <td class="px-4 py-3 tabular-nums whitespace-nowrap">
                                 {{
                                     money(
                                         expense.amount,
@@ -827,10 +775,20 @@ defineOptions({
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        @click="openExpense(expense)"
+                                        @click="openExpense(expense, false)"
                                     >
                                         {{ t('Open') }}
                                     </Button>
+                                    <Can permission="expenses.edit">
+                                        <Button
+                                            v-if="!expense.purchase_id"
+                                            variant="ghost"
+                                            size="sm"
+                                            @click="openExpense(expense, true)"
+                                        >
+                                            {{ t('Edit') }}
+                                        </Button>
+                                    </Can>
                                     <Can permission="expenses.delete">
                                         <Form
                                             v-if="!expense.purchase_id"
@@ -846,7 +804,6 @@ defineOptions({
                                                 :disabled="processing"
                                             >
                                                 <Trash2 class="size-4" />
-                                                {{ processing ? t('Deleting…') : t('Delete') }}
                                             </Button>
                                         </Form>
                                     </Can>
@@ -865,19 +822,22 @@ defineOptions({
                                                 :disabled="processing"
                                             >
                                                 <Trash2 class="size-4" />
-                                                {{ processing ? t('Deleting…') : t('Delete') }}
                                             </Button>
                                         </Form>
                                     </Can>
                                 </div>
                             </td>
                         </tr>
-                        <tr v-if="!expenses.length">
+                        <tr v-if="!filteredExpenses.length">
                             <td
-                                colspan="5"
+                                colspan="7"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
-                                {{ t('No expenses yet') }}
+                                {{
+                                    expenseSearch.trim()
+                                        ? t('No matching expenses')
+                                        : t('No expenses yet')
+                                }}
                             </td>
                         </tr>
                     </tbody>
@@ -885,28 +845,126 @@ defineOptions({
             </div>
         </div>
 
-        <div
-            v-show="tab === 'purchases'"
-            class="overflow-hidden rounded-xl border bg-card shadow-sm"
-        >
+        <div v-show="tab === 'purchases'" class="space-y-4">
             <div
-                class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4"
+                class="overflow-hidden rounded-xl border bg-card shadow-sm"
             >
-                <div>
+                <div
+                    class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4"
+                >
+                    <div>
+                        <h3 class="text-sm font-semibold">
+                            {{ t('Materials purchased') }}
+                        </h3>
+                        <p class="mt-0.5 text-sm text-muted-foreground">
+                            {{ t('Qty and cost by material for this project') }}
+                        </p>
+                    </div>
+                    <Can permission="purchases.create">
+                        <Button as-child size="sm">
+                            <Link
+                                :href="`/purchases/create?project_id=${item.id}`"
+                                >{{ t('New purchase') }}</Link
+                            >
+                        </Button>
+                    </Can>
+                </div>
+                <div class="border-b px-5 py-3">
+                    <MisSearchInput
+                        v-model="materialQuery"
+                        class="max-w-sm"
+                        :placeholder="t('Search materials...')"
+                    />
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead
+                            class="bg-muted/40 text-start text-muted-foreground"
+                        >
+                            <tr>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Material') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Purchases') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Total qty') }}
+                                </th>
+                                <th class="px-4 py-3 font-medium">
+                                    {{ t('Total cost') }}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="row in filteredPurchaseMaterials"
+                                :key="row.material_id"
+                                class="cursor-pointer border-t hover:bg-muted/30"
+                                @click="openMaterial(row)"
+                            >
+                                <td class="px-4 py-3">
+                                    <div class="font-medium text-primary">
+                                        {{ row.name }}
+                                    </div>
+                                    <div
+                                        v-if="row.code || row.unit"
+                                        class="text-xs text-muted-foreground"
+                                    >
+                                        {{
+                                            [row.code, row.unit]
+                                                .filter(Boolean)
+                                                .join(' · ')
+                                        }}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{ formatNumber(row.purchase_count, 0) }}
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{ formatNumber(row.quantity, 3) }}
+                                    <span
+                                        v-if="row.unit"
+                                        class="text-muted-foreground"
+                                    >
+                                        {{ row.unit }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 font-medium tabular-nums">
+                                    {{
+                                        moneyByCurrency(
+                                            row.total_cost_by_currency,
+                                            row.total_cost_base,
+                                        )
+                                    }}
+                                </td>
+                            </tr>
+                            <tr v-if="!filteredPurchaseMaterials.length">
+                                <td
+                                    colspan="4"
+                                    class="px-4 py-10 text-center text-muted-foreground"
+                                >
+                                    {{
+                                        materialQuery.trim()
+                                            ? t('No matching materials')
+                                            : t('No materials purchased yet')
+                                    }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div
+                class="overflow-hidden rounded-xl border bg-card shadow-sm"
+            >
+                <div class="border-b px-5 py-4">
                     <h3 class="text-sm font-semibold">
                         {{ t('Project purchases') }}
                     </h3>
                 </div>
-                <Can permission="purchases.create">
-                    <Button as-child size="sm">
-                        <Link
-                            :href="`/purchases/create?project_id=${item.id}`"
-                            >{{ t('New purchase') }}</Link
-                        >
-                    </Button>
-                </Can>
-            </div>
-            <div class="overflow-x-auto">
+                <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
@@ -978,7 +1036,7 @@ defineOptions({
                             <td class="px-4 py-3">
                                 <StatusBadge :status="purchase.status" />
                             </td>
-                            <td class="px-4 py-3 text-right">
+                            <td class="px-4 py-3 text-end">
                                 <Can permission="purchases.edit">
                                     <Form
                                         v-if="(purchase.remaining_amount ?? Math.max(0, Number(purchase.total_amount) - Number(purchase.paid_amount))) > 0"
@@ -1012,6 +1070,7 @@ defineOptions({
                         </tr>
                     </tbody>
                 </table>
+            </div>
             </div>
         </div>
 
@@ -1207,10 +1266,138 @@ defineOptions({
         </div>
     </div>
 
+    <Dialog v-model:open="materialDialogOpen">
+        <DialogContent
+            class="flex max-h-[85vh] flex-col gap-4 overflow-hidden sm:max-w-4xl"
+        >
+            <DialogHeader>
+                <DialogTitle>
+                    {{
+                        t('Purchases of :name', {
+                            name: selectedMaterial?.name || t('Material'),
+                        })
+                    }}
+                </DialogTitle>
+                <DialogDescription>
+                    {{
+                        selectedMaterial
+                            ? `${formatNumber(selectedMaterial.purchase_count, 0)} ${t('Purchases')} · ${formatNumber(selectedMaterial.quantity, 3)}${selectedMaterial.unit ? ` ${selectedMaterial.unit}` : ''} · ${moneyByCurrency(selectedMaterial.total_cost_by_currency, selectedMaterial.total_cost_base)}`
+                            : ''
+                    }}
+                </DialogDescription>
+            </DialogHeader>
+            <MisSearchInput
+                v-model="materialLineQuery"
+                class="max-w-sm"
+                :placeholder="t('Search purchases...')"
+            />
+            <div class="-mx-6 min-h-0 flex-1 overflow-auto border-t">
+                <table class="min-w-full text-sm">
+                    <thead
+                        class="sticky top-0 bg-muted/90 text-start text-muted-foreground backdrop-blur"
+                    >
+                        <tr>
+                            <th class="px-4 py-3 font-medium">
+                                {{ t('Purchase') }}
+                            </th>
+                            <th class="px-4 py-3 font-medium">
+                                {{ t('Date') }}
+                            </th>
+                            <th class="px-4 py-3 font-medium">
+                                {{ t('Supplier') }}
+                            </th>
+                            <th class="px-4 py-3 font-medium">
+                                {{ t('Qty') }}
+                            </th>
+                            <th class="px-4 py-3 font-medium">
+                                {{ t('Unit cost') }}
+                            </th>
+                            <th class="px-4 py-3 font-medium">
+                                {{ t('Total') }}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="line in filteredMaterialLines"
+                            :key="line.id"
+                            class="border-t hover:bg-muted/30"
+                        >
+                            <td class="px-4 py-3">
+                                <Link
+                                    :href="`/purchases/${line.purchase_id}`"
+                                    class="font-medium text-primary hover:underline"
+                                >
+                                    {{ line.purchase_no }}
+                                </Link>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                {{ formatDate(line.purchase_date) }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {{ line.supplier || '—' }}
+                            </td>
+                            <td class="px-4 py-3 tabular-nums">
+                                {{ formatNumber(line.quantity, 3) }}
+                            </td>
+                            <td class="px-4 py-3 tabular-nums">
+                                {{
+                                    money(
+                                        line.unit_cost,
+                                        line.currency || baseCurrency,
+                                    )
+                                }}
+                            </td>
+                            <td class="px-4 py-3 tabular-nums">
+                                {{
+                                    money(
+                                        line.total_cost,
+                                        line.currency || baseCurrency,
+                                    )
+                                }}
+                            </td>
+                        </tr>
+                        <tr v-if="!filteredMaterialLines.length">
+                            <td
+                                colspan="6"
+                                class="px-4 py-10 text-center text-muted-foreground"
+                            >
+                                {{
+                                    materialLineQuery.trim()
+                                        ? t('No matching purchases')
+                                        : t('No purchases yet')
+                                }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </DialogContent>
+    </Dialog>
+
     <ExpenseRecordDialog
         v-model:open="expenseDialogOpen"
         :item="selectedExpense"
         :project-id="item.id"
+        :start-editing="expenseStartEditing"
         :categories="expense_categories"
+    />
+
+    <ShareholderAddDialog
+        v-model:open="addShareholderOpen"
+        :project-id="item.id"
+        :available-shareholders="available_shareholders"
+    />
+
+    <ShareholderContributionDialog
+        v-model:open="contributionDialogOpen"
+        :project-id="item.id"
+        :shareholders="shareholders"
+    />
+
+    <ShareholderPayoutDialog
+        v-model:open="payoutDialogOpen"
+        :project-id="item.id"
+        :shareholders="shareholders"
     />
 </template>

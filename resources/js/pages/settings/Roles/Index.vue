@@ -191,7 +191,6 @@ defineOptions({
 
     <MisListPage
         :title="t('Role Management')"
-        :description="t('Define roles and permissions')"
         :icon="Shield"
     >
         <template #actions>

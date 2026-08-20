@@ -7,13 +7,19 @@ import Heading from '@/components/Heading.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
-import { money } from '@/lib/utils';
+import { money, moneyByCurrency } from '@/lib/utils';
 
 const { t } = useTranslations();
 
 defineProps<{
     item: Record<string, any>;
-    stats: { purchases_count: number; purchases_total: number; remaining_total: number };
+    stats: {
+        purchases_count: number;
+        purchases_total: number;
+        remaining_total: number;
+        purchases_by_currency?: Record<string, number>;
+        remaining_by_currency?: Record<string, number>;
+    };
 }>();
 
 defineOptions({
@@ -51,11 +57,11 @@ defineOptions({
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Purchase total') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.purchases_total) }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ moneyByCurrency(stats.purchases_by_currency, stats.purchases_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Remaining owed') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-amber-700">{{ money(stats.remaining_total) }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums text-amber-700">{{ moneyByCurrency(stats.remaining_by_currency, stats.remaining_total) }}</div>
             </div>
         </div>
 

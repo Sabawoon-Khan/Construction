@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PartnerDistribution extends Model
 {
+    use HasCreator;
+
     protected $fillable = [
+        'user_id',
         'project_id',
         'partner_id',
         'amount',

@@ -39,7 +39,7 @@ class PurchaseController extends Controller implements HasMiddleware
     public function index(Request $request): Response
     {
         $query = Purchase::query()
-            ->with(['supplier:id,name', 'project:id,name']);
+            ->with(['supplier:id,name', 'project:id,name', 'creator:id,name']);
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
@@ -56,10 +56,7 @@ class PurchaseController extends Controller implements HasMiddleware
         $paidBase = (float) (clone $query)->sum('paid_amount_base');
         $totalByCurrency = CurrencyAmounts::sum(clone $query, 'total_amount');
         $paidByCurrency = CurrencyAmounts::sum(clone $query, 'paid_amount');
-        $remainingByCurrency = [];
-        foreach (array_unique([...array_keys($totalByCurrency), ...array_keys($paidByCurrency)]) as $code) {
-            $remainingByCurrency[$code] = round(($totalByCurrency[$code] ?? 0) - ($paidByCurrency[$code] ?? 0), 2);
-        }
+        $remainingByCurrency = CurrencyAmounts::remaining($totalByCurrency, $paidByCurrency);
 
         $totals = [
             'count' => (clone $query)->count(),

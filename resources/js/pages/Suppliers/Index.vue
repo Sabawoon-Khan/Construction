@@ -9,14 +9,22 @@ import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { money } from '@/lib/utils';
+import { moneyByCurrency } from '@/lib/utils';
 
 type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; purchases_total: number; paid_total: number; remaining_total: number };
+    totals: {
+        count: number;
+        purchases_total: number;
+        paid_total: number;
+        remaining_total: number;
+        purchases_by_currency?: Record<string, number>;
+        paid_by_currency?: Record<string, number>;
+        remaining_by_currency?: Record<string, number>;
+    };
 }>();
 
 const search = ref(props.filters.search ?? '');
@@ -73,9 +81,9 @@ function rowActions(item: Item): RowActionItem[] {
 
         <MisStatGrid :columns="4">
             <MisStatCard :label="t('Suppliers')" :value="totals.count" />
-            <MisStatCard :label="t('Purchases')" :value="money(totals.purchases_total)" />
-            <MisStatCard :label="t('Paid')" :value="money(totals.paid_total)" tone="success" />
-            <MisStatCard :label="t('Remaining owed')" :value="money(totals.remaining_total)" tone="warning" />
+            <MisStatCard :label="t('Purchases')" :value="moneyByCurrency(totals.purchases_by_currency, totals.purchases_total)" />
+            <MisStatCard :label="t('Paid')" :value="moneyByCurrency(totals.paid_by_currency, totals.paid_total)" tone="success" />
+            <MisStatCard :label="t('Remaining owed')" :value="moneyByCurrency(totals.remaining_by_currency, totals.remaining_total)" tone="warning" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
@@ -88,6 +96,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Contact') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Phone') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Purchases') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -106,6 +116,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3">{{ item.contact_person || '—' }}</td>
                             <td class="px-4 py-3">{{ item.phone || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ item.purchases_count ?? 0 }}</td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -114,9 +126,8 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="6"
+                            :colspan="7"
                             :title="t('No suppliers yet')"
-                            :description="t('Add a supplier before recording a purchase.')"
                         />
                     </tbody>
                 </table>

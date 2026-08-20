@@ -25,6 +25,7 @@ const { baseCurrency } = useCurrency();
 const { can, formatDate } = useMisPage();
 const dialogOpen = ref(false);
 const selected = ref<Record<string, any> | null>(null);
+const startEditing = ref(false);
 
 defineOptions({
     layout: {
@@ -41,15 +42,16 @@ const clearFilters = () => {
     apply();
 };
 
-function openRecord(item: Record<string, any> | null) {
+function openRecord(item: Record<string, any> | null, edit = false) {
     selected.value = item;
+    startEditing.value = edit && !!item;
     dialogOpen.value = true;
 }
 
 function rowActions(item: any): RowActionItem[] {
     return [
-        { label: t('View'), icon: Eye, onClick: () => openRecord(item) },
-        { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item), hidden: !can('incomes.edit') },
+        { label: t('View'), icon: Eye, onClick: () => openRecord(item, false) },
+        { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item, true), hidden: !can('incomes.edit') },
         { separator: true, isLabel: true, label: t('Danger') },
         {
             label: t('Delete'),
@@ -90,6 +92,8 @@ function rowActions(item: any): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Total amount') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -103,19 +107,21 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3">{{ formatDate(item.income_date) }}</td>
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3" @click.stop>
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="4" :title="t('No income records yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="5" :title="t('No income records yet')" />
                     </tbody>
                 </table>
             </div>
             <Pagination :paginator="items" />
         </div>
 
-        <IncomeRecordDialog v-model:open="dialogOpen" :item="selected" />
+        <IncomeRecordDialog v-model:open="dialogOpen" :item="selected" :start-editing="startEditing" />
     </div>
 </template>

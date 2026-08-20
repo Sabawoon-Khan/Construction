@@ -2,6 +2,7 @@
 import { usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import GlobalSearch from '@/components/GlobalSearch.vue';
 import NotificationBell from '@/components/NotificationBell.vue';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import AiHeaderButton from '@/components/AiHeaderButton.vue';
@@ -55,6 +56,7 @@ const showAvatar = computed(
         </div>
 
         <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <GlobalSearch />
             <LanguageSwitcher />
             <AiHeaderButton />
             <NotificationBell />

@@ -11,14 +11,20 @@ import { translateStatus } from '@/lib/translateStatus';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { formatNumber, money } from '@/lib/utils';
+import { formatNumber, moneyByCurrency } from '@/lib/utils';
 
 type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; active: number; units: number; sales_total: number };
+    totals: {
+        count: number;
+        active: number;
+        units: number;
+        sales_total: number;
+        sales_by_currency?: Record<string, number>;
+    };
 }>();
 
 const search = ref(props.filters.search ?? '');
@@ -95,7 +101,7 @@ function rowActions(item: Item): RowActionItem[] {
             <MisStatCard :label="t('Projects')" :value="totals.count" />
             <MisStatCard :label="t('Active')" :value="totals.active" />
             <MisStatCard :label="t('Units')" :value="totals.units" />
-            <MisStatCard :label="t('Sales total')" :value="money(totals.sales_total)" tone="success" />
+            <MisStatCard :label="t('Sales total')" :value="moneyByCurrency(totals.sales_by_currency, totals.sales_total)" tone="success" />
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
@@ -109,6 +115,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Progress') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Units') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+
                             <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -128,6 +136,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3 tabular-nums">{{ formatNumber(item.progress_percent) }}%</td>
                             <td class="px-4 py-3">{{ item.units_count }}</td>
+                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -136,9 +146,8 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="7"
+                            :colspan="8"
                             :title="t('No projects yet')"
-                            :description="t('Create a project to start adding units and sales.')"
                         />
                     </tbody>
                 </table>

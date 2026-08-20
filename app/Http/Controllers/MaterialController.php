@@ -23,7 +23,7 @@ class MaterialController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = Material::query()->with('unit:id,unit_name');
+        $query = Material::query()->with(['unit:id,unit_name', 'creator:id,name']);
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {

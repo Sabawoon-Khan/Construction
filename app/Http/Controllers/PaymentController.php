@@ -25,7 +25,7 @@ class PaymentController extends Controller implements HasMiddleware
             ->where(function ($q) {
                 $q->whereNull('purchase_id')->orWhereHas('purchase');
             })
-            ->with(['customer:id,name', 'supplier:id,name', 'project:id,name', 'sale:id,sale_no', 'purchase:id,purchase_no']);
+            ->with(['customer:id,name', 'supplier:id,name', 'project:id,name', 'sale:id,sale_no', 'purchase:id,purchase_no', 'creator:id,name']);
 
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {

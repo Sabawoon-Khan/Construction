@@ -42,7 +42,7 @@ class EmployeeController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Employees/Index', [
-            'items' => $query->latest()->paginate(15)->withQueryString(),
+            'items' => $query->with('creator:id,name')->latest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
         ]);

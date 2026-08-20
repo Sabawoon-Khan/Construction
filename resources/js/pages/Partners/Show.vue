@@ -6,7 +6,7 @@ import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money } from '@/lib/utils';
+import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
 
 defineProps<{
     item: Record<string, any>;
@@ -18,7 +18,13 @@ defineProps<{
         paid_total: number;
         balance_owed: number;
     }[];
-    stats: { projects_count: number; contributions_total: number; payouts_total: number };
+    stats: {
+        projects_count: number;
+        contributions_total: number;
+        payouts_total: number;
+        contributions_by_currency?: Record<string, number>;
+        payouts_by_currency?: Record<string, number>;
+    };
 }>();
 const { t } = useTranslations();
 
@@ -62,11 +68,11 @@ defineOptions({
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Total contributed') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.contributions_total) }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ moneyByCurrency(stats.contributions_by_currency, stats.contributions_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Total paid out') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(stats.payouts_total) }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ moneyByCurrency(stats.payouts_by_currency, stats.payouts_total) }}</div>
             </div>
         </div>
 
