@@ -56,7 +56,7 @@ export const featureGroups: Array<{
         items: [
             {
                 titleKey: 'landing.feat.i18n.title',
-                title: 'en / fa / ps / ar',
+                title: 'en / fa',
                 bodyKey: 'landing.feat.i18n.body',
                 body: 'Cookie locale switcher, full RTL where needed, and readable Arabic-script typography.',
             },
@@ -398,7 +398,7 @@ export const stackItems: string[] = [
     'Inertia 3 · Vue 3 · TypeScript · Vite 8',
     'Tailwind 4 · shadcn-vue / Reka UI',
     'Spatie Permission + Activitylog',
-    'Locales: en, fa, ps, ar',
+    'Locales: en, fa',
     'PWA / Workbox · Dexie (offline)',
     'Laravel AI SDK · multi-provider',
     'Plus Jakarta Sans · Noto Sans Arabic',

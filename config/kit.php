@@ -26,7 +26,7 @@ return [
         'sms' => (bool) env('KIT_SMS', false),
         'tenancy' => (bool) env('KIT_TENANCY', false),
         'tours' => true,
-        'arabic' => true,
+        'arabic' => false,
         'mail_alerts' => (bool) env('KIT_MAIL_ALERTS', true),
         /*
          * Offline foundation (PWA shell, Dexie outbox, sync API).
