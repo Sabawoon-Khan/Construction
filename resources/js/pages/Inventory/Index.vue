@@ -4,6 +4,7 @@ import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -96,7 +97,10 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label>{{ t('Project') }}</Label>
+                <div class="flex items-center justify-between gap-2">
+                    <Label>{{ t('Project') }}</Label>
+                    <RelatedCreateLink href="/projects/create" :label="t('Add project')" />
+                </div>
                 <select name="project_id" required class="h-9 rounded-md border px-3 text-sm" :value="projectId">
                     <option value="" disabled>{{ t('Select project') }}</option>
                     <option v-for="project in projects" :key="project.id" :value="project.id">{{ project.name }}</option>
@@ -104,7 +108,10 @@ defineOptions({
                 <InputError :message="errors.project_id" />
             </div>
             <div class="grid gap-2">
-                <Label>{{ t('Material') }}</Label>
+                <div class="flex items-center justify-between gap-2">
+                    <Label>{{ t('Material') }}</Label>
+                    <RelatedCreateLink href="/materials/create" :label="t('Add material')" />
+                </div>
                 <select name="material_id" required class="h-9 rounded-md border px-3 text-sm">
                     <option value="">{{ t('Select material') }}</option>
                     <option v-for="material in issueMaterials" :key="material.id" :value="material.id">

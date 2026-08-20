@@ -26,6 +26,7 @@ class GeneralSettingsController extends Controller
 
         $validated = $request->validate([
             'app_name' => ['required', 'string', 'max:255'],
+            'app_name_en' => ['nullable', 'string', 'max:255'],
             'default_locale' => ['required', 'string', Rule::in($locales->codes())],
             'calendar_system' => ['sometimes', 'string', Rule::in(CalendarSystem::options())],
             'logo' => ['nullable', 'image', 'max:2048'],
@@ -35,6 +36,7 @@ class GeneralSettingsController extends Controller
         ]);
 
         OrgSetting::setValue('app_name', $validated['app_name']);
+        OrgSetting::setValue('app_name_en', $validated['app_name_en'] ?? '');
         OrgSetting::setValue('default_locale', $validated['default_locale']);
 
         if (array_key_exists('calendar_system', $validated)) {
@@ -61,7 +63,11 @@ class GeneralSettingsController extends Controller
             OrgSetting::setValue('favicon_path', $path);
         }
 
-        config(['app.name' => $validated['app_name']]);
+        config([
+            'app.name' => filled($validated['app_name_en'] ?? null)
+                ? $validated['app_name_en']
+                : $validated['app_name'],
+        ]);
 
         return back()->with('success', __('Settings saved.'));
     }

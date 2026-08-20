@@ -4,6 +4,7 @@ import { Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
@@ -11,12 +12,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 
-const props = defineProps<{ item: any; projects: any[] }>();
+const props = defineProps<{ item: any; projects: any[]; default_project_id?: number | null }>();
 const isEdit = computed(() => !!props.item);
 const { t } = useTranslations();
 const { baseCurrency } = useCurrency();
 const currency = ref(props.item?.currency ?? baseCurrency.value);
+const projectId = ref(
+    String(props.item?.project_id ?? props.default_project_id ?? ''),
+);
 
 defineOptions({
     layout: {
@@ -31,7 +36,7 @@ defineOptions({
 
 <template>
     <Head :title="isEdit ? t('Edit unit') : t('Create unit')" />
-    <MisFormPage :title="isEdit ? t('Edit unit') : t('Create unit')" back-href="/units">
+    <MisFormPage :title="isEdit ? t('Edit unit') : t('Create unit')" :back-href="isEdit ? '/units' : undefined">
         <Form
             :action="isEdit ? `/units/${item.id}` : '/units'"
             :method="isEdit ? 'put' : 'post'"
@@ -40,10 +45,19 @@ defineOptions({
         >
             <div class="mis-form-grid">
                 <div class="grid gap-2">
-                    <Label>{{ t('Project') }}</Label>
-                    <select name="project_id" required class="mis-form-select" :value="item?.project_id ?? ''">
+                    <div class="flex items-center justify-between gap-2">
+                        <Label>{{ t('Project') }}</Label>
+                        <RelatedCreateLink href="/projects/create" :label="t('Add project')" />
+                    </div>
+                    <select
+                        v-model="projectId"
+                        name="project_id"
+                        required
+                        class="mis-form-select"
+                        :disabled="isEdit"
+                    >
                         <option value="" disabled>{{ t('Select') }}</option>
-                        <option v-for="p in projects" :key="p.id" :value="p.id">{{ p.name }}</option>
+                        <option v-for="p in projects" :key="p.id" :value="String(p.id)">{{ p.name }}</option>
                     </select>
                     <InputError :message="errors.project_id" />
                 </div>
@@ -80,8 +94,12 @@ defineOptions({
                     </select>
                 </div>
                 <div class="grid gap-2">
-                    <Label>{{ t('Bedrooms') }}</Label>
-                    <Input name="bedrooms" type="number" :default-value="item?.bedrooms ?? ''" />
+                    <Label>{{ t('Halls') }}</Label>
+                    <Input name="halls" type="number" :default-value="item?.halls ?? ''" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>{{ t('Kitchens') }}</Label>
+                    <Input name="kitchens" type="number" :default-value="item?.kitchens ?? ''" />
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ t('Bathrooms') }}</Label>
@@ -92,16 +110,24 @@ defineOptions({
                     <Input name="toilets" type="number" :default-value="item?.toilets ?? ''" />
                 </div>
                 <div class="grid gap-2">
-                    <Label>{{ t('Halls') }}</Label>
-                    <Input name="halls" type="number" :default-value="item?.halls ?? ''" />
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Kitchens') }}</Label>
-                    <Input name="kitchens" type="number" :default-value="item?.kitchens ?? ''" />
+                    <Label>{{ t('Corridors') }}</Label>
+                    <Input name="corridors" type="number" :default-value="item?.corridors ?? ''" />
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ t('Balconies') }}</Label>
                     <Input name="balconies" type="number" :default-value="item?.balconies ?? ''" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>{{ t('Courtyards') }}</Label>
+                    <Input name="courtyards" type="number" :default-value="item?.courtyards ?? ''" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>{{ t('Parkings') }}</Label>
+                    <Input name="parkings" type="number" :default-value="item?.parkings ?? ''" />
+                </div>
+                <div class="grid gap-2">
+                    <Label>{{ t('Bedrooms') }}</Label>
+                    <Input name="bedrooms" type="number" :default-value="item?.bedrooms ?? ''" />
                 </div>
                 <div class="grid gap-2">
                     <Label>{{ t('Planned unit cost') }}</Label>
@@ -127,7 +153,10 @@ defineOptions({
             />
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ t('Save') }}</Button>
-                <Button as-child variant="secondary"><Link href="/units">{{ t('Cancel') }}</Link></Button>
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
+                    <Link href="/units">{{ t('Cancel') }}</Link>
+                </Button>
                 <Form v-if="isEdit" :action="`/units/${item.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
                     <Button type="submit" variant="destructive" :disabled="deleting">
                         <Trash2 class="size-4" />

@@ -8,12 +8,15 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\BalanceSheetController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseUnitController;
 use App\Http\Controllers\GlobalSearchController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocaleController;
@@ -21,7 +24,9 @@ use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PortfolioProjectController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\PublicPortfolioController;
 use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RobotsController;
@@ -33,7 +38,15 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::get('/', HomeController::class)->name('home');
+Route::post('/contact', [ContactController::class, 'store'])
+    ->middleware('throttle:8,1')
+    ->name('contact.store');
+Route::get('/work', [PublicPortfolioController::class, 'index'])
+    ->name('website.portfolio.index');
+Route::get('/portfolio/{slug}', [PublicPortfolioController::class, 'show'])
+    ->where('slug', '^(?!create$)[A-Za-z0-9\-]+$')
+    ->name('website.portfolio.show');
 
 Route::get('/robots.txt', RobotsController::class)->name('robots');
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
@@ -102,6 +115,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('partners', PartnerController::class);
     Route::resource('suppliers', SupplierController::class);
     Route::resource('materials', MaterialController::class)->except(['show']);
+    Route::resource('portfolio', PortfolioProjectController::class)
+        ->parameters(['portfolio' => 'portfolio'])
+        ->except(['show']);
+    Route::resource('contact-messages', ContactMessageController::class)
+        ->only(['index', 'show', 'destroy']);
     Route::resource('purchases', PurchaseController::class);
     Route::post('purchases/{purchase}/pay', [PurchaseController::class, 'pay'])
         ->name('purchases.pay');

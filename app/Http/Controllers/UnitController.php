@@ -69,6 +69,7 @@ class UnitController extends Controller implements HasMiddleware
     {
         return Inertia::render('Units/Form', [
             'item' => null,
+            'default_project_id' => $request->integer('project_id') ?: null,
             ...$this->formOptions($request),
         ]);
     }
@@ -100,6 +101,9 @@ class UnitController extends Controller implements HasMiddleware
                 'halls' => $data['halls'] ?? null,
                 'kitchens' => $data['kitchens'] ?? null,
                 'balconies' => $data['balconies'] ?? null,
+                'corridors' => $data['corridors'] ?? null,
+                'courtyards' => $data['courtyards'] ?? null,
+                'parkings' => $data['parkings'] ?? null,
                 'cost_price' => $costPrice,
                 'cost_price_base' => round($costPrice * $exchangeRate, 2),
                 'list_price' => $listPrice,
@@ -172,6 +176,9 @@ class UnitController extends Controller implements HasMiddleware
             'halls' => $data['halls'] ?? null,
             'kitchens' => $data['kitchens'] ?? null,
             'balconies' => $data['balconies'] ?? null,
+            'corridors' => $data['corridors'] ?? null,
+            'courtyards' => $data['courtyards'] ?? null,
+            'parkings' => $data['parkings'] ?? null,
             'cost_price' => $costPrice,
             'cost_price_base' => round($costPrice * $exchangeRate, 2),
             'list_price' => $listPrice,
@@ -212,6 +219,9 @@ class UnitController extends Controller implements HasMiddleware
             'halls' => 'nullable|integer|min:0',
             'kitchens' => 'nullable|integer|min:0',
             'balconies' => 'nullable|integer|min:0',
+            'corridors' => 'nullable|integer|min:0',
+            'courtyards' => 'nullable|integer|min:0',
+            'parkings' => 'nullable|integer|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'list_price' => 'nullable|numeric|min:0',
             'currency' => 'required|string|size:3',

@@ -27,15 +27,17 @@ class DatabaseSeeder extends Seeder
         $admin->syncRoles(['Owner']);
 
         Company::query()->firstOrCreate(
-            ['name' => config('app.name', 'Yaqeen Kit')],
+            ['name' => 'شاهین صمیم بارکزی'],
             [
-                'legal_name' => config('app.name', 'Yaqeen Kit'),
+                'name_en' => 'Shahin Samim Barakzai',
+                'legal_name' => 'شاهین صمیم بارکزی',
                 'base_currency' => 'USD',
                 'is_active' => true,
             ],
         );
 
-        OrgSetting::setValue('app_name', config('app.name', 'Yaqeen Kit'));
+        OrgSetting::setValue('app_name', 'شاهین صمیم بارکزی');
+        OrgSetting::setValue('app_name_en', 'Shahin Samim Barakzai');
         OrgSetting::setValue('default_locale', config('app.locale', 'fa'));
         OrgSetting::setValue('calendar_system', 'jalali');
 

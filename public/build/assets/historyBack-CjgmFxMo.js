@@ -1,0 +1,1 @@
+function e(){window.history.back()}export{e as t};

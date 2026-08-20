@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 
 const props = defineProps<{
     item: Record<string, any> | null;
@@ -36,7 +37,7 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit material') : t('Create material')" />
 
-    <MisFormPage :title="isEdit ? t('Edit material') : t('Create material')" back-href="/materials">
+    <MisFormPage :title="isEdit ? t('Edit material') : t('Create material')" :back-href="isEdit ? '/materials' : undefined">
         <Form
             :action="isEdit ? `/materials/${item!.id}` : '/materials'"
             :method="isEdit ? 'put' : 'post'"
@@ -92,7 +93,8 @@ defineOptions({
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save') }}</Button>
-                <Button as-child variant="secondary">
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
                     <Link href="/materials">{{ t('Cancel') }}</Link>
                 </Button>
                 <Form v-if="isEdit" :action="`/materials/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">

@@ -40,6 +40,7 @@ class AppearanceSettingsTest extends TestCase
                 ->has('themeColors.sidebarActive')
                 ->has('themeColors.shell')
                 ->has('branding.app_name')
+                ->has('branding.app_name_en')
                 ->has('branding.calendar_system')
                 ->where('canManageTheme', true)
             );

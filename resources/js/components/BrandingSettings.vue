@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useForm, usePage } from '@inertiajs/vue3';
-import { Languages } from '@lucide/vue';
+import { ImagePlus, Languages } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import InputError from '@/components/InputError.vue';
@@ -17,6 +17,7 @@ import { useTranslations } from '@/composables/useTranslations';
 
 type BrandingSettings = {
     app_name: string;
+    app_name_en: string;
     default_locale: string;
     calendar_system?: 'gregorian' | 'jalali' | 'hijri';
     logo_url: string | null;
@@ -36,6 +37,7 @@ const faviconPreview = ref<string | null>(props.settings.favicon_url);
 
 const form = useForm({
     app_name: props.settings.app_name,
+    app_name_en: props.settings.app_name_en,
     default_locale: props.settings.default_locale,
     calendar_system: props.settings.calendar_system ?? 'gregorian',
     logo: null as File | null,
@@ -48,6 +50,7 @@ watch(
     () => props.settings,
     (settings) => {
         form.app_name = settings.app_name;
+        form.app_name_en = settings.app_name_en;
         form.default_locale = settings.default_locale;
         form.calendar_system = settings.calendar_system ?? 'gregorian';
 
@@ -173,6 +176,18 @@ function submit(): void {
                             required
                         />
                         <InputError :message="form.errors.app_name" />
+                    </div>
+
+                    <div class="space-y-2">
+                        <Label for="brand_app_name_en">{{
+                            t('App name (English)')
+                        }}</Label>
+                        <Input
+                            id="brand_app_name_en"
+                            v-model="form.app_name_en"
+                            :disabled="!canEdit"
+                        />
+                        <InputError :message="form.errors.app_name_en" />
                     </div>
 
                     <div class="space-y-2">

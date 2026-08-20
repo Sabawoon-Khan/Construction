@@ -3,6 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Plus, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 import { money } from '@/lib/utils';
 
 type Line = { material_id: string; quantity: string; unit_cost: string };
@@ -112,11 +114,14 @@ defineOptions({
 
 <template>
     <Head :title="isEdit ? t('Edit purchase') : t('New purchase')" />
-    <MisFormPage :title="isEdit ? t('Edit purchase') : t('New purchase')" back-href="/purchases">
+    <MisFormPage :title="isEdit ? t('Edit purchase') : t('New purchase')" :back-href="isEdit ? '/purchases' : undefined">
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
                 <div class="grid gap-2">
-                    <Label>{{ t('Project') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label>{{ t('Project') }}</Label>
+                        <RelatedCreateLink href="/projects/create" :label="t('Add project')" />
+                    </div>
                     <select v-model="form.project_id" :disabled="isEdit" required class="mis-form-select">
                         <option value="" disabled>{{ t('Select project') }}</option>
                         <option v-for="project in projects" :key="project.id" :value="String(project.id)">{{ project.name }}</option>
@@ -124,7 +129,10 @@ defineOptions({
                     <InputError :message="form.errors.project_id" />
                 </div>
                 <div class="grid gap-2">
-                    <Label>{{ t('Supplier') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label>{{ t('Supplier') }}</Label>
+                        <RelatedCreateLink href="/suppliers/create" :label="t('Add supplier')" />
+                    </div>
                     <select v-model="form.supplier_id" :disabled="isEdit" required class="mis-form-select">
                         <option value="" disabled>{{ t('Select supplier') }}</option>
                         <option v-for="supplier in suppliers" :key="supplier.id" :value="String(supplier.id)">{{ supplier.name }}</option>
@@ -151,9 +159,12 @@ defineOptions({
             <div v-if="!isEdit" class="space-y-3">
                 <div class="flex items-center justify-between">
                     <h3 class="text-sm font-semibold">{{ t('Materials') }}</h3>
-                    <Button type="button" variant="outline" size="sm" @click="addLine">
-                        <Plus class="size-4" /> {{ t('Add line') }}
-                    </Button>
+                    <div class="flex items-center gap-2">
+                        <RelatedCreateLink href="/materials/create" :label="t('Add material')" />
+                        <Button type="button" variant="outline" size="sm" @click="addLine">
+                            <Plus class="size-4" /> {{ t('Add line') }}
+                        </Button>
+                    </div>
                 </div>
                 <InputError :message="form.errors.items" />
                 <div class="overflow-x-auto rounded-xl border border-border/80">
@@ -230,7 +241,8 @@ defineOptions({
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
-                <Button as-child variant="secondary">
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
                     <Link href="/purchases">{{ t('Cancel') }}</Link>
                 </Button>
                 <Button v-if="isEdit" type="button" variant="destructive" class="ml-auto" :disabled="form.processing" @click="removePurchase">

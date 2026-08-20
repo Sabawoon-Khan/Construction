@@ -5,6 +5,7 @@ import { computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -211,7 +212,10 @@ function removeExpense() {
                         </template>
                         <template v-else>
                             <div class="grid gap-2">
-                                <Label for="expense_unit_id">{{ t('Unit') }}</Label>
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label for="expense_unit_id">{{ t('Unit') }}</Label>
+                                    <RelatedCreateLink href="/expense-units" :label="t('Add unit')" />
+                                </div>
                                 <select
                                     id="expense_unit_id"
                                     name="expense_unit_id"

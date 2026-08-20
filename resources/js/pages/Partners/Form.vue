@@ -3,12 +3,14 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 
 const props = defineProps<{
     item: Record<string, any> | null;
@@ -32,7 +34,7 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit shareholder') : t('Add shareholder')" />
 
-    <MisFormPage :title="isEdit ? t('Edit shareholder') : t('Add shareholder')" back-href="/partners">
+    <MisFormPage :title="isEdit ? t('Edit shareholder') : t('Add shareholder')" :back-href="isEdit ? '/partners' : undefined">
         <Form
             :action="isEdit ? `/partners/${item!.id}` : '/partners'"
             :method="isEdit ? 'put' : 'post'"
@@ -61,7 +63,10 @@ defineOptions({
                     <InputError :message="errors.email" />
                 </div>
                 <div class="grid gap-2 mis-form-span">
-                    <Label for="user_id">{{ t('Login account') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label for="user_id">{{ t('Login account') }}</Label>
+                        <RelatedCreateLink href="/settings/users/create" :label="t('Create user')" />
+                    </div>
                     <select
                         id="user_id"
                         name="user_id"
@@ -99,7 +104,8 @@ defineOptions({
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save') }}</Button>
-                <Button as-child variant="secondary">
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
                     <Link href="/partners">{{ t('Cancel') }}</Link>
                 </Button>
                 <Form v-if="isEdit" :action="`/partners/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">

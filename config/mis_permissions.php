@@ -86,6 +86,12 @@ return [
         'materials' => [
             'extra' => [],
         ],
+        'portfolio' => [
+            'extra' => [],
+        ],
+        'contact_messages' => [
+            'extra' => [],
+        ],
         'purchases' => [
             'extra' => [],
         ],

@@ -13,6 +13,7 @@ const props = defineProps<{
     company: {
         id: number;
         name: string;
+        name_en?: string | null;
         legal_name?: string | null;
         registration_no?: string | null;
         phone?: string | null;
@@ -68,6 +69,16 @@ defineOptions({
                 <Label for="name">{{ t('Company name') }}</Label>
                 <Input id="name" name="name" required :default-value="company.name" />
                 <InputError :message="errors.name" />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="name_en">{{ t('Company name (English)') }}</Label>
+                <Input
+                    id="name_en"
+                    name="name_en"
+                    :default-value="company.name_en ?? ''"
+                />
+                <InputError :message="errors.name_en" />
             </div>
 
             <div class="grid gap-2">

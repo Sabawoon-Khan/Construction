@@ -1,1 +1,0 @@
-import{H as e,in as t,st as n,ut as r,wr as i,yt as a,zn as o}from"./useTranslations-gALGlhxK.js";var s={class:`text-sm text-red-600 dark:text-red-500`},c=a({__name:`InputError`,props:{message:{}},setup(a){return(c,l)=>o((t(),r(`div`,null,[n(`p`,s,i(a.message),1)],512)),[[e,a.message]])}});export{c as t};

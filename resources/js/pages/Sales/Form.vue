@@ -4,6 +4,7 @@ import { CalendarClock, FileText, Info, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage, MisTabs } from '@/components/mis';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -11,8 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
-import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 import { money } from '@/lib/utils';
 
 const props = defineProps<{ item: any; projects: any[]; customers: any[]; units: any[] }>();
@@ -44,6 +45,10 @@ const projectUnits = computed(() => {
 
 const selectedUnit = computed(() =>
     props.units.find((u) => String(u.id) === unitId.value),
+);
+
+const unitCreateHref = computed(() =>
+    projectId.value ? `/units/create?project_id=${projectId.value}` : '/units/create',
 );
 
 watch(projectId, () => {
@@ -110,7 +115,7 @@ function removeRow(index: number) {
 
 <template>
     <Head :title="isEdit ? t('Edit sale') : t('Create sale')" />
-    <MisFormPage :title="isEdit ? t('Edit sale') : t('Create sale')" back-href="/sales">
+    <MisFormPage :title="isEdit ? t('Edit sale') : t('Create sale')" :back-href="isEdit ? '/sales' : undefined">
         <Form
             :action="isEdit ? `/sales/${item.id}` : '/sales'"
             :method="isEdit ? 'put' : 'post'"
@@ -121,7 +126,10 @@ function removeRow(index: number) {
 
             <div v-show="tab === 'info'" class="mis-form-grid">
                 <div class="grid gap-2">
-                    <Label>{{ t('Project') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label>{{ t('Project') }}</Label>
+                        <RelatedCreateLink href="/projects/create" :label="t('Add project')" />
+                    </div>
                     <select
                         v-model="projectId"
                         name="project_id"
@@ -136,7 +144,10 @@ function removeRow(index: number) {
                     <InputError :message="errors.project_id" />
                 </div>
                 <div class="grid gap-2">
-                    <Label>{{ t('Unit') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label>{{ t('Unit') }}</Label>
+                        <RelatedCreateLink :href="unitCreateHref" :label="t('Add unit')" />
+                    </div>
                     <select
                         v-model="unitId"
                         name="unit_id"
@@ -174,7 +185,10 @@ function removeRow(index: number) {
                     </span>
                 </div>
                 <div class="grid gap-2">
-                    <Label>{{ t('Customer') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label>{{ t('Customer') }}</Label>
+                        <RelatedCreateLink href="/customers/create" :label="t('Add customer')" />
+                    </div>
                     <select
                         v-model="customerId"
                         name="customer_id"
@@ -354,7 +368,8 @@ function removeRow(index: number) {
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ t('Save sale') }}</Button>
-                <Button as-child variant="secondary">
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
                     <Link href="/sales">{{ t('Cancel') }}</Link>
                 </Button>
                 <Form v-if="isEdit" :action="`/sales/${item.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">

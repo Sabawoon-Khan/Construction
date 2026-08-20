@@ -5,11 +5,18 @@ import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 
-const props = defineProps<{
-    title: string;
-    backHref: string;
-    class?: string;
-}>();
+const props = withDefaults(
+    defineProps<{
+        title: string;
+        /** When set, shows Back that goes here (typically edit forms). Omit on create. */
+        backHref?: string | null;
+        class?: string;
+    }>(),
+    {
+        backHref: null,
+        class: undefined,
+    },
+);
 
 const { t } = useTranslations();
 </script>
@@ -18,6 +25,7 @@ const { t } = useTranslations();
     <div :class="cn('flex h-full min-w-0 flex-1 flex-col gap-5', props.class)">
         <header class="flex min-w-0 items-center gap-2">
             <Button
+                v-if="backHref"
                 as-child
                 variant="ghost"
                 size="sm"

@@ -2,12 +2,21 @@
 
 namespace App\Services;
 
+use App\Models\Attendance;
+use App\Models\ContactMessage;
+use App\Models\Employee;
 use App\Models\Expense;
+use App\Models\FieldReport;
 use App\Models\Income;
+use App\Models\InventoryTransaction;
+use App\Models\Material;
 use App\Models\Partner;
 use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Purchase;
+use App\Models\Salary;
 use App\Models\Sale;
+use App\Models\SaleInstallment;
 use App\Models\Unit;
 use App\Models\User;
 use App\Support\CurrencyAmounts;
@@ -118,6 +127,8 @@ class DashboardService
                 ];
             });
 
+        $alerts = $this->alerts();
+
         return [
             'period' => [
                 'from' => $from->toDateString(),
@@ -142,11 +153,26 @@ class DashboardService
                 'net_profit_total' => $netProfitTotal,
                 'expenses_by_currency' => $expensesByCurrency,
                 'incomes_by_currency' => $incomesByCurrency,
+                'overdue_installments_count' => $alerts['overdue_installments_count'],
+                'overdue_installments_amount' => $alerts['overdue_installments_amount'],
+                'purchases_owed_count' => $alerts['purchases_owed_count'],
+                'purchases_owed_amount' => $alerts['purchases_owed_amount'],
+                'unread_contacts' => $alerts['unread_contacts'],
+                'pending_salaries_count' => $alerts['pending_salaries_count'],
+                'pending_salaries_amount' => $alerts['pending_salaries_amount'],
+                'attendance_today' => $alerts['attendance_today'],
+                'employees_count' => $alerts['employees_count'],
+                'low_stock_count' => count($alerts['low_stock']),
+                'field_reports_draft' => $alerts['field_reports_draft'],
             ],
             'partners' => $partners,
             'recent_sales' => $recentSales,
             'recent_expenses' => $recentExpenses,
             'projects' => $projects,
+            'low_stock' => $alerts['low_stock'],
+            'overdue_installments' => $alerts['overdue_installments'],
+            'unpaid_purchases' => $alerts['unpaid_purchases'],
+            'recent_field_reports' => $alerts['recent_field_reports'],
         ];
     }
 
@@ -167,21 +193,27 @@ class DashboardService
             return [
                 'project_id' => $project->id,
                 'project_name' => $project->name,
+                'ownership_percentage' => (float) $project->pivot->ownership_percentage,
                 ...$share,
             ];
-        });
+        })->values();
 
         $allTimeShares = $partner->projects->map(fn ($project) => ShareholderProfitService::partnerShare($partner, $project->id));
+
+        $avgOwnership = $partner->projects->count()
+            ? round((float) $partner->projects->avg(fn ($p) => (float) $p->pivot->ownership_percentage), 2)
+            : 0.0;
 
         return [
             'partner' => [
                 'id' => $partner->id,
                 'name' => $partner->name,
+                'ownership_percentage' => $avgOwnership,
                 'projects' => $partner->projects->map(fn ($p) => [
                     'id' => $p->id,
                     'name' => $p->name,
                     'ownership_percentage' => (float) $p->pivot->ownership_percentage,
-                ]),
+                ])->values(),
             ],
             'company_profit' => $summary['kpis']['net_profit_period'],
             'my_profit' => round((float) $projectShares->sum('entitled_share'), 2),
@@ -200,8 +232,152 @@ class DashboardService
                 'period_revenue' => $summary['kpis']['period_revenue'],
                 'period_expenses' => $summary['kpis']['period_expenses'],
                 'period_salaries' => $summary['kpis']['period_salaries'],
+                'period_receipts' => $summary['kpis']['period_receipts'],
                 'active_projects' => $summary['kpis']['active_projects'],
+                'units_available' => $summary['kpis']['units_available'],
+                'units_reserved' => $summary['kpis']['units_reserved'],
+                'units_sold' => $summary['kpis']['units_sold'],
             ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     overdue_installments_count: int,
+     *     overdue_installments_amount: float,
+     *     overdue_installments: list<array<string, mixed>>,
+     *     purchases_owed_count: int,
+     *     purchases_owed_amount: float,
+     *     unpaid_purchases: list<array<string, mixed>>,
+     *     unread_contacts: int,
+     *     pending_salaries_count: int,
+     *     pending_salaries_amount: float,
+     *     attendance_today: int,
+     *     employees_count: int,
+     *     low_stock: list<array<string, mixed>>,
+     *     field_reports_draft: int,
+     *     recent_field_reports: list<array<string, mixed>>
+     * }
+     */
+    protected function alerts(): array
+    {
+        $today = now()->toDateString();
+
+        $overdueQuery = SaleInstallment::query()
+            ->whereDate('due_date', '<', $today)
+            ->whereColumn('paid_amount_base', '<', 'amount_base')
+            ->whereHas('sale', fn ($q) => $q->where('status', '!=', 'cancelled'));
+
+        $overdueInstallments = (clone $overdueQuery)
+            ->with(['sale:id,sale_no,customer_id,project_id', 'sale.customer:id,name', 'sale.project:id,name'])
+            ->orderBy('due_date')
+            ->limit(6)
+            ->get()
+            ->map(fn (SaleInstallment $row) => [
+                'id' => $row->id,
+                'sale_id' => $row->sale_id,
+                'sale_no' => $row->sale?->sale_no,
+                'customer' => $row->sale?->customer?->name,
+                'project' => $row->sale?->project?->name,
+                'due_date' => $row->due_date?->toDateString(),
+                'remaining' => max(0, (float) $row->amount_base - (float) $row->paid_amount_base),
+            ])
+            ->values()
+            ->all();
+
+        $purchasesOwedAmount = (float) Purchase::query()
+            ->whereIn('status', ['unpaid', 'partial'])
+            ->selectRaw('COALESCE(SUM(total_amount_base - paid_amount_base), 0) as owed')
+            ->value('owed');
+
+        $purchasesOwedCount = Purchase::query()
+            ->whereIn('status', ['unpaid', 'partial'])
+            ->count();
+
+        $unpaidPurchases = Purchase::query()
+            ->with(['supplier:id,name', 'project:id,name'])
+            ->whereIn('status', ['unpaid', 'partial'])
+            ->orderByDesc('purchase_date')
+            ->limit(6)
+            ->get()
+            ->map(fn (Purchase $purchase) => [
+                'id' => $purchase->id,
+                'purchase_no' => $purchase->purchase_no,
+                'supplier' => $purchase->supplier?->name,
+                'project' => $purchase->project?->name,
+                'remaining' => max(0, (float) $purchase->total_amount_base - (float) $purchase->paid_amount_base),
+                'status' => $purchase->status,
+            ])
+            ->values()
+            ->all();
+
+        $materials = Material::query()
+            ->get(['id', 'name', 'code', 'minimum_stock'])
+            ->keyBy('id');
+
+        $onHandByMaterial = InventoryTransaction::stockLevels()
+            ->groupBy('material_id')
+            ->map(fn ($rows) => round((float) $rows->sum('on_hand'), 3));
+
+        $lowStock = $materials
+            ->map(function (Material $material) use ($onHandByMaterial) {
+                $minimum = (float) $material->minimum_stock;
+                if ($minimum <= 0) {
+                    return null;
+                }
+
+                $onHand = (float) ($onHandByMaterial[$material->id] ?? 0);
+                if ($onHand >= $minimum) {
+                    return null;
+                }
+
+                return [
+                    'id' => $material->id,
+                    'name' => $material->name,
+                    'code' => $material->code,
+                    'on_hand' => $onHand,
+                    'minimum_stock' => $minimum,
+                ];
+            })
+            ->filter()
+            ->sortBy('on_hand')
+            ->take(6)
+            ->values()
+            ->all();
+
+        $pendingSalaries = Salary::query()->where('status', 'pending');
+
+        $recentFieldReports = FieldReport::query()
+            ->latest('updated_at')
+            ->limit(5)
+            ->get(['id', 'title', 'status', 'location', 'updated_at'])
+            ->map(fn (FieldReport $report) => [
+                'id' => $report->id,
+                'title' => $report->title,
+                'status' => $report->status,
+                'location' => $report->location,
+                'updated_at' => $report->updated_at?->toDateTimeString(),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'overdue_installments_count' => (clone $overdueQuery)->count(),
+            'overdue_installments_amount' => (float) (clone $overdueQuery)->selectRaw(
+                'COALESCE(SUM(amount_base - paid_amount_base), 0) as owed'
+            )->value('owed'),
+            'overdue_installments' => $overdueInstallments,
+            'purchases_owed_count' => $purchasesOwedCount,
+            'purchases_owed_amount' => $purchasesOwedAmount,
+            'unpaid_purchases' => $unpaidPurchases,
+            'unread_contacts' => ContactMessage::query()->unread()->count(),
+            'pending_salaries_count' => (clone $pendingSalaries)->count(),
+            'pending_salaries_amount' => (float) (clone $pendingSalaries)->sum('net_salary_base'),
+            'attendance_today' => Attendance::query()->whereDate('date', $today)->count(),
+            'employees_count' => Employee::query()->count(),
+            'low_stock' => $lowStock,
+            'field_reports_draft' => FieldReport::query()->where('status', 'draft')->count(),
+            'recent_field_reports' => $recentFieldReports,
         ];
     }
 

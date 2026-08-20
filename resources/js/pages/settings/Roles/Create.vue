@@ -66,7 +66,7 @@ defineOptions({
 <template>
     <Head :title="t('Create role')" />
 
-    <MisFormPage :title="t('Create role')" back-href="/settings/roles">
+    <MisFormPage :title="t('Create role')">
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
             <div class="grid gap-2">

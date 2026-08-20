@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Form, Link } from '@inertiajs/vue3';
-import Can from '@/components/Can.vue';
+import { Form } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -41,7 +41,13 @@ const { t } = useTranslations();
                 v-slot="{ errors, processing }"
             >
                 <div class="grid gap-2">
-                    <Label for="add_partner_id">{{ t('Shareholder') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label for="add_partner_id">{{ t('Shareholder') }}</Label>
+                        <RelatedCreateLink
+                            href="/partners/create"
+                            :label="t('New shareholder')"
+                        />
+                    </div>
                     <select
                         id="add_partner_id"
                         name="partner_id"
@@ -84,14 +90,6 @@ const { t } = useTranslations();
                     />
                     <InputError :message="errors.ownership_percentage" />
                 </div>
-
-                <Can permission="partners.create">
-                    <Button as-child variant="outline" class="w-full">
-                        <Link href="/partners/create">{{
-                            t('New shareholder')
-                        }}</Link>
-                    </Button>
-                </Can>
 
                 <DialogFooter class="gap-2 sm:justify-end">
                     <Button

@@ -1,7 +1,7 @@
 @props(['url'])
 @php
     $logoUrl = \App\Models\OrgSetting::logoUrlForMail();
-    $appName = (string) \App\Models\OrgSetting::getValue('app_name', config('app.name'));
+    $appName = \App\Models\OrgSetting::appName();
 @endphp
 <tr>
 <td class="header">

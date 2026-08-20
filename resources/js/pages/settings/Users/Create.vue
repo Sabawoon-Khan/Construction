@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,7 +39,7 @@ defineOptions({
 <template>
     <Head :title="t('Create user')" />
 
-    <MisFormPage :title="t('Create user')" back-href="/settings/users">
+    <MisFormPage :title="t('Create user')">
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
             <div class="grid gap-2">
@@ -70,7 +71,10 @@ defineOptions({
             </div>
 
             <div class="grid gap-2 mis-form-span">
-                <Label>{{ t('Assign roles') }}</Label>
+                <div class="flex items-center justify-between gap-2">
+                    <Label>{{ t('Assign roles') }}</Label>
+                    <RelatedCreateLink href="/settings/roles/create" :label="t('Create role')" />
+                </div>
                 <select
                     v-model="form.roles"
                     multiple

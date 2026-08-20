@@ -20,6 +20,7 @@ declare module '@inertiajs/core' {
             company: {
                 id: number;
                 name: string;
+                name_en: string | null;
                 legal_name: string | null;
                 registration_no: string | null;
                 phone: string | null;

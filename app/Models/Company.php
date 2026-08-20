@@ -18,6 +18,7 @@ class Company extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'name_en',
         'legal_name',
         'registration_no',
         'phone',
@@ -36,5 +37,19 @@ class Company extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Locale-aware display name: English when locale is `en`, otherwise primary (Dari/Persian) name.
+     */
+    public function displayName(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        if ($locale === 'en' && filled($this->name_en)) {
+            return (string) $this->name_en;
+        }
+
+        return (string) $this->name;
     }
 }

@@ -143,21 +143,6 @@ function exportUrl(format: string) {
                 </div>
             </div>
 
-            <div
-                class="relative overflow-hidden rounded-2xl border border-sidebar-border/70 bg-[radial-gradient(circle_at_top_left,rgba(180_83%_40%/0.14),transparent_40%),linear-gradient(135deg,oklch(0.98_0.01_85),oklch(0.96_0.02_145))] p-6 dark:bg-[radial-gradient(circle_at_top_left,rgba(180_60%_45%/0.18),transparent_45%),linear-gradient(135deg,oklch(0.24_0.02_145),oklch(0.2_0.02_85))]"
-            >
-                <div class="max-w-2xl space-y-2">
-                    <p class="text-sm font-medium tracking-wide text-emerald-800 uppercase dark:text-emerald-300">
-                        {{ t('Reports') }}
-                    </p>
-                    <h1 class="font-serif text-3xl tracking-tight text-foreground md:text-4xl">
-                        {{ t('Balance Sheet') }}
-                    </h1>
-                    <p class="text-muted-foreground">
-                        {{ t('A snapshot of assets, liabilities, and equity as of a chosen date.') }}
-                    </p>
-                </div>
-            </div>
         </div>
 
         <Alert

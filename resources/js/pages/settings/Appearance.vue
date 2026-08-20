@@ -20,6 +20,7 @@ defineProps<{
     canManageTheme: boolean;
     branding: {
         app_name: string;
+        app_name_en: string;
         default_locale: string;
         calendar_system?: 'gregorian' | 'jalali' | 'hijri';
         logo_url: string | null;

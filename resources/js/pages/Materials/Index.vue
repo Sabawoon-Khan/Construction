@@ -3,9 +3,10 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
-import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisFilterBar, MisLoadingState, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
+import { useInertiaLoading } from '@/composables/useInertiaLoading';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -22,6 +23,7 @@ const props = defineProps<{
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
 const { editAction, can } = useMisPage();
+const { loading } = useInertiaLoading();
 
 defineOptions({
     layout: {
@@ -75,7 +77,12 @@ function rowActions(item: Item): RowActionItem[] {
             <MisStatCard :label="t('Active')" :value="totals.active" />
         </MisStatGrid>
 
-        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
+        <MisLoadingState v-if="loading" />
+
+        <div
+            v-else
+            class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
+        >
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">

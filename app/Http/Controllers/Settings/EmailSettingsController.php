@@ -110,7 +110,7 @@ class EmailSettingsController extends Controller
         MailSettings::applyToConfig();
         MailTemplates::applyToConfig();
 
-        $appName = (string) OrgSetting::getValue('app_name', config('app.name'));
+        $appName = OrgSetting::appName();
 
         try {
             Notification::route('mail', $validated['to'])

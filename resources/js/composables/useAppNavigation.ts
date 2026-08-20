@@ -7,6 +7,8 @@ import {
     ClipboardList,
     Clock,
     FolderKanban,
+    Images,
+    Inbox,
     LayoutGrid,
     Package,
     Receipt,
@@ -63,6 +65,7 @@ export function useAppNavigation() {
         const overview: NavItem[] = [
             item(t('Dashboard'), dashboard(), LayoutGrid),
         ];
+
         groups.push({ label: t('Overview'), items: overview });
 
         const fieldWork: NavItem[] = [];
@@ -236,6 +239,30 @@ export function useAppNavigation() {
             groups.push({ label: t('HR'), items: hr });
         }
 
+        if (can('portfolio.view') || can('contact_messages.view')) {
+            const website: NavItem[] = [];
+
+            if (can('portfolio.view')) {
+                website.push(
+                    item(t('Portfolio'), '/portfolio', Images, {
+                        href: '/portfolio/create',
+                        permission: 'portfolio.create',
+                    }),
+                );
+            }
+
+            if (can('contact_messages.view')) {
+                website.push(
+                    item(t('Contact'), '/contact-messages', Inbox),
+                );
+            }
+
+            groups.push({
+                label: t('Website'),
+                items: website,
+            });
+        }
+
         if (
             can('settings.manage') ||
             can('users.view') ||
@@ -298,11 +325,17 @@ export function useAppNavigation() {
 
         const overview: NavItem[] = [];
         const operations: NavItem[] = [];
+        const website: NavItem[] = [];
         const organization: NavItem[] = [];
 
         for (const group of tabGroups.value) {
             if (group.label === t('Overview')) {
                 overview.push(...group.items);
+                continue;
+            }
+
+            if (group.label === t('Website')) {
+                website.push(...group.items);
                 continue;
             }
 
@@ -338,6 +371,10 @@ export function useAppNavigation() {
 
         if (operations.length) {
             groups.push({ label: t('Operations'), items: operations });
+        }
+
+        if (website.length) {
+            groups.push({ label: t('Website'), items: website });
         }
 
         if (organization.length) {

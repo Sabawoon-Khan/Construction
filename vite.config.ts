@@ -19,6 +19,13 @@ export default defineConfig({
                 bunny('Noto Sans Arabic', {
                     weights: [400, 500, 600, 700],
                 }),
+                // Public site (`.construct`) only — luxury residential brand
+                bunny('Cormorant Garamond', {
+                    weights: [500, 600, 700],
+                }),
+                bunny('Outfit', {
+                    weights: [400, 500, 600, 700],
+                }),
             ],
         }),
         inertia(),

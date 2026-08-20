@@ -26,7 +26,7 @@ class Seo
 
         return [
             'app_url' => $appUrl,
-            'site_name' => (string) OrgSetting::getValue('app_name', config('app.name')),
+            'site_name' => OrgSetting::appName($locale),
             'default_description' => (string) config('kit.seo.default_description', ''),
             'default_image' => self::absoluteUrl((string) config('kit.seo.default_image', '/favicon.svg')),
             'locale' => $locale,

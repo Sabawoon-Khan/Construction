@@ -3,12 +3,14 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 
 const props = defineProps<{
     item: Record<string, any> | null;
@@ -58,11 +60,14 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit attendance') : t('Record attendance')" />
 
-    <MisFormPage :title="isEdit ? t('Edit attendance') : t('Record attendance')" back-href="/attendance">
+    <MisFormPage :title="isEdit ? t('Edit attendance') : t('Record attendance')" :back-href="isEdit ? '/attendance' : undefined">
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
                 <div v-if="isEdit" class="grid gap-2">
-                    <Label for="employee_id">{{ t('Employee') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label for="employee_id">{{ t('Employee') }}</Label>
+                        <RelatedCreateLink href="/employees/create" :label="t('Add employee')" />
+                    </div>
                     <select id="employee_id" v-model="form.employee_id" required class="mis-form-select">
                         <option value="" disabled>{{ t('Select employee') }}</option>
                         <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
@@ -72,7 +77,8 @@ defineOptions({
                 <div v-else class="grid gap-2 mis-form-span">
                     <div class="flex items-center justify-between">
                         <Label>{{ t('Employees') }}</Label>
-                        <div class="flex gap-2 text-xs">
+                        <div class="flex items-center gap-3 text-xs">
+                            <RelatedCreateLink href="/employees/create" :label="t('Add employee')" />
                             <button type="button" class="text-primary hover:underline" @click="form.employee_ids = employees.map((e) => String(e.id))">{{ t('Select all') }}</button>
                             <button type="button" class="text-primary hover:underline" @click="form.employee_ids = []">{{ t('Clear') }}</button>
                         </div>
@@ -136,7 +142,8 @@ defineOptions({
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
-                <Button as-child variant="secondary">
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
                     <Link href="/attendance">{{ t('Cancel') }}</Link>
                 </Button>
                 <Button v-if="isEdit" type="button" variant="destructive" class="ml-auto" :disabled="form.processing" @click="removeAttendance">

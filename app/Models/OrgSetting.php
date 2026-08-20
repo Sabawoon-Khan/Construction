@@ -183,12 +183,33 @@ class OrgSetting extends Model
     }
 
     /**
-     * @return array{app_name: string, default_locale: string, calendar_system: string, logo_url: string|null, favicon_url: string|null}
+     * Locale-aware app/brand name. English uses `app_name_en` (falls back to APP_NAME).
+     */
+    public static function appName(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        if ($locale === 'en') {
+            $english = static::getValue('app_name_en');
+
+            if (is_string($english) && $english !== '') {
+                return $english;
+            }
+
+            return (string) config('app.name');
+        }
+
+        return (string) static::getValue('app_name', config('app.name'));
+    }
+
+    /**
+     * @return array{app_name: string, app_name_en: string, default_locale: string, calendar_system: string, logo_url: string|null, favicon_url: string|null}
      */
     public static function general(): array
     {
         return [
             'app_name' => (string) static::getValue('app_name', config('app.name')),
+            'app_name_en' => (string) static::getValue('app_name_en', config('app.name')),
             'default_locale' => (string) static::getValue('default_locale', config('app.locale')),
             'calendar_system' => CalendarSystem::current(),
             'logo_url' => static::logoUrl(),

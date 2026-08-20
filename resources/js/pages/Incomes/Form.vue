@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 
 const props = defineProps<{ item: Record<string, any> | null }>();
 const isEdit = computed(() => !!props.item);
@@ -31,7 +32,7 @@ defineOptions({
 
 <template>
     <Head :title="isEdit ? t('Edit income') : t('Record income')" />
-    <MisFormPage :title="isEdit ? t('Edit income') : t('Record income')" back-href="/incomes">
+    <MisFormPage :title="isEdit ? t('Edit income') : t('Record income')" :back-href="isEdit ? '/incomes' : undefined">
         <Form
             :action="isEdit ? `/incomes/${item!.id}` : '/incomes'"
             :method="isEdit ? 'put' : 'post'"
@@ -80,7 +81,10 @@ defineOptions({
             />
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save income') }}</Button>
-                <Button as-child variant="secondary"><Link href="/incomes">{{ t('Cancel') }}</Link></Button>
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
+                    <Link href="/incomes">{{ t('Cancel') }}</Link>
+                </Button>
                 <Form v-if="isEdit" :action="`/incomes/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
                     <Button type="submit" variant="destructive" :disabled="deleting">
                         <Trash2 class="size-4" />

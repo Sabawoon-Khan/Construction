@@ -5,12 +5,14 @@ import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 
 const props = defineProps<{
     item: Record<string, any> | null;
@@ -49,7 +51,7 @@ defineOptions({
 
 <template>
     <Head :title="isEdit ? t('Edit expense') : t('Record expense')" />
-    <MisFormPage :title="isEdit ? t('Edit expense') : t('Record expense')" :back-href="backHref">
+    <MisFormPage :title="isEdit ? t('Edit expense') : t('Record expense')" :back-href="isEdit ? backHref : undefined">
         <Form
             :action="isEdit ? `/expenses/${item!.id}` : '/expenses'"
             :method="isEdit ? 'put' : 'post'"
@@ -86,7 +88,10 @@ defineOptions({
                     </select>
                 </div>
                 <div class="grid gap-2">
-                    <Label for="expense_unit_id">{{ t('Unit') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label for="expense_unit_id">{{ t('Unit') }}</Label>
+                        <RelatedCreateLink href="/expense-units" :label="t('Add unit')" />
+                    </div>
                     <select
                         id="expense_unit_id"
                         name="expense_unit_id"
@@ -158,7 +163,8 @@ defineOptions({
             </div>
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save expense') }}</Button>
-                <Button as-child variant="secondary"><Link :href="backHref">{{ t('Cancel') }}</Link></Button>
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary"><Link :href="backHref">{{ t('Cancel') }}</Link></Button>
                 <Form v-if="isEdit" :action="`/expenses/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
                     <Button type="submit" variant="destructive" :disabled="deleting">
                         <Trash2 class="size-4" />

@@ -9,11 +9,14 @@ import { MisTabs } from '@/components/mis';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money, moneyByCurrency } from '@/lib/utils';
 
 const tab = ref('info');
 const { t } = useTranslations();
+const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 const tabs = [
     { id: 'info', label: t('Customer info'), icon: Info },
     { id: 'sales', label: t('Sales'), icon: Banknote },
@@ -26,6 +29,8 @@ const props = defineProps<{
         sales_count: number;
         sales_total: number;
         payments_total: number;
+        remaining?: number;
+        last_purchase_at?: string | null;
         sales_by_currency?: Record<string, number>;
         payments_by_currency?: Record<string, number>;
     };
@@ -59,18 +64,22 @@ defineOptions({
             </Can>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-4">
             <div class="rounded-xl border bg-card p-4 shadow-sm">
                 <div class="text-sm text-muted-foreground">{{ t('Sales') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ stats.sales_count }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Sales total') }}</div>
+                <div class="text-sm text-muted-foreground">{{ t('Purchase amount') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums">{{ moneyByCurrency(stats.sales_by_currency, stats.sales_total) }}</div>
             </div>
             <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Payments received') }}</div>
+                <div class="text-sm text-muted-foreground">{{ t('Amount paid') }}</div>
                 <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ moneyByCurrency(stats.payments_by_currency, stats.payments_total) }}</div>
+            </div>
+            <div class="rounded-xl border bg-card p-4 shadow-sm">
+                <div class="text-sm text-muted-foreground">{{ t('Remaining') }}</div>
+                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(stats.remaining ?? 0) }}</div>
             </div>
         </div>
 
@@ -81,11 +90,18 @@ defineOptions({
             :title="t('Customer details')"
             :items="[
                 { label: t('Customer No'), value: item.customer_no },
-                { label: t('Father name'), value: item.father_name },
                 { label: t('Phone'), value: item.phone },
+                { label: t('Address'), value: item.address, span: true },
+                { label: t('Registration date'), value: formatDate(item.registered_at) },
+                { label: t('Customer type'), value: item.type === 'wholesale' ? t('Wholesale') : t('Retail') },
+                { label: t('Purchase amount'), value: moneyByCurrency(stats.sales_by_currency, stats.sales_total) },
+                { label: t('Amount paid'), value: moneyByCurrency(stats.payments_by_currency, stats.payments_total) },
+                { label: t('Remaining'), value: money(stats.remaining ?? 0) },
+                { label: t('Last purchase'), value: formatDate(stats.last_purchase_at) },
+                { label: t('Status'), value: item.status === 'inactive' ? t('Inactive') : t('Active') },
+                { label: t('Father name'), value: item.father_name },
                 { label: t('Email'), value: item.email },
                 { label: t('National ID'), value: item.national_id },
-                { label: t('Address'), value: item.address, span: true },
                 { label: t('Notes'), value: item.notes, span: true },
             ]"
         />

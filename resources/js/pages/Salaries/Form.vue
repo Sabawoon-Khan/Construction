@@ -4,12 +4,14 @@ import { Trash2 } from '@lucide/vue';
 import { computed, watch } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisFormPage } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 import { money } from '@/lib/utils';
 
 const props = defineProps<{
@@ -88,11 +90,14 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit salary') : t('Add salary')" />
 
-    <MisFormPage :title="isEdit ? t('Edit salary') : t('Add salary')" back-href="/salaries">
+    <MisFormPage :title="isEdit ? t('Edit salary') : t('Add salary')" :back-href="isEdit ? '/salaries' : undefined">
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
                 <div class="grid gap-2">
-                    <Label for="employee_id">{{ t('Employee') }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label for="employee_id">{{ t('Employee') }}</Label>
+                        <RelatedCreateLink href="/employees/create" :label="t('Add employee')" />
+                    </div>
                     <select id="employee_id" v-model="form.employee_id" required class="mis-form-select" :disabled="isEdit">
                         <option value="" disabled>{{ t('Select employee') }}</option>
                         <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
@@ -166,7 +171,8 @@ defineOptions({
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
-                <Button as-child variant="secondary">
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
                     <Link href="/salaries">{{ t('Cancel') }}</Link>
                 </Button>
                 <Button v-if="isEdit" type="button" variant="destructive" class="ml-auto" :disabled="form.processing" @click="removeSalary">

@@ -48,6 +48,7 @@ return [
     'warm' => [
         'org_settings' => [
             'app_name',
+            'app_name_en',
             'default_locale',
             'calendar_system',
             'logo_path',

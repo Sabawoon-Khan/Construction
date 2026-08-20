@@ -3,13 +3,14 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useMisPage } from '@/composables/useMisPage';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { moneyByCurrency } from '@/lib/utils';
+import { money, moneyByCurrency } from '@/lib/utils';
 
 type Item = Record<string, any>;
 
@@ -28,7 +29,7 @@ const props = defineProps<{
 
 const search = ref(props.filters.search ?? '');
 const { t } = useTranslations();
-const { viewAction, editAction, can } = useMisPage();
+const { viewAction, editAction, can, formatDate } = useMisPage();
 
 defineOptions({
     layout: {
@@ -46,6 +47,10 @@ function applySearch() {
 function clearFilters() {
     search.value = '';
     applySearch();
+}
+
+function customerType(item: Item): string {
+    return item.type === 'wholesale' ? t('Wholesale') : t('Retail');
 }
 
 function rowActions(item: Item): RowActionItem[] {
@@ -90,12 +95,18 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Customer No') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Phone') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('National ID') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
-
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Customer No') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Name') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Phone') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Address') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Registration date') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Customer type') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Purchase amount') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Amount paid') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Remaining') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Last purchase') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Status') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Notes') }}</th>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -105,16 +116,22 @@ function rowActions(item: Item): RowActionItem[] {
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
-                            <td class="px-4 py-3 font-medium">
+                            <td class="px-4 py-3 font-medium whitespace-nowrap">
                                 <Link :href="`/customers/${item.id}`" class="hover:text-primary hover:underline">
                                     {{ item.customer_no || '—' }}
                                 </Link>
                             </td>
-                            <td class="px-4 py-3">{{ item.name || '—' }}</td>
-                            <td class="px-4 py-3">{{ item.phone || '—' }}</td>
-                            <td class="px-4 py-3">{{ item.national_id || '—' }}</td>
-                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap">{{ item.name || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ item.phone || '—' }}</td>
+                            <td class="px-4 py-3 max-w-[14rem] truncate" :title="item.address || undefined">{{ item.address || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(item.registered_at) }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ customerType(item) }}</td>
+                            <td class="px-4 py-3 tabular-nums whitespace-nowrap">{{ money(item.purchase_amount ?? 0) }}</td>
+                            <td class="px-4 py-3 tabular-nums whitespace-nowrap">{{ money(item.paid_amount ?? 0) }}</td>
+                            <td class="px-4 py-3 tabular-nums whitespace-nowrap">{{ money(item.remaining ?? 0) }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(item.last_purchase_at) }}</td>
+                            <td class="px-4 py-3"><StatusBadge :status="item.status || 'active'" /></td>
+                            <td class="px-4 py-3 max-w-[14rem] truncate" :title="item.notes || undefined">{{ item.notes || '—' }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -123,7 +140,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="6"
+                            :colspan="13"
                             :title="t('No customers yet')"
                         />
                     </tbody>

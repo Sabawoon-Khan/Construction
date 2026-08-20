@@ -1,0 +1,1 @@
+import{h as e,o as t,tt as n}from"./useTranslations-DCHDVzSU.js";function r(){let r=e();return{baseCurrency:n(()=>t(r.props.company?.base_currency??`USD`))}}export{r as t};

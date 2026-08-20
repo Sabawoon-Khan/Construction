@@ -9,10 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/composables/useTranslations';
+import { historyBack } from '@/lib/historyBack';
 
-const props = defineProps<{
-    item: Record<string, any> | null;
-}>();
+const props = withDefaults(
+    defineProps<{
+        item: Record<string, any> | null;
+        defaults?: { customer_no?: string; registered_at?: string };
+    }>(),
+    { defaults: () => ({}) },
+);
 
 const isEdit = computed(() => !!props.item);
 const { t } = useTranslations();
@@ -31,7 +36,7 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit customer') : t('Create customer')" />
 
-    <MisFormPage :title="isEdit ? t('Edit customer') : t('Create customer')" back-href="/customers">
+    <MisFormPage :title="isEdit ? t('Edit customer') : t('Create customer')" :back-href="isEdit ? '/customers' : undefined">
         <Form
             :action="isEdit ? `/customers/${item!.id}` : '/customers'"
             :method="isEdit ? 'put' : 'post'"
@@ -40,24 +45,45 @@ defineOptions({
         >
             <div class="mis-form-grid">
             <div class="grid gap-2">
+                <Label for="customer_no">{{ t('Customer No') }}</Label>
+                <Input id="customer_no" name="customer_no" type="text" :default-value="item?.customer_no ?? defaults.customer_no ?? ''" />
+                <InputError :message="errors.customer_no" />
+            </div>
+            <div class="grid gap-2">
                 <Label for="name">{{ t('Name') }}</Label>
                 <Input id="name" name="name" type="text" required :default-value="item?.name ?? ''" />
                 <InputError :message="errors.name" />
             </div>
             <div class="grid gap-2">
-                <Label for="customer_no">{{ t('Customer No') }}</Label>
-                <Input id="customer_no" name="customer_no" type="text" required :default-value="item?.customer_no ?? ''" />
-                <InputError :message="errors.customer_no" />
+                <Label for="phone">{{ t('Phone') }}</Label>
+                <Input id="phone" name="phone" type="text" :default-value="item?.phone ?? ''" placeholder="07XXXXXXXX" />
+                <InputError :message="errors.phone" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="registered_at">{{ t('Registration date') }}</Label>
+                <Input id="registered_at" name="registered_at" type="date" :default-value="item?.registered_at?.slice?.(0, 10) ?? defaults.registered_at ?? ''" />
+                <InputError :message="errors.registered_at" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="type">{{ t('Customer type') }}</Label>
+                <select id="type" name="type" class="mis-form-select">
+                    <option value="retail" :selected="(item?.type ?? 'retail') === 'retail'">{{ t('Retail') }}</option>
+                    <option value="wholesale" :selected="(item?.type ?? '') === 'wholesale'">{{ t('Wholesale') }}</option>
+                </select>
+                <InputError :message="errors.type" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="status">{{ t('Status') }}</Label>
+                <select id="status" name="status" class="mis-form-select">
+                    <option value="active" :selected="(item?.status ?? 'active') === 'active'">{{ t('Active') }}</option>
+                    <option value="inactive" :selected="(item?.status ?? '') === 'inactive'">{{ t('Inactive') }}</option>
+                </select>
+                <InputError :message="errors.status" />
             </div>
             <div class="grid gap-2">
                 <Label for="father_name">{{ t('Father name') }}</Label>
                 <Input id="father_name" name="father_name" type="text" :default-value="item?.father_name ?? ''" />
                 <InputError :message="errors.father_name" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="phone">{{ t('Phone') }}</Label>
-                <Input id="phone" name="phone" type="text" :default-value="item?.phone ?? ''" />
-                <InputError :message="errors.phone" />
             </div>
             <div class="grid gap-2">
                 <Label for="email">{{ t('Email') }}</Label>
@@ -90,7 +116,8 @@ defineOptions({
 
             <div class="mis-form-actions">
                 <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save') }}</Button>
-                <Button as-child variant="secondary">
+                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button v-else as-child variant="secondary">
                     <Link href="/customers">{{ t('Cancel') }}</Link>
                 </Button>
                 <Form v-if="isEdit" :action="`/customers/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">

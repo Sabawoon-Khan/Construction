@@ -3,6 +3,7 @@ import { Form } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -62,9 +63,15 @@ watch(
                 v-slot="{ errors, processing }"
             >
                 <div class="grid gap-2">
-                    <Label for="payout_partner_id">{{
-                        t('Shareholder')
-                    }}</Label>
+                    <div class="flex items-center justify-between gap-2">
+                        <Label for="payout_partner_id">{{
+                            t('Shareholder')
+                        }}</Label>
+                        <RelatedCreateLink
+                            href="/partners/create"
+                            :label="t('Add shareholder')"
+                        />
+                    </div>
                     <select
                         id="payout_partner_id"
                         v-model="partnerId"

@@ -1,22 +1,28 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import {
+    AlertTriangle,
     ArrowUpRight,
+    Boxes,
     Building2,
     CircleDollarSign,
+    ClipboardList,
     Home,
+    Inbox,
+    Package,
     TrendingUp,
+    Users,
     Wallet,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { translateStatus } from '@/lib/translateStatus';
-import { moneyByCurrency, resolveCurrency } from '@/lib/utils';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
+import { translateStatus } from '@/lib/translateStatus';
+import { moneyByCurrency, resolveCurrency } from '@/lib/utils';
 import { dashboard } from '@/routes';
 
 type Stats = Record<string, any>;
@@ -26,6 +32,7 @@ const props = defineProps<{
     preset?: 'today' | 'month' | 'year' | 'custom';
     stats: Stats;
 }>();
+
 const { t } = useTranslations();
 const calendar = useCalendar();
 const { baseCurrency } = useCurrency();
@@ -39,10 +46,8 @@ defineOptions({
 
 const from = ref(props.stats.period?.from ?? props.stats.filters?.from ?? '');
 const to = ref(props.stats.period?.to ?? props.stats.filters?.to ?? '');
-
-const kpis = computed(() =>
-    props.mode === 'shareholder' ? props.stats.kpis : props.stats.kpis,
-);
+const kpis = computed(() => props.stats.kpis ?? {});
+const isAdmin = computed(() => props.mode !== 'shareholder');
 
 const money = (v: unknown, currency = baseCurrency.value) =>
     new Intl.NumberFormat('en-US', {
@@ -103,32 +108,9 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
             </div>
         </div>
 
+        <!-- Shareholder KPIs -->
         <div
-            class="relative overflow-hidden rounded-2xl border border-sidebar-border/70 bg-[radial-gradient(circle_at_top_left,rgba(180_83%_40%/0.14),transparent_40%),linear-gradient(135deg,oklch(0.98_0.01_85),oklch(0.96_0.02_145))] p-6 dark:bg-[radial-gradient(circle_at_top_left,rgba(180_60%_45%/0.18),transparent_45%),linear-gradient(135deg,oklch(0.24_0.02_145),oklch(0.2_0.02_85))]"
-        >
-            <div class="max-w-2xl space-y-2">
-                    <p class="text-sm font-medium tracking-wide text-emerald-800 uppercase dark:text-emerald-300">
-                        {{ t('Construction MIS') }}
-                    </p>
-                    <h1 class="font-serif text-3xl tracking-tight text-foreground md:text-4xl">
-                        {{
-                            mode === 'shareholder'
-                                ? t('Your shareholder overview')
-                                : t('Projects, costs, sales & profit — one clear view')
-                        }}
-                    </h1>
-                    <p class="text-muted-foreground">
-                        {{
-                            mode === 'shareholder'
-                                ? t('See company profit for the selected period and your ownership share.')
-                                : t('Track active builds, home sales, expenses and shareholder profit in real time.')
-                        }}
-                    </p>
-            </div>
-        </div>
-
-        <div
-            v-if="mode === 'shareholder'"
+            v-if="!isAdmin"
             class="grid gap-4 md:grid-cols-2 xl:grid-cols-5"
         >
             <div class="rounded-2xl border bg-card p-5">
@@ -154,15 +136,22 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 <div class="mt-2 text-3xl font-semibold tabular-nums text-emerald-700">
                     {{ money(stats.my_paid) }}
                 </div>
+                <div v-if="stats.all_time" class="mt-1 text-xs text-muted-foreground">
+                    {{ t('All-time :amount', { amount: money(stats.all_time.paid_total) }) }}
+                </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
                 <div class="text-sm text-muted-foreground">{{ t('Still owed') }}</div>
                 <div class="mt-2 text-3xl font-semibold tabular-nums text-amber-700">
                     {{ money(stats.my_balance) }}
                 </div>
+                <div v-if="stats.all_time" class="mt-1 text-xs text-muted-foreground">
+                    {{ t('All-time :amount', { amount: money(stats.all_time.balance_owed) }) }}
+                </div>
             </div>
         </div>
 
+        <!-- Admin finance KPIs -->
         <div v-else class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
@@ -178,6 +167,15 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 </div>
                 <div class="mt-3 text-3xl font-semibold tabular-nums">
                     {{ money(kpis.period_sales) }}
+                </div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">{{ t('Period receipts') }}</span>
+                    <CircleDollarSign class="size-4 text-muted-foreground" />
+                </div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums text-emerald-700">
+                    {{ money(kpis.period_receipts) }}
                 </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
@@ -198,15 +196,6 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                     {{ moneyByCurrency(kpis.expenses_by_currency, kpis.period_expenses) }}
                 </div>
             </div>
-            <div class="rounded-2xl border bg-card p-5">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm text-muted-foreground">{{ t('Paid salaries') }}</span>
-                    <Wallet class="size-4 text-muted-foreground" />
-                </div>
-                <div class="mt-3 text-3xl font-semibold tabular-nums">
-                    {{ money(kpis.period_salaries) }}
-                </div>
-            </div>
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950/40">
                 <div class="flex items-center justify-between">
                     <span class="text-sm text-emerald-800 dark:text-emerald-300">{{ t('Net profit') }}</span>
@@ -221,41 +210,143 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
             </div>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2">
+        <!-- Unit pipeline (both modes) -->
+        <div class="grid gap-4 sm:grid-cols-3">
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="text-sm text-muted-foreground">{{ t('Units available') }}</div>
+                <div class="mt-2 text-3xl font-semibold tabular-nums">{{ kpis.units_available ?? 0 }}</div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="text-sm text-muted-foreground">{{ t('Units reserved') }}</div>
+                <div class="mt-2 text-3xl font-semibold tabular-nums text-amber-700">{{ kpis.units_reserved ?? 0 }}</div>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="text-sm text-muted-foreground">{{ t('Units sold') }}</div>
+                <div class="mt-2 text-3xl font-semibold tabular-nums text-emerald-700">{{ kpis.units_sold ?? 0 }}</div>
+            </div>
+        </div>
+
+        <!-- Admin alert strip -->
+        <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Link
+                href="/sales"
+                class="rounded-2xl border bg-card p-4 transition-colors hover:bg-muted/30"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm text-muted-foreground">{{ t('Overdue installments') }}</span>
+                    <AlertTriangle class="size-4 text-amber-600" />
+                </div>
+                <div class="mt-2 text-2xl font-semibold tabular-nums">{{ kpis.overdue_installments_count ?? 0 }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">{{ money(kpis.overdue_installments_amount) }}</div>
+            </Link>
+            <Link
+                href="/purchases"
+                class="rounded-2xl border bg-card p-4 transition-colors hover:bg-muted/30"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm text-muted-foreground">{{ t('Supplier balances') }}</span>
+                    <Package class="size-4 text-rose-600" />
+                </div>
+                <div class="mt-2 text-2xl font-semibold tabular-nums">{{ kpis.purchases_owed_count ?? 0 }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">{{ money(kpis.purchases_owed_amount) }}</div>
+            </Link>
+            <Link
+                href="/inventory"
+                class="rounded-2xl border bg-card p-4 transition-colors hover:bg-muted/30"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm text-muted-foreground">{{ t('Low stock items') }}</span>
+                    <Boxes class="size-4 text-orange-600" />
+                </div>
+                <div class="mt-2 text-2xl font-semibold tabular-nums">{{ kpis.low_stock_count ?? 0 }}</div>
+            </Link>
+            <Link
+                href="/contact-messages"
+                class="rounded-2xl border bg-card p-4 transition-colors hover:bg-muted/30"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-sm text-muted-foreground">{{ t('Unread messages') }}</span>
+                    <Inbox class="size-4 text-sky-600" />
+                </div>
+                <div class="mt-2 text-2xl font-semibold tabular-nums">{{ kpis.unread_contacts ?? 0 }}</div>
+            </Link>
+        </div>
+
+        <!-- Admin ops: HR + field reports -->
+        <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">{{ t('Attendance today') }}</span>
+                    <Users class="size-4 text-muted-foreground" />
+                </div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">
+                    {{ kpis.attendance_today ?? 0 }}
+                    <span class="text-base font-normal text-muted-foreground">/ {{ kpis.employees_count ?? 0 }}</span>
+                </div>
+                <Button as-child variant="ghost" size="sm" class="mt-2 -ms-2">
+                    <Link href="/attendance">{{ t('Open attendance') }} <ArrowUpRight class="size-4" /></Link>
+                </Button>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">{{ t('Pending salaries') }}</span>
+                    <Wallet class="size-4 text-muted-foreground" />
+                </div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ kpis.pending_salaries_count ?? 0 }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">{{ money(kpis.pending_salaries_amount) }}</div>
+                <Button as-child variant="ghost" size="sm" class="mt-2 -ms-2">
+                    <Link href="/salaries">{{ t('Open salaries') }} <ArrowUpRight class="size-4" /></Link>
+                </Button>
+            </div>
+            <div class="rounded-2xl border bg-card p-5">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-muted-foreground">{{ t('Draft field reports') }}</span>
+                    <ClipboardList class="size-4 text-muted-foreground" />
+                </div>
+                <div class="mt-3 text-3xl font-semibold tabular-nums">{{ kpis.field_reports_draft ?? 0 }}</div>
+                <Button as-child variant="ghost" size="sm" class="mt-2 -ms-2">
+                    <Link href="/field-reports">{{ t('Open field reports') }} <ArrowUpRight class="size-4" /></Link>
+                </Button>
+            </div>
+        </div>
+
+        <!-- Currency cards (admin only) -->
+        <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2">
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
                     <span class="text-sm font-medium text-muted-foreground">{{ t('AFN account') }}</span>
-                    <span class="text-xs font-semibold rounded-full bg-muted px-2 py-1">AFN</span>
+                    <span class="rounded-full bg-muted px-2 py-1 text-xs font-semibold">AFN</span>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-4">
                     <div>
                         <div class="text-xs text-muted-foreground">{{ t('Expenses') }}</div>
-                        <div class="text-lg font-semibold tabular-nums text-rose-700">{{ money(stats.kpis?.expenses_by_currency?.AFN ?? 0, 'AFN') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-rose-700">{{ money(kpis.expenses_by_currency?.AFN ?? 0, 'AFN') }}</div>
                     </div>
                     <div>
                         <div class="text-xs text-muted-foreground">{{ t('Incomes') }}</div>
-                        <div class="text-lg font-semibold tabular-nums text-emerald-700">{{ money(stats.kpis?.incomes_by_currency?.AFN ?? 0, 'AFN') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-emerald-700">{{ money(kpis.incomes_by_currency?.AFN ?? 0, 'AFN') }}</div>
                     </div>
                 </div>
             </div>
             <div class="rounded-2xl border bg-card p-5">
                 <div class="flex items-center justify-between">
                     <span class="text-sm font-medium text-muted-foreground">{{ t('USD account') }}</span>
-                    <span class="text-xs font-semibold rounded-full bg-muted px-2 py-1">USD</span>
+                    <span class="rounded-full bg-muted px-2 py-1 text-xs font-semibold">USD</span>
                 </div>
                 <div class="mt-3 grid grid-cols-2 gap-4">
                     <div>
                         <div class="text-xs text-muted-foreground">{{ t('Expenses') }}</div>
-                        <div class="text-lg font-semibold tabular-nums text-rose-700">{{ money(stats.kpis?.expenses_by_currency?.USD ?? 0, 'USD') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-rose-700">{{ money(kpis.expenses_by_currency?.USD ?? 0, 'USD') }}</div>
                     </div>
                     <div>
                         <div class="text-xs text-muted-foreground">{{ t('Incomes') }}</div>
-                        <div class="text-lg font-semibold tabular-nums text-emerald-700">{{ money(stats.kpis?.incomes_by_currency?.USD ?? 0, 'USD') }}</div>
+                        <div class="text-lg font-semibold tabular-nums text-emerald-700">{{ money(kpis.incomes_by_currency?.USD ?? 0, 'USD') }}</div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Projects + partners / project shares -->
         <div class="grid gap-4 xl:grid-cols-3">
             <div class="rounded-2xl border bg-card xl:col-span-2">
                 <div class="flex items-center justify-between border-b px-5 py-4">
@@ -316,7 +407,44 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 </div>
             </div>
 
-            <div class="rounded-2xl border bg-card">
+            <!-- Shareholder: project shares -->
+            <div v-if="!isAdmin" class="rounded-2xl border bg-card">
+                <div class="flex items-center justify-between border-b px-5 py-4">
+                    <h2 class="font-medium">{{ t('Your project shares') }}</h2>
+                    <CircleDollarSign class="size-4 text-muted-foreground" />
+                </div>
+                <div class="space-y-3 p-5">
+                    <div
+                        v-for="share in stats.project_shares || []"
+                        :key="share.project_id"
+                        class="rounded-xl bg-muted/40 px-3 py-3"
+                    >
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="font-medium">{{ share.project_name }}</div>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ t(':value% ownership', { value: Number(share.ownership_percentage ?? 0).toFixed(2) }) }}
+                                </div>
+                            </div>
+                            <div class="text-right text-sm tabular-nums">
+                                <div class="font-semibold">{{ money(share.entitled_share) }}</div>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ t('Paid :paid · Owed :owed', { paid: money(share.paid_total ?? 0), owed: money(share.balance_owed ?? 0) }) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p
+                        v-if="!(stats.project_shares || []).length"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ t('No project shares assigned yet.') }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Admin: shareholder split -->
+            <div v-else class="rounded-2xl border bg-card">
                 <div class="flex items-center justify-between border-b px-5 py-4">
                     <h2 class="font-medium">{{ t('Shareholder split') }}</h2>
                     <CircleDollarSign class="size-4 text-muted-foreground" />
@@ -356,7 +484,99 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
             </div>
         </div>
 
-        <div v-if="mode !== 'shareholder'" class="grid gap-4 lg:grid-cols-2">
+        <!-- Admin attention lists -->
+        <div v-if="isAdmin" class="grid gap-4 lg:grid-cols-3">
+            <div class="rounded-2xl border bg-card">
+                <div class="flex items-center justify-between border-b px-5 py-4">
+                    <h2 class="font-medium">{{ t('Overdue installments') }}</h2>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link href="/sales">{{ t('Open') }} <ArrowUpRight class="size-4" /></Link>
+                    </Button>
+                </div>
+                <div class="divide-y">
+                    <div
+                        v-for="row in stats.overdue_installments || []"
+                        :key="row.id"
+                        class="flex items-center justify-between gap-3 px-5 py-3 text-sm"
+                    >
+                        <div>
+                            <div class="font-medium">{{ row.customer || row.sale_no }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                {{ row.project || '—' }} · {{ formatDate(row.due_date) }}
+                            </div>
+                        </div>
+                        <div class="font-medium tabular-nums text-amber-700">{{ money(row.remaining) }}</div>
+                    </div>
+                    <div
+                        v-if="!(stats.overdue_installments || []).length"
+                        class="px-5 py-6 text-sm text-muted-foreground"
+                    >
+                        {{ t('No overdue installments.') }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border bg-card">
+                <div class="flex items-center justify-between border-b px-5 py-4">
+                    <h2 class="font-medium">{{ t('Low stock') }}</h2>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link href="/inventory">{{ t('Open') }} <ArrowUpRight class="size-4" /></Link>
+                    </Button>
+                </div>
+                <div class="divide-y">
+                    <div
+                        v-for="row in stats.low_stock || []"
+                        :key="row.id"
+                        class="flex items-center justify-between gap-3 px-5 py-3 text-sm"
+                    >
+                        <div>
+                            <div class="font-medium">{{ row.name }}</div>
+                            <div class="text-xs text-muted-foreground">{{ row.code }}</div>
+                        </div>
+                        <div class="text-right text-xs tabular-nums">
+                            <div class="font-medium text-orange-700">{{ row.on_hand }}</div>
+                            <div class="text-muted-foreground">{{ t('Min') }} {{ row.minimum_stock }}</div>
+                        </div>
+                    </div>
+                    <div
+                        v-if="!(stats.low_stock || []).length"
+                        class="px-5 py-6 text-sm text-muted-foreground"
+                    >
+                        {{ t('Stock levels look fine.') }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border bg-card">
+                <div class="flex items-center justify-between border-b px-5 py-4">
+                    <h2 class="font-medium">{{ t('Unpaid purchases') }}</h2>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link href="/purchases">{{ t('Open') }} <ArrowUpRight class="size-4" /></Link>
+                    </Button>
+                </div>
+                <div class="divide-y">
+                    <div
+                        v-for="row in stats.unpaid_purchases || []"
+                        :key="row.id"
+                        class="flex items-center justify-between gap-3 px-5 py-3 text-sm"
+                    >
+                        <div>
+                            <div class="font-medium">{{ row.supplier || row.purchase_no }}</div>
+                            <div class="text-xs text-muted-foreground">{{ row.project || '—' }}</div>
+                        </div>
+                        <div class="font-medium tabular-nums text-rose-700">{{ money(row.remaining) }}</div>
+                    </div>
+                    <div
+                        v-if="!(stats.unpaid_purchases || []).length"
+                        class="px-5 py-6 text-sm text-muted-foreground"
+                    >
+                        {{ t('No unpaid purchases.') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="isAdmin" class="grid gap-4 lg:grid-cols-2">
             <div class="rounded-2xl border bg-card">
                 <div class="flex items-center justify-between border-b px-5 py-4">
                     <h2 class="font-medium">{{ t('Recent sales') }}</h2>
@@ -421,8 +641,37 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
         </div>
 
         <div
-            v-if="mode !== 'shareholder'"
-            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+            v-if="isAdmin && (stats.recent_field_reports || []).length"
+            class="rounded-2xl border bg-card"
+        >
+            <div class="flex items-center justify-between border-b px-5 py-4">
+                <h2 class="font-medium">{{ t('Recent field reports') }}</h2>
+                <Button as-child variant="ghost" size="sm">
+                    <Link href="/field-reports">{{ t('Open') }} <ArrowUpRight class="size-4" /></Link>
+                </Button>
+            </div>
+            <div class="divide-y">
+                <div
+                    v-for="report in stats.recent_field_reports || []"
+                    :key="report.id"
+                    class="flex items-center justify-between gap-3 px-5 py-3 text-sm"
+                >
+                    <div>
+                        <div class="font-medium">{{ report.title }}</div>
+                        <div class="text-xs text-muted-foreground">
+                            {{ report.location || '—' }} · {{ translateStatus(report.status, t) }}
+                        </div>
+                    </div>
+                    <Button as-child variant="ghost" size="sm">
+                        <Link :href="`/field-reports/${report.id}`">{{ t('View') }}</Link>
+                    </Button>
+                </div>
+            </div>
+        </div>
+
+        <div
+            v-if="isAdmin"
+            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7"
         >
             <Can permission="expenses.create">
                 <Button as-child variant="outline" class="justify-between">
@@ -440,10 +689,16 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                 </Button>
             </Can>
             <Button as-child variant="outline" class="justify-between">
-                <Link href="/reports">{{ t('Open reports') }} <ArrowUpRight class="size-4" /></Link>
+                <Link href="/inventory">{{ t('Inventory') }} <ArrowUpRight class="size-4" /></Link>
             </Button>
             <Button as-child variant="outline" class="justify-between">
-                <Link href="/partners">{{ t('Shareholder accounts') }} <ArrowUpRight class="size-4" /></Link>
+                <Link href="/balance-sheet">{{ t('Balance sheet') }} <ArrowUpRight class="size-4" /></Link>
+            </Button>
+            <Button as-child variant="outline" class="justify-between">
+                <Link href="/contact-messages">{{ t('Contact messages') }} <ArrowUpRight class="size-4" /></Link>
+            </Button>
+            <Button as-child variant="outline" class="justify-between">
+                <Link href="/reports">{{ t('Open reports') }} <ArrowUpRight class="size-4" /></Link>
             </Button>
         </div>
     </div>

@@ -50,15 +50,26 @@ class HandleInertiaRequests extends Middleware
         $locales = app(LocaleRegistry::class);
         $localeConfig = $locales->get($locale) ?? [];
 
-        $appName = OrgSetting::getValue('app_name', config('app.name'));
+        $appName = OrgSetting::appName($locale);
 
         $company = null;
-        if ($request->user()) {
-            try {
-                $companyModel = CurrentCompany::get();
+        $publicCompany = null;
+        try {
+            $companyModel = CurrentCompany::get();
+            $displayName = $companyModel->displayName($locale);
+            $publicCompany = [
+                'name' => $displayName,
+                'name_primary' => (string) $companyModel->name,
+                'name_en' => filled($companyModel->name_en) ? (string) $companyModel->name_en : null,
+                'phone' => filled($companyModel->phone) ? $companyModel->phone : null,
+                'email' => filled($companyModel->email) ? $companyModel->email : null,
+                'address' => filled($companyModel->address) ? $companyModel->address : null,
+            ];
+            if ($request->user()) {
                 $company = [
                     'id' => $companyModel->id,
-                    'name' => $companyModel->name,
+                    'name' => $displayName,
+                    'name_en' => $companyModel->name_en,
                     'legal_name' => $companyModel->legal_name,
                     'registration_no' => $companyModel->registration_no,
                     'phone' => $companyModel->phone,
@@ -67,15 +78,17 @@ class HandleInertiaRequests extends Middleware
                     'base_currency' => CurrencyService::normalize($companyModel->base_currency),
                     'logo_path' => $companyModel->logo_path,
                 ];
-            } catch (Throwable) {
-                $company = null;
             }
+        } catch (Throwable) {
+            $company = null;
+            $publicCompany = null;
         }
 
         return [
             ...parent::share($request),
-            'name' => $company['name'] ?? $appName,
+            'name' => $company['name'] ?? $publicCompany['name'] ?? $appName,
             'company' => $company,
+            'publicCompany' => $publicCompany,
             'logo' => OrgSetting::logoUrl(),
             'favicon' => OrgSetting::faviconUrl(),
             'themeColors' => (function (): array {
@@ -117,7 +130,7 @@ class HandleInertiaRequests extends Middleware
             'seo' => fn () => config('kit.features.seo') ? Seo::shared() : null,
             'documentSeo' => fn () => $request->routeIs('home') && config('kit.features.seo')
                 ? Seo::document([
-                    'title' => OrgSetting::getValue('app_name', config('app.name')),
+                    'title' => OrgSetting::appName($locale),
                     'description' => config('kit.seo.default_description'),
                     'path' => '/',
                     'site_name_only' => true,
