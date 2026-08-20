@@ -2,6 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 
 type PaginatorLink = {
@@ -31,6 +32,8 @@ const props = defineProps<{
     paginator: Paginator;
 }>();
 
+const { t } = useTranslations();
+
 const links = computed(() => props.paginator.links ?? props.paginator.meta?.links ?? []);
 const from = computed(() => props.paginator.meta?.from ?? props.paginator.from);
 const to = computed(() => props.paginator.meta?.to ?? props.paginator.to);
@@ -47,14 +50,14 @@ const show = computed(() => lastPage.value > 1 || links.value.length > 3);
     >
         <p class="text-sm text-muted-foreground">
             <template v-if="total">
-                Showing
+                {{ t('Showing') }}
                 <span class="font-medium text-foreground">{{ from ?? 0 }}</span>
-                to
+                {{ t('to') }}
                 <span class="font-medium text-foreground">{{ to ?? 0 }}</span>
-                of
+                {{ t('of') }}
                 <span class="font-medium text-foreground">{{ total }}</span>
             </template>
-            <template v-else>Pages</template>
+            <template v-else>{{ t('Pages') }}</template>
         </p>
         <div class="flex flex-wrap items-center gap-1">
             <template v-for="(link, index) in visibleLinks" :key="`${link.label}-${index}`">

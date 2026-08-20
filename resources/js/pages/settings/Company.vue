@@ -7,6 +7,7 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/composables/useTranslations';
 
 const props = defineProps<{
     company: {
@@ -29,6 +30,8 @@ const props = defineProps<{
     currency_pairs: { from: string; to: string }[];
 }>();
 
+const { t } = useTranslations();
+
 const baseCurrency = ref(props.company.base_currency);
 const newRate = ref({
     from_currency: props.currency_pairs[0]?.from ?? props.company.base_currency,
@@ -48,15 +51,12 @@ defineOptions({
 </script>
 
 <template>
-    <Head title="Company settings" />
+    <Head :title="t('Company settings')" />
 
-    <h1 class="sr-only">Company settings</h1>
+    <h1 class="sr-only">{{ t('Company settings') }}</h1>
 
     <div class="flex flex-col space-y-6">
-        <Heading
-            variant="small"
-            title="Company"
-        />
+        <Heading variant="small" :title="t('Company')" />
 
         <Form
             action="/settings/company"
@@ -65,13 +65,13 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="name">Company name</Label>
+                <Label for="name">{{ t('Company name') }}</Label>
                 <Input id="name" name="name" required :default-value="company.name" />
                 <InputError :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="legal_name">Legal name</Label>
+                <Label for="legal_name">{{ t('Legal name') }}</Label>
                 <Input
                     id="legal_name"
                     name="legal_name"
@@ -81,7 +81,7 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="registration_no">Registration no</Label>
+                <Label for="registration_no">{{ t('Registration no') }}</Label>
                 <Input
                     id="registration_no"
                     name="registration_no"
@@ -91,13 +91,13 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="phone">Phone</Label>
+                <Label for="phone">{{ t('Phone') }}</Label>
                 <Input id="phone" name="phone" :default-value="company.phone ?? ''" />
                 <InputError :message="errors.phone" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="email">Email</Label>
+                <Label for="email">{{ t('Email') }}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -108,14 +108,14 @@ defineOptions({
             </div>
 
             <div class="grid gap-2">
-                <Label for="base_currency">Base currency</Label>
+                <Label for="base_currency">{{ t('Base currency') }}</Label>
                 <CurrencySelect id="base_currency" v-model="baseCurrency" />
                 <input type="hidden" name="base_currency" :value="baseCurrency" />
                 <InputError :message="errors.base_currency" />
             </div>
 
             <div class="grid gap-2">
-                <Label for="address">Address</Label>
+                <Label for="address">{{ t('Address') }}</Label>
                 <textarea
                     id="address"
                     name="address"
@@ -127,15 +127,12 @@ defineOptions({
             </div>
 
             <Button type="submit" :disabled="processing">
-                {{ processing ? 'Saving...' : 'Save company' }}
+                {{ processing ? t('Saving...') : t('Save company') }}
             </Button>
         </Form>
 
         <div class="space-y-4 rounded-xl border p-6">
-            <Heading
-                variant="small"
-                title="Exchange rates"
-            />
+            <Heading variant="small" :title="t('Exchange rates')" />
 
             <Form
                 action="/settings/company/exchange-rates"
@@ -145,7 +142,7 @@ defineOptions({
             >
                 <input type="hidden" name="from_currency" :value="newRate.from_currency" />
                 <div class="grid gap-2">
-                    <Label for="rate_to_currency">To currency</Label>
+                    <Label for="rate_to_currency">{{ t('To currency') }}</Label>
                     <select
                         id="rate_to_currency"
                         v-model="newRate.to_currency"
@@ -163,7 +160,7 @@ defineOptions({
                     <InputError :message="errors.to_currency" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="rate">Rate</Label>
+                    <Label for="rate">{{ t('Rate') }}</Label>
                     <Input
                         id="rate"
                         v-model="newRate.rate"
@@ -177,7 +174,7 @@ defineOptions({
                     <InputError :message="errors.rate" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="effective_date">Effective date</Label>
+                    <Label for="effective_date">{{ t('Effective date') }}</Label>
                     <Input
                         id="effective_date"
                         v-model="newRate.effective_date"
@@ -189,7 +186,7 @@ defineOptions({
                 </div>
                 <div class="flex items-end">
                     <Button type="submit" :disabled="processing" class="w-full">
-                        {{ processing ? 'Saving...' : 'Add rate' }}
+                        {{ processing ? t('Saving...') : t('Add rate') }}
                     </Button>
                 </div>
             </Form>
@@ -198,11 +195,11 @@ defineOptions({
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b text-start text-muted-foreground">
-                            <th class="py-2 pr-4">From</th>
-                            <th class="py-2 pr-4">To</th>
-                            <th class="py-2 pr-4">Rate</th>
-                            <th class="py-2 pr-4">Effective date</th>
-                            <th class="py-2 text-end">Actions</th>
+                            <th class="py-2 pr-4">{{ t('From') }}</th>
+                            <th class="py-2 pr-4">{{ t('To') }}</th>
+                            <th class="py-2 pr-4">{{ t('Rate') }}</th>
+                            <th class="py-2 pr-4">{{ t('Effective date') }}</th>
+                            <th class="py-2 text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
@@ -219,14 +216,14 @@ defineOptions({
                                 >
                                     <input type="hidden" name="_method" value="delete" />
                                     <Button type="submit" :disabled="processing" variant="ghost" size="sm">
-                                        Delete
+                                        {{ t('Delete') }}
                                     </Button>
                                 </Form>
                             </td>
                         </tr>
                         <tr v-if="!exchange_rates.length">
                             <td colspan="5" class="py-6 text-center text-muted-foreground">
-                                No exchange rates yet. Add one above.
+                                {{ t('No exchange rates yet') }}
                             </td>
                         </tr>
                     </tbody>

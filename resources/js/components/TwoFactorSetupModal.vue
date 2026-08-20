@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/composables/useAppearance';
+import { useTranslations } from '@/composables/useTranslations';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { confirm } from '@/routes/two-factor';
 import type { TwoFactorConfigContent } from '@/types';
@@ -30,6 +31,7 @@ type Props = {
 };
 
 const { resolvedAppearance } = useAppearance();
+const { t } = useTranslations();
 
 const props = defineProps<Props>();
 const isOpen = defineModel<boolean>('isOpen');
@@ -46,26 +48,24 @@ const pinInputContainerRef = useTemplateRef('pinInputContainerRef');
 const modalConfig = computed<TwoFactorConfigContent>(() => {
     if (props.twoFactorEnabled) {
         return {
-            title: 'Two-factor authentication enabled',
-            description:
-                'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-            buttonText: 'Close',
+            title: t('Two-factor authentication enabled'),
+            description: t('Scan the QR code or enter the setup key.'),
+            buttonText: t('Close'),
         };
     }
 
     if (showVerificationStep.value) {
         return {
-            title: 'Verify authentication code',
-            description: 'Enter the 6-digit code from your authenticator app',
-            buttonText: 'Continue',
+            title: t('Verify authentication code'),
+            description: t('Enter the 6-digit code from your authenticator app'),
+            buttonText: t('Continue'),
         };
     }
 
     return {
-        title: 'Enable two-factor authentication',
-        description:
-            'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-        buttonText: 'Continue',
+        title: t('Enable two-factor authentication'),
+        description: t('Scan the QR code or enter the setup key.'),
+        buttonText: t('Continue'),
     };
 });
 
@@ -196,9 +196,9 @@ watch(
                             <div
                                 class="absolute inset-0 top-1/2 h-px w-full bg-border"
                             />
-                            <span class="relative bg-card px-2 py-1"
-                                >or, enter the code manually</span
-                            >
+                            <span class="relative bg-card px-2 py-1">
+                                {{ t('or, enter the code manually') }}
+                            </span>
                         </div>
 
                         <div
@@ -279,14 +279,14 @@ watch(
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
                                 >
-                                    Back
+                                    {{ t('Back') }}
                                 </Button>
                                 <Button
                                     type="submit"
                                     class="w-auto flex-1"
                                     :disabled="processing || code.length < 6"
                                 >
-                                    Confirm
+                                    {{ t('Confirm') }}
                                 </Button>
                             </div>
                         </div>

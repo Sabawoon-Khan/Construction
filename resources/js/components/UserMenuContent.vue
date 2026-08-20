@@ -8,6 +8,7 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
+import { useTranslations } from '@/composables/useTranslations';
 import { onLogout } from '@/offline/lifecycle';
 import { logout } from '@/routes';
 import { edit } from '@/routes/profile';
@@ -18,6 +19,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const { t } = useTranslations();
 
 const handleLogout = () => {
     void onLogout(props.user.id);
@@ -35,7 +37,7 @@ const handleLogout = () => {
         <DropdownMenuItem :as-child="true">
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />
-                Settings
+                {{ t('Settings') }}
             </Link>
         </DropdownMenuItem>
     </DropdownMenuGroup>
@@ -49,7 +51,7 @@ const handleLogout = () => {
             data-test="logout-button"
         >
             <LogOut class="mr-2 h-4 w-4" />
-            Log out
+            {{ t('Log out') }}
         </Link>
     </DropdownMenuItem>
 </template>

@@ -305,15 +305,7 @@ function onProviderChange(model: AiModelForm): void {
     }
 }
 
-const hasUsableModel = computed(() =>
-    state.models.some((m) => m.api_key_set || m.api_key.trim() !== ''),
-);
-
 const hasLogs = computed(() => (props.logs?.data.length ?? 0) > 0);
-
-const hasActiveFilters = computed(() =>
-    Boolean(search.value || statusFilter.value || actionFilter.value),
-);
 
 const isConfigTab = computed(
     () =>
@@ -729,17 +721,6 @@ defineOptions({
             @submit.prevent="submit"
         >
             <template v-if="tab === 'general'">
-                <p
-                    v-if="state.enabled && !hasUsableModel"
-                    class="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-foreground"
-                >
-                    {{
-                        t(
-                            'Add a model and API key, then Save — helpers appear on text fields after that.',
-                        )
-                    }}
-                </p>
-
                 <section class="space-y-4 border-b border-border/70 pb-8">
                     <div class="flex flex-wrap items-end justify-between gap-3">
                         <div>
@@ -1610,15 +1591,6 @@ defineOptions({
                 <MisEmptyState
                     v-if="!hasLogs"
                     :title="t('No AI usage yet')"
-                    :description="
-                        hasActiveFilters
-                            ? t(
-                                  'Try clearing filters or broadening your search.',
-                              )
-                            : t(
-                                  'Requests will appear here once AI assist is used.',
-                              )
-                    "
                 />
 
                 <div v-else class="space-y-2">

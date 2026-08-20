@@ -827,15 +827,6 @@ defineOptions({
                     v-if="!hasLogs"
                     :icon="Inbox"
                     :title="t('No emails logged yet')"
-                    :description="
-                        hasActiveFilters
-                            ? t(
-                                  'Try clearing filters or broadening your search.',
-                              )
-                            : t(
-                                  'Outbound emails will appear here once the system sends them.',
-                              )
-                    "
                 />
 
                 <div v-else class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
