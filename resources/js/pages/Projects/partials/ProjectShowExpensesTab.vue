@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
@@ -44,6 +44,21 @@ const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
 
 const expenseSearch = ref('');
+const deletingId = ref<number | null>(null);
+
+function deleteExpense(expense: (typeof props.expenses)[number]) {
+    deletingId.value = expense.id;
+    const href = expense.purchase_id
+        ? `/purchases/${expense.purchase_id}`
+        : `/expenses/${expense.id}`;
+
+    router.delete(href, {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingId.value = null;
+        },
+    });
+}
 
 const filteredExpenses = computed(() => {
     const q = expenseSearch.value.trim().toLowerCase();
@@ -165,6 +180,7 @@ const filteredExpenses = computed(() => {
                         <td class="px-4 py-3" @click.stop>
                             <div class="flex flex-wrap justify-end gap-1">
                                 <Button
+                                    type="button"
                                     variant="ghost"
                                     size="sm"
                                     @click="emit('open-expense', expense, false)"
@@ -174,6 +190,7 @@ const filteredExpenses = computed(() => {
                                 <Can permission="expenses.edit">
                                     <Button
                                         v-if="!expense.purchase_id"
+                                        type="button"
                                         variant="ghost"
                                         size="sm"
                                         @click="emit('open-expense', expense, true)"
@@ -182,40 +199,30 @@ const filteredExpenses = computed(() => {
                                     </Button>
                                 </Can>
                                 <Can permission="expenses.delete">
-                                    <Form
+                                    <Button
                                         v-if="!expense.purchase_id"
-                                        :action="`/expenses/${expense.id}`"
-                                        method="delete"
-                                        v-slot="{ processing }"
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        class="text-destructive hover:text-destructive"
+                                        :disabled="deletingId === expense.id"
+                                        @click.stop="deleteExpense(expense)"
                                     >
-                                        <Button
-                                            type="submit"
-                                            variant="ghost"
-                                            size="sm"
-                                            class="text-destructive hover:text-destructive"
-                                            :disabled="processing"
-                                        >
-                                            <Trash2 class="size-4" />
-                                        </Button>
-                                    </Form>
+                                        <Trash2 class="size-4" />
+                                    </Button>
                                 </Can>
                                 <Can permission="purchases.delete">
-                                    <Form
+                                    <Button
                                         v-if="expense.purchase_id"
-                                        :action="`/purchases/${expense.purchase_id}`"
-                                        method="delete"
-                                        v-slot="{ processing }"
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        class="text-destructive hover:text-destructive"
+                                        :disabled="deletingId === expense.id"
+                                        @click.stop="deleteExpense(expense)"
                                     >
-                                        <Button
-                                            type="submit"
-                                            variant="ghost"
-                                            size="sm"
-                                            class="text-destructive hover:text-destructive"
-                                            :disabled="processing"
-                                        >
-                                            <Trash2 class="size-4" />
-                                        </Button>
-                                    </Form>
+                                        <Trash2 class="size-4" />
+                                    </Button>
                                 </Can>
                             </div>
                         </td>

@@ -92,7 +92,10 @@ function removeExpense() {
         ? `/purchases/${props.item.purchase_id}`
         : `/expenses/${props.item.id}`;
 
-    router.delete(href);
+    router.delete(href, {
+        preserveScroll: true,
+        onSuccess: () => emit('update:open', false),
+    });
 }
 </script>
 

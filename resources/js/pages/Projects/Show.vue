@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
+import { Form, Head, Link, router } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     Banknote,
@@ -12,7 +12,7 @@ import {
     Trash2,
     Warehouse,
 } from '@lucide/vue';
-import { onMounted, computed, ref, watch } from 'vue';
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
 import Heading from '@/components/Heading.vue';
@@ -173,18 +173,35 @@ const tabs = [
 ];
 const tabIds = new Set(tabs.map((entry) => entry.id));
 
-onMounted(() => {
+function syncTabFromHash() {
     const hashTab = window.location.hash.replace('#', '');
     if (hashTab && tabIds.has(hashTab)) {
         tab.value = hashTab;
     }
-});
+}
 
-watch(tab, (value) => {
+function persistTabHash(value: string) {
     if (!tabIds.has(value) || window.location.hash === `#${value}`) {
         return;
     }
-    window.history.replaceState(null, '', `#${value}`);
+    window.history.replaceState(window.history.state, '', `#${value}`);
+}
+
+onMounted(() => {
+    syncTabFromHash();
+});
+
+watch(tab, persistTabHash);
+
+const stopNavigate = router.on('navigate', () => {
+    syncTabFromHash();
+    if (tab.value !== 'info') {
+        persistTabHash(tab.value);
+    }
+});
+
+onUnmounted(() => {
+    stopNavigate();
 });
 
 defineOptions({

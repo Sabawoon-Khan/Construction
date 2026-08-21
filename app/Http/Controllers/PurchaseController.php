@@ -173,10 +173,27 @@ class PurchaseController extends Controller implements HasMiddleware
 
     public function destroy(Purchase $purchase): RedirectResponse
     {
-        PurchaseService::assertDeletable($purchase);
+        try {
+            PurchaseService::assertDeletable($purchase);
+        } catch (ValidationException $e) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => collect($e->errors())->flatten()->first() ?: 'This purchase cannot be deleted.',
+            ]);
+
+            return back();
+        }
+
+        $projectId = $purchase->project_id;
+        $fromProject = $projectId && str_contains((string) url()->previous(), '/projects/'.$projectId);
+
         $purchase->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Purchase deleted.']);
+
+        if ($fromProject) {
+            return redirect()->to(route('projects.show', $projectId).'#expenses');
+        }
 
         return redirect()->route('purchases.index');
     }
