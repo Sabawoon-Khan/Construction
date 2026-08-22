@@ -12,8 +12,6 @@ class ExpenseUnit extends Model
 {
     use HasCreator;
 
-    public $timestamps = false;
-
     protected $fillable = [
         'user_id',
         'unit_name',

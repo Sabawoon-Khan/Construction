@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Link, router } from '@inertiajs/vue3';
-import { Pencil, Printer, Trash2 } from '@lucide/vue';
+import { LoaderCircle, Pencil, Plus, Printer, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
@@ -48,6 +48,20 @@ const currency = ref(baseCurrency.value);
 const itemAmount = ref('');
 const perPrice = ref('');
 const paymentMethod = ref('cash');
+const categoryId = ref('');
+const localCategories = ref<{ id: number; name: string; code: string }[]>([]);
+const newCategoryName = ref('');
+const addingCategory = ref(false);
+const categoryError = ref<string | null>(null);
+const showNewCategory = ref(false);
+
+watch(
+    () => props.categories,
+    (categories) => {
+        localCategories.value = [...(categories ?? [])];
+    },
+    { immediate: true },
+);
 
 watch(
     () => [props.open, props.item, props.startEditing] as const,
@@ -57,11 +71,23 @@ watch(
         itemAmount.value = String(props.item?.item_amount ?? (isProjectExpense.value ? '1' : ''));
         perPrice.value = String(props.item?.per_price ?? props.item?.amount ?? '');
         paymentMethod.value = props.item?.payment_method === 'bank' ? 'bank' : 'cash';
+        categoryId.value = props.item?.expense_category_id ? String(props.item.expense_category_id) : '';
+        newCategoryName.value = '';
+        categoryError.value = null;
+        showNewCategory.value = false;
     },
     { immediate: true },
 );
 
 const showForm = computed(() => !isPurchaseLinked.value && (isCreate.value || editing.value));
+const categoryLabel = computed(() => {
+    if (props.item?.category?.name) {
+        return props.item.category.name;
+    }
+
+    const selected = localCategories.value.find((c) => String(c.id) === categoryId.value);
+    return selected?.name ?? t('General');
+});
 const totalCost = computed(() => {
     const qty = Number(itemAmount.value);
     const price = Number(perPrice.value);
@@ -96,6 +122,50 @@ function removeExpense() {
         preserveScroll: true,
         onSuccess: () => emit('update:open', false),
     });
+}
+
+async function addCategory() {
+    const name = newCategoryName.value.trim();
+    if (!name) {
+        categoryError.value = t('Category name is required');
+        return;
+    }
+
+    addingCategory.value = true;
+    categoryError.value = null;
+
+    try {
+        const response = await fetch('/expense-categories', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'X-CSRF-TOKEN':
+                    document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({ name }),
+        });
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => null);
+            categoryError.value =
+                data?.errors?.name?.[0] ?? data?.message ?? t('Could not create category');
+            return;
+        }
+
+        const category = await response.json();
+        localCategories.value = [...localCategories.value, category].sort((a, b) =>
+            a.name.localeCompare(b.name),
+        );
+        categoryId.value = String(category.id);
+        newCategoryName.value = '';
+        showNewCategory.value = false;
+    } catch {
+        categoryError.value = t('Could not create category');
+    } finally {
+        addingCategory.value = false;
+    }
 }
 </script>
 
@@ -155,16 +225,53 @@ function removeExpense() {
                             <InputError :message="errors.expense_date" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="expense_category_id">{{ t('Category') }}</Label>
+                            <div class="flex items-center justify-between gap-2">
+                                <Label for="expense_category_id">{{ t('Category') }}</Label>
+                                <RelatedCreateLink href="/expense-categories" :label="t('Manage categories')" />
+                            </div>
                             <select
                                 id="expense_category_id"
+                                v-model="categoryId"
                                 name="expense_category_id"
                                 class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                                :value="item?.expense_category_id ?? ''"
                             >
                                 <option value="">{{ t('General') }}</option>
-                                <option v-for="c in categories || []" :key="c.id" :value="c.id">{{ c.name }}</option>
+                                <option v-for="c in localCategories" :key="c.id" :value="String(c.id)">
+                                    {{ c.name }}
+                                </option>
                             </select>
+                            <div class="flex gap-2">
+                                <Input
+                                    v-if="showNewCategory"
+                                    v-model="newCategoryName"
+                                    :placeholder="t('New category name')"
+                                    class="min-w-0 flex-1"
+                                    @keydown.enter.prevent="addCategory"
+                                />
+                                <Button
+                                    v-if="showNewCategory"
+                                    type="button"
+                                    size="sm"
+                                    :disabled="addingCategory"
+                                    @click="addCategory"
+                                >
+                                    <LoaderCircle v-if="addingCategory" class="size-4 animate-spin" />
+                                    <Plus v-else class="size-4" />
+                                    {{ t('Add') }}
+                                </Button>
+                                <Button
+                                    v-else
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    class="w-full"
+                                    @click="showNewCategory = true"
+                                >
+                                    <Plus class="size-4" />
+                                    {{ t('Add category') }}
+                                </Button>
+                            </div>
+                            <p v-if="categoryError" class="text-sm text-destructive">{{ categoryError }}</p>
                         </div>
                         <div class="grid gap-2">
                             <Label for="reference_no">{{ t('Bill number') }}</Label>
@@ -291,6 +398,10 @@ function removeExpense() {
                     <div>
                         <dt class="text-muted-foreground">{{ t('Paid to') }}</dt>
                         <dd class="font-medium">{{ item.paid_to || '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted-foreground">{{ t('Category') }}</dt>
+                        <dd class="font-medium">{{ categoryLabel }}</dd>
                     </div>
                     <div>
                         <dt class="text-muted-foreground">{{ t('Bill number') }}</dt>

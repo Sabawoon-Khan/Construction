@@ -13,6 +13,7 @@ use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\ExpenseUnitController;
 use App\Http\Controllers\GlobalSearchController;
@@ -133,6 +134,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['inventory' => 'inventoryTransaction']);
     Route::resource('expenses', ExpenseController::class);
+    Route::resource('expense-categories', ExpenseCategoryController::class)->except(['create', 'edit', 'show']);
     Route::resource('expense-units', ExpenseUnitController::class)->except(['create', 'edit', 'show']);
     Route::resource('incomes', IncomeController::class);
     Route::resource('sales', SaleController::class);

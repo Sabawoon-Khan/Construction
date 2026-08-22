@@ -36,6 +36,8 @@ const { t } = useTranslations();
 const tableColumns = computed(() => [
     { key: 'customer_no', label: t('Customer No') },
     { key: 'name', label: t('Name') },
+    { key: 'takhallus', label: t('Last name') },
+    { key: 'father_name', label: t('Father name') },
     { key: 'phone', label: t('Phone') },
     { key: 'address', label: t('Address') },
     { key: 'registered_at', label: t('Registration date') },
@@ -46,6 +48,7 @@ const tableColumns = computed(() => [
     { key: 'last_purchase_at', label: t('Last purchase') },
     { key: 'status', label: t('Status') },
     { key: 'notes', label: t('Notes') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { viewAction, editAction, can, formatDate } = useMisPage();
@@ -116,6 +119,8 @@ function rowActions(item: Item): RowActionItem[] {
                         <tr>
                             <SortableTh column="customer_no">{{ t('Customer No') }}</SortableTh>
                             <SortableTh column="name">{{ t('Name') }}</SortableTh>
+                            <SortableTh column="takhallus">{{ t('Last name') }}</SortableTh>
+                            <SortableTh column="father_name">{{ t('Father name') }}</SortableTh>
                             <SortableTh column="phone">{{ t('Phone') }}</SortableTh>
                             <SortableTh column="address">{{ t('Address') }}</SortableTh>
                             <SortableTh column="registered_at">{{ t('Registration date') }}</SortableTh>
@@ -126,6 +131,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="last_purchase_at">{{ t('Last purchase') }}</SortableTh>
                             <SortableTh column="status">{{ t('Status') }}</SortableTh>
                             <SortableTh column="notes">{{ t('Notes') }}</SortableTh>
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -141,6 +147,8 @@ function rowActions(item: Item): RowActionItem[] {
                                 </Link>
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">{{ item.name || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ item.takhallus || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ item.father_name || '—' }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">{{ item.phone || '—' }}</td>
                             <td class="px-4 py-3 max-w-[14rem] truncate" :title="item.address || undefined">{{ item.address || '—' }}</td>
                             <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(item.registered_at) }}</td>
@@ -151,6 +159,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(item.last_purchase_at) }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status || 'active'" /></td>
                             <td class="px-4 py-3 max-w-[14rem] truncate" :title="item.notes || undefined">{{ item.notes || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -159,7 +168,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="13"
+                            :colspan="16"
                             :title="t('No customers yet')"
                         />
                     </tbody>

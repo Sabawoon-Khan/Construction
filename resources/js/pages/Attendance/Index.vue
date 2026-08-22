@@ -37,6 +37,7 @@ const tableColumns = computed(() => [
     { key: 'status', label: t('Status') },
     { key: 'notes', label: t('Notes') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { editAction, can, formatDate } = useMisPage();
@@ -118,7 +119,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="status">{{ t('Status') }}</SortableTh>
                             <SortableTh column="notes">{{ t('Notes') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
-
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -140,7 +141,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3">{{ translateStatus(item.status, t) }}</td>
                             <td class="px-4 py-3">{{ item.notes || '—' }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -149,7 +150,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="8"
+                            :colspan="9"
                             :title="t('No attendance records')"
                         />
                     </tbody>

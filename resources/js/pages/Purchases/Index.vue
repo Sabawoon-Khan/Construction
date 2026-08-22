@@ -34,6 +34,7 @@ const tableColumns = computed(() => [
     { key: 'remaining_amount', label: t('Remaining') },
     { key: 'status', label: t('Status') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { baseCurrency } = useCurrency();
@@ -110,7 +111,7 @@ function rowActions(item: any): RowActionItem[] {
                             <SortableTh column="remaining_amount">{{ t('Remaining') }}</SortableTh>
                             <SortableTh column="status">{{ t('Status') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
-
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -127,14 +128,14 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(item.remaining_amount, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No purchases yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="11" :title="t('No purchases yet')" />
                     </tbody>
                 </table>
             </TableFrame>

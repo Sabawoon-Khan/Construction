@@ -54,8 +54,8 @@ const tableColumnsContributions = computed(() => [
     { key: 'amount', label: t('Amount') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const shareholderSort = useTableSort(() => props.shareholders);
-const contributionSort = useTableSort(() => props.contributions);
+const shareholderSort = useTableSort(() => props.shareholders ?? []);
+const contributionSort = useTableSort(() => props.contributions ?? []);
 const { baseCurrency } = useCurrency();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
@@ -110,48 +110,48 @@ const formatDate = (value: string | null | undefined) =>
                         <tr>
                             <SortableTh
                                 column="name"
-                                :sort-key="shareholderSort.sortKey.value"
-                                :sort-dir="shareholderSort.sortDir.value"
+                                :sort-key="shareholderSort.sortKey"
+                                :sort-dir="shareholderSort.sortDir"
                                 @sort="shareholderSort.sortBy"
                             >
                                 {{ t('Name') }}
                             </SortableTh>
                             <SortableTh
                                 column="ownership_percentage"
-                                :sort-key="shareholderSort.sortKey.value"
-                                :sort-dir="shareholderSort.sortDir.value"
+                                :sort-key="shareholderSort.sortKey"
+                                :sort-dir="shareholderSort.sortDir"
                                 @sort="shareholderSort.sortBy"
                             >
                                 {{ t('Share') }}
                             </SortableTh>
                             <SortableTh
                                 column="contributed_total"
-                                :sort-key="shareholderSort.sortKey.value"
-                                :sort-dir="shareholderSort.sortDir.value"
+                                :sort-key="shareholderSort.sortKey"
+                                :sort-dir="shareholderSort.sortDir"
                                 @sort="shareholderSort.sortBy"
                             >
                                 {{ t('Money in') }}
                             </SortableTh>
                             <SortableTh
                                 column="entitled_share"
-                                :sort-key="shareholderSort.sortKey.value"
-                                :sort-dir="shareholderSort.sortDir.value"
+                                :sort-key="shareholderSort.sortKey"
+                                :sort-dir="shareholderSort.sortDir"
                                 @sort="shareholderSort.sortBy"
                             >
                                 {{ t('Profit share') }}
                             </SortableTh>
                             <SortableTh
                                 column="paid_total"
-                                :sort-key="shareholderSort.sortKey.value"
-                                :sort-dir="shareholderSort.sortDir.value"
+                                :sort-key="shareholderSort.sortKey"
+                                :sort-dir="shareholderSort.sortDir"
                                 @sort="shareholderSort.sortBy"
                             >
                                 {{ t('Paid out') }}
                             </SortableTh>
                             <SortableTh
                                 column="balance_owed"
-                                :sort-key="shareholderSort.sortKey.value"
-                                :sort-dir="shareholderSort.sortDir.value"
+                                :sort-key="shareholderSort.sortKey"
+                                :sort-dir="shareholderSort.sortDir"
                                 @sort="shareholderSort.sortBy"
                             >
                                 {{ t('Still owed') }}
@@ -224,24 +224,24 @@ const formatDate = (value: string | null | undefined) =>
                         <tr>
                             <SortableTh
                                 column="invested_at"
-                                :sort-key="contributionSort.sortKey.value"
-                                :sort-dir="contributionSort.sortDir.value"
+                                :sort-key="contributionSort.sortKey"
+                                :sort-dir="contributionSort.sortDir"
                                 @sort="contributionSort.sortBy"
                             >
                                 {{ t('Date') }}
                             </SortableTh>
                             <SortableTh
                                 column="partner.name"
-                                :sort-key="contributionSort.sortKey.value"
-                                :sort-dir="contributionSort.sortDir.value"
+                                :sort-key="contributionSort.sortKey"
+                                :sort-dir="contributionSort.sortDir"
                                 @sort="contributionSort.sortBy"
                             >
                                 {{ t('Shareholder') }}
                             </SortableTh>
                             <SortableTh
                                 column="amount"
-                                :sort-key="contributionSort.sortKey.value"
-                                :sort-dir="contributionSort.sortDir.value"
+                                :sort-key="contributionSort.sortKey"
+                                :sort-dir="contributionSort.sortDir"
                                 @sort="contributionSort.sortBy"
                             >
                                 {{ t('Amount') }}

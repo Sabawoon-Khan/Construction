@@ -24,6 +24,8 @@ const props = defineProps<{
         description: string;
         amount: number;
         currency?: string;
+        expense_category_id?: number | null;
+        category?: { id: number; name: string } | null;
         purchase_id?: number | null;
         reference_no?: string | null;
         payment_method?: string | null;
@@ -45,6 +47,7 @@ const tableColumns = computed(() => [
     { key: 'expense_date', label: t('Date') },
     { key: 'reference_no', label: t('Bill number') },
     { key: 'paid_to', label: t('Paid to') },
+    { key: 'category.name', label: t('Category') },
     { key: 'description', label: t('Description') },
     { key: 'payment_method', label: t('Paying type') },
     { key: 'amount', label: t('Amount') },
@@ -88,6 +91,7 @@ const filteredExpenses = computed(() => {
             formatDate(expense.expense_date),
             expense.reference_no,
             expense.paid_to,
+            expense.category?.name,
             expense.description,
             expense.payment_method,
             method,
@@ -144,6 +148,7 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                         <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
                         <SortableTh column="reference_no">{{ t('Bill number') }}</SortableTh>
                         <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
+                        <SortableTh column="category.name">{{ t('Category') }}</SortableTh>
                         <SortableTh column="description">{{ t('Description') }}</SortableTh>
                         <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
                         <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
@@ -166,6 +171,9 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                         </td>
                         <td class="px-4 py-3">
                             {{ expense.paid_to || '—' }}
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ expense.category?.name || t('General') }}
                         </td>
                         <td class="max-w-[16rem] truncate px-4 py-3">
                             {{ expense.description || '—' }}
@@ -244,7 +252,7 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                     </tr>
                     <tr v-if="!filteredExpenses.length">
                         <td
-                            colspan="8"
+                            colspan="9"
                             class="px-4 py-10 text-center text-muted-foreground"
                         >
                             {{

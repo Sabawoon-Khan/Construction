@@ -232,7 +232,7 @@ class ProjectController extends Controller implements HasMiddleware
                 ->limit(50)
                 ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at']),
             'expenses' => $expensesQuery
-                ->with(['expenseUnit:id,unit_name', 'attachments'])
+                ->with(['expenseUnit:id,unit_name', 'category:id,name', 'attachments'])
                 ->latest('expense_date')
                 ->limit(50)
                 ->get([

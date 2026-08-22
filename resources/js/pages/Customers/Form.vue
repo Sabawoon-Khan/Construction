@@ -55,6 +55,16 @@ defineOptions({
                 <InputError :message="errors.name" />
             </div>
             <div class="grid gap-2">
+                <Label for="takhallus">{{ t('Last name') }}</Label>
+                <Input id="takhallus" name="takhallus" type="text" :default-value="item?.takhallus ?? ''" />
+                <InputError :message="errors.takhallus" />
+            </div>
+            <div class="grid gap-2">
+                <Label for="father_name">{{ t('Father name') }}</Label>
+                <Input id="father_name" name="father_name" type="text" :default-value="item?.father_name ?? ''" />
+                <InputError :message="errors.father_name" />
+            </div>
+            <div class="grid gap-2">
                 <Label for="phone">{{ t('Phone') }}</Label>
                 <Input id="phone" name="phone" type="text" :default-value="item?.phone ?? ''" placeholder="07XXXXXXXX" />
                 <InputError :message="errors.phone" />
@@ -79,11 +89,6 @@ defineOptions({
                     <option value="inactive" :selected="(item?.status ?? '') === 'inactive'">{{ t('Inactive') }}</option>
                 </select>
                 <InputError :message="errors.status" />
-            </div>
-            <div class="grid gap-2">
-                <Label for="father_name">{{ t('Father name') }}</Label>
-                <Input id="father_name" name="father_name" type="text" :default-value="item?.father_name ?? ''" />
-                <InputError :message="errors.father_name" />
             </div>
             <div class="grid gap-2">
                 <Label for="email">{{ t('Email') }}</Label>

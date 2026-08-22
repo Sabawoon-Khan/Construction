@@ -35,12 +35,14 @@ const tableColumnsInstallments = computed(() => [
     { key: 'amount', label: t('Amount') },
     { key: 'paid_amount', label: t('Paid') },
     { key: 'status', label: t('Status') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'action', label: t('Action'), locked: true },
 ]);
 const tableColumnsPayments = computed(() => [
     { key: 'payment_no', label: t('No') },
     { key: 'paid_at', label: t('Date') },
     { key: 'amount', label: t('Amount') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'action', label: t('Action'), locked: true },
 ]);
 const installmentSort = useTableSort(() => props.sale.installments ?? []);
@@ -219,11 +221,12 @@ function submitPayment() {
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <SortableTh column="installment_no" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">#</SortableTh>
-                        <SortableTh column="due_date" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Due') }}</SortableTh>
-                        <SortableTh column="amount" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Amount') }}</SortableTh>
-                        <SortableTh column="paid_amount" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Paid') }}</SortableTh>
-                        <SortableTh column="status" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Status') }}</SortableTh>
+                        <SortableTh column="installment_no" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">#</SortableTh>
+                        <SortableTh column="due_date" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Due') }}</SortableTh>
+                        <SortableTh column="amount" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Amount') }}</SortableTh>
+                        <SortableTh column="paid_amount" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Paid') }}</SortableTh>
+                        <SortableTh column="status" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Status') }}</SortableTh>
+                        <SortableTh column="created_at" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Created at') }}</SortableTh>
                         <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
                     </tr>
                 </thead>
@@ -234,6 +237,7 @@ function submitPayment() {
                         <td class="px-4 py-3 tabular-nums">{{ money(i.amount) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(i.paid_amount) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="i.status" /></td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(i.created_at) }}</td>
                         <td class="px-4 py-3 text-end">
                             <Button
                                 v-if="installmentRemaining(i) > 0"
@@ -246,7 +250,7 @@ function submitPayment() {
                         </td>
                     </tr>
                     <tr v-if="!sale.installments?.length">
-                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No installments') }}</td>
+                        <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">{{ t('No installments') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -261,9 +265,9 @@ function submitPayment() {
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <SortableTh column="payment_no" :sort-key="paymentSort.sortKey.value" :sort-dir="paymentSort.sortDir.value" @sort="paymentSort.sortBy">{{ t('No') }}</SortableTh>
-                        <SortableTh column="paid_at" :sort-key="paymentSort.sortKey.value" :sort-dir="paymentSort.sortDir.value" @sort="paymentSort.sortBy">{{ t('Date') }}</SortableTh>
-                        <SortableTh column="amount" :sort-key="paymentSort.sortKey.value" :sort-dir="paymentSort.sortDir.value" @sort="paymentSort.sortBy">{{ t('Amount') }}</SortableTh>
+                        <SortableTh column="payment_no" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('No') }}</SortableTh>
+                        <SortableTh column="paid_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Date') }}</SortableTh>
+                        <SortableTh column="amount" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Amount') }}</SortableTh>
                         <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
                     </tr>
                 </thead>

@@ -34,9 +34,10 @@ const tableColumns = computed(() => [
     { key: 'phone', label: t('Phone') },
     { key: 'projects_count', label: t('Projects') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const { viewAction, editAction, can } = useMisPage();
+const { viewAction, editAction, can, formatDate } = useMisPage();
 const search = ref(props.filters.search ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 
@@ -101,7 +102,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="phone">{{ t('Phone') }}</SortableTh>
                             <SortableTh column="projects_count">{{ t('Projects') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
-
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -114,14 +115,14 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3">{{ item.phone || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ item.projects_count ?? 0 }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="6" :title="t('No shareholders yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="7" :title="t('No shareholders yet')" />
                     </tbody>
                 </table>
             </TableFrame>

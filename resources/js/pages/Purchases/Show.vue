@@ -41,18 +41,8 @@ const tableColumnsPayments = computed(() => [
     { key: 'amount', label: t('Amount') },
     { key: 'payment_method', label: t('Method') },
 ]);
-const {
-    sortedRows: sortedItems,
-    sortKey: itemsSortKey,
-    sortDir: itemsSortDir,
-    sortBy: sortItems,
-} = useTableSort(() => props.purchase.items ?? []);
-const {
-    sortedRows: sortedPayments,
-    sortKey: paymentsSortKey,
-    sortDir: paymentsSortDir,
-    sortBy: sortPayments,
-} = useTableSort(() => props.purchase.payments ?? [], {
+const itemsSort = useTableSort(() => props.purchase.items ?? []);
+const paymentsSort = useTableSort(() => props.purchase.payments ?? [], {
     defaultKey: 'paid_at',
     defaultDir: 'desc',
 });
@@ -164,14 +154,14 @@ defineOptions({
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <SortableTh column="material.name" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Material') }}</SortableTh>
-                        <SortableTh column="quantity" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Qty') }}</SortableTh>
-                        <SortableTh column="unit_cost" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Unit cost') }}</SortableTh>
-                        <SortableTh column="total_cost" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Total') }}</SortableTh>
+                        <SortableTh column="material.name" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Material') }}</SortableTh>
+                        <SortableTh column="quantity" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Qty') }}</SortableTh>
+                        <SortableTh column="unit_cost" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Unit cost') }}</SortableTh>
+                        <SortableTh column="total_cost" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Total') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="line in sortedItems" :key="line.id" class="border-t">
+                    <tr v-for="line in itemsSort.sortedRows" :key="line.id" class="border-t">
                         <td class="px-4 py-3">{{ line.material?.name }} {{ line.material?.unit?.unit_name ? `(${line.material.unit.unit_name})` : '' }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ line.quantity }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(line.unit_cost, purchase.currency) }}</td>
@@ -224,14 +214,14 @@ defineOptions({
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <SortableTh column="payment_no" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('No') }}</SortableTh>
-                        <SortableTh column="paid_at" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('Date') }}</SortableTh>
-                        <SortableTh column="amount" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('Amount') }}</SortableTh>
-                        <SortableTh column="payment_method" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('Method') }}</SortableTh>
+                        <SortableTh column="payment_no" :sort-key="paymentsSort.sortKey" :sort-dir="paymentsSort.sortDir" @sort="paymentsSort.sortBy">{{ t('No') }}</SortableTh>
+                        <SortableTh column="paid_at" :sort-key="paymentsSort.sortKey" :sort-dir="paymentsSort.sortDir" @sort="paymentsSort.sortBy">{{ t('Date') }}</SortableTh>
+                        <SortableTh column="amount" :sort-key="paymentsSort.sortKey" :sort-dir="paymentsSort.sortDir" @sort="paymentsSort.sortBy">{{ t('Amount') }}</SortableTh>
+                        <SortableTh column="payment_method" :sort-key="paymentsSort.sortKey" :sort-dir="paymentsSort.sortDir" @sort="paymentsSort.sortBy">{{ t('Method') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="payment in sortedPayments" :key="payment.id" class="border-t">
+                    <tr v-for="payment in paymentsSort.sortedRows" :key="payment.id" class="border-t">
                         <td class="px-4 py-3">
                             <Link :href="`/payments/${payment.id}`" class="hover:underline">{{ payment.payment_no }}</Link>
                         </td>

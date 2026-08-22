@@ -187,6 +187,7 @@ export function useAppNavigation() {
                 }),
             );
             finance.push(item(t('Expense units'), '/expense-units', Receipt));
+            finance.push(item(t('Expense categories'), '/expense-categories', Receipt));
         }
 
         if (can('incomes.view')) {

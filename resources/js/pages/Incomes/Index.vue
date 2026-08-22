@@ -30,6 +30,7 @@ const tableColumns = computed(() => [
     { key: 'description', label: t('Description') },
     { key: 'amount', label: t('Total amount') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { baseCurrency } = useCurrency();
@@ -105,7 +106,7 @@ function rowActions(item: any): RowActionItem[] {
                             <SortableTh column="description">{{ t('Description') }}</SortableTh>
                             <SortableTh column="amount">{{ t('Total amount') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
-
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -120,14 +121,14 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(item.amount, item.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3" @click.stop>
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="5" :title="t('No income records yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="6" :title="t('No income records yet')" />
                     </tbody>
                 </table>
             </TableFrame>

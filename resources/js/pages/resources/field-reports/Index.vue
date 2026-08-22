@@ -26,6 +26,7 @@ const props = defineProps<{
         title: string;
         location: string | null;
         status: string;
+        created_at?: string | null;
     }>;
     offlineEnabled: boolean;
     filters?: { search?: string; status?: string };
@@ -35,9 +36,10 @@ const { t } = useTranslations();
 const tableColumns = computed(() => [
     { key: 'title', label: t('Title') },
     { key: 'location', label: t('Location') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const { viewAction, editAction, deleteAction } = useMisPage();
+const { viewAction, editAction, deleteAction, formatDate } = useMisPage();
 const search = ref(props.filters?.search ?? '');
 const status = ref(props.filters?.status ?? '');
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -178,6 +180,7 @@ defineOptions({
                         <tr>
                             <SortableTh column="title">{{ t('Title') }}</SortableTh>
                             <SortableTh column="location">{{ t('Location') }}</SortableTh>
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -200,6 +203,7 @@ defineOptions({
                             <td class="px-4 py-3 text-muted-foreground">
                                 {{ item.location || t('No location') }}
                             </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3 text-end">
                                 <div class="inline-flex justify-end">
                                     <RowActionsMenu v-if="item.id" :actions="rowActions(item)" />

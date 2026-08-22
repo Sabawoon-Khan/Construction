@@ -1,4 +1,16 @@
-import { computed, inject, provide, ref, toValue, type InjectionKey, type MaybeRefOrGetter, type Ref } from 'vue';
+import {
+    computed,
+    inject,
+    provide,
+    reactive,
+    ref,
+    toValue,
+    type ComputedRef,
+    type InjectionKey,
+    type MaybeRefOrGetter,
+    type Ref,
+    type UnwrapNestedRefs,
+} from 'vue';
 
 export type SortDir = 'asc' | 'desc';
 
@@ -8,6 +20,15 @@ export type TableSortState<T extends Record<string, unknown> = Record<string, un
     sortDir: Ref<SortDir>;
     sortBy: (key: string) => void;
 };
+
+/** Reactive view of table sort state — nested refs auto-unwrap in templates (SSR-safe). */
+export type ReactiveTableSortState<T extends Record<string, unknown> = Record<string, unknown>> =
+    UnwrapNestedRefs<{
+        sortedRows: ComputedRef<T[]>;
+        sortKey: Ref<string>;
+        sortDir: Ref<SortDir>;
+        sortBy: (key: string) => void;
+    }>;
 
 const TABLE_SORT_KEY: InjectionKey<TableSortState> = Symbol('tableSort');
 
@@ -52,7 +73,7 @@ function compareValues(a: unknown, b: unknown): number {
     return as.localeCompare(bs, undefined, { numeric: true, sensitivity: 'base' });
 }
 
-export function useTableSort<T extends Record<string, unknown>>(
+function createTableSortState<T extends Record<string, unknown>>(
     rows: MaybeRefOrGetter<T[]>,
     options: { defaultKey?: string; defaultDir?: SortDir } = {},
 ): TableSortState<T> {
@@ -87,11 +108,18 @@ export function useTableSort<T extends Record<string, unknown>>(
     };
 }
 
+export function useTableSort<T extends Record<string, unknown>>(
+    rows: MaybeRefOrGetter<T[]>,
+    options: { defaultKey?: string; defaultDir?: SortDir } = {},
+): ReactiveTableSortState<T> {
+    return reactive(createTableSortState(rows, options)) as ReactiveTableSortState<T>;
+}
+
 export function provideTableSort<T extends Record<string, unknown>>(
     rows: MaybeRefOrGetter<T[]>,
     options: { defaultKey?: string; defaultDir?: SortDir } = {},
 ): TableSortState<T> {
-    const state = useTableSort(rows, options);
+    const state = createTableSortState(rows, options);
     provide(TABLE_SORT_KEY, state as TableSortState);
 
     return state;

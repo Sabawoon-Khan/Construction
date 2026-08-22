@@ -10,6 +10,7 @@ import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money, moneyByCurrency } from '@/lib/utils';
@@ -21,7 +22,9 @@ const tableColumns = computed(() => [
     { key: 'total_amount', label: t('Total') },
     { key: 'remaining_amount', label: t('Remaining') },
     { key: 'status', label: t('Status') },
+    { key: 'created_at', label: t('Created at') },
 ]);
+const { formatDate } = useMisPage();
 
 const props = defineProps<{
     item: Record<string, any>;
@@ -111,6 +114,7 @@ defineOptions({
                         <SortableTh column="total_amount">{{ t('Total') }}</SortableTh>
                         <SortableTh column="remaining_amount">{{ t('Remaining') }}</SortableTh>
                         <SortableTh column="status">{{ t('Status') }}</SortableTh>
+                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
@@ -122,9 +126,10 @@ defineOptions({
                         <td class="px-4 py-3 tabular-nums">{{ money(purchase.total_amount, purchase.currency) }}</td>
                         <td class="px-4 py-3 tabular-nums text-amber-700">{{ money(purchase.remaining_amount, purchase.currency) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="purchase.status" /></td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(purchase.created_at) }}</td>
                     </tr>
                     <tr v-if="!item.purchases?.length">
-                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No purchases yet') }}</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No purchases yet') }}</td>
                     </tr>
                 </tbody>
             </table>

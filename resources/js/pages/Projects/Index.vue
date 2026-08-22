@@ -41,9 +41,10 @@ const tableColumns = computed(() => [
     { key: 'progress_percent', label: t('Progress') },
     { key: 'units_count', label: t('Units') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const { viewAction, editAction, can } = useMisPage();
+const { viewAction, editAction, can, formatDate } = useMisPage();
 
 defineOptions({
     layout: {
@@ -130,7 +131,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="progress_percent">{{ t('Progress') }}</SortableTh>
                             <SortableTh column="units_count">{{ t('Units') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
-
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -151,7 +152,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ formatNumber(item.progress_percent) }}%</td>
                             <td class="px-4 py-3">{{ item.units_count }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -160,7 +161,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="8"
+                            :colspan="9"
                             :title="t('No projects yet')"
                         />
                     </tbody>

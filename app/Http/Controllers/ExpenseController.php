@@ -100,7 +100,9 @@ class ExpenseController extends Controller implements HasMiddleware
 
         $expense->update([
             ...FinanceDefaults::expenseAttributes($data, $projectId),
-            'expense_category_id' => $request->integer('expense_category_id') ?: $expense->expense_category_id,
+            'expense_category_id' => $request->filled('expense_category_id')
+                ? $request->integer('expense_category_id')
+                : FinanceDefaults::generalExpenseCategoryId(),
             'expense_unit_id' => $request->integer('expense_unit_id') ?: null,
             'reference_no' => $request->input('reference_no'),
             'payment_method' => $request->input('payment_method', $expense->payment_method) ?: 'cash',
@@ -195,8 +197,6 @@ class ExpenseController extends Controller implements HasMiddleware
     /** @return Collection<int, ExpenseCategory> */
     private function categories()
     {
-        ExpenseCategory::ensureDefaults();
-
-        return ExpenseCategory::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'code']);
+        return ExpenseCategory::nonMaterialOptions();
     }
 }

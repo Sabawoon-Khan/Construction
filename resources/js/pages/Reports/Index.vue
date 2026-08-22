@@ -316,9 +316,9 @@ function exportUrl(format: string) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <SortableTh class="px-5" column="category" :sort-key="categorySort.sortKey.value" :sort-dir="categorySort.sortDir.value" @sort="categorySort.sortBy">{{ t('Category') }}</SortableTh>
-                                <SortableTh class="px-5" column="count" :sort-key="categorySort.sortKey.value" :sort-dir="categorySort.sortDir.value" @sort="categorySort.sortBy">{{ t('Count') }}</SortableTh>
-                                <SortableTh class="px-5" column="amount_base" :sort-key="categorySort.sortKey.value" :sort-dir="categorySort.sortDir.value" @sort="categorySort.sortBy">{{ t('Amount') }}</SortableTh>
+                                <SortableTh class="px-5" column="category" :sort-key="categorySort.sortKey" :sort-dir="categorySort.sortDir" @sort="categorySort.sortBy">{{ t('Category') }}</SortableTh>
+                                <SortableTh class="px-5" column="count" :sort-key="categorySort.sortKey" :sort-dir="categorySort.sortDir" @sort="categorySort.sortBy">{{ t('Count') }}</SortableTh>
+                                <SortableTh class="px-5" column="amount_base" :sort-key="categorySort.sortKey" :sort-dir="categorySort.sortDir" @sort="categorySort.sortBy">{{ t('Amount') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
@@ -347,12 +347,12 @@ function exportUrl(format: string) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <SortableTh class="px-5" column="name" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Shareholder') }}</SortableTh>
-                                <SortableTh class="px-5" column="project_name" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Project') }}</SortableTh>
-                                <SortableTh class="px-5" column="ownership_percentage" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Share %') }}</SortableTh>
-                                <SortableTh class="px-5" column="entitled_share" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Entitled') }}</SortableTh>
-                                <SortableTh class="px-5" column="paid_total" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Paid') }}</SortableTh>
-                                <SortableTh class="px-5" column="balance_owed" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Balance') }}</SortableTh>
+                                <SortableTh class="px-5" column="name" :sort-key="partnerSort.sortKey" :sort-dir="partnerSort.sortDir" @sort="partnerSort.sortBy">{{ t('Shareholder') }}</SortableTh>
+                                <SortableTh class="px-5" column="project_name" :sort-key="partnerSort.sortKey" :sort-dir="partnerSort.sortDir" @sort="partnerSort.sortBy">{{ t('Project') }}</SortableTh>
+                                <SortableTh class="px-5" column="ownership_percentage" :sort-key="partnerSort.sortKey" :sort-dir="partnerSort.sortDir" @sort="partnerSort.sortBy">{{ t('Share %') }}</SortableTh>
+                                <SortableTh class="px-5" column="entitled_share" :sort-key="partnerSort.sortKey" :sort-dir="partnerSort.sortDir" @sort="partnerSort.sortBy">{{ t('Entitled') }}</SortableTh>
+                                <SortableTh class="px-5" column="paid_total" :sort-key="partnerSort.sortKey" :sort-dir="partnerSort.sortDir" @sort="partnerSort.sortBy">{{ t('Paid') }}</SortableTh>
+                                <SortableTh class="px-5" column="balance_owed" :sort-key="partnerSort.sortKey" :sort-dir="partnerSort.sortDir" @sort="partnerSort.sortBy">{{ t('Balance') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
@@ -396,9 +396,9 @@ function exportUrl(format: string) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <SortableTh class="px-5" column="contract_date" :sort-key="salesSort.sortKey.value" :sort-dir="salesSort.sortDir.value" @sort="salesSort.sortBy">{{ t('Date') }}</SortableTh>
-                                <SortableTh class="px-5" column="customer.name" :sort-key="salesSort.sortKey.value" :sort-dir="salesSort.sortDir.value" @sort="salesSort.sortBy">{{ t('Buyer') }}</SortableTh>
-                                <SortableTh class="px-5" column="discount" :sort-key="salesSort.sortKey.value" :sort-dir="salesSort.sortDir.value" @sort="salesSort.sortBy">{{ t('Amount') }}</SortableTh>
+                                <SortableTh class="px-5" column="contract_date" :sort-key="salesSort.sortKey" :sort-dir="salesSort.sortDir" @sort="salesSort.sortBy">{{ t('Date') }}</SortableTh>
+                                <SortableTh class="px-5" column="customer.name" :sort-key="salesSort.sortKey" :sort-dir="salesSort.sortDir" @sort="salesSort.sortBy">{{ t('Buyer') }}</SortableTh>
+                                <SortableTh class="px-5" column="discount" :sort-key="salesSort.sortKey" :sort-dir="salesSort.sortDir" @sort="salesSort.sortBy">{{ t('Amount') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
@@ -435,10 +435,10 @@ function exportUrl(format: string) {
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <SortableTh class="px-5" column="expense_date" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Date') }}</SortableTh>
-                                <SortableTh class="px-5" column="category.name" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Category') }}</SortableTh>
-                                <SortableTh class="px-5" column="description" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Description') }}</SortableTh>
-                                <SortableTh class="px-5" column="amount" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Amount') }}</SortableTh>
+                                <SortableTh class="px-5" column="expense_date" :sort-key="expenseSort.sortKey" :sort-dir="expenseSort.sortDir" @sort="expenseSort.sortBy">{{ t('Date') }}</SortableTh>
+                                <SortableTh class="px-5" column="category.name" :sort-key="expenseSort.sortKey" :sort-dir="expenseSort.sortDir" @sort="expenseSort.sortBy">{{ t('Category') }}</SortableTh>
+                                <SortableTh class="px-5" column="description" :sort-key="expenseSort.sortKey" :sort-dir="expenseSort.sortDir" @sort="expenseSort.sortBy">{{ t('Description') }}</SortableTh>
+                                <SortableTh class="px-5" column="amount" :sort-key="expenseSort.sortKey" :sort-dir="expenseSort.sortDir" @sort="expenseSort.sortBy">{{ t('Amount') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
@@ -471,9 +471,9 @@ function exportUrl(format: string) {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <SortableTh class="px-5" column="created_at" :sort-key="activitySort.sortKey.value" :sort-dir="activitySort.sortDir.value" @sort="activitySort.sortBy">{{ t('Date') }}</SortableTh>
-                            <SortableTh class="px-5" column="subject.name" :sort-key="activitySort.sortKey.value" :sort-dir="activitySort.sortDir.value" @sort="activitySort.sortBy">{{ t('Project') }}</SortableTh>
-                            <SortableTh class="px-5" column="to_status" :sort-key="activitySort.sortKey.value" :sort-dir="activitySort.sortDir.value" @sort="activitySort.sortBy">{{ t('Status change') }}</SortableTh>
+                            <SortableTh class="px-5" column="created_at" :sort-key="activitySort.sortKey" :sort-dir="activitySort.sortDir" @sort="activitySort.sortBy">{{ t('Date') }}</SortableTh>
+                            <SortableTh class="px-5" column="subject.name" :sort-key="activitySort.sortKey" :sort-dir="activitySort.sortDir" @sort="activitySort.sortBy">{{ t('Project') }}</SortableTh>
+                            <SortableTh class="px-5" column="to_status" :sort-key="activitySort.sortKey" :sort-dir="activitySort.sortDir" @sort="activitySort.sortBy">{{ t('Status change') }}</SortableTh>
                         </tr>
                     </thead>
                     <tbody>

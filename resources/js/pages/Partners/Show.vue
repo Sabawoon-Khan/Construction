@@ -9,6 +9,7 @@ import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import { Button } from '@/components/ui/button';
+import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
@@ -38,7 +39,9 @@ const tableColumns = computed(() => [
     { key: 'entitled_share', label: t('Profit share') },
     { key: 'paid_total', label: t('Paid') },
     { key: 'balance_owed', label: t('Owed') },
+    { key: 'created_at', label: t('Created at') },
 ]);
+const { formatDate } = useMisPage();
 const { sortedRows } = provideTableSort(() => props.projects);
 
 defineOptions({
@@ -109,6 +112,7 @@ defineOptions({
                         <SortableTh column="entitled_share">{{ t('Profit share') }}</SortableTh>
                         <SortableTh column="paid_total">{{ t('Paid') }}</SortableTh>
                         <SortableTh column="balance_owed">{{ t('Owed') }}</SortableTh>
+                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
@@ -120,9 +124,10 @@ defineOptions({
                         <td class="px-4 py-3 tabular-nums">{{ money(p.entitled_share) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(p.paid_total) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(p.balance_owed) }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(p.created_at) }}</td>
                     </tr>
                     <tr v-if="!projects.length">
-                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">
+                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">
                             {{ t('Not assigned to any project yet. Add from a project page.') }}
                         </td>
                     </tr>

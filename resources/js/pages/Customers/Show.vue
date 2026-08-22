@@ -24,6 +24,7 @@ const tableColumns = computed(() => [
     { key: 'unit.unit_no', label: t('Unit') },
     { key: 'unit.list_price', label: t('Net') },
     { key: 'status', label: t('Status') },
+    { key: 'created_at', label: t('Created at') },
 ]);
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
@@ -102,6 +103,8 @@ defineOptions({
             :title="t('Customer details')"
             :items="[
                 { label: t('Customer No'), value: item.customer_no },
+                { label: t('Last name'), value: item.takhallus },
+                { label: t('Father name'), value: item.father_name },
                 { label: t('Phone'), value: item.phone },
                 { label: t('Address'), value: item.address, span: true },
                 { label: t('Registration date'), value: formatDate(item.registered_at) },
@@ -111,7 +114,6 @@ defineOptions({
                 { label: t('Remaining'), value: money(stats.remaining ?? 0) },
                 { label: t('Last purchase'), value: formatDate(stats.last_purchase_at) },
                 { label: t('Status'), value: item.status === 'inactive' ? t('Inactive') : t('Active') },
-                { label: t('Father name'), value: item.father_name },
                 { label: t('Email'), value: item.email },
                 { label: t('National ID'), value: item.national_id },
                 { label: t('Notes'), value: item.notes, span: true },
@@ -131,6 +133,7 @@ defineOptions({
                         <SortableTh column="unit.unit_no">{{ t('Unit') }}</SortableTh>
                         <SortableTh column="unit.list_price">{{ t('Net') }}</SortableTh>
                         <SortableTh column="status">{{ t('Status') }}</SortableTh>
+                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,9 +145,10 @@ defineOptions({
                         <td class="px-4 py-3">{{ sale.unit?.unit_no || '—' }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="sale.status" /></td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(sale.created_at) }}</td>
                     </tr>
                     <tr v-if="!item.sales?.length">
-                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
                     </tr>
                 </tbody>
             </table>

@@ -45,9 +45,10 @@ const tableColumns = computed(() => [
     { key: 'email', label: t('Email') },
     { key: 'message', label: t('Message') },
     { key: 'read_at', label: t('Status') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const { can } = useMisPage();
+const { can, formatDate } = useMisPage();
 const { loading } = useInertiaLoading();
 
 defineOptions({
@@ -145,6 +146,7 @@ function preview(message: string): string {
                             <SortableTh column="email">{{ t('Email') }}</SortableTh>
                             <SortableTh column="message">{{ t('Message') }}</SortableTh>
                             <SortableTh column="read_at">{{ t('Status') }}</SortableTh>
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -177,6 +179,7 @@ function preview(message: string): string {
                                     {{ item.read_at ? t('Read') : t('Unread') }}
                                 </span>
                             </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -185,7 +188,7 @@ function preview(message: string): string {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="5"
+                            :colspan="6"
                             :title="t('No contact messages yet')"
                         />
                     </tbody>

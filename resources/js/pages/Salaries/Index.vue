@@ -41,11 +41,12 @@ const tableColumns = computed(() => [
     { key: 'net_salary', label: t('Net Salary') },
     { key: 'status', label: t('Status') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { baseCurrency } = useCurrency();
 const { months, digits } = useCalendar('gregorian');
-const { editAction, viewAction, can } = useMisPage();
+const { editAction, viewAction, can, formatDate } = useMisPage();
 
 const monthOptions = computed(() =>
     months().map((label, index) => ({
@@ -172,6 +173,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="net_salary" align="end">{{ t('Net Salary') }}</SortableTh>
                             <SortableTh column="status">{{ t('Status') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -200,6 +202,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 <StatusBadge :status="item.status" />
                             </td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -208,7 +211,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="9"
+                            :colspan="10"
                             :title="t('No salary records')"
                         />
                     </tbody>

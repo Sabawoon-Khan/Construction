@@ -38,6 +38,7 @@ const tableColumns = computed(() => [
     { key: 'amount', label: t('Total cost') },
     { key: 'creator.name', label: t('Added by') },
     { key: 'attachments', label: t('Attachments') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { baseCurrency } = useCurrency();
@@ -121,7 +122,7 @@ function rowActions(item: any): RowActionItem[] {
                             <SortableTh column="amount">{{ t('Total cost') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
                             <th class="px-4 py-3 font-medium">{{ t('Attachments') }}</th>
-
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -143,14 +144,14 @@ function rowActions(item: any): RowActionItem[] {
                             <td class="px-4 py-3" @click.stop>
                                 <AttachmentLinks :files="item.attachments" />
                             </td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3" @click.stop>
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No expenses yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="11" :title="t('No expenses yet')" />
                     </tbody>
                 </table>
             </TableFrame>

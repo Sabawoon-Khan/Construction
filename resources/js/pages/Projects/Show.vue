@@ -102,6 +102,8 @@ defineProps<{
         description: string;
         amount: number;
         currency?: string;
+        expense_category_id?: number | null;
+        category?: { id: number; name: string } | null;
         purchase_id?: number | null;
         reference_no?: string | null;
         payment_method?: string | null;

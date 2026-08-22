@@ -31,9 +31,10 @@ const tableColumns = computed(() => [
     { key: 'location', label: t('Location') },
     { key: 'media.length', label: t('Media') },
     { key: 'is_published', label: t('Published') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const { editAction, can } = useMisPage();
+const { editAction, can, formatDate } = useMisPage();
 const { loading } = useInertiaLoading();
 
 defineOptions({
@@ -103,6 +104,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="location">{{ t('Location') }}</SortableTh>
                             <SortableTh column="media.length">{{ t('Media') }}</SortableTh>
                             <SortableTh column="is_published">{{ t('Published') }}</SortableTh>
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -152,13 +154,14 @@ function rowActions(item: Item): RowActionItem[] {
                                     {{ item.is_published ? t('Published') : t('Draft') }}
                                 </span>
                             </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="6" :title="t('No portfolio projects yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="7" :title="t('No portfolio projects yet')" />
                     </tbody>
                 </table>
             </TableFrame>

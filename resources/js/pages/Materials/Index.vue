@@ -33,9 +33,10 @@ const tableColumns = computed(() => [
     { key: 'unit_cost', label: t('Unit cost') },
     { key: 'minimum_stock', label: t('Min stock') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const { editAction, can } = useMisPage();
+const { editAction, can, formatDate } = useMisPage();
 const { loading } = useInertiaLoading();
 
 defineOptions({
@@ -106,7 +107,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="unit_cost">{{ t('Unit cost') }}</SortableTh>
                             <SortableTh column="minimum_stock">{{ t('Min stock') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
-
+                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -118,14 +119,14 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="px-4 py-3 tabular-nums">{{ money(item.unit_cost, item.currency) }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ item.minimum_stock }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="7" :title="t('No materials yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No materials yet')" />
                     </tbody>
                 </table>
             </TableFrame>

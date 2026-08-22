@@ -40,6 +40,7 @@ const tableColumns = computed(() => [
     { key: 'salary_payment_method', label: t('Salary payment method') },
     { key: 'status', label: t('Status') },
     { key: 'creator.name', label: t('Added by') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { viewAction, editAction, can, formatDate } = useMisPage();
@@ -128,7 +129,7 @@ function rowActions(item: Item): RowActionItem[] {
                             <th class="px-4 py-3 font-medium">{{ t('Salary payment method') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
-
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Created at') }}</th>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -157,7 +158,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 <span>{{ translateStatus(item.status, t) }}</span>
                             </td>
                             <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">
                                     <RowActionsMenu :actions="rowActions(item)" />
@@ -166,7 +167,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="14"
+                            :colspan="15"
                             :title="t('No employees yet')"
                         />
                     </tbody>

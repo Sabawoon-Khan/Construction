@@ -11,6 +11,7 @@ import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
@@ -23,7 +24,9 @@ const tableColumns = computed(() => [
     { key: 'customer.name', label: t('Customer') },
     { key: 'unit.list_price', label: t('Net') },
     { key: 'status', label: t('Status') },
+    { key: 'created_at', label: t('Created at') },
 ]);
+const { formatDate } = useMisPage();
 const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
 const tabs = [
     { id: 'info', label: t('Unit info'), icon: Info },
@@ -117,6 +120,7 @@ defineOptions({
                         <SortableTh column="customer.name">{{ t('Customer') }}</SortableTh>
                         <SortableTh column="unit.list_price">{{ t('Net') }}</SortableTh>
                         <SortableTh column="status">{{ t('Status') }}</SortableTh>
+                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
@@ -127,9 +131,10 @@ defineOptions({
                         <td class="px-4 py-3">{{ sale.customer?.name || '—' }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(Math.max(0, Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0)), sale.currency) }}</td>
                         <td class="px-4 py-3"><StatusBadge :status="sale.status" /></td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(sale.created_at) }}</td>
                     </tr>
                     <tr v-if="!item.sales?.length">
-                        <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
+                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
                     </tr>
                 </tbody>
             </table>

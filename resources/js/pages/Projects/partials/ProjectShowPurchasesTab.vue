@@ -139,32 +139,32 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                         <tr>
                             <SortableTh
                                 column="name"
-                                :sort-key="materialSort.sortKey.value"
-                                :sort-dir="materialSort.sortDir.value"
+                                :sort-key="materialSort.sortKey"
+                                :sort-dir="materialSort.sortDir"
                                 @sort="materialSort.sortBy"
                             >
                                 {{ t('Material') }}
                             </SortableTh>
                             <SortableTh
                                 column="purchase_count"
-                                :sort-key="materialSort.sortKey.value"
-                                :sort-dir="materialSort.sortDir.value"
+                                :sort-key="materialSort.sortKey"
+                                :sort-dir="materialSort.sortDir"
                                 @sort="materialSort.sortBy"
                             >
                                 {{ t('Purchases') }}
                             </SortableTh>
                             <SortableTh
                                 column="quantity"
-                                :sort-key="materialSort.sortKey.value"
-                                :sort-dir="materialSort.sortDir.value"
+                                :sort-key="materialSort.sortKey"
+                                :sort-dir="materialSort.sortDir"
                                 @sort="materialSort.sortBy"
                             >
                                 {{ t('Total qty') }}
                             </SortableTh>
                             <SortableTh
                                 column="total_cost_base"
-                                :sort-key="materialSort.sortKey.value"
-                                :sort-dir="materialSort.sortDir.value"
+                                :sort-key="materialSort.sortKey"
+                                :sort-dir="materialSort.sortDir"
                                 @sort="materialSort.sortBy"
                             >
                                 {{ t('Total cost') }}
@@ -243,48 +243,48 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                         <tr>
                             <SortableTh
                                 column="purchase_no"
-                                :sort-key="purchaseSort.sortKey.value"
-                                :sort-dir="purchaseSort.sortDir.value"
+                                :sort-key="purchaseSort.sortKey"
+                                :sort-dir="purchaseSort.sortDir"
                                 @sort="purchaseSort.sortBy"
                             >
                                 {{ t('Purchase') }}
                             </SortableTh>
                             <SortableTh
                                 column="purchase_date"
-                                :sort-key="purchaseSort.sortKey.value"
-                                :sort-dir="purchaseSort.sortDir.value"
+                                :sort-key="purchaseSort.sortKey"
+                                :sort-dir="purchaseSort.sortDir"
                                 @sort="purchaseSort.sortBy"
                             >
                                 {{ t('Date') }}
                             </SortableTh>
                             <SortableTh
                                 column="supplier.name"
-                                :sort-key="purchaseSort.sortKey.value"
-                                :sort-dir="purchaseSort.sortDir.value"
+                                :sort-key="purchaseSort.sortKey"
+                                :sort-dir="purchaseSort.sortDir"
                                 @sort="purchaseSort.sortBy"
                             >
                                 {{ t('Supplier') }}
                             </SortableTh>
                             <SortableTh
                                 column="total_amount"
-                                :sort-key="purchaseSort.sortKey.value"
-                                :sort-dir="purchaseSort.sortDir.value"
+                                :sort-key="purchaseSort.sortKey"
+                                :sort-dir="purchaseSort.sortDir"
                                 @sort="purchaseSort.sortBy"
                             >
                                 {{ t('Total') }}
                             </SortableTh>
                             <SortableTh
                                 column="remaining_amount"
-                                :sort-key="purchaseSort.sortKey.value"
-                                :sort-dir="purchaseSort.sortDir.value"
+                                :sort-key="purchaseSort.sortKey"
+                                :sort-dir="purchaseSort.sortDir"
                                 @sort="purchaseSort.sortBy"
                             >
                                 {{ t('Remaining') }}
                             </SortableTh>
                             <SortableTh
                                 column="status"
-                                :sort-key="purchaseSort.sortKey.value"
-                                :sort-dir="purchaseSort.sortDir.value"
+                                :sort-key="purchaseSort.sortKey"
+                                :sort-dir="purchaseSort.sortDir"
                                 @sort="purchaseSort.sortBy"
                             >
                                 {{ t('Status') }}

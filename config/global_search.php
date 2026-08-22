@@ -55,7 +55,7 @@ return [
         'label' => 'Customers',
         'model' => Customer::class,
         'permission' => 'customers',
-        'search' => ['customer_no', 'name', 'father_name', 'phone', 'email', 'national_id', 'address', 'notes'],
+        'search' => ['customer_no', 'name', 'takhallus', 'father_name', 'phone', 'email', 'national_id', 'address', 'notes'],
         'priority' => ['customer_no', 'name', 'phone'],
         'phone' => ['phone'],
         'title' => 'name',

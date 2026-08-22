@@ -27,7 +27,7 @@ class ExpenseUnitController extends Controller implements HasMiddleware
         }
 
         return Inertia::render('ExpenseUnits/Index', [
-            'items' => $query->get(['id', 'unit_name', 'user_id']),
+            'items' => $query->get(['id', 'unit_name', 'user_id', 'created_at']),
             'filters' => ['search' => $search],
             'totals' => [
                 'count' => (clone $query)->count(),

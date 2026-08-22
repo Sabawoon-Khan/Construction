@@ -30,6 +30,8 @@ class CustomerController extends Controller implements HasMiddleware
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->orWhere('name', 'like', "%{$search}%");
+                $q->orWhere('takhallus', 'like', "%{$search}%");
+                $q->orWhere('father_name', 'like', "%{$search}%");
                 $q->orWhere('customer_no', 'like', "%{$search}%");
                 $q->orWhere('phone', 'like', "%{$search}%");
                 $q->orWhere('national_id', 'like', "%{$search}%");
@@ -158,6 +160,7 @@ class CustomerController extends Controller implements HasMiddleware
                 Rule::unique('customers', 'customer_no')->ignore($ignoreId),
             ],
             'name' => 'required|string|max:255',
+            'takhallus' => 'nullable|string|max:255',
             'father_name' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',

@@ -142,8 +142,8 @@ const formatDate = (value: string | null | undefined) =>
                         <tr>
                             <SortableTh
                                 column="material_id"
-                                :sort-key="stockSort.sortKey.value"
-                                :sort-dir="stockSort.sortDir.value"
+                                :sort-key="stockSort.sortKey"
+                                :sort-dir="stockSort.sortDir"
                                 @sort="stockSort.sortBy"
                             >
                                 {{ t('Material') }}
@@ -153,8 +153,8 @@ const formatDate = (value: string | null | undefined) =>
                             </th>
                             <SortableTh
                                 column="on_hand"
-                                :sort-key="stockSort.sortKey.value"
-                                :sort-dir="stockSort.sortDir.value"
+                                :sort-key="stockSort.sortKey"
+                                :sort-dir="stockSort.sortDir"
                                 @sort="stockSort.sortBy"
                             >
                                 {{ t('On hand') }}
@@ -214,24 +214,24 @@ const formatDate = (value: string | null | undefined) =>
                         <tr>
                             <SortableTh
                                 column="material.name"
-                                :sort-key="issueSort.sortKey.value"
-                                :sort-dir="issueSort.sortDir.value"
+                                :sort-key="issueSort.sortKey"
+                                :sort-dir="issueSort.sortDir"
                                 @sort="issueSort.sortBy"
                             >
                                 {{ t('Material') }}
                             </SortableTh>
                             <SortableTh
                                 column="quantity"
-                                :sort-key="issueSort.sortKey.value"
-                                :sort-dir="issueSort.sortDir.value"
+                                :sort-key="issueSort.sortKey"
+                                :sort-dir="issueSort.sortDir"
                                 @sort="issueSort.sortBy"
                             >
                                 {{ t('Issued qty') }}
                             </SortableTh>
                             <SortableTh
                                 column="transaction_date"
-                                :sort-key="issueSort.sortKey.value"
-                                :sort-dir="issueSort.sortDir.value"
+                                :sort-key="issueSort.sortKey"
+                                :sort-dir="issueSort.sortDir"
                                 @sort="issueSort.sortBy"
                             >
                                 {{ t('Issue date') }}
