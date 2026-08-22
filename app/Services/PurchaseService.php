@@ -252,6 +252,68 @@ class PurchaseService
         });
     }
 
+    /**
+     * @param  array{quantity: float|int|string, transaction_date?: mixed, reference_no?: string|null, notes?: string|null}  $data
+     */
+    public static function updateIssue(InventoryTransaction $transaction, array $data): InventoryTransaction
+    {
+        if ($transaction->type !== InventoryTransaction::TYPE_ISSUE) {
+            throw ValidationException::withMessages([
+                'inventory' => 'Only stock issues can be updated.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($transaction, $data) {
+            $quantity = round((float) $data['quantity'], 3);
+
+            if ($quantity <= 0) {
+                throw ValidationException::withMessages([
+                    'quantity' => 'Issue quantity must be greater than zero.',
+                ]);
+            }
+
+            $onHand = InventoryTransaction::onHand((int) $transaction->project_id, (int) $transaction->material_id);
+            $maxQuantity = $onHand + (float) $transaction->quantity;
+
+            if ($quantity > $maxQuantity + 0.0001) {
+                throw ValidationException::withMessages([
+                    'quantity' => 'Cannot issue more than the '.$maxQuantity.' currently available for this project.',
+                ]);
+            }
+
+            $unitCostBase = self::averageUnitCostBase((int) $transaction->project_id, (int) $transaction->material_id);
+            $totalCostBase = round($quantity * $unitCostBase, 2);
+
+            $transaction->update([
+                'quantity' => $quantity,
+                'unit_cost' => $unitCostBase,
+                'unit_cost_base' => $unitCostBase,
+                'total_cost' => $totalCostBase,
+                'total_cost_base' => $totalCostBase,
+                'transaction_date' => $data['transaction_date'] ?? $transaction->transaction_date,
+                'reference_no' => array_key_exists('reference_no', $data)
+                    ? $data['reference_no']
+                    : $transaction->reference_no,
+                'notes' => array_key_exists('notes', $data)
+                    ? $data['notes']
+                    : $transaction->notes,
+            ]);
+
+            return $transaction->fresh();
+        });
+    }
+
+    public static function deleteIssue(InventoryTransaction $transaction): void
+    {
+        if ($transaction->type !== InventoryTransaction::TYPE_ISSUE) {
+            throw ValidationException::withMessages([
+                'inventory' => 'Only stock issues can be deleted.',
+            ]);
+        }
+
+        $transaction->delete();
+    }
+
     public static function assertDeletable(Purchase $purchase): void
     {
         $purchase->loadMissing('items');

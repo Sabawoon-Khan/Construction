@@ -129,7 +129,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('purchases', PurchaseController::class);
     Route::post('purchases/{purchase}/pay', [PurchaseController::class, 'pay'])
         ->name('purchases.pay');
-    Route::resource('inventory', InventoryController::class)->only(['index', 'store']);
+    Route::resource('inventory', InventoryController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['inventory' => 'inventoryTransaction']);
     Route::resource('expenses', ExpenseController::class);
     Route::resource('expense-units', ExpenseUnitController::class)->except(['create', 'edit', 'show']);
     Route::resource('incomes', IncomeController::class);

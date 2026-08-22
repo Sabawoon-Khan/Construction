@@ -1287,7 +1287,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-QvioHDs2.css",
+    "file": "assets/app-DDR_ATH6.css",
     "name": "app",
     "names": [
       "app.css"
@@ -1296,7 +1296,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-DAltiJbo.js",
+    "file": "assets/app-DH6KDiUY.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -1878,7 +1878,7 @@
     ]
   },
   "resources/js/pages/Inventory/Index.vue": {
-    "file": "assets/Index-DjuICkRT.js",
+    "file": "assets/Index-D05Hoxr3.js",
     "name": "Index",
     "src": "resources/js/pages/Inventory/Index.vue",
     "isDynamicEntry": true,
@@ -1889,8 +1889,11 @@
       "_TableFrame-D2kf7sSB.js",
       "_RowActionsMenu-CirKIcs_.js",
       "_mis-CjtPV5nF.js",
+      "_pencil-B6bCbRVI.js",
+      "_trash-2-6l69I3A1.js",
       "_dialog-g55k0E5k.js",
       "_label-DU5BUR0X.js",
+      "_useCalendar-B1JEB7h_.js",
       "_InputError-nBkuY3Tz.js",
       "_RelatedCreateLink-04-sBDPv.js",
       "_EmptyState-f3hzjlgi.js",

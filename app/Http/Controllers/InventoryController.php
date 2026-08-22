@@ -59,8 +59,69 @@ class InventoryController extends Controller implements HasMiddleware
             })->values();
         }
 
+        $issuesQuery = InventoryTransaction::query()
+            ->with([
+                'project:id,name',
+                'material:id,name,code',
+                'material.unit:id,unit_name',
+            ])
+            ->where('type', InventoryTransaction::TYPE_ISSUE)
+            ->latest('transaction_date')
+            ->latest('id');
+
+        if ($projectId) {
+            $issuesQuery->where('project_id', $projectId);
+        }
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $issuesQuery->where(function ($query) use ($needle) {
+                $query->whereHas('project', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$needle}%"]))
+                    ->orWhereHas('material', function ($q) use ($needle) {
+                        $q->whereRaw('LOWER(name) LIKE ?', ["%{$needle}%"])
+                            ->orWhereRaw('LOWER(code) LIKE ?', ["%{$needle}%"]);
+                    });
+            });
+        }
+
+        $issues = $issuesQuery->limit(100)->get()->map(fn (InventoryTransaction $issue) => [
+            'id' => $issue->id,
+            'project_id' => (int) $issue->project_id,
+            'project_name' => $issue->project?->name,
+            'material_id' => (int) $issue->material_id,
+            'material_name' => $issue->material?->name,
+            'material_code' => $issue->material?->code,
+            'unit_name' => $issue->material?->unit?->unit_name,
+            'quantity' => (float) $issue->quantity,
+            'transaction_date' => $issue->transaction_date?->toDateString(),
+            'reference_no' => $issue->reference_no,
+            'notes' => $issue->notes,
+        ])->values();
+
+        $latestIssues = InventoryTransaction::query()
+            ->where('type', InventoryTransaction::TYPE_ISSUE)
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->get(['id', 'project_id', 'material_id', 'quantity', 'transaction_date'])
+            ->unique(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id)
+            ->keyBy(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id);
+
+        $items = $items->map(function (array $row) use ($latestIssues) {
+            $latest = $latestIssues->get($row['project_id'].'-'.$row['material_id']);
+
+            $row['latest_issue'] = $latest ? [
+                'id' => $latest->id,
+                'quantity' => (float) $latest->quantity,
+                'transaction_date' => $latest->transaction_date?->toDateString(),
+            ] : null;
+
+            return $row;
+        })->values();
+
         return Inertia::render('Inventory/Index', [
             'items' => $items,
+            'issues' => $issues,
             'projects' => $projects,
             'materials' => Material::query()
                 ->where('is_active', true)
@@ -117,6 +178,37 @@ class InventoryController extends Controller implements HasMiddleware
 
         return redirect()->route('inventory.index', array_filter([
             'project_id' => $data['project_id'],
+        ]));
+    }
+
+    public function update(Request $request, InventoryTransaction $inventoryTransaction): RedirectResponse
+    {
+        $data = $request->validate([
+            'quantity' => 'required|numeric|min:0.001',
+            'transaction_date' => 'nullable|date',
+            'reference_no' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+        ]);
+
+        PurchaseService::updateIssue($inventoryTransaction, $data);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Stock issue updated.']);
+
+        return redirect()->route('inventory.index', array_filter([
+            'project_id' => $inventoryTransaction->project_id,
+        ]));
+    }
+
+    public function destroy(InventoryTransaction $inventoryTransaction): RedirectResponse
+    {
+        $projectId = $inventoryTransaction->project_id;
+
+        PurchaseService::deleteIssue($inventoryTransaction);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Stock issue deleted.']);
+
+        return redirect()->route('inventory.index', array_filter([
+            'project_id' => $projectId,
         ]));
     }
 }
