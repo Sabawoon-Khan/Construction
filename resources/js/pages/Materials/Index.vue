@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { MisFilterBar, MisLoadingState, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useInertiaLoading } from '@/composables/useInertiaLoading';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
@@ -21,7 +24,17 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'code', label: t('Code') },
+    { key: 'name', label: t('Name') },
+    { key: 'unit.unit_name', label: t('Unit') },
+    { key: 'unit_cost', label: t('Unit cost') },
+    { key: 'minimum_stock', label: t('Min stock') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { editAction, can } = useMisPage();
 const { loading } = useInertiaLoading();
 
@@ -83,22 +96,22 @@ function rowActions(item: Item): RowActionItem[] {
             v-else
             class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
         >
-            <div class="overflow-x-auto">
+            <TableFrame table-id="materials" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Code') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Unit cost') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Min stock') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="code">{{ t('Code') }}</SortableTh>
+                            <SortableTh column="name">{{ t('Name') }}</SortableTh>
+                            <SortableTh column="unit.unit_name">{{ t('Unit') }}</SortableTh>
+                            <SortableTh column="unit_cost">{{ t('Unit cost') }}</SortableTh>
+                            <SortableTh column="minimum_stock">{{ t('Min stock') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr v-for="item in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
                             <td class="px-4 py-3 font-medium">{{ item.code }}</td>
                             <td class="px-4 py-3">{{ item.name }}</td>
                             <td class="px-4 py-3">{{ item.unit?.unit_name || '—' }}</td>
@@ -115,7 +128,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState v-if="!items.data.length" :colspan="7" :title="t('No materials yet')" />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
-defineProps<{
+const props = defineProps<{
     item: Record<string, any>;
 }>();
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'sale_no', label: t('Sale') },
+    { key: 'customer.name', label: t('Customer') },
+    { key: 'unit.list_price', label: t('Amount') },
+]);
+const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
 </script>
 
 <template>
@@ -15,19 +25,20 @@ const { t } = useTranslations();
         <div class="border-b px-5 py-3">
             <h3 class="text-sm font-semibold">{{ t('Recent sales') }}</h3>
         </div>
+        <TableFrame table-id="project-sales" :columns="tableColumns">
         <table class="min-w-full text-sm">
             <thead class="bg-muted/40 text-start text-muted-foreground">
                 <tr>
-                    <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
-                    <th class="px-4 py-3 font-medium">
+                    <SortableTh column="sale_no">{{ t('Sale') }}</SortableTh>
+                    <SortableTh column="customer.name">
                         {{ t('Customer') }}
-                    </th>
-                    <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
+                    </SortableTh>
+                    <SortableTh column="unit.list_price">{{ t('Amount') }}</SortableTh>
                 </tr>
             </thead>
             <tbody>
                 <tr
-                    v-for="sale in item.sales"
+                    v-for="sale in sortedRows"
                     :key="sale.id"
                     class="border-t hover:bg-muted/30"
                 >
@@ -64,5 +75,6 @@ const { t } = useTranslations();
                 </tr>
             </tbody>
         </table>
+        </TableFrame>
     </div>
 </template>

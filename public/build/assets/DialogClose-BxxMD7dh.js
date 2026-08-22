@@ -1,0 +1,1 @@
+import{Fn as e,Ht as t,_t as n,gr as r,ln as i,nn as a,ot as o}from"./useTranslations-BPynr0k6.js";import{f as s}from"./dialog-g55k0E5k.js";var c=n({__name:`DialogClose`,props:{asChild:{type:Boolean},as:{}},setup(n){let c=n;return(n,l)=>(a(),o(r(s),t({"data-slot":`dialog-close`},c),{default:e(()=>[i(n.$slots,`default`)]),_:3},16))}});export{c as t};

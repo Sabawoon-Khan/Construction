@@ -3,13 +3,17 @@ import { Form } from '@inertiajs/vue3';
 import Can from '@/components/Can.vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
+import { computed } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
+import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 
-defineProps<{
+const props = defineProps<{
     item: Record<string, any>;
     stock?: {
         material_id: number;
@@ -34,6 +38,18 @@ defineProps<{
 }>();
 
 const { t } = useTranslations();
+const tableColumnsStock = computed(() => [
+    { key: 'material_id', label: t('Material') },
+    { key: 'unit', label: t('Unit') },
+    { key: 'on_hand', label: t('On hand') },
+]);
+const tableColumnsIssues = computed(() => [
+    { key: 'material.name', label: t('Material') },
+    { key: 'quantity', label: t('Issued qty') },
+    { key: 'transaction_date', label: t('Issue date') },
+]);
+const stockSort = useTableSort(() => props.stock ?? [], { defaultKey: 'material_id' });
+const issueSort = useTableSort(() => props.stock_issues ?? []);
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
@@ -118,25 +134,36 @@ const formatDate = (value: string | null | undefined) =>
                         {{ t('Stock on hand') }}
                     </h3>
                 </div>
+                <TableFrame table-id="project-stock-on-hand" :columns="tableColumnsStock">
                 <table class="min-w-full text-sm">
                     <thead
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh
+                                column="material_id"
+                                :sort-key="stockSort.sortKey.value"
+                                :sort-dir="stockSort.sortDir.value"
+                                @sort="stockSort.sortBy"
+                            >
                                 {{ t('Material') }}
-                            </th>
+                            </SortableTh>
                             <th class="px-4 py-3 font-medium">
                                 {{ t('Unit') }}
                             </th>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh
+                                column="on_hand"
+                                :sort-key="stockSort.sortKey.value"
+                                :sort-dir="stockSort.sortDir.value"
+                                @sort="stockSort.sortBy"
+                            >
                                 {{ t('On hand') }}
-                            </th>
+                            </SortableTh>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="row in stock || []"
+                            v-for="row in stockSort.sortedRows"
                             :key="`onhand-${row.material_id}`"
                             class="border-t"
                         >
@@ -168,6 +195,7 @@ const formatDate = (value: string | null | undefined) =>
                         </tr>
                     </tbody>
                 </table>
+                </TableFrame>
             </div>
 
             <div
@@ -178,25 +206,41 @@ const formatDate = (value: string | null | undefined) =>
                         {{ t('Stock issue dates') }}
                     </h3>
                 </div>
+                <TableFrame table-id="project-stock-issues" :columns="tableColumnsIssues">
                 <table class="min-w-full text-sm">
                     <thead
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh
+                                column="material.name"
+                                :sort-key="issueSort.sortKey.value"
+                                :sort-dir="issueSort.sortDir.value"
+                                @sort="issueSort.sortBy"
+                            >
                                 {{ t('Material') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="quantity"
+                                :sort-key="issueSort.sortKey.value"
+                                :sort-dir="issueSort.sortDir.value"
+                                @sort="issueSort.sortBy"
+                            >
                                 {{ t('Issued qty') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="transaction_date"
+                                :sort-key="issueSort.sortKey.value"
+                                :sort-dir="issueSort.sortDir.value"
+                                @sort="issueSort.sortBy"
+                            >
                                 {{ t('Issue date') }}
-                            </th>
+                            </SortableTh>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="issue in stock_issues || []"
+                            v-for="issue in issueSort.sortedRows"
                             :key="`issued-${issue.id}`"
                             class="border-t"
                         >
@@ -230,6 +274,7 @@ const formatDate = (value: string | null | undefined) =>
                         </tr>
                     </tbody>
                 </table>
+                </TableFrame>
             </div>
         </div>
     </div>

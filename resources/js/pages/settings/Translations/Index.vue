@@ -3,6 +3,8 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { Languages, Loader2, Search } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import MisPagination from '@/components/MisPagination.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -12,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useLocale } from '@/composables/useLocale';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { Paginated } from '@/lib/format';
 
@@ -30,7 +33,12 @@ interface Props {
 const props = defineProps<Props>();
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'key', label: t('Key') },
+    { key: 'value', label: t('Translation') },
+]);
 const { locales } = useLocale();
+const { sortedRows } = provideTableSort(() => props.entries.data, { defaultKey: 'key' });
 
 defineOptions({
     layout: {
@@ -168,21 +176,21 @@ const hasSearch = computed(
             </div>
 
             <form v-else @submit.prevent="saveTranslations">
-                <div class="overflow-x-auto">
+                <TableFrame table-id="translations" :columns="tableColumns">
                     <table class="w-full table-fixed text-xs sm:text-sm">
                         <thead>
                             <tr class="border-b bg-muted/30 text-start text-xs text-muted-foreground">
-                                <th class="w-[36%] px-3 py-1.5 font-medium sm:w-[34%]">
+                                <SortableTh class="w-[36%] px-3 py-1.5 sm:w-[34%]" column="key">
                                     {{ t('Key') }}
-                                </th>
-                                <th class="px-3 py-1.5 font-medium">
+                                </SortableTh>
+                                <SortableTh class="px-3 py-1.5" column="value">
                                     {{ t('Translation') }}
-                                </th>
+                                </SortableTh>
                             </tr>
                         </thead>
                         <tbody>
                             <tr
-                                v-for="(entry, index) in entries.data"
+                                v-for="(entry, index) in sortedRows"
                                 :key="entry.key"
                                 class="border-b last:border-b-0 hover:bg-muted/10"
                             >
@@ -211,7 +219,7 @@ const hasSearch = computed(
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableFrame>
 
                 <p
                     v-if="form.errors.translations"

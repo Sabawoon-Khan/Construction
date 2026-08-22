@@ -215,6 +215,7 @@ function pad2(n: number): string {
 function localeKey(locale: string): string {
     if (locale.startsWith('fa')) return 'fa';
     if (locale.startsWith('ps')) return 'ps';
+    if (locale.startsWith('ur')) return 'fa';
     if (locale.startsWith('ar')) return 'ar';
     return 'en';
 }
@@ -452,6 +453,22 @@ export function formatDate(
     return formatCalendarParts(parts, system, locale, options);
 }
 
+function parseDateTime(value: Date | string): Date | null {
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    const trimmed = normalizeDigits(String(value)).trim();
+    if (!trimmed) return null;
+
+    const isoLike = trimmed.includes('T')
+        ? trimmed
+        : trimmed.replace(' ', 'T');
+    const parsed = new Date(isoLike);
+
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function formatDateTime(
     value: Date | string | null | undefined,
     system: CalendarSystem,
@@ -459,16 +476,29 @@ export function formatDateTime(
 ): string {
     if (value == null || value === '') return '';
 
-    const date =
-        value instanceof Date
-            ? value
-            : new Date(normalizeDigits(String(value)).replace(' ', 'T'));
+    // Keep calendar date from the stored Y-M-D prefix (avoids UTC midnight shifting date-only values).
+    const datePart = formatDate(value, system, locale);
+    if (!datePart) {
+        return typeof value === 'string' ? value : '';
+    }
 
-    if (Number.isNaN(date.getTime())) return String(value);
+    const parsed = parseDateTime(value);
+    if (!parsed) {
+        return datePart;
+    }
 
-    const datePart = formatDate(date, system, locale);
+    const raw =
+        typeof value === 'string' ? normalizeDigits(value).trim() : '';
+    const hasTime =
+        value instanceof Date ||
+        /(?:T|\s)\d{1,2}:\d{2}/.test(raw);
+
+    if (!hasTime) {
+        return datePart;
+    }
+
     const timePart = localizeDigits(
-        `${pad2(date.getHours())}:${pad2(date.getMinutes())}`,
+        `${pad2(parsed.getHours())}:${pad2(parsed.getMinutes())}`,
         locale,
     );
 

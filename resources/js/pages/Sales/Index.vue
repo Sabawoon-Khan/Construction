@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Banknote, Printer, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money, moneyByCurrency } from '@/lib/utils';
@@ -27,7 +30,21 @@ const props = defineProps<{
     };
 }>();
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'sale_no', label: t('Sale No') },
+    { key: 'customer.name', label: t('Customer') },
+    { key: 'project.name', label: t('Project') },
+    { key: 'unit.unit_no', label: t('Unit') },
+    { key: 'unit.list_price', label: t('Sale price') },
+    { key: 'discount', label: t('Discount') },
+    { key: 'total_price', label: t('Total') },
+    { key: 'remaining', label: t('Remaining') },
+    { key: 'status', label: t('Status') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { baseCurrency } = useCurrency();
 const { viewAction, editAction, can } = useMisPage();
 
@@ -105,26 +122,26 @@ function rowActions(item: any): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="sales" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Sale No') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Customer') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Sale price') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Discount') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Total') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Remaining') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="sale_no">{{ t('Sale No') }}</SortableTh>
+                            <SortableTh column="customer.name">{{ t('Customer') }}</SortableTh>
+                            <SortableTh column="project.name">{{ t('Project') }}</SortableTh>
+                            <SortableTh column="unit.unit_no">{{ t('Unit') }}</SortableTh>
+                            <SortableTh column="unit.list_price">{{ t('Sale price') }}</SortableTh>
+                            <SortableTh column="discount">{{ t('Discount') }}</SortableTh>
+                            <SortableTh column="total_price">{{ t('Total') }}</SortableTh>
+                            <SortableTh column="remaining">{{ t('Remaining') }}</SortableTh>
+                            <SortableTh column="status">{{ t('Status') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr v-for="item in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
                             <td class="px-4 py-3 font-medium">
                                 <Link :href="`/sales/${item.id}`" class="hover:text-primary hover:underline">{{ item.sale_no }}</Link>
                             </td>
@@ -147,7 +164,7 @@ function rowActions(item: any): RowActionItem[] {
                         <EmptyState v-if="!items.data.length" :colspan="11" :title="t('No sales yet')" />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

@@ -41,7 +41,7 @@ class UserManagementController extends Controller
                     exactColumns: ['email'],
                 );
             })
-            ->orderBy('name')
+            ->latest()
             ->paginate(20)
             ->withQueryString();
 

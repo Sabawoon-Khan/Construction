@@ -6,6 +6,7 @@ use App\Concerns\HasAttachments;
 use App\Concerns\Trashable;
 use App\Models\Concerns\HasCreator;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -20,12 +21,16 @@ class Employee extends Model
         'user_id',
         'employee_no',
         'name',
+        'takhallus',
+        'father_name',
         'email',
         'phone',
         'department',
         'designation',
+        'working_hours',
         'joining_date',
         'basic_salary',
+        'salary_payment_method',
         'basic_salary_base',
         'currency',
         'exchange_rate',
@@ -60,5 +65,12 @@ class Employee extends Model
     public function salaries(): HasMany
     {
         return $this->hasMany(Salary::class);
+    }
+
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class, 'project_employee')
+            ->withPivot(['started_at', 'role_on_project', 'working_hours', 'notes'])
+            ->withTimestamps();
     }
 }

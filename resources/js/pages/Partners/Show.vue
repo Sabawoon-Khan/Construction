@@ -5,11 +5,15 @@ import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
+import { computed } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Button } from '@/components/ui/button';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
 
-defineProps<{
+const props = defineProps<{
     item: Record<string, any>;
     projects: {
         id: number;
@@ -28,6 +32,14 @@ defineProps<{
     };
 }>();
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'name', label: t('Project') },
+    { key: 'ownership_percentage', label: t('Share') },
+    { key: 'entitled_share', label: t('Profit share') },
+    { key: 'paid_total', label: t('Paid') },
+    { key: 'balance_owed', label: t('Owed') },
+]);
+const { sortedRows } = provideTableSort(() => props.projects);
 
 defineOptions({
     layout: {
@@ -88,18 +100,19 @@ defineOptions({
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Project shares') }}</h3>
             </div>
+            <TableFrame table-id="partner-shares" :columns="tableColumns">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Share') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Profit share') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Paid') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Owed') }}</th>
+                        <SortableTh column="name">{{ t('Project') }}</SortableTh>
+                        <SortableTh column="ownership_percentage">{{ t('Share') }}</SortableTh>
+                        <SortableTh column="entitled_share">{{ t('Profit share') }}</SortableTh>
+                        <SortableTh column="paid_total">{{ t('Paid') }}</SortableTh>
+                        <SortableTh column="balance_owed">{{ t('Owed') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="p in projects" :key="p.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="p in sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3">
                             <Link :href="`/projects/${p.id}`" class="font-medium text-primary hover:underline">{{ p.name }}</Link>
                         </td>
@@ -115,6 +128,7 @@ defineOptions({
                     </tr>
                 </tbody>
             </table>
+            </TableFrame>
         </div>
 
         <DetailGrid

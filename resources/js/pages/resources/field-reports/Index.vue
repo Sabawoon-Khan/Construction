@@ -8,11 +8,12 @@ import {
     MisPagination,
     MisSearchInput,
     MisSelectField,
-    MisStatusBadge,
 } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import { Badge } from '@/components/ui/badge';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { Paginated } from '@/lib/format';
 import type { RowActionItem } from '@/lib/row-actions';
@@ -31,6 +32,11 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'title', label: t('Title') },
+    { key: 'location', label: t('Location') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { viewAction, editAction, deleteAction } = useMisPage();
 const search = ref(props.filters?.search ?? '');
 const status = ref(props.filters?.status ?? '');
@@ -43,6 +49,7 @@ const { displayItems, showingOfflineCache, online } = useOfflineResourceList({
     offlineEnabled: toRef(props, 'offlineEnabled'),
     onlineItems,
 });
+const { sortedRows } = provideTableSort(() => displayItems.value);
 
 const statusOptions = computed(() => [
     { value: '', label: t('All') },
@@ -165,20 +172,18 @@ defineOptions({
             v-else
             class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
         >
-            <div class="overflow-x-auto">
+            <TableFrame table-id="field-reports" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3">{{ t('Title') }}</th>
-                            <th class="px-4 py-3">{{ t('Location') }}</th>
-                            <th class="px-4 py-3">{{ t('Status') }}</th>
-                            <th class="px-4 py-3">{{ t('Sync') }}</th>
+                            <SortableTh column="title">{{ t('Title') }}</SortableTh>
+                            <SortableTh column="location">{{ t('Location') }}</SortableTh>
                             <th class="px-4 py-3 text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in displayItems"
+                            v-for="item in sortedRows"
                             :key="item.client_uuid || item.id"
                             class="border-t align-middle"
                         >
@@ -195,22 +200,6 @@ defineOptions({
                             <td class="px-4 py-3 text-muted-foreground">
                                 {{ item.location || t('No location') }}
                             </td>
-                            <td class="px-4 py-3">
-                                <MisStatusBadge
-                                    v-if="item.status"
-                                    :status="item.status"
-                                    :map="{ submitted: 'default', draft: 'outline' }"
-                                />
-                            </td>
-                            <td class="px-4 py-3">
-                                <Badge
-                                    v-if="item.pending_local || item.offline_only"
-                                    variant="outline"
-                                >
-                                    {{ t('Pending sync') }}
-                                </Badge>
-                                <span v-else class="text-muted-foreground">{{ t('Synced') }}</span>
-                            </td>
                             <td class="px-4 py-3 text-end">
                                 <div class="inline-flex justify-end">
                                     <RowActionsMenu v-if="item.id" :actions="rowActions(item)" />
@@ -219,7 +208,7 @@ defineOptions({
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
 
         <template v-if="online" #pagination>

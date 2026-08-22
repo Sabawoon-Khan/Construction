@@ -9,11 +9,14 @@ import InputError from '@/components/InputError.vue';
 import { MisTabs } from '@/components/mis';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
+import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { translateStatus } from '@/lib/translateStatus';
 import { money } from '@/lib/utils';
@@ -26,6 +29,22 @@ const props = defineProps<{
     total_price: number;
 }>();
 const { t } = useTranslations();
+const tableColumnsInstallments = computed(() => [
+    { key: 'installment_no', label: '#' },
+    { key: 'due_date', label: t('Due') },
+    { key: 'amount', label: t('Amount') },
+    { key: 'paid_amount', label: t('Paid') },
+    { key: 'status', label: t('Status') },
+    { key: 'action', label: t('Action'), locked: true },
+]);
+const tableColumnsPayments = computed(() => [
+    { key: 'payment_no', label: t('No') },
+    { key: 'paid_at', label: t('Date') },
+    { key: 'amount', label: t('Amount') },
+    { key: 'action', label: t('Action'), locked: true },
+]);
+const installmentSort = useTableSort(() => props.sale.installments ?? []);
+const paymentSort = useTableSort(() => props.sale.payments ?? []);
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
@@ -196,19 +215,20 @@ function submitPayment() {
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Installments') }}</h3>
             </div>
+            <TableFrame table-id="sale-installments" :columns="tableColumnsInstallments">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">#</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Due') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Paid') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                        <SortableTh column="installment_no" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">#</SortableTh>
+                        <SortableTh column="due_date" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Due') }}</SortableTh>
+                        <SortableTh column="amount" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Amount') }}</SortableTh>
+                        <SortableTh column="paid_amount" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Paid') }}</SortableTh>
+                        <SortableTh column="status" :sort-key="installmentSort.sortKey.value" :sort-dir="installmentSort.sortDir.value" @sort="installmentSort.sortBy">{{ t('Status') }}</SortableTh>
                         <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="i in sale.installments" :key="i.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="i in installmentSort.sortedRows" :key="i.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3">{{ i.installment_no }}</td>
                         <td class="px-4 py-3">{{ formatDate(i.due_date) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(i.amount) }}</td>
@@ -230,23 +250,25 @@ function submitPayment() {
                     </tr>
                 </tbody>
             </table>
+            </TableFrame>
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Receipts') }}</h3>
             </div>
+            <TableFrame table-id="sale-receipts" :columns="tableColumnsPayments">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
+                        <SortableTh column="payment_no" :sort-key="paymentSort.sortKey.value" :sort-dir="paymentSort.sortDir.value" @sort="paymentSort.sortBy">{{ t('No') }}</SortableTh>
+                        <SortableTh column="paid_at" :sort-key="paymentSort.sortKey.value" :sort-dir="paymentSort.sortDir.value" @sort="paymentSort.sortBy">{{ t('Date') }}</SortableTh>
+                        <SortableTh column="amount" :sort-key="paymentSort.sortKey.value" :sort-dir="paymentSort.sortDir.value" @sort="paymentSort.sortBy">{{ t('Amount') }}</SortableTh>
                         <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="p in sale.payments" :key="p.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="p in paymentSort.sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
                         <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency) }}</td>
@@ -261,6 +283,7 @@ function submitPayment() {
                     </tr>
                 </tbody>
             </table>
+            </TableFrame>
         </div>
         </div>
 

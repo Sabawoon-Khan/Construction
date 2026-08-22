@@ -1,20 +1,30 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import { ArrowLeft, Banknote, Info, Paperclip, Pencil } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
 import { MisTabs } from '@/components/mis';
 import RecordAttachments from '@/components/RecordAttachments.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
-defineProps<{ item: Record<string, any> }>();
+const props = defineProps<{ item: Record<string, any> }>();
 const tab = ref('info');
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'sale_no', label: t('Sale') },
+    { key: 'customer.name', label: t('Customer') },
+    { key: 'unit.list_price', label: t('Net') },
+    { key: 'status', label: t('Status') },
+]);
+const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
 const tabs = [
     { id: 'info', label: t('Unit info'), icon: Info },
     { id: 'sales', label: t('Sales'), icon: Banknote },
@@ -99,17 +109,18 @@ defineOptions({
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Sales history') }}</h3>
             </div>
+            <TableFrame table-id="unit-sales" :columns="tableColumns">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('Sale') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Customer') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Net') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                        <SortableTh column="sale_no">{{ t('Sale') }}</SortableTh>
+                        <SortableTh column="customer.name">{{ t('Customer') }}</SortableTh>
+                        <SortableTh column="unit.list_price">{{ t('Net') }}</SortableTh>
+                        <SortableTh column="status">{{ t('Status') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="sale in item.sales" :key="sale.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="sale in sortedRows" :key="sale.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3">
                             <Link :href="`/sales/${sale.id}`" class="font-medium text-primary hover:underline">{{ sale.sale_no }}</Link>
                         </td>
@@ -122,6 +133,7 @@ defineOptions({
                     </tr>
                 </tbody>
             </table>
+            </TableFrame>
         </div>
 
         <div v-show="tab === 'attachments'">

@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money, moneyByCurrency } from '@/lib/utils';
@@ -28,7 +31,23 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'customer_no', label: t('Customer No') },
+    { key: 'name', label: t('Name') },
+    { key: 'phone', label: t('Phone') },
+    { key: 'address', label: t('Address') },
+    { key: 'registered_at', label: t('Registration date') },
+    { key: 'type', label: t('Customer type') },
+    { key: 'purchase_amount', label: t('Purchase amount') },
+    { key: 'paid_amount', label: t('Amount paid') },
+    { key: 'remaining', label: t('Remaining') },
+    { key: 'last_purchase_at', label: t('Last purchase') },
+    { key: 'status', label: t('Status') },
+    { key: 'notes', label: t('Notes') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { viewAction, editAction, can, formatDate } = useMisPage();
 
 defineOptions({
@@ -91,28 +110,28 @@ function rowActions(item: Item): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="customers" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Customer No') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Name') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Phone') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Address') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Registration date') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Customer type') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Purchase amount') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Amount paid') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Remaining') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Last purchase') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Notes') }}</th>
+                            <SortableTh column="customer_no">{{ t('Customer No') }}</SortableTh>
+                            <SortableTh column="name">{{ t('Name') }}</SortableTh>
+                            <SortableTh column="phone">{{ t('Phone') }}</SortableTh>
+                            <SortableTh column="address">{{ t('Address') }}</SortableTh>
+                            <SortableTh column="registered_at">{{ t('Registration date') }}</SortableTh>
+                            <SortableTh column="type">{{ t('Customer type') }}</SortableTh>
+                            <SortableTh column="purchase_amount">{{ t('Purchase amount') }}</SortableTh>
+                            <SortableTh column="paid_amount">{{ t('Amount paid') }}</SortableTh>
+                            <SortableTh column="remaining">{{ t('Remaining') }}</SortableTh>
+                            <SortableTh column="last_purchase_at">{{ t('Last purchase') }}</SortableTh>
+                            <SortableTh column="status">{{ t('Status') }}</SortableTh>
+                            <SortableTh column="notes">{{ t('Notes') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in items.data"
+                            v-for="item in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
@@ -145,7 +164,7 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

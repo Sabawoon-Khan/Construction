@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCalendar } from '@/composables/useCalendar';
 import { useLocale } from '@/composables/useLocale';
 import { useTranslations } from '@/composables/useTranslations';
 import { edit } from '@/routes/profile';
@@ -47,6 +48,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const page = usePage();
 const { t } = useTranslations();
+const calendar = useCalendar();
 const { locale, locales, updateLocale } = useLocale();
 const user = computed(() => page.props.auth.user);
 const multilingual = computed(
@@ -356,9 +358,9 @@ defineOptions({
                         </div>
                         <p class="text-muted-foreground">
                             {{
-                                new Date(
-                                    session.last_activity * 1000,
-                                ).toLocaleString()
+                                calendar.formatDateTime(
+                                    new Date(session.last_activity * 1000),
+                                ) || '—'
                             }}
                         </p>
                     </div>

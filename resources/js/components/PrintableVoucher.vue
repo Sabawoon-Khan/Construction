@@ -42,144 +42,114 @@ const company = computed(() => page.props.company);
 const companyName = computed(
     () => company.value?.legal_name || company.value?.name || page.props.name || t('Company'),
 );
-const printedAt = computed(() =>
-    calendar.formatDateTime(new Date()) ||
-    new Date().toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }),
-);
+const printedAt = computed(() => calendar.formatDateTime(new Date()) || '—');
 const displayDate = computed(() => calendar.format(props.date) || '—');
 
 const kindLabel = computed(() => {
     if (props.kind === 'receipt') return t('Receipt Voucher');
     if (props.kind === 'payment') return t('Payment Voucher');
+    if (props.kind === 'salary') return t('Salary Voucher');
     return t('Account Statement');
 });
 
-const accent = computed(() => {
-    if (props.kind === 'payment') return 'border-rose-700 text-rose-800';
-    if (props.kind === 'receipt') return 'border-emerald-700 text-emerald-800';
-    return 'border-slate-700 text-slate-800';
-});
-
-const amountClass = computed(() => {
-    if (props.kind === 'payment') return 'text-rose-800';
-    if (props.kind === 'receipt') return 'text-emerald-800';
-    return 'text-slate-900';
+const thirdSignLabel = computed(() => {
+    if (props.kind === 'payment' || props.kind === 'salary') return t('Received by');
+    return t('Authorized by');
 });
 
 const words = computed(() => amountInWords(props.amount, props.currency));
+
+const detailItems = computed(() => {
+    const items: { label: string; value: string }[] = [];
+
+    if (props.projectName) items.push({ label: t('Project'), value: props.projectName });
+    if (props.accountName) items.push({ label: t('Account'), value: props.accountName });
+    if (props.paymentMethod) items.push({ label: t('Payment method'), value: props.paymentMethod });
+    if (props.referenceNo) items.push({ label: t('Reference'), value: props.referenceNo });
+
+    for (const field of props.fields ?? []) {
+        if (field.value) items.push({ label: field.label, value: String(field.value) });
+    }
+
+    return items;
+});
+
+const showDetailsColumn = computed(() => props.lines?.some((line) => line.meta));
 </script>
 
 <template>
-    <article
-        class="voucher-sheet mx-auto w-full max-w-3xl overflow-hidden rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm print:max-w-none print:rounded-none print:border-black print:shadow-none"
-    >
-        <div class="relative border-b border-slate-300 px-6 py-5 print:border-black print:px-0 print:py-4">
-            <div class="absolute inset-y-0 left-0 w-1.5 bg-slate-900 print:w-1" />
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:gap-3">
-                <div class="space-y-1 pl-3 print:pl-4">
-                    <p class="text-xs font-semibold tracking-[0.2em] text-slate-500 uppercase">
-                        {{ kindLabel }}
-                    </p>
-                    <h1 class="text-2xl font-semibold tracking-tight">{{ companyName }}</h1>
-                    <p v-if="company?.address" class="max-w-md text-sm text-slate-600">{{ company.address }}</p>
-                    <p class="text-sm text-slate-600">
-                        <span v-if="company?.phone">{{ t('Tel') }}: {{ company.phone }}</span>
-                        <span v-if="company?.phone && company?.email"> · </span>
-                        <span v-if="company?.email">{{ company.email }}</span>
-                    </p>
-                    <p v-if="company?.registration_no" class="text-xs text-slate-500">
-                        {{ t('Reg. No') }}: {{ company.registration_no }}
-                    </p>
-                </div>
-                <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm sm:min-w-[200px] print:border-black print:bg-white">
-                    <div class="flex justify-between gap-6">
-                        <span class="text-slate-500">{{ t('Voucher No') }}</span>
-                        <span class="font-semibold">{{ documentNo }}</span>
-                    </div>
-                    <div class="mt-2 flex justify-between gap-6">
-                        <span class="text-slate-500">{{ t('Date') }}</span>
-                        <span class="font-medium">{{ displayDate }}</span>
-                    </div>
-                    <div v-if="status" class="mt-2 flex justify-between gap-6">
-                        <span class="text-slate-500">{{ t('Status') }}</span>
-                        <span class="font-medium">{{ translateStatus(status, t) }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4 flex items-center justify-between gap-3 border-t border-dashed border-slate-300 pt-3">
-                <h2 class="text-lg font-semibold">{{ title }}</h2>
-                <span
-                    class="rounded-full border px-3 py-1 text-xs font-semibold tracking-wide uppercase"
-                    :class="accent"
-                >
-                    {{ kind }}
-                </span>
-            </div>
+    <article class="voucher-sheet mx-auto w-full max-w-2xl bg-white text-neutral-900">
+        <!-- Header -->
+        <header class="border-b border-neutral-200 px-8 py-7 text-center print:px-0 print:py-5">
+            <p class="text-[11px] font-medium tracking-[0.15em] text-neutral-400 uppercase">
+                {{ kindLabel }}
+            </p>
+            <h1 class="mt-2 text-xl font-semibold tracking-tight">{{ companyName }}</h1>
+            <p v-if="company?.address || company?.phone || company?.email" class="mt-1.5 text-sm text-neutral-500">
+                <span v-if="company?.address">{{ company.address }}</span>
+                <template v-if="company?.address && (company?.phone || company?.email)"> · </template>
+                <span v-if="company?.phone">{{ company.phone }}</span>
+                <template v-if="company?.phone && company?.email"> · </template>
+                <span v-if="company?.email">{{ company.email }}</span>
+            </p>
+            <h2 class="mt-5 text-base font-medium text-neutral-700">{{ title }}</h2>
+        </header>
+
+        <!-- Meta -->
+        <div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-b border-neutral-100 px-8 py-3 text-sm text-neutral-500 print:px-0">
+            <span><span class="text-neutral-400">{{ t('No') }}</span> {{ documentNo }}</span>
+            <span class="hidden h-3 w-px bg-neutral-200 sm:block" />
+            <span><span class="text-neutral-400">{{ t('Date') }}</span> {{ displayDate }}</span>
+            <template v-if="status">
+                <span class="hidden h-3 w-px bg-neutral-200 sm:block" />
+                <span>{{ translateStatus(status, t) }}</span>
+            </template>
         </div>
 
-        <div class="space-y-5 px-6 py-5 print:space-y-4 print:px-0 print:py-4">
-            <div class="grid gap-3 sm:grid-cols-2 print:gap-2">
-                <div class="rounded-lg border border-slate-200 p-4 print:border-black print:p-3">
-                    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">{{ partyLabel }}</p>
-                    <p class="mt-1 text-base font-semibold">{{ partyName || '—' }}</p>
+        <div class="space-y-7 px-8 py-7 print:space-y-5 print:px-0 print:py-5">
+            <!-- Party & amount -->
+            <div class="flex items-end justify-between gap-6">
+                <div class="min-w-0">
+                    <p class="text-xs text-neutral-400">{{ partyLabel }}</p>
+                    <p class="mt-1 text-lg font-medium">{{ partyName || '—' }}</p>
                 </div>
-                <div class="rounded-lg border border-slate-200 p-4 print:border-black print:p-3">
-                    <p class="text-xs font-medium tracking-wide text-slate-500 uppercase">
+                <div class="shrink-0 text-end">
+                    <p class="text-xs text-neutral-400">
                         {{ kind === 'statement' ? t('Balance due') : t('Amount') }}
                     </p>
-                    <p class="mt-1 text-2xl font-semibold tabular-nums" :class="amountClass">
+                    <p class="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
                         {{ money(amount, currency) }}
                     </p>
                 </div>
             </div>
 
-            <dl class="grid gap-x-6 gap-y-3 rounded-lg border border-slate-200 p-4 text-sm sm:grid-cols-2 print:border-black print:p-3">
-                <div v-if="projectName">
-                    <dt class="text-xs text-slate-500 uppercase">{{ t('Project') }}</dt>
-                    <dd class="mt-0.5 font-medium">{{ projectName }}</dd>
+            <!-- Details -->
+            <div v-if="detailItems.length" class="grid gap-x-8 gap-y-2.5 text-sm sm:grid-cols-2">
+                <div v-for="item in detailItems" :key="item.label" class="flex justify-between gap-4 sm:block">
+                    <span class="text-neutral-400">{{ item.label }}</span>
+                    <span class="font-medium sm:mt-0.5 sm:block">{{ item.value }}</span>
                 </div>
-                <div v-if="accountName">
-                    <dt class="text-xs text-slate-500 uppercase">{{ t('Account') }}</dt>
-                    <dd class="mt-0.5 font-medium">{{ accountName }}</dd>
-                </div>
-                <div v-if="paymentMethod">
-                    <dt class="text-xs text-slate-500 uppercase">{{ t('Payment method') }}</dt>
-                    <dd class="mt-0.5 font-medium capitalize">{{ paymentMethod }}</dd>
-                </div>
-                <div v-if="referenceNo">
-                    <dt class="text-xs text-slate-500 uppercase">{{ t('Reference') }}</dt>
-                    <dd class="mt-0.5 font-medium">{{ referenceNo }}</dd>
-                </div>
-                <div v-for="field in fields" :key="field.label">
-                    <dt class="text-xs text-slate-500 uppercase">{{ field.label }}</dt>
-                    <dd class="mt-0.5 font-medium">{{ field.value || '—' }}</dd>
-                </div>
-                <div v-if="description" class="sm:col-span-2">
-                    <dt class="text-xs text-slate-500 uppercase">{{ t('Description / Notes') }}</dt>
-                    <dd class="mt-0.5 font-medium whitespace-pre-wrap">{{ description }}</dd>
-                </div>
-            </dl>
+            </div>
 
-            <div v-if="lines?.length" class="overflow-hidden rounded-lg border border-slate-200 print:border-black">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-slate-50 text-start text-slate-600 print:bg-white">
-                        <tr>
-                            <th class="px-4 py-2.5 font-medium">{{ t('Description') }}</th>
-                            <th class="px-4 py-2.5 font-medium">{{ t('Details') }}</th>
-                            <th class="px-4 py-2.5 text-end font-medium">{{ t('Amount') }}</th>
+            <!-- Line items -->
+            <div v-if="lines?.length">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-neutral-200 text-neutral-400">
+                            <th class="pb-2 text-start font-normal">{{ t('Description') }}</th>
+                            <th v-if="showDetailsColumn" class="pb-2 text-start font-normal">{{ t('Details') }}</th>
+                            <th class="pb-2 text-end font-normal">{{ t('Amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(line, index) in lines" :key="index" class="border-t border-slate-200">
-                            <td class="px-4 py-2.5">{{ line.description }}</td>
-                            <td class="px-4 py-2.5 text-slate-600">{{ line.meta || '—' }}</td>
-                            <td class="px-4 py-2.5 text-end tabular-nums">
+                        <tr
+                            v-for="(line, index) in lines"
+                            :key="index"
+                            class="border-b border-neutral-100 last:border-0"
+                        >
+                            <td class="py-2.5">{{ line.description }}</td>
+                            <td v-if="showDetailsColumn" class="py-2.5 text-neutral-500">{{ line.meta || '—' }}</td>
+                            <td class="py-2.5 text-end tabular-nums">
                                 {{ line.amount == null ? '—' : money(line.amount, currency) }}
                             </td>
                         </tr>
@@ -187,43 +157,41 @@ const words = computed(() => amountInWords(props.amount, props.currency));
                 </table>
             </div>
 
-            <div v-if="totals?.length" class="grid gap-2 sm:ml-auto sm:max-w-sm">
+            <!-- Totals -->
+            <div v-if="totals?.length" class="ms-auto max-w-xs space-y-1.5 text-sm">
                 <div
                     v-for="total in totals"
                     :key="total.label"
-                    class="flex items-center justify-between border-b border-dashed border-slate-200 py-1.5 text-sm"
+                    class="flex items-center justify-between gap-4"
                 >
-                    <span class="text-slate-600">{{ total.label }}</span>
+                    <span class="text-neutral-500">{{ total.label }}</span>
                     <span class="font-semibold tabular-nums">{{ total.value }}</span>
                 </div>
             </div>
 
-            <div class="rounded-lg bg-slate-50 px-4 py-3 text-sm print:border print:border-black print:bg-white print:py-2">
-                <span class="text-slate-500">{{ t('Amount in words') }}:</span>
-                <span class="ml-2 font-medium italic">{{ words }}</span>
-            </div>
+            <!-- Notes -->
+            <p v-if="description" class="text-sm leading-relaxed text-neutral-600">
+                <span class="text-neutral-400">{{ t('Notes') }}:</span>
+                {{ description }}
+            </p>
 
-            <div class="grid gap-8 pt-4 sm:grid-cols-3 print:gap-6 print:pt-2">
-                <div class="space-y-8">
-                    <div class="border-b border-slate-400" />
-                    <p class="text-center text-xs tracking-wide text-slate-500 uppercase">{{ t('Prepared by') }}</p>
-                </div>
-                <div class="space-y-8">
-                    <div class="border-b border-slate-400" />
-                    <p class="text-center text-xs tracking-wide text-slate-500 uppercase">{{ t('Checked by') }}</p>
-                </div>
-                <div class="space-y-8">
-                    <div class="border-b border-slate-400" />
-                    <p class="text-center text-xs tracking-wide text-slate-500 uppercase">
-                        {{ kind === 'payment' ? t('Received by') : t('Authorized by') }}
-                    </p>
+            <!-- Amount in words -->
+            <p class="border-t border-neutral-100 pt-5 text-sm text-neutral-500 italic">
+                {{ words }}
+            </p>
+
+            <!-- Signatures -->
+            <div class="grid grid-cols-3 gap-6 pt-2 print:gap-4">
+                <div v-for="label in [t('Prepared by'), t('Checked by'), thirdSignLabel]" :key="label">
+                    <div class="border-b border-neutral-300" />
+                    <p class="mt-2 text-center text-[11px] text-neutral-400">{{ label }}</p>
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-3 text-xs text-slate-500 print:border-black print:bg-white print:px-0 print:py-2">
-            <span>{{ t('Computer-generated voucher') }} · {{ companyName }}</span>
-            <span>{{ t('Printed') }} {{ printedAt }}</span>
-        </div>
+        <!-- Footer -->
+        <footer class="border-t border-neutral-100 px-8 py-3 text-center text-[11px] text-neutral-400 print:px-0">
+            {{ companyName }} · {{ t('Printed') }} {{ printedAt }}
+        </footer>
     </article>
 </template>

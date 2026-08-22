@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { moneyByCurrency } from '@/lib/utils';
@@ -25,8 +28,17 @@ const props = defineProps<{
     };
 }>();
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'partner_no', label: t('Partner No') },
+    { key: 'name', label: t('Name') },
+    { key: 'phone', label: t('Phone') },
+    { key: 'projects_count', label: t('Projects') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { viewAction, editAction, can } = useMisPage();
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 
 defineOptions({
     layout: {
@@ -80,21 +92,21 @@ function rowActions(item: Item): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="partners" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Partner No') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Phone') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Projects') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="partner_no">{{ t('Partner No') }}</SortableTh>
+                            <SortableTh column="name">{{ t('Name') }}</SortableTh>
+                            <SortableTh column="phone">{{ t('Phone') }}</SortableTh>
+                            <SortableTh column="projects_count">{{ t('Projects') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr v-for="item in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
                             <td class="px-4 py-3 font-medium">
                                 <Link :href="`/partners/${item.id}`" class="hover:text-primary hover:underline">{{ item.partner_no || '—' }}</Link>
                             </td>
@@ -112,7 +124,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState v-if="!items.data.length" :colspan="6" :title="t('No shareholders yet')" />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

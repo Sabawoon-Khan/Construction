@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Eye, Pencil, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { Eye, Pencil, Printer, Trash2 } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
@@ -10,6 +12,7 @@ import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money, moneyByCurrency } from '@/lib/utils';
@@ -23,7 +26,20 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'expense_date', label: t('Date') },
+    { key: 'paid_to', label: t('Paid to') },
+    { key: 'description', label: t('Description') },
+    { key: 'expense_unit.unit_name', label: t('Unit') },
+    { key: 'item_amount', label: t('Item amount') },
+    { key: 'per_price', label: t('Per price') },
+    { key: 'amount', label: t('Total cost') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'attachments', label: t('Attachments') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { baseCurrency } = useCurrency();
 const { can, formatDate } = useMisPage();
 const dialogOpen = ref(false);
@@ -57,6 +73,7 @@ function openRecord(item: Record<string, any> | null, edit = false) {
 function rowActions(item: any): RowActionItem[] {
     return [
         { label: t('View'), icon: Eye, onClick: () => openRecord(item, false) },
+        { label: t('Print'), icon: Printer, href: `/expenses/${item.id}` },
         { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item, true), hidden: !can('expenses.edit') || !!item.purchase_id },
         { separator: true, isLabel: true, label: t('Danger') },
         {
@@ -91,18 +108,18 @@ function rowActions(item: any): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="expenses" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Unit') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Item amount') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Per price') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Total cost') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
+                            <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
+                            <SortableTh column="description">{{ t('Description') }}</SortableTh>
+                            <SortableTh column="expense_unit.unit_name">{{ t('Unit') }}</SortableTh>
+                            <SortableTh column="item_amount">{{ t('Item amount') }}</SortableTh>
+                            <SortableTh column="per_price">{{ t('Per price') }}</SortableTh>
+                            <SortableTh column="amount">{{ t('Total cost') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
                             <th class="px-4 py-3 font-medium">{{ t('Attachments') }}</th>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
@@ -110,7 +127,7 @@ function rowActions(item: any): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in items.data"
+                            v-for="item in sortedRows"
                             :key="item.id"
                             class="cursor-pointer border-b last:border-0 transition-colors hover:bg-muted/30"
                             @click="openRecord(item)"
@@ -136,7 +153,7 @@ function rowActions(item: any): RowActionItem[] {
                         <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No expenses yet')" />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
 

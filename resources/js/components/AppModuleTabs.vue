@@ -20,10 +20,18 @@ const model = computed({
     get: () => activeId.value,
     set() {},
 });
+
+const showCreate = computed(
+    () => Boolean(activeItem.value?.createHref && activeItem.value?.createPermission),
+);
+
+const visible = computed(
+    () => !isSettingsArea.value && (tabs.value.length > 1 || showCreate.value),
+);
 </script>
 
 <template>
-    <div v-if="!isSettingsArea && tabs.length > 1" class="print:hidden">
+    <div v-if="visible" class="print:hidden">
         <MisTabs
             v-model="model"
             nowrap
@@ -31,12 +39,12 @@ const model = computed({
             class="min-w-0"
         >
             <template
-                v-if="activeItem?.createHref && activeItem.createPermission"
+                v-if="showCreate"
                 #actions
             >
                 <MisCreateButton
-                    :href="activeItem.createHref"
-                    :permission="activeItem.createPermission"
+                    :href="activeItem!.createHref!"
+                    :permission="activeItem!.createPermission!"
                     variant="ghost"
                     size="sm"
                     class="text-primary"

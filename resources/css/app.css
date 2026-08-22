@@ -2382,11 +2382,11 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         max-width: none !important;
         margin: 0 !important;
         overflow: visible !important;
-        border: 1px solid #000 !important;
+        border: none !important;
         border-radius: 0 !important;
         box-shadow: none !important;
         background: #fff !important;
-        color: #111 !important;
+        color: #171717 !important;
         break-inside: avoid;
     }
 

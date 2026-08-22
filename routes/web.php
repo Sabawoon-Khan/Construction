@@ -98,6 +98,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/shareholders', [ProjectController::class, 'storeShareholder'])
         ->middleware('permission:partners.create')
         ->name('projects.shareholders.store');
+    Route::post('projects/{project}/employees', [ProjectController::class, 'storeEmployee'])
+        ->middleware('permission:employees.edit')
+        ->name('projects.employees.store');
+    Route::delete('projects/{project}/employees/{employee}', [ProjectController::class, 'destroyEmployee'])
+        ->middleware('permission:employees.edit')
+        ->name('projects.employees.destroy');
     Route::post('projects/{project}/shareholders/{partner}/contributions', [ProjectController::class, 'storeShareholderContribution'])
         ->middleware('permission:partners.edit')
         ->name('projects.shareholders.contributions.store');

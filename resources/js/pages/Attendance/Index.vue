@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
+import { Input } from '@/components/ui/input';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { translateStatus } from '@/lib/translateStatus';
@@ -23,8 +27,19 @@ const props = defineProps<{
 const search = ref(props.filters.search ?? '');
 const employeeId = ref(props.filters.employee_id ?? '');
 const date = ref(props.filters.date ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
-const { editAction, can } = useMisPage();
+const tableColumns = computed(() => [
+    { key: 'date', label: t('Date') },
+    { key: 'employee.name', label: t('Employee') },
+    { key: 'check_in', label: t('Check in') },
+    { key: 'check_out', label: t('Check out') },
+    { key: 'status', label: t('Status') },
+    { key: 'notes', label: t('Notes') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
+const { editAction, can, formatDate } = useMisPage();
 
 defineOptions({
     layout: {
@@ -81,7 +96,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <option value="">{{ t('All employees') }}</option>
                 <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
             </select>
-            <input v-model="date" type="date" class="h-9 w-[150px] rounded-md border border-input bg-background px-3 text-sm" />
+            <Input v-model="date" type="date" class="w-[150px]" />
         </MisFilterBar>
 
         <MisStatGrid :columns="4">
@@ -92,28 +107,28 @@ function rowActions(item: Item): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="attendance" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Employee') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Check in') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Check out') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Notes') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="date">{{ t('Date') }}</SortableTh>
+                            <SortableTh column="employee.name">{{ t('Employee') }}</SortableTh>
+                            <SortableTh column="check_in">{{ t('Check in') }}</SortableTh>
+                            <SortableTh column="check_out">{{ t('Check out') }}</SortableTh>
+                            <SortableTh column="status">{{ t('Status') }}</SortableTh>
+                            <SortableTh column="notes">{{ t('Notes') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in items.data"
+                            v-for="item in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
-                            <td class="px-4 py-3">{{ item.date || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(item.date) }}</td>
                             <td class="px-4 py-3">
                                 <Link v-if="item.employee" :href="`/employees/${item.employee.id}`" class="hover:text-primary hover:underline">
                                     {{ item.employee.name }}
@@ -139,7 +154,7 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

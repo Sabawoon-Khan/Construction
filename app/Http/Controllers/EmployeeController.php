@@ -29,6 +29,8 @@ class EmployeeController extends Controller implements HasMiddleware
         if ($search = $request->string('search')->toString()) {
             $query->where(function ($q) use ($search) {
                 $q->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('takhallus', 'like', "%{$search}%")
+                    ->orWhere('father_name', 'like', "%{$search}%")
                     ->orWhere('employee_no', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%")
@@ -73,13 +75,19 @@ class EmployeeController extends Controller implements HasMiddleware
     public function show(Employee $employee): Response
     {
         $employee->loadCount(['attendance', 'salaries']);
-        $employee->load('attachments');
+        $employee->load([
+            'attachments',
+            'projects' => fn ($q) => $q->orderBy('name'),
+            'attendance' => fn ($q) => $q->with('creator:id,name')->latest('date')->limit(20),
+            'salaries' => fn ($q) => $q->with('creator:id,name')->latest('year')->latest('month')->limit(20),
+        ]);
 
         return Inertia::render('Employees/Show', [
             'item' => $employee,
             'stats' => [
                 'attendance_count' => $employee->attendance_count ?? 0,
                 'salaries_count' => $employee->salaries_count ?? 0,
+                'projects_count' => $employee->projects->count(),
             ],
         ]);
     }
@@ -127,12 +135,16 @@ class EmployeeController extends Controller implements HasMiddleware
         $data = $request->validate([
             'employee_no' => 'nullable|string|max:50|unique:employees,employee_no'.($ignoreId ? ','.$ignoreId : ''),
             'name' => 'required|string|max:255',
+            'takhallus' => 'nullable|string|max:255',
+            'father_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:50',
             'department' => 'nullable|string|max:100',
             'designation' => 'nullable|string|max:100',
+            'working_hours' => 'nullable|string|max:100',
             'joining_date' => 'nullable|date',
             'basic_salary' => 'nullable|numeric|min:0',
+            'salary_payment_method' => 'nullable|string|in:cash,bank',
             'currency' => 'nullable|string|size:3',
             'status' => 'nullable|string|in:active,inactive,on_leave',
             'notes' => 'nullable|string',

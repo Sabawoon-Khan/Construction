@@ -26,8 +26,11 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Input } from '@/components/ui/input';
 import { useCalendar } from '@/composables/useCalendar';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { Paginated } from '@/lib/format';
 
@@ -79,6 +82,14 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'datetime', label: t('Time') },
+    { key: 'level', label: t('Level') },
+    { key: 'environment', label: t('Env') },
+    { key: 'message', label: t('Message') },
+    { key: 'expand', label: t('Details'), locked: true },
+]);
+const { sortedRows } = provideTableSort(() => props.entries.data);
 const calendar = useCalendar();
 
 const search = ref(props.filters?.search ?? '');
@@ -432,21 +443,21 @@ defineOptions({
                     {{ t('No log entries match your filters') }}
                 </MisEmptyState>
 
-                <div v-else class="overflow-x-auto">
+                <TableFrame v-else table-id="system-logs" :columns="tableColumns">
                     <table class="w-full text-sm">
                         <thead class="bg-muted/40 text-start">
                             <tr class="border-b">
-                                <th class="px-4 py-3 font-medium whitespace-nowrap">
+                                <SortableTh column="datetime">
                                     {{ t('Time') }}
-                                </th>
-                                <th class="px-4 py-3 font-medium">{{ t('Level') }}</th>
-                                <th class="px-4 py-3 font-medium">{{ t('Env') }}</th>
-                                <th class="px-4 py-3 font-medium">{{ t('Message') }}</th>
+                                </SortableTh>
+                                <SortableTh column="level">{{ t('Level') }}</SortableTh>
+                                <SortableTh column="environment">{{ t('Env') }}</SortableTh>
+                                <SortableTh column="message">{{ t('Message') }}</SortableTh>
                                 <th class="w-10 px-4 py-3" />
                             </tr>
                         </thead>
                         <tbody>
-                            <template v-for="entry in entries.data" :key="entry.id">
+                            <template v-for="entry in sortedRows" :key="entry.id">
                                 <tr
                                     class="cursor-pointer border-b hover:bg-muted/20"
                                     @click="toggleExpanded(entry.id)"
@@ -501,7 +512,7 @@ defineOptions({
                             </template>
                         </tbody>
                     </table>
-                </div>
+                </TableFrame>
 
                 <div class="px-4 pb-4">
                     <MisPagination :pagination="entries" />

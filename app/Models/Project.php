@@ -109,6 +109,13 @@ class Project extends Model
             ->withTimestamps();
     }
 
+    public function employees(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class, 'project_employee')
+            ->withPivot(['started_at', 'role_on_project', 'working_hours', 'notes'])
+            ->withTimestamps();
+    }
+
     public function partnerDistributions(): HasMany
     {
         return $this->hasMany(PartnerDistribution::class);

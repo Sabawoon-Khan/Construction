@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import {
     MisFilterBar,
     MisLoadingState,
@@ -14,6 +16,7 @@ import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useInertiaLoading } from '@/composables/useInertiaLoading';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 
@@ -35,7 +38,15 @@ const props = defineProps<{
 
 const search = ref(props.filters.search ?? '');
 const status = ref(props.filters.status ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'name', label: t('From') },
+    { key: 'email', label: t('Email') },
+    { key: 'message', label: t('Message') },
+    { key: 'read_at', label: t('Status') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { can } = useMisPage();
 const { loading } = useInertiaLoading();
 
@@ -126,20 +137,20 @@ function preview(message: string): string {
             v-else
             class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
         >
-            <div class="overflow-x-auto">
+            <TableFrame table-id="contact-messages" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('From') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Email') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Message') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                            <SortableTh column="name">{{ t('From') }}</SortableTh>
+                            <SortableTh column="email">{{ t('Email') }}</SortableTh>
+                            <SortableTh column="message">{{ t('Message') }}</SortableTh>
+                            <SortableTh column="read_at">{{ t('Status') }}</SortableTh>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in items.data"
+                            v-for="item in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                             :class="{ 'font-medium': !item.read_at }"
@@ -179,7 +190,7 @@ function preview(message: string): string {
                         />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

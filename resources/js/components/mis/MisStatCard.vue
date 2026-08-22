@@ -5,15 +5,19 @@ import { cn } from '@/lib/utils';
 withDefaults(
     defineProps<{
         label: string;
-        value: string | number;
+        value?: string | number;
         icon?: Component;
         /** Visual tone for KPI emphasis. */
         tone?: 'default' | 'muted' | 'success' | 'warning' | 'danger';
+        /** Hide the main value line when using the default slot for custom content. */
+        showValue?: boolean;
         class?: string;
     }>(),
     {
         icon: undefined,
+        value: '',
         tone: 'default',
+        showValue: true,
         class: undefined,
     },
 );
@@ -49,7 +53,7 @@ const toneClass: Record<string, string> = {
                 <slot name="trailing" />
             </div>
         </div>
-        <p class="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
+        <p v-if="showValue" class="mt-2 text-2xl font-semibold tracking-tight tabular-nums">
             {{ value }}
         </p>
         <slot />

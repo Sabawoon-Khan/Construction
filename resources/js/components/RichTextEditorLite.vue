@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { Link2 } from '@lucide/vue';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onActivated, onMounted, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/composables/useTranslations';
 
 const props = withDefaults(
     defineProps<{
-        modelValue: string;
+        modelValue?: string | null;
         placeholder?: string;
     }>(),
     {
+        modelValue: '',
         placeholder: 'Write here...',
     },
 );
@@ -21,22 +22,49 @@ const { t } = useTranslations();
 
 const editorRef = ref<HTMLDivElement | null>(null);
 const isFocused = ref(false);
-const isEmpty = computed(() => !props.modelValue || props.modelValue === '<br>');
+const isEmpty = computed(() => {
+    const value = props.modelValue ?? '';
+    return value === '' || value === '<br>';
+});
 
-watch(
-    () => props.modelValue,
-    (value) => {
-        const el = editorRef.value;
-        if (!el) {
-            return;
-        }
+function normalizeValue(value: string | null | undefined): string {
+    return value ?? '';
+}
 
-        if (el.innerHTML !== value) {
-            el.innerHTML = value || '';
-        }
-    },
-    { immediate: true },
-);
+function syncFromModel(value = props.modelValue): void {
+    const el = editorRef.value;
+    if (!el) {
+        return;
+    }
+
+    const next = normalizeValue(value);
+    if (el.innerHTML !== next) {
+        el.innerHTML = next;
+    }
+}
+
+async function ensureSynced(): Promise<void> {
+    await nextTick();
+    syncFromModel();
+}
+
+onMounted(() => {
+    void ensureSynced();
+});
+
+onActivated(() => {
+    void ensureSynced();
+});
+
+watch(() => props.modelValue, () => {
+    void ensureSynced();
+});
+
+watch(editorRef, (el) => {
+    if (el) {
+        void ensureSynced();
+    }
+});
 
 function onInput(): void {
     emit('update:modelValue', editorRef.value?.innerHTML || '');

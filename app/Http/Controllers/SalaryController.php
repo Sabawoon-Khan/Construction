@@ -79,6 +79,19 @@ class SalaryController extends Controller implements HasMiddleware
         ]);
     }
 
+    public function show(Salary $salary): Response
+    {
+        $salary->load([
+            'attachments',
+            'employee:id,name,employee_no,department,designation,salary_payment_method',
+            'creator:id,name',
+        ]);
+
+        return Inertia::render('Salaries/Show', [
+            'item' => $salary,
+        ]);
+    }
+
     public function create(): Response
     {
         return Inertia::render('Salaries/Form', [

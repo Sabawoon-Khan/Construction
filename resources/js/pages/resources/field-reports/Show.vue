@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, MapPin, Paperclip } from '@lucide/vue';
-import { ref } from 'vue';
+import { ArrowLeft, Pencil } from '@lucide/vue';
+import Can from '@/components/Can.vue';
+import DetailGrid from '@/components/DetailGrid.vue';
 import Heading from '@/components/Heading.vue';
-import { MisTabs } from '@/components/mis';
-import { translateStatus } from '@/lib/translateStatus';
-import { Badge } from '@/components/ui/badge';
+import RecordAttachments from '@/components/RecordAttachments.vue';
+import { MisStatusBadge } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
+import { translateStatus } from '@/lib/translateStatus';
 
-const props = defineProps<{
+defineProps<{
     item: {
         id: number;
         title: string;
@@ -29,13 +30,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
-const calendar = useCalendar();
-const tab = ref('overview');
-const tabs = [
-    { id: 'overview', label: t('Overview') },
-    { id: 'notes', label: t('Notes') },
-    { id: 'attachments', label: t('Attachments') },
-];
+const { formatDateTime } = useCalendar();
 
 defineOptions({
     layout: {
@@ -45,94 +40,73 @@ defineOptions({
         ],
     },
 });
-
-function formatBytes(bytes: number | null | undefined): string {
-    if (!bytes) {
-        return '';
-    }
-    if (bytes < 1024) {
-        return `${bytes} B`;
-    }
-    if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 </script>
 
 <template>
-    <Head :title="t('Field report details')" />
+    <Head :title="item.title || t('Field report details')" />
 
-    <div class="mx-auto flex w-full max-w-5xl flex-col gap-5 p-4 md:p-6">
-        <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-            <Link href="/field-reports"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-        </Button>
-
-        <div class="rounded-2xl border bg-card p-5 md:p-6">
-            <Heading :title="item.title || t('Field report')" />
-
-            <div class="mt-4 flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">
-                    {{ translateStatus(item.status, t) }}
-                </Badge>
-                <span v-if="item.location" class="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                    <MapPin class="size-4" />
-                    {{ item.location }}
-                </span>
-                <span v-if="item.created_at" class="text-sm text-muted-foreground">
-                    {{ calendar.format(item.created_at) }}
-                </span>
+    <div class="flex h-full flex-1 flex-col gap-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div class="space-y-3">
+                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
+                    <Link href="/field-reports">
+                        <ArrowLeft class="size-4" /> {{ t('Back') }}
+                    </Link>
+                </Button>
+                <div class="space-y-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <Heading
+                            :title="item.title || t('Field report')"
+                            :description="item.location || t('Field report details')"
+                        />
+                        <MisStatusBadge :status="item.status" />
+                    </div>
+                </div>
             </div>
+            <Can permission="field_reports.edit">
+                <Button as-child>
+                    <Link :href="`/field-reports/${item.id}/edit`">
+                        <Pencil class="size-4" /> {{ t('Edit') }}
+                    </Link>
+                </Button>
+            </Can>
         </div>
 
-        <MisTabs v-model="tab" :tabs="tabs" />
+        <DetailGrid
+            :title="t('Overview')"
+            :items="[
+                { label: t('Location'), value: item.location || t('No location') },
+                { label: t('Status'), value: translateStatus(item.status, t) },
+                {
+                    label: t('Created'),
+                    value: item.created_at ? formatDateTime(item.created_at) : '—',
+                },
+                {
+                    label: t('Attachments'),
+                    value: item.attachments?.length ? String(item.attachments.length) : '0',
+                },
+            ]"
+        />
 
-        <div v-if="tab === 'overview'" class="rounded-2xl border bg-card p-5 md:p-6">
-            <h2 class="mb-3 text-sm font-semibold">{{ t('Overview') }}</h2>
-            <p class="text-sm text-muted-foreground">
-                {{ item.location || t('No location') }}
-            </p>
-        </div>
-
-        <div v-else-if="tab === 'notes'" class="rounded-2xl border bg-card p-5 md:p-6">
-            <h2 class="mb-3 text-sm font-semibold">{{ t('Notes') }}</h2>
+        <div class="rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm">
+            <h3 class="text-sm font-semibold tracking-tight">{{ t('Notes') }}</h3>
             <div
                 v-if="item.body"
-                class="prose prose-sm dark:prose-invert max-w-none"
+                class="prose prose-sm dark:prose-invert mt-4 max-w-none text-foreground"
                 v-html="item.body"
             />
-            <p v-else class="text-sm text-muted-foreground">
+            <p v-else class="mt-3 text-sm text-muted-foreground">
                 {{ t('No notes added.') }}
             </p>
         </div>
 
-        <div v-else class="rounded-2xl border bg-card p-5 md:p-6">
-            <h2 class="mb-3 text-sm font-semibold">{{ t('Attachments') }}</h2>
-            <div
-                v-if="item.attachments?.length"
-                class="space-y-2"
-            >
-                <a
-                    v-for="file in item.attachments"
-                    :key="file.id"
-                    :href="file.download_url || `/attachments/${file.id}/download`"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="flex items-center justify-between gap-3 rounded-lg border border-border/70 bg-background px-3 py-2 hover:bg-muted/50"
-                >
-                    <span class="inline-flex min-w-0 items-center gap-2">
-                        <Paperclip class="size-4 shrink-0 text-muted-foreground" />
-                        <span class="truncate text-sm font-medium">{{ file.original_filename }}</span>
-                    </span>
-                    <span class="text-xs text-muted-foreground">
-                        {{ formatBytes(file.file_size) }}
-                    </span>
-                </a>
-            </div>
-            <p v-else class="text-sm text-muted-foreground">
-                {{ t('No attachments.') }}
-            </p>
-        </div>
+        <RecordAttachments
+            attachable="field_reports"
+            :attachable-id="item.id"
+            :attachments="item.attachments"
+            boxed
+            readonly
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+        />
     </div>
 </template>

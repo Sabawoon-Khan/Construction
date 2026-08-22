@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
+use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\InventoryTransaction;
@@ -150,6 +151,36 @@ class ProjectController extends Controller implements HasMiddleware
         $shareholders = ShareholderProfitService::projectPartners($project);
 
         $assignedIds = $shareholders->pluck('id');
+        $projectEmployees = $project->employees()
+            ->orderBy('name')
+            ->get([
+                'employees.id',
+                'employees.employee_no',
+                'employees.name',
+                'employees.department',
+                'employees.designation',
+                'employees.phone',
+                'employees.basic_salary',
+                'employees.currency',
+                'employees.status',
+            ])
+            ->map(fn (Employee $employee) => [
+                'id' => $employee->id,
+                'employee_no' => $employee->employee_no,
+                'name' => $employee->name,
+                'department' => $employee->department,
+                'designation' => $employee->designation,
+                'phone' => $employee->phone,
+                'basic_salary' => $employee->basic_salary,
+                'currency' => $employee->currency,
+                'status' => $employee->status,
+                'started_at' => $employee->pivot?->started_at,
+                'role_on_project' => $employee->pivot?->role_on_project,
+                'working_hours' => $employee->pivot?->working_hours,
+                'notes' => $employee->pivot?->notes,
+            ])
+            ->values();
+        $assignedEmployeeIds = $projectEmployees->pluck('id');
 
         return Inertia::render('Projects/Show', [
             'item' => $project,
@@ -188,6 +219,12 @@ class ProjectController extends Controller implements HasMiddleware
                 ->orderBy('name')
                 ->when($assignedIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $assignedIds))
                 ->get(['id', 'name', 'phone']),
+            'employees' => $projectEmployees,
+            'available_employees' => Employee::query()
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->when($assignedEmployeeIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $assignedEmployeeIds))
+                ->get(['id', 'name', 'employee_no', 'department', 'designation', 'working_hours', 'phone']),
             'contributions' => PartnerInvestment::query()
                 ->where('project_id', $project->id)
                 ->with('partner:id,name')
@@ -292,6 +329,45 @@ class ProjectController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder added to project.']);
 
         return redirect()->to(route('projects.show', $project).'#shareholders');
+    }
+
+    public function storeEmployee(Request $request, Project $project): RedirectResponse
+    {
+        $data = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'started_at' => 'required|date',
+            'role_on_project' => 'nullable|string|max:100',
+            'working_hours' => 'nullable|string|max:100',
+            'notes' => 'nullable|string',
+        ]);
+
+        if ($project->employees()->where('employees.id', $data['employee_id'])->exists()) {
+            return back()->withErrors(['employee_id' => 'This employee is already on the project.']);
+        }
+
+        $employee = Employee::query()->findOrFail($data['employee_id']);
+
+        $project->employees()->attach($data['employee_id'], [
+            'started_at' => $data['started_at'],
+            'role_on_project' => $data['role_on_project'] ?: $employee->designation,
+            'working_hours' => $data['working_hours'] ?: $employee->working_hours,
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Employee added to project.']);
+
+        return redirect()->to(route('projects.show', $project).'#employees');
+    }
+
+    public function destroyEmployee(Project $project, Employee $employee): RedirectResponse
+    {
+        abort_unless($project->employees()->where('employees.id', $employee->id)->exists(), 404);
+
+        $project->employees()->detach($employee->id);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Employee removed from project.']);
+
+        return redirect()->to(route('projects.show', $project).'#employees');
     }
 
     public function storeShareholderContribution(Request $request, Project $project, Partner $partner): RedirectResponse

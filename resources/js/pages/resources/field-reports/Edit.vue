@@ -143,6 +143,7 @@ function onAttachmentRemoved(file: ExistingUploadFile): void {
             <div class="grid gap-2">
                 <Label for="body">{{ t('Notes') }}</Label>
                 <RichTextEditorLite
+                    :key="item.id"
                     v-model="local.body"
                 />
             </div>

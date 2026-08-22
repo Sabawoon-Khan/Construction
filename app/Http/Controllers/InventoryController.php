@@ -74,6 +74,13 @@ class InventoryController extends Controller implements HasMiddleware
             'totals' => [
                 'rows' => $items->count(),
                 'on_hand_rows' => $items->where('on_hand', '>', 0)->count(),
+                'low_stock_rows' => $items->filter(function (array $row) {
+                    $minimum = (float) ($row['minimum_stock'] ?? 0);
+
+                    return $minimum > 0
+                        && (float) $row['on_hand'] > 0
+                        && (float) $row['on_hand'] <= $minimum;
+                })->count(),
             ],
         ]);
     }

@@ -99,6 +99,11 @@ class Purchase extends Model
         return max(0, round((float) $this->total_amount - (float) $this->paid_amount, 2));
     }
 
+    public function getRemainingAmountBaseAttribute(): float
+    {
+        return max(0, round((float) $this->total_amount_base - (float) $this->paid_amount_base, 2));
+    }
+
     public static function statusFor(float $total, float $paid): string
     {
         if ($paid <= 0) {

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +13,7 @@ export type MisDataTableColumn = {
     class?: string;
     headerClass?: string;
     align?: 'start' | 'center' | 'end';
+    sortable?: boolean;
 };
 
 const props = withDefaults(
@@ -23,6 +27,7 @@ const props = withDefaults(
         /** Row identity key; falls back to index. */
         rowKey?: string;
         stickyHeader?: boolean;
+        tableId?: string;
     }>(),
     {
         class: undefined,
@@ -30,11 +35,20 @@ const props = withDefaults(
         density: 'comfortable',
         rowKey: undefined,
         stickyHeader: false,
+        tableId: 'mis-data-table',
     },
 );
 
 const { t } = useTranslations();
 const resolvedEmptyLabel = computed(() => props.emptyLabel ?? t('No results'));
+const { sortedRows } = provideTableSort(() => props.rows);
+const frameColumns = computed(() =>
+    props.columns.map((column) => ({
+        key: column.key,
+        label: column.label,
+        locked: column.sortable === false,
+    })),
+);
 
 function cellValue(row: Record<string, unknown>, key: string): string {
     const value = row[key];
@@ -83,7 +97,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
         >
             <Spinner class="size-6" />
         </div>
-        <div class="overflow-x-auto">
+        <TableFrame :table-id="tableId" :columns="frameColumns">
             <table class="w-full min-w-[32rem] text-sm">
                 <thead>
                     <tr
@@ -94,23 +108,41 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                             )
                         "
                     >
-                        <th
-                            v-for="column in columns"
-                            :key="column.key"
-                            :class="
-                                cn(
-                                    'font-semibold tracking-[0.12em] text-muted-foreground uppercase rtl:tracking-normal',
-                                    density === 'compact'
-                                        ? 'px-3 py-2 text-[10px]'
-                                        : 'px-4 py-3 text-[11px]',
-                                    alignClass(column.align),
-                                    column.headerClass,
-                                    column.class,
-                                )
-                            "
-                        >
-                            {{ column.label }}
-                        </th>
+                        <template v-for="column in columns" :key="column.key">
+                            <th
+                                v-if="column.sortable === false"
+                                :class="
+                                    cn(
+                                        'font-semibold tracking-[0.12em] text-muted-foreground uppercase rtl:tracking-normal',
+                                        density === 'compact'
+                                            ? 'px-3 py-2 text-[10px]'
+                                            : 'px-4 py-3 text-[11px]',
+                                        alignClass(column.align),
+                                        column.headerClass,
+                                        column.class,
+                                    )
+                                "
+                            >
+                                {{ column.label }}
+                            </th>
+                            <SortableTh
+                                v-else
+                                :column="column.key"
+                                :align="column.align"
+                                :class="
+                                    cn(
+                                        'font-semibold tracking-[0.12em] text-muted-foreground uppercase rtl:tracking-normal',
+                                        density === 'compact'
+                                            ? 'px-3 py-2 text-[10px]'
+                                            : 'px-4 py-3 text-[11px]',
+                                        column.headerClass,
+                                        column.class,
+                                    )
+                                "
+                            >
+                                {{ column.label }}
+                            </SortableTh>
+                        </template>
                     </tr>
                 </thead>
                 <tbody>
@@ -123,7 +155,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                         </td>
                     </tr>
                     <tr
-                        v-for="(row, rowIndex) in rows"
+                        v-for="(row, rowIndex) in sortedRows"
                         :key="rowId(row, rowIndex, rowKey)"
                         class="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/20"
                     >
@@ -151,6 +183,6 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                     </tr>
                 </tbody>
             </table>
-        </div>
+        </TableFrame>
     </div>
 </template>

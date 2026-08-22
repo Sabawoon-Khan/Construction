@@ -1,4 +1,4 @@
-export type VoucherKind = 'receipt' | 'payment' | 'statement';
+export type VoucherKind = 'receipt' | 'payment' | 'statement' | 'salary';
 
 export type VoucherField = {
     label: string;

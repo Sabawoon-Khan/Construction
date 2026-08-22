@@ -2,13 +2,17 @@
 import { Link } from '@inertiajs/vue3';
 import { Printer } from '@lucide/vue';
 import Can from '@/components/Can.vue';
+import { computed } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money } from '@/lib/utils';
 
-defineProps<{
+const props = defineProps<{
     item: Record<string, any>;
     shareholders: {
         id: number;
@@ -36,6 +40,22 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslations();
+const tableColumnsShareholders = computed(() => [
+    { key: 'name', label: t('Name') },
+    { key: 'ownership_percentage', label: t('Share') },
+    { key: 'contributed_total', label: t('Money in') },
+    { key: 'entitled_share', label: t('Profit share') },
+    { key: 'paid_total', label: t('Paid out') },
+    { key: 'balance_owed', label: t('Still owed') },
+]);
+const tableColumnsContributions = computed(() => [
+    { key: 'invested_at', label: t('Date') },
+    { key: 'partner.name', label: t('Shareholder') },
+    { key: 'amount', label: t('Amount') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
+const shareholderSort = useTableSort(() => props.shareholders);
+const contributionSort = useTableSort(() => props.contributions);
 const { baseCurrency } = useCurrency();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
@@ -84,33 +104,63 @@ const formatDate = (value: string | null | undefined) =>
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <TableFrame table-id="project-shareholders" :columns="tableColumnsShareholders">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh
+                                column="name"
+                                :sort-key="shareholderSort.sortKey.value"
+                                :sort-dir="shareholderSort.sortDir.value"
+                                @sort="shareholderSort.sortBy"
+                            >
                                 {{ t('Name') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="ownership_percentage"
+                                :sort-key="shareholderSort.sortKey.value"
+                                :sort-dir="shareholderSort.sortDir.value"
+                                @sort="shareholderSort.sortBy"
+                            >
                                 {{ t('Share') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="contributed_total"
+                                :sort-key="shareholderSort.sortKey.value"
+                                :sort-dir="shareholderSort.sortDir.value"
+                                @sort="shareholderSort.sortBy"
+                            >
                                 {{ t('Money in') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="entitled_share"
+                                :sort-key="shareholderSort.sortKey.value"
+                                :sort-dir="shareholderSort.sortDir.value"
+                                @sort="shareholderSort.sortBy"
+                            >
                                 {{ t('Profit share') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="paid_total"
+                                :sort-key="shareholderSort.sortKey.value"
+                                :sort-dir="shareholderSort.sortDir.value"
+                                @sort="shareholderSort.sortBy"
+                            >
                                 {{ t('Paid out') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="balance_owed"
+                                :sort-key="shareholderSort.sortKey.value"
+                                :sort-dir="shareholderSort.sortDir.value"
+                                @sort="shareholderSort.sortBy"
+                            >
                                 {{ t('Still owed') }}
-                            </th>
+                            </SortableTh>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="s in shareholders"
+                            v-for="s in shareholderSort.sortedRows"
                             :key="s.id"
                             class="border-t hover:bg-muted/30"
                         >
@@ -154,7 +204,7 @@ const formatDate = (value: string | null | undefined) =>
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
 
         <div
@@ -166,21 +216,36 @@ const formatDate = (value: string | null | undefined) =>
                     {{ t('Contribution history') }}
                 </h3>
             </div>
-            <div class="overflow-x-auto">
+            <TableFrame table-id="project-contributions" :columns="tableColumnsContributions">
                 <table class="min-w-full text-sm">
                     <thead
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh
+                                column="invested_at"
+                                :sort-key="contributionSort.sortKey.value"
+                                :sort-dir="contributionSort.sortDir.value"
+                                @sort="contributionSort.sortBy"
+                            >
                                 {{ t('Date') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="partner.name"
+                                :sort-key="contributionSort.sortKey.value"
+                                :sort-dir="contributionSort.sortDir.value"
+                                @sort="contributionSort.sortBy"
+                            >
                                 {{ t('Shareholder') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="amount"
+                                :sort-key="contributionSort.sortKey.value"
+                                :sort-dir="contributionSort.sortDir.value"
+                                @sort="contributionSort.sortBy"
+                            >
                                 {{ t('Amount') }}
-                            </th>
+                            </SortableTh>
                             <th class="px-4 py-3 text-end font-medium">
                                 {{ t('Actions') }}
                             </th>
@@ -188,7 +253,7 @@ const formatDate = (value: string | null | undefined) =>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="c in contributions"
+                            v-for="c in contributionSort.sortedRows"
                             :key="c.id"
                             class="border-t hover:bg-muted/30"
                         >
@@ -225,7 +290,7 @@ const formatDate = (value: string | null | undefined) =>
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
     </div>
 </template>

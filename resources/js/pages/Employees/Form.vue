@@ -50,6 +50,16 @@ defineOptions({
                     <InputError :message="errors.name" />
                 </div>
                 <div class="grid gap-2">
+                    <Label for="takhallus">{{ t('Takhallus') }}</Label>
+                    <Input id="takhallus" name="takhallus" type="text" :default-value="item?.takhallus ?? ''" />
+                    <InputError :message="errors.takhallus" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="father_name">{{ t('Father name') }}</Label>
+                    <Input id="father_name" name="father_name" type="text" :default-value="item?.father_name ?? ''" />
+                    <InputError :message="errors.father_name" />
+                </div>
+                <div class="grid gap-2">
                     <Label for="employee_no">{{ t('Employee No') }}</Label>
                     <Input id="employee_no" name="employee_no" type="text" :default-value="item?.employee_no ?? ''" />
                     <InputError :message="errors.employee_no" />
@@ -75,7 +85,12 @@ defineOptions({
                     <InputError :message="errors.designation" />
                 </div>
                 <div class="grid gap-2">
-                    <Label for="joining_date">{{ t('Joining Date') }}</Label>
+                    <Label for="working_hours">{{ t('Working hours') }}</Label>
+                    <Input id="working_hours" name="working_hours" type="text" :default-value="item?.working_hours ?? ''" :placeholder="t('e.g. 8 hours per day')" />
+                    <InputError :message="errors.working_hours" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="joining_date">{{ t('Employment Date') }}</Label>
                     <Input id="joining_date" name="joining_date" type="date" :default-value="item?.joining_date?.slice?.(0, 10) ?? ''" />
                     <InputError :message="errors.joining_date" />
                 </div>
@@ -87,6 +102,15 @@ defineOptions({
                     </div>
                     <InputError :message="errors.basic_salary" />
                     <InputError :message="errors.currency" />
+                </div>
+                <div class="grid gap-2">
+                    <Label for="salary_payment_method">{{ t('Salary payment method') }}</Label>
+                    <select id="salary_payment_method" name="salary_payment_method" class="mis-form-select">
+                        <option value="" :selected="!item?.salary_payment_method">{{ t('Select') }}</option>
+                        <option value="cash" :selected="item?.salary_payment_method === 'cash'">{{ t('Cash') }}</option>
+                        <option value="bank" :selected="item?.salary_payment_method === 'bank'">{{ t('Bank') }}</option>
+                    </select>
+                    <InputError :message="errors.salary_payment_method" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="status">{{ t('Status') }}</Label>

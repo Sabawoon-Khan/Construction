@@ -5,14 +5,25 @@ import Can from '@/components/Can.vue';
 import DetailGrid from '@/components/DetailGrid.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
+import { computed } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money, moneyByCurrency } from '@/lib/utils';
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'purchase_no', label: t('Purchase') },
+    { key: 'project.name', label: t('Project') },
+    { key: 'total_amount', label: t('Total') },
+    { key: 'remaining_amount', label: t('Remaining') },
+    { key: 'status', label: t('Status') },
+]);
 
-defineProps<{
+const props = defineProps<{
     item: Record<string, any>;
     stats: {
         purchases_count: number;
@@ -22,6 +33,8 @@ defineProps<{
         remaining_by_currency?: Record<string, number>;
     };
 }>();
+
+const { sortedRows } = provideTableSort(() => props.item.purchases ?? []);
 
 defineOptions({
     layout: {
@@ -89,18 +102,19 @@ defineOptions({
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Recent purchases') }}</h3>
             </div>
+            <TableFrame table-id="supplier-purchases" :columns="tableColumns">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('Purchase') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Total') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Remaining') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                        <SortableTh column="purchase_no">{{ t('Purchase') }}</SortableTh>
+                        <SortableTh column="project.name">{{ t('Project') }}</SortableTh>
+                        <SortableTh column="total_amount">{{ t('Total') }}</SortableTh>
+                        <SortableTh column="remaining_amount">{{ t('Remaining') }}</SortableTh>
+                        <SortableTh column="status">{{ t('Status') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="purchase in item.purchases" :key="purchase.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="purchase in sortedRows" :key="purchase.id" class="border-t hover:bg-muted/30">
                         <td class="px-4 py-3">
                             <Link :href="`/purchases/${purchase.id}`" class="font-medium text-primary hover:underline">{{ purchase.purchase_no }}</Link>
                         </td>
@@ -114,6 +128,7 @@ defineOptions({
                     </tr>
                 </tbody>
             </table>
+            </TableFrame>
         </div>
     </div>
 </template>

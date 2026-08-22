@@ -10,16 +10,20 @@ import {
     Pencil,
     Receipt,
     Trash2,
+    UserRound,
     Warehouse,
 } from '@lucide/vue';
 import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
+import EmployeeAddDialog from '@/components/EmployeeAddDialog.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
 import Heading from '@/components/Heading.vue';
 import { MisSearchInput, MisTabs } from '@/components/mis';
 import ShareholderAddDialog from '@/components/ShareholderAddDialog.vue';
 import ShareholderContributionDialog from '@/components/ShareholderContributionDialog.vue';
 import ShareholderPayoutDialog from '@/components/ShareholderPayoutDialog.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,9 +35,11 @@ import {
 } from '@/components/ui/dialog';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
 import ProjectShowAttachmentsTab from './partials/ProjectShowAttachmentsTab.vue';
+import ProjectShowEmployeesTab from './partials/ProjectShowEmployeesTab.vue';
 import ProjectShowExpensesTab from './partials/ProjectShowExpensesTab.vue';
 import ProjectShowInfoTab from './partials/ProjectShowInfoTab.vue';
 import ProjectShowPurchasesTab, {
@@ -56,6 +62,30 @@ defineProps<{
         balance_owed: number;
     }[];
     available_shareholders: { id: number; name: string; phone?: string }[];
+    employees: {
+        id: number;
+        employee_no?: string;
+        name: string;
+        department?: string;
+        designation?: string;
+        phone?: string;
+        basic_salary?: number | null;
+        currency?: string;
+        status?: string;
+        started_at?: string | null;
+        role_on_project?: string | null;
+        working_hours?: string | null;
+        notes?: string | null;
+    }[];
+    available_employees: {
+        id: number;
+        name: string;
+        employee_no?: string;
+        department?: string;
+        designation?: string;
+        working_hours?: string;
+        phone?: string;
+    }[];
     contributions: {
         id: number;
         partner_id: number;
@@ -121,6 +151,7 @@ const expenseDialogOpen = ref(false);
 const selectedExpense = ref<Record<string, any> | null>(null);
 const expenseStartEditing = ref(false);
 const addShareholderOpen = ref(false);
+const addEmployeeOpen = ref(false);
 const contributionDialogOpen = ref(false);
 const payoutDialogOpen = ref(false);
 const materialDialogOpen = ref(false);
@@ -128,6 +159,14 @@ const selectedMaterial = ref<PurchaseMaterial | null>(null);
 const materialLineQuery = ref('');
 const tab = ref('info');
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'purchase_no', label: t('Purchase') },
+    { key: 'purchase_date', label: t('Date') },
+    { key: 'supplier', label: t('Supplier') },
+    { key: 'quantity', label: t('Qty') },
+    { key: 'unit_cost', label: t('Unit cost') },
+    { key: 'total_cost', label: t('Total') },
+]);
 const { baseCurrency } = useCurrency();
 
 function openExpense(expense: Record<string, any> | null, edit = false) {
@@ -162,10 +201,13 @@ const filteredMaterialLines = computed(() => {
     );
 });
 
+const { sortedRows } = provideTableSort(filteredMaterialLines);
+
 const tabs = [
     { id: 'info', label: t('Project info'), icon: Info },
     { id: 'attachments', label: t('Attachments'), icon: Paperclip },
     { id: 'shareholders', label: t('Shareholders'), icon: Handshake },
+    { id: 'employees', label: t('Employees'), icon: UserRound },
     { id: 'expenses', label: t('Expenses'), icon: Receipt },
     { id: 'purchases', label: t('Purchases'), icon: Package },
     { id: 'stock', label: t('Stock'), icon: Warehouse },
@@ -337,6 +379,14 @@ defineOptions({
             />
         </div>
 
+        <div v-show="tab === 'employees'">
+            <ProjectShowEmployeesTab
+                :item="item"
+                :employees="employees"
+                @add-employee="addEmployeeOpen = true"
+            />
+        </div>
+
         <div v-show="tab === 'expenses'">
             <ProjectShowExpensesTab
                 :item="item"
@@ -390,34 +440,35 @@ defineOptions({
                 :placeholder="t('Search purchases...')"
             />
             <div class="-mx-6 min-h-0 flex-1 overflow-auto border-t">
+                <TableFrame table-id="project-material-lines" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead
                         class="sticky top-0 bg-muted/90 text-start text-muted-foreground backdrop-blur"
                     >
                         <tr>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh column="purchase_no">
                                 {{ t('Purchase') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh column="purchase_date">
                                 {{ t('Date') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh column="supplier">
                                 {{ t('Supplier') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh column="quantity">
                                 {{ t('Qty') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh column="unit_cost">
                                 {{ t('Unit cost') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh column="total_cost">
                                 {{ t('Total') }}
-                            </th>
+                            </SortableTh>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="line in filteredMaterialLines"
+                            v-for="line in sortedRows"
                             :key="line.id"
                             class="border-t hover:bg-muted/30"
                         >
@@ -469,6 +520,7 @@ defineOptions({
                         </tr>
                     </tbody>
                 </table>
+                </TableFrame>
             </div>
         </DialogContent>
     </Dialog>
@@ -485,6 +537,12 @@ defineOptions({
         v-model:open="addShareholderOpen"
         :project-id="item.id"
         :available-shareholders="available_shareholders"
+    />
+
+    <EmployeeAddDialog
+        v-model:open="addEmployeeOpen"
+        :project-id="item.id"
+        :available-employees="available_employees"
     />
 
     <ShareholderContributionDialog

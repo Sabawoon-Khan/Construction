@@ -1,0 +1,1 @@
+import{B as e,Ln as t,Sr as n,_t as r,at as i,ct as a,nn as o}from"./useTranslations-BPynr0k6.js";var s={class:`text-sm text-red-600 dark:text-red-500`},c=r({__name:`InputError`,props:{message:{}},setup(r){return(c,l)=>t((o(),a(`div`,null,[i(`p`,s,n(r.message),1)],512)),[[e,r.message]])}});export{c as t};

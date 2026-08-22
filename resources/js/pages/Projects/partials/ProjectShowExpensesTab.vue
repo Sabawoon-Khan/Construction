@@ -4,10 +4,13 @@ import { Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import Can from '@/components/Can.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { MisSearchInput } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
@@ -38,6 +41,16 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'expense_date', label: t('Date') },
+    { key: 'reference_no', label: t('Bill number') },
+    { key: 'paid_to', label: t('Paid to') },
+    { key: 'description', label: t('Description') },
+    { key: 'payment_method', label: t('Paying type') },
+    { key: 'amount', label: t('Amount') },
+    { key: 'attachments', label: t('Attachments') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { baseCurrency } = useCurrency();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
@@ -88,6 +101,8 @@ const filteredExpenses = computed(() => {
         return haystack.includes(q);
     });
 });
+
+const { sortedRows } = provideTableSort(filteredExpenses);
 </script>
 
 <template>
@@ -122,23 +137,23 @@ const filteredExpenses = computed(() => {
             />
         </div>
 
-        <div class="overflow-x-auto">
+        <TableFrame table-id="project-expenses" :columns="tableColumns">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Bill number') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Paid to') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Paying type') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Attachments') }}</th>
+                        <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
+                        <SortableTh column="reference_no">{{ t('Bill number') }}</SortableTh>
+                        <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
+                        <SortableTh column="description">{{ t('Description') }}</SortableTh>
+                        <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
+                        <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
+                        <SortableTh column="attachments">{{ t('Attachments') }}</SortableTh>
                         <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr
-                        v-for="expense in filteredExpenses"
+                        v-for="expense in sortedRows"
                         :key="expense.id"
                         class="cursor-pointer border-t hover:bg-muted/30"
                         @click="emit('open-expense', expense)"
@@ -241,6 +256,6 @@ const filteredExpenses = computed(() => {
                     </tr>
                 </tbody>
             </table>
-        </div>
+        </TableFrame>
     </div>
 </template>

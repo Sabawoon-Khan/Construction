@@ -6,12 +6,16 @@ import DetailGrid from '@/components/DetailGrid.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import { computed } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
@@ -25,6 +29,33 @@ const props = defineProps<{
     total_amount_base: number;
 }>();
 const { t } = useTranslations();
+const tableColumnsItems = computed(() => [
+    { key: 'material.name', label: t('Material') },
+    { key: 'quantity', label: t('Qty') },
+    { key: 'unit_cost', label: t('Unit cost') },
+    { key: 'total_cost', label: t('Total') },
+]);
+const tableColumnsPayments = computed(() => [
+    { key: 'payment_no', label: t('No') },
+    { key: 'paid_at', label: t('Date') },
+    { key: 'amount', label: t('Amount') },
+    { key: 'payment_method', label: t('Method') },
+]);
+const {
+    sortedRows: sortedItems,
+    sortKey: itemsSortKey,
+    sortDir: itemsSortDir,
+    sortBy: sortItems,
+} = useTableSort(() => props.purchase.items ?? []);
+const {
+    sortedRows: sortedPayments,
+    sortKey: paymentsSortKey,
+    sortDir: paymentsSortDir,
+    sortBy: sortPayments,
+} = useTableSort(() => props.purchase.payments ?? [], {
+    defaultKey: 'paid_at',
+    defaultDir: 'desc',
+});
 const { baseCurrency } = useCurrency();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
@@ -129,17 +160,18 @@ defineOptions({
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Materials (in stock)') }}</h3>
             </div>
+            <TableFrame table-id="purchase-items" :columns="tableColumnsItems">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('Material') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Qty') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Unit cost') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Total') }}</th>
+                        <SortableTh column="material.name" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Material') }}</SortableTh>
+                        <SortableTh column="quantity" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Qty') }}</SortableTh>
+                        <SortableTh column="unit_cost" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Unit cost') }}</SortableTh>
+                        <SortableTh column="total_cost" :sort-key="itemsSortKey" :sort-dir="itemsSortDir" @sort="sortItems">{{ t('Total') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="line in purchase.items" :key="line.id" class="border-t">
+                    <tr v-for="line in sortedItems" :key="line.id" class="border-t">
                         <td class="px-4 py-3">{{ line.material?.name }} {{ line.material?.unit?.unit_name ? `(${line.material.unit.unit_name})` : '' }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ line.quantity }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(line.unit_cost, purchase.currency) }}</td>
@@ -147,6 +179,7 @@ defineOptions({
                     </tr>
                 </tbody>
             </table>
+            </TableFrame>
         </div>
 
         <div id="pay" v-if="remaining_amount > 0" class="space-y-4 rounded-xl border bg-card p-5 shadow-sm">
@@ -187,17 +220,18 @@ defineOptions({
             <div class="border-b px-5 py-3">
                 <h3 class="text-sm font-semibold">{{ t('Payments to supplier') }}</h3>
             </div>
+            <TableFrame table-id="purchase-payments" :columns="tableColumnsPayments">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
-                        <th class="px-4 py-3 font-medium">{{ t('No') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Amount') }}</th>
-                        <th class="px-4 py-3 font-medium">{{ t('Method') }}</th>
+                        <SortableTh column="payment_no" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('No') }}</SortableTh>
+                        <SortableTh column="paid_at" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('Date') }}</SortableTh>
+                        <SortableTh column="amount" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('Amount') }}</SortableTh>
+                        <SortableTh column="payment_method" :sort-key="paymentsSortKey" :sort-dir="paymentsSortDir" @sort="sortPayments">{{ t('Method') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="payment in purchase.payments" :key="payment.id" class="border-t">
+                    <tr v-for="payment in sortedPayments" :key="payment.id" class="border-t">
                         <td class="px-4 py-3">
                             <Link :href="`/payments/${payment.id}`" class="hover:underline">{{ payment.payment_no }}</Link>
                         </td>
@@ -210,6 +244,7 @@ defineOptions({
                     </tr>
                 </tbody>
             </table>
+            </TableFrame>
         </div>
     </div>
 </template>

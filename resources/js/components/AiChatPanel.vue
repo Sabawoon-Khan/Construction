@@ -32,10 +32,12 @@ import {
     useAiChat,
     type AiChatPendingApproval,
 } from '@/composables/useAiChat';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 
 const page = usePage();
 const { t } = useTranslations();
+const calendar = useCalendar();
 const {
     open,
     view,
@@ -239,10 +241,7 @@ function formatWhen(value: string | null): string {
         });
     }
 
-    return date.toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-    });
+    return calendar.format(value) || '';
 }
 
 async function confirmDelete(id: string): Promise<void> {

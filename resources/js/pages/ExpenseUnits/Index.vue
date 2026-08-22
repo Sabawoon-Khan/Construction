@@ -4,6 +4,8 @@ import { Pencil, Plus, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import InputError from '@/components/InputError.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -18,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 
@@ -29,7 +32,13 @@ const props = defineProps<{
 
 const { t } = useTranslations();
 const { can } = useMisPage();
+const tableColumns = computed(() => [
+    { key: 'unit_name', label: t('Unit name') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const search = ref(props.filters?.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items);
 const dialogOpen = ref(false);
 const editing = ref<{ id: number; unit_name: string } | null>(null);
 const isEdit = computed(() => !!editing.value);
@@ -117,19 +126,19 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="expense-units" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Unit name') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="unit_name">{{ t('Unit name') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in items"
+                            v-for="item in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
@@ -145,7 +154,7 @@ function rowActions(item: { id: number; unit_name: string }): RowActionItem[] {
                         <EmptyState v-if="!items.length" :colspan="3" :title="t('No units yet')" />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
     </div>
 

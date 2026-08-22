@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCalendar } from '@/composables/useCalendar';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 
 const props = defineProps<{
@@ -32,6 +36,15 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'from_currency', label: t('From') },
+    { key: 'to_currency', label: t('To') },
+    { key: 'rate', label: t('Rate') },
+    { key: 'effective_date', label: t('Effective date') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
+const { sortedRows } = provideTableSort(() => props.exchange_rates);
+const calendar = useCalendar();
 
 const baseCurrency = ref(props.company.base_currency);
 const newRate = ref({
@@ -202,23 +215,23 @@ defineOptions({
                 </div>
             </Form>
 
-            <div class="overflow-x-auto">
+            <TableFrame table-id="company-exchange-rates" :columns="tableColumns">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b text-start text-muted-foreground">
-                            <th class="py-2 pr-4">{{ t('From') }}</th>
-                            <th class="py-2 pr-4">{{ t('To') }}</th>
-                            <th class="py-2 pr-4">{{ t('Rate') }}</th>
-                            <th class="py-2 pr-4">{{ t('Effective date') }}</th>
+                            <SortableTh class="py-2 pr-4" column="from_currency">{{ t('From') }}</SortableTh>
+                            <SortableTh class="py-2 pr-4" column="to_currency">{{ t('To') }}</SortableTh>
+                            <SortableTh class="py-2 pr-4" column="rate">{{ t('Rate') }}</SortableTh>
+                            <SortableTh class="py-2 pr-4" column="effective_date">{{ t('Effective date') }}</SortableTh>
                             <th class="py-2 text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y">
-                        <tr v-for="rate in exchange_rates" :key="rate.id">
+                        <tr v-for="rate in sortedRows" :key="rate.id">
                             <td class="py-3 pr-4">{{ rate.from_currency }}</td>
                             <td class="py-3 pr-4">{{ rate.to_currency }}</td>
                             <td class="py-3 pr-4 tabular-nums">{{ Number(rate.rate).toFixed(6) }}</td>
-                            <td class="py-3 pr-4">{{ rate.effective_date }}</td>
+                            <td class="py-3 pr-4 whitespace-nowrap">{{ calendar.format(rate.effective_date) || '—' }}</td>
                             <td class="py-3 text-end">
                                 <Form
                                     :action="`/settings/company/exchange-rates/${rate.id}`"
@@ -239,7 +252,7 @@ defineOptions({
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
     </div>
 </template>

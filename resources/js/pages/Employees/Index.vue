@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { translateStatus } from '@/lib/translateStatus';
@@ -21,8 +24,25 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
-const { viewAction, editAction, can } = useMisPage();
+const tableColumns = computed(() => [
+    { key: 'employee_no', label: t('Employee No') },
+    { key: 'name', label: t('Name') },
+    { key: 'takhallus', label: t('Takhallus') },
+    { key: 'father_name', label: t('Father name') },
+    { key: 'department', label: t('Department') },
+    { key: 'designation', label: t('Designation') },
+    { key: 'working_hours', label: t('Working hours') },
+    { key: 'employment_date', label: t('Employment Date') },
+    { key: 'phone', label: t('Phone') },
+    { key: 'basic_salary', label: t('Basic Salary') },
+    { key: 'salary_payment_method', label: t('Salary payment method') },
+    { key: 'status', label: t('Status') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
+const { viewAction, editAction, can, formatDate } = useMisPage();
 
 defineOptions({
     layout: {
@@ -40,6 +60,18 @@ function applySearch() {
 function clearFilters() {
     search.value = '';
     applySearch();
+}
+
+function paymentMethodLabel(method: string | null | undefined): string {
+    if (method === 'cash') {
+        return t('Cash');
+    }
+
+    if (method === 'bank') {
+        return t('Bank');
+    }
+
+    return '—';
 }
 
 function rowActions(item: Item): RowActionItem[] {
@@ -79,16 +111,21 @@ function rowActions(item: Item): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="employees" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
                             <th class="px-4 py-3 font-medium">{{ t('Employee No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Takhallus') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Father name') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Department') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Designation') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Working hours') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Employment Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Phone') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Basic Salary') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ t('Salary payment method') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
 
@@ -107,10 +144,15 @@ function rowActions(item: Item): RowActionItem[] {
                                 </Link>
                             </td>
                             <td class="px-4 py-3">{{ item.name || '—' }}</td>
+                            <td class="px-4 py-3">{{ item.takhallus || '—' }}</td>
+                            <td class="px-4 py-3">{{ item.father_name || '—' }}</td>
                             <td class="px-4 py-3">{{ item.department || '—' }}</td>
                             <td class="px-4 py-3">{{ item.designation || '—' }}</td>
+                            <td class="px-4 py-3">{{ item.working_hours || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(item.joining_date) }}</td>
                             <td class="px-4 py-3">{{ item.phone || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ item.basic_salary ? money(item.basic_salary, item.currency) : '—' }}</td>
+                            <td class="px-4 py-3">{{ paymentMethodLabel(item.salary_payment_method) }}</td>
                             <td class="px-4 py-3">
                                 <span>{{ translateStatus(item.status, t) }}</span>
                             </td>
@@ -124,12 +166,12 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="9"
+                            :colspan="14"
                             :title="t('No employees yet')"
                         />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

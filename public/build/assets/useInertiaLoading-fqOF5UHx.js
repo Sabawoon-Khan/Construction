@@ -1,0 +1,1 @@
+import{Xt as e,en as t,or as n,wr as r}from"./useTranslations-BPynr0k6.js";function i(){let i=n(!1),a,o;return e(()=>{a=r.on(`start`,e=>{e.detail.visit.prefetch||(i.value=!0)}),o=r.on(`finish`,()=>{i.value=!1})}),t(()=>{a?.(),o?.()}),{loading:i}}export{i as t};

@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Banknote, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money, moneyByCurrency } from '@/lib/utils';
@@ -19,7 +22,20 @@ const props = defineProps<{
     totals: { count: number; total_amount: number; total_amount_base: number; paid: number; paid_base: number; remaining: number; remaining_base: number; total_by_currency?: Record<string, number>; paid_by_currency?: Record<string, number>; remaining_by_currency?: Record<string, number> };
 }>();
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'purchase_no', label: t('Purchase No') },
+    { key: 'purchase_date', label: t('Date') },
+    { key: 'project.name', label: t('Project') },
+    { key: 'supplier.name', label: t('Supplier') },
+    { key: 'total_amount', label: t('Total') },
+    { key: 'paid_amount', label: t('Paid') },
+    { key: 'remaining_amount', label: t('Remaining') },
+    { key: 'status', label: t('Status') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { baseCurrency } = useCurrency();
 const { viewAction, editAction, can, formatDate } = useMisPage();
 
@@ -81,25 +97,25 @@ function rowActions(item: any): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="purchases" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Purchase No') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Supplier') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Total') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Paid') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Remaining') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="purchase_no">{{ t('Purchase No') }}</SortableTh>
+                            <SortableTh column="purchase_date">{{ t('Date') }}</SortableTh>
+                            <SortableTh column="project.name">{{ t('Project') }}</SortableTh>
+                            <SortableTh column="supplier.name">{{ t('Supplier') }}</SortableTh>
+                            <SortableTh column="total_amount">{{ t('Total') }}</SortableTh>
+                            <SortableTh column="paid_amount">{{ t('Paid') }}</SortableTh>
+                            <SortableTh column="remaining_amount">{{ t('Remaining') }}</SortableTh>
+                            <SortableTh column="status">{{ t('Status') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in items.data" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr v-for="item in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
                             <td class="px-4 py-3 font-medium">
                                 <Link :href="`/purchases/${item.id}`" class="hover:text-primary hover:underline">{{ item.purchase_no }}</Link>
                             </td>
@@ -121,7 +137,7 @@ function rowActions(item: any): RowActionItem[] {
                         <EmptyState v-if="!items.data.length" :colspan="10" :title="t('No purchases yet')" />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
     </div>

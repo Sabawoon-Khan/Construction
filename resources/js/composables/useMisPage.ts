@@ -14,6 +14,11 @@ export function useMisPage() {
         fallback = '—',
     ): string => calendar.format(value) || fallback;
 
+    const formatDateTime = (
+        value: Date | string | null | undefined,
+        fallback = '—',
+    ): string => calendar.formatDateTime(value) || fallback;
+
     const gated = (
         action: RowActionItem,
         permission?: string,
@@ -73,6 +78,7 @@ export function useMisPage() {
         t,
         can,
         formatDate,
+        formatDateTime,
         viewAction,
         editAction,
         deleteAction,

@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { Eye, Pencil, Trash2 } from '@lucide/vue';
-import { ref } from 'vue';
+import { Eye, Pencil, Printer, Trash2 } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import IncomeRecordDialog from '@/components/IncomeRecordDialog.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import { useCurrency } from '@/composables/useCurrency';
 import { useMisPage } from '@/composables/useMisPage';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money, moneyByCurrency } from '@/lib/utils';
@@ -20,7 +23,15 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search ?? '');
+const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'income_date', label: t('Date') },
+    { key: 'description', label: t('Description') },
+    { key: 'amount', label: t('Total amount') },
+    { key: 'creator.name', label: t('Added by') },
+    { key: 'actions', label: t('Actions'), locked: true },
+]);
 const { baseCurrency } = useCurrency();
 const { can, formatDate } = useMisPage();
 const dialogOpen = ref(false);
@@ -51,6 +62,7 @@ function openRecord(item: Record<string, any> | null, edit = false) {
 function rowActions(item: any): RowActionItem[] {
     return [
         { label: t('View'), icon: Eye, onClick: () => openRecord(item, false) },
+        { label: t('Print'), icon: Printer, href: `/incomes/${item.id}` },
         { label: t('Edit'), icon: Pencil, onClick: () => openRecord(item, true), hidden: !can('incomes.edit') },
         { separator: true, isLabel: true, label: t('Danger') },
         {
@@ -85,21 +97,21 @@ function rowActions(item: any): RowActionItem[] {
         </MisStatGrid>
 
         <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="overflow-x-auto">
+            <TableFrame table-id="incomes" :columns="tableColumns">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Description') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Total amount') }}</th>
-                            <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <SortableTh column="income_date">{{ t('Date') }}</SortableTh>
+                            <SortableTh column="description">{{ t('Description') }}</SortableTh>
+                            <SortableTh column="amount">{{ t('Total amount') }}</SortableTh>
+                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
 
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in items.data"
+                            v-for="item in sortedRows"
                             :key="item.id"
                             class="cursor-pointer border-b last:border-0 transition-colors hover:bg-muted/30"
                             @click="openRecord(item)"
@@ -118,7 +130,7 @@ function rowActions(item: any): RowActionItem[] {
                         <EmptyState v-if="!items.data.length" :colspan="5" :title="t('No income records yet')" />
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
             <Pagination :paginator="items" />
         </div>
 

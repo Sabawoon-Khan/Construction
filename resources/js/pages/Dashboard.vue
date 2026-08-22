@@ -18,8 +18,11 @@ import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { translateStatus } from '@/lib/translateStatus';
 import { moneyByCurrency, resolveCurrency } from '@/lib/utils';
@@ -34,6 +37,14 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const tableColumns = computed(() => [
+    { key: 'name', label: t('Project') },
+    { key: 'progress_percent', label: t('Progress') },
+    { key: 'revenue', label: t('Revenue') },
+    { key: 'expenses', label: t('Expenses') },
+    { key: 'profit', label: t('Profit') },
+]);
+const { sortedRows } = provideTableSort(() => props.stats.projects || []);
 const calendar = useCalendar();
 const { baseCurrency } = useCurrency();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
@@ -355,20 +366,20 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                         <Link href="/projects">{{ t('View all') }} <ArrowUpRight class="size-4" /></Link>
                     </Button>
                 </div>
-                <div class="overflow-x-auto">
+                <TableFrame table-id="dashboard-projects" :columns="tableColumns">
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Project') }}</th>
-                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Progress') }}</th>
-                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Revenue') }}</th>
-                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Expenses') }}</th>
-                                <th class="px-5 py-3 whitespace-nowrap">{{ t('Profit') }}</th>
+                                <SortableTh class="px-5" column="name">{{ t('Project') }}</SortableTh>
+                                <SortableTh class="px-5" column="progress_percent">{{ t('Progress') }}</SortableTh>
+                                <SortableTh class="px-5" column="revenue">{{ t('Revenue') }}</SortableTh>
+                                <SortableTh class="px-5" column="expenses">{{ t('Expenses') }}</SortableTh>
+                                <SortableTh class="px-5" column="profit">{{ t('Profit') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
                             <tr
-                                v-for="p in stats.projects || []"
+                                v-for="p in sortedRows"
                                 :key="p.id"
                                 class="border-t"
                             >
@@ -404,7 +415,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableFrame>
             </div>
 
             <!-- Shareholder: project shares -->

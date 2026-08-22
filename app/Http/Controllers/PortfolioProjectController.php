@@ -53,7 +53,7 @@ class PortfolioProjectController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Portfolio/Index', [
-            'items' => $query->ordered()->paginate(15)->withQueryString(),
+            'items' => $query->latest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
         ]);

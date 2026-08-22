@@ -4,11 +4,14 @@ import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import InputError from '@/components/InputError.vue';
 import { MisSearchInput } from '@/components/mis';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
 
@@ -56,6 +59,21 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslations();
+const tableColumnsMaterials = computed(() => [
+    { key: 'name', label: t('Material') },
+    { key: 'purchase_count', label: t('Purchases') },
+    { key: 'quantity', label: t('Total qty') },
+    { key: 'total_cost_base', label: t('Total cost') },
+]);
+const tableColumnsPurchases = computed(() => [
+    { key: 'purchase_no', label: t('Purchase') },
+    { key: 'purchase_date', label: t('Date') },
+    { key: 'supplier.name', label: t('Supplier') },
+    { key: 'total_amount', label: t('Total') },
+    { key: 'remaining_amount', label: t('Remaining') },
+    { key: 'status', label: t('Status') },
+    { key: 'pay', label: t('Pay'), locked: true },
+]);
 const { baseCurrency } = useCurrency();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
@@ -70,7 +88,7 @@ const filteredPurchaseMaterials = computed(() => {
         return rows;
     }
 
-    return rows.filter((row) =>
+        return rows.filter((row) =>
         [row.name, row.code, row.unit]
             .filter(Boolean)
             .join(' ')
@@ -78,6 +96,9 @@ const filteredPurchaseMaterials = computed(() => {
             .includes(q),
     );
 });
+
+const materialSort = useTableSort(filteredPurchaseMaterials, { defaultKey: 'material_id' });
+const purchaseSort = useTableSort(() => props.purchases ?? []);
 </script>
 
 <template>
@@ -110,29 +131,49 @@ const filteredPurchaseMaterials = computed(() => {
                     :placeholder="t('Search materials...')"
                 />
             </div>
-            <div class="overflow-x-auto">
+            <TableFrame table-id="project-purchase-materials" :columns="tableColumnsMaterials">
                 <table class="min-w-full text-sm">
                     <thead
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh
+                                column="name"
+                                :sort-key="materialSort.sortKey.value"
+                                :sort-dir="materialSort.sortDir.value"
+                                @sort="materialSort.sortBy"
+                            >
                                 {{ t('Material') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="purchase_count"
+                                :sort-key="materialSort.sortKey.value"
+                                :sort-dir="materialSort.sortDir.value"
+                                @sort="materialSort.sortBy"
+                            >
                                 {{ t('Purchases') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="quantity"
+                                :sort-key="materialSort.sortKey.value"
+                                :sort-dir="materialSort.sortDir.value"
+                                @sort="materialSort.sortBy"
+                            >
                                 {{ t('Total qty') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="total_cost_base"
+                                :sort-key="materialSort.sortKey.value"
+                                :sort-dir="materialSort.sortDir.value"
+                                @sort="materialSort.sortBy"
+                            >
                                 {{ t('Total cost') }}
-                            </th>
+                            </SortableTh>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="row in filteredPurchaseMaterials"
+                            v-for="row in materialSort.sortedRows"
                             :key="row.material_id"
                             class="cursor-pointer border-t hover:bg-muted/30"
                             @click="emit('open-material', row)"
@@ -187,7 +228,7 @@ const filteredPurchaseMaterials = computed(() => {
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
 
         <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
@@ -196,28 +237,58 @@ const filteredPurchaseMaterials = computed(() => {
                     {{ t('Project purchases') }}
                 </h3>
             </div>
-            <div class="overflow-x-auto">
+            <TableFrame table-id="project-purchases" :columns="tableColumnsPurchases">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
-                            <th class="px-4 py-3 font-medium">
+                            <SortableTh
+                                column="purchase_no"
+                                :sort-key="purchaseSort.sortKey.value"
+                                :sort-dir="purchaseSort.sortDir.value"
+                                @sort="purchaseSort.sortBy"
+                            >
                                 {{ t('Purchase') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="purchase_date"
+                                :sort-key="purchaseSort.sortKey.value"
+                                :sort-dir="purchaseSort.sortDir.value"
+                                @sort="purchaseSort.sortBy"
+                            >
                                 {{ t('Date') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="supplier.name"
+                                :sort-key="purchaseSort.sortKey.value"
+                                :sort-dir="purchaseSort.sortDir.value"
+                                @sort="purchaseSort.sortBy"
+                            >
                                 {{ t('Supplier') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="total_amount"
+                                :sort-key="purchaseSort.sortKey.value"
+                                :sort-dir="purchaseSort.sortDir.value"
+                                @sort="purchaseSort.sortBy"
+                            >
                                 {{ t('Total') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="remaining_amount"
+                                :sort-key="purchaseSort.sortKey.value"
+                                :sort-dir="purchaseSort.sortDir.value"
+                                @sort="purchaseSort.sortBy"
+                            >
                                 {{ t('Remaining') }}
-                            </th>
-                            <th class="px-4 py-3 font-medium">
+                            </SortableTh>
+                            <SortableTh
+                                column="status"
+                                :sort-key="purchaseSort.sortKey.value"
+                                :sort-dir="purchaseSort.sortDir.value"
+                                @sort="purchaseSort.sortBy"
+                            >
                                 {{ t('Status') }}
-                            </th>
+                            </SortableTh>
                             <th class="px-4 py-3 font-medium text-end">
                                 {{ t('Pay') }}
                             </th>
@@ -225,7 +296,7 @@ const filteredPurchaseMaterials = computed(() => {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="purchase in purchases || []"
+                            v-for="purchase in purchaseSort.sortedRows"
                             :key="purchase.id"
                             class="border-t hover:bg-muted/30"
                         >
@@ -302,7 +373,7 @@ const filteredPurchaseMaterials = computed(() => {
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
     </div>
 </template>

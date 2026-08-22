@@ -14,6 +14,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import PublicSiteFooter from '@/components/public/PublicSiteFooter.vue';
 import PublicSiteHeader from '@/components/public/PublicSiteHeader.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
+import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { publicStockImages } from '@/lib/publicStockImages';
 import '@/pages/welcome/welcome-premium.css';
@@ -55,6 +56,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const calendar = useCalendar();
 
 const lightboxOpen = ref(false);
 const activeMediaIndex = ref(0);
@@ -145,7 +147,9 @@ const facts = computed(() =>
         },
         {
             label: lt('home.portfolio.fact.completed', 'Completed'),
-            value: props.project.completed_on,
+            value: props.project.completed_on
+                ? calendar.format(props.project.completed_on)
+                : null,
         },
         {
             label: lt('home.portfolio.fact.location', 'Location'),

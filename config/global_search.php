@@ -196,7 +196,7 @@ return [
         'label' => 'Employees',
         'model' => Employee::class,
         'permission' => 'employees',
-        'search' => ['employee_no', 'name', 'email', 'phone', 'department', 'designation', 'notes'],
+        'search' => ['employee_no', 'name', 'takhallus', 'father_name', 'email', 'phone', 'department', 'designation', 'notes'],
         'priority' => ['employee_no', 'name', 'phone'],
         'phone' => ['phone'],
         'title' => 'name',

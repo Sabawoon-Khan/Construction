@@ -9,11 +9,14 @@ import {
     TrendingUp,
     Wallet,
 } from '@lucide/vue';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import SortableTh from '@/components/SortableTh.vue';
+import TableFrame from '@/components/TableFrame.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { resolveCurrency } from '@/lib/utils';
 
@@ -42,6 +45,40 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const tableColumnsCategory = computed(() => [
+    { key: 'category', label: t('Category') },
+    { key: 'count', label: t('Count') },
+    { key: 'amount_base', label: t('Amount') },
+]);
+const tableColumnsPartners = computed(() => [
+    { key: 'name', label: t('Shareholder') },
+    { key: 'project_name', label: t('Project') },
+    { key: 'ownership_percentage', label: t('Share %') },
+    { key: 'entitled_share', label: t('Entitled') },
+    { key: 'paid_total', label: t('Paid') },
+    { key: 'balance_owed', label: t('Balance') },
+]);
+const tableColumnsSales = computed(() => [
+    { key: 'contract_date', label: t('Date') },
+    { key: 'customer.name', label: t('Buyer') },
+    { key: 'discount', label: t('Amount') },
+]);
+const tableColumnsExpenses = computed(() => [
+    { key: 'expense_date', label: t('Date') },
+    { key: 'category.name', label: t('Category') },
+    { key: 'description', label: t('Description') },
+    { key: 'amount', label: t('Amount') },
+]);
+const tableColumnsActivity = computed(() => [
+    { key: 'created_at', label: t('Date') },
+    { key: 'subject.name', label: t('Project') },
+    { key: 'to_status', label: t('Status change') },
+]);
+const categorySort = useTableSort(() => props.by_category, { defaultKey: 'amount_base', defaultDir: 'desc' });
+const partnerSort = useTableSort(() => props.partners);
+const salesSort = useTableSort(() => props.sales);
+const expenseSort = useTableSort(() => props.expenses);
+const activitySort = useTableSort(() => props.activity);
 const from = ref(props.filters.from);
 const to = ref(props.filters.to);
 const projectId = ref(String(props.filters.project_id ?? ''));
@@ -275,17 +312,17 @@ function exportUrl(format: string) {
                 <div class="border-b px-5 py-4">
                     <h2 class="font-medium">{{ t('Expenses by category') }}</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <TableFrame table-id="reports-category" :columns="tableColumnsCategory">
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Category') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Count') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Amount') }}</th>
+                                <SortableTh class="px-5" column="category" :sort-key="categorySort.sortKey.value" :sort-dir="categorySort.sortDir.value" @sort="categorySort.sortBy">{{ t('Category') }}</SortableTh>
+                                <SortableTh class="px-5" column="count" :sort-key="categorySort.sortKey.value" :sort-dir="categorySort.sortDir.value" @sort="categorySort.sortBy">{{ t('Count') }}</SortableTh>
+                                <SortableTh class="px-5" column="amount_base" :sort-key="categorySort.sortKey.value" :sort-dir="categorySort.sortDir.value" @sort="categorySort.sortBy">{{ t('Amount') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="row in by_category" :key="row.category" class="border-t">
+                            <tr v-for="row in categorySort.sortedRows" :key="row.category" class="border-t">
                                 <td class="px-5 py-3">{{ row.category }}</td>
                                 <td class="px-5 py-3">{{ row.count }}</td>
                                 <td class="px-5 py-3 tabular-nums">
@@ -299,28 +336,28 @@ function exportUrl(format: string) {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableFrame>
             </div>
 
             <div class="rounded-2xl border bg-card">
                 <div class="border-b px-5 py-4">
                     <h2 class="font-medium">{{ t('Shareholder distribution') }}</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <TableFrame table-id="reports-partners" :columns="tableColumnsPartners">
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Shareholder') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Project') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Share %') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Entitled') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Paid') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Balance') }}</th>
+                                <SortableTh class="px-5" column="name" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Shareholder') }}</SortableTh>
+                                <SortableTh class="px-5" column="project_name" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Project') }}</SortableTh>
+                                <SortableTh class="px-5" column="ownership_percentage" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Share %') }}</SortableTh>
+                                <SortableTh class="px-5" column="entitled_share" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Entitled') }}</SortableTh>
+                                <SortableTh class="px-5" column="paid_total" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Paid') }}</SortableTh>
+                                <SortableTh class="px-5" column="balance_owed" :sort-key="partnerSort.sortKey.value" :sort-dir="partnerSort.sortDir.value" @sort="partnerSort.sortBy">{{ t('Balance') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
                             <tr
-                                v-for="p in partners"
+                                v-for="p in partnerSort.sortedRows"
                                 :key="`${p.id}-${p.project_name}`"
                                 class="border-t"
                             >
@@ -346,7 +383,7 @@ function exportUrl(format: string) {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableFrame>
             </div>
         </div>
 
@@ -355,17 +392,17 @@ function exportUrl(format: string) {
                 <div class="border-b px-5 py-4">
                     <h2 class="font-medium">{{ t('New sales') }}</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <TableFrame table-id="reports-sales" :columns="tableColumnsSales">
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Date') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Buyer') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Amount') }}</th>
+                                <SortableTh class="px-5" column="contract_date" :sort-key="salesSort.sortKey.value" :sort-dir="salesSort.sortDir.value" @sort="salesSort.sortBy">{{ t('Date') }}</SortableTh>
+                                <SortableTh class="px-5" column="customer.name" :sort-key="salesSort.sortKey.value" :sort-dir="salesSort.sortDir.value" @sort="salesSort.sortBy">{{ t('Buyer') }}</SortableTh>
+                                <SortableTh class="px-5" column="discount" :sort-key="salesSort.sortKey.value" :sort-dir="salesSort.sortDir.value" @sort="salesSort.sortBy">{{ t('Amount') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="s in sales" :key="s.id" class="border-t">
+                            <tr v-for="s in salesSort.sortedRows" :key="s.id" class="border-t">
                                 <td class="whitespace-nowrap px-5 py-3">{{ dateOnly(s.contract_date) }}</td>
                                 <td class="px-5 py-3">{{ s.customer?.name }}</td>
                                 <td class="whitespace-nowrap px-5 py-3 tabular-nums">
@@ -387,25 +424,25 @@ function exportUrl(format: string) {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableFrame>
             </div>
 
             <div class="rounded-2xl border bg-card">
                 <div class="border-b px-5 py-4">
                     <h2 class="font-medium">{{ t('New expenses & salaries') }}</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <TableFrame table-id="reports-expenses" :columns="tableColumnsExpenses">
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Date') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Category') }}</th>
-                                <th class="px-5 py-3">{{ t('Description') }}</th>
-                                <th class="whitespace-nowrap px-5 py-3">{{ t('Amount') }}</th>
+                                <SortableTh class="px-5" column="expense_date" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Date') }}</SortableTh>
+                                <SortableTh class="px-5" column="category.name" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Category') }}</SortableTh>
+                                <SortableTh class="px-5" column="description" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Description') }}</SortableTh>
+                                <SortableTh class="px-5" column="amount" :sort-key="expenseSort.sortKey.value" :sort-dir="expenseSort.sortDir.value" @sort="expenseSort.sortBy">{{ t('Amount') }}</SortableTh>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="e in expenses" :key="e.id" class="border-t">
+                            <tr v-for="e in expenseSort.sortedRows" :key="e.id" class="border-t">
                                 <td class="whitespace-nowrap px-5 py-3">{{ dateOnly(e.expense_date) }}</td>
                                 <td class="whitespace-nowrap px-5 py-3">
                                     {{ e.category?.name || t('General') }}
@@ -422,7 +459,7 @@ function exportUrl(format: string) {
                             </tr>
                         </tbody>
                     </table>
-                </div>
+                </TableFrame>
             </div>
         </div>
 
@@ -430,24 +467,24 @@ function exportUrl(format: string) {
             <div class="border-b px-5 py-4">
                 <h2 class="font-medium">{{ t('Project activity') }}</h2>
             </div>
-            <div class="overflow-x-auto">
+            <TableFrame table-id="reports-activity" :columns="tableColumnsActivity">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
-                            <th class="whitespace-nowrap px-5 py-3">{{ t('Date') }}</th>
-                            <th class="whitespace-nowrap px-5 py-3">{{ t('Project') }}</th>
-                            <th class="px-5 py-3">{{ t('Status change') }}</th>
+                            <SortableTh class="px-5" column="created_at" :sort-key="activitySort.sortKey.value" :sort-dir="activitySort.sortDir.value" @sort="activitySort.sortBy">{{ t('Date') }}</SortableTh>
+                            <SortableTh class="px-5" column="subject.name" :sort-key="activitySort.sortKey.value" :sort-dir="activitySort.sortDir.value" @sort="activitySort.sortBy">{{ t('Project') }}</SortableTh>
+                            <SortableTh class="px-5" column="to_status" :sort-key="activitySort.sortKey.value" :sort-dir="activitySort.sortDir.value" @sort="activitySort.sortBy">{{ t('Status change') }}</SortableTh>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="row in activity" :key="row.id" class="border-t">
+                        <tr v-for="row in activitySort.sortedRows" :key="row.id" class="border-t">
                             <td class="whitespace-nowrap px-5 py-3">{{ dateOnly(row.created_at) }}</td>
                             <td class="px-5 py-3">{{ row.subject?.name || t('Project') }}</td>
                             <td class="px-5 py-3">{{ row.from_status }} → {{ row.to_status }}</td>
                         </tr>
                     </tbody>
                 </table>
-            </div>
+            </TableFrame>
         </div>
     </div>
 </template>
