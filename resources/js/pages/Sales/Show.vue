@@ -277,6 +277,7 @@ function submitPayment() {
                         <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
                         <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency) }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(p.created_at) }}</td>
                         <td class="px-4 py-3 text-end">
                             <Button as-child size="sm" variant="outline">
                                 <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
@@ -284,7 +285,7 @@ function submitPayment() {
                         </td>
                     </tr>
                     <tr v-if="!sale.payments?.length">
-                        <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">{{ t('No receipts yet') }}</td>
+                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No receipts yet') }}</td>
                     </tr>
                 </tbody>
             </table>

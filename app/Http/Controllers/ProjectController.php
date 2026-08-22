@@ -155,6 +155,7 @@ class ProjectController extends Controller implements HasMiddleware
             ->orderBy('name')
             ->get([
                 'employees.id',
+                'employees.created_at',
                 'employees.employee_no',
                 'employees.name',
                 'employees.department',
@@ -166,6 +167,7 @@ class ProjectController extends Controller implements HasMiddleware
             ])
             ->map(fn (Employee $employee) => [
                 'id' => $employee->id,
+                'created_at' => $employee->created_at,
                 'employee_no' => $employee->employee_no,
                 'name' => $employee->name,
                 'department' => $employee->department,
@@ -230,7 +232,7 @@ class ProjectController extends Controller implements HasMiddleware
                 ->with('partner:id,name')
                 ->latest('invested_at')
                 ->limit(50)
-                ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at']),
+                ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at', 'created_at']),
             'expenses' => $expensesQuery
                 ->with(['expenseUnit:id,unit_name', 'category:id,name', 'attachments'])
                 ->latest('expense_date')
@@ -252,13 +254,14 @@ class ProjectController extends Controller implements HasMiddleware
                     'payment_method',
                     'expense_unit_id',
                     'expense_category_id',
+                    'created_at',
                 ]),
             'expense_categories' => $this->expenseCategories(),
             'purchases' => $purchasesQuery
                 ->with('supplier:id,name')
                 ->latest('purchase_date')
                 ->limit(50)
-                ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'total_amount_base', 'paid_amount', 'paid_amount_base', 'currency', 'status']),
+                ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'total_amount_base', 'paid_amount', 'paid_amount_base', 'currency', 'status', 'created_at']),
             'purchase_materials' => $this->purchaseMaterialsForProject($project),
             'stock' => $stock->map(function ($row) {
                 return [

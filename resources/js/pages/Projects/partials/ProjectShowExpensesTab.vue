@@ -52,6 +52,7 @@ const tableColumns = computed(() => [
     { key: 'payment_method', label: t('Paying type') },
     { key: 'amount', label: t('Amount') },
     { key: 'attachments', label: t('Attachments') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { baseCurrency } = useCurrency();
@@ -153,6 +154,7 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                         <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
                         <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
                         <SortableTh column="attachments">{{ t('Attachments') }}</SortableTh>
+                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                         <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
                     </tr>
                 </thead>
@@ -200,6 +202,7 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                         <td class="px-4 py-3" @click.stop>
                             <AttachmentLinks :files="expense.attachments" />
                         </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(expense.created_at) }}</td>
                         <td class="px-4 py-3" @click.stop>
                             <div class="flex flex-wrap justify-end gap-1">
                                 <Button
@@ -252,7 +255,7 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                     </tr>
                     <tr v-if="!filteredExpenses.length">
                         <td
-                            colspan="9"
+                            colspan="10"
                             class="px-4 py-10 text-center text-muted-foreground"
                         >
                             {{

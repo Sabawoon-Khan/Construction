@@ -52,6 +52,7 @@ const tableColumnsContributions = computed(() => [
     { key: 'invested_at', label: t('Date') },
     { key: 'partner.name', label: t('Shareholder') },
     { key: 'amount', label: t('Amount') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const shareholderSort = useTableSort(() => props.shareholders ?? []);
@@ -246,6 +247,14 @@ const formatDate = (value: string | null | undefined) =>
                             >
                                 {{ t('Amount') }}
                             </SortableTh>
+                            <SortableTh
+                                column="created_at"
+                                :sort-key="contributionSort.sortKey"
+                                :sort-dir="contributionSort.sortDir"
+                                @sort="contributionSort.sortBy"
+                            >
+                                {{ t('Created at') }}
+                            </SortableTh>
                             <th class="px-4 py-3 text-end font-medium">
                                 {{ t('Actions') }}
                             </th>
@@ -270,6 +279,9 @@ const formatDate = (value: string | null | undefined) =>
                                         c.currency || baseCurrency,
                                     )
                                 }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                                {{ formatDate(c.created_at) }}
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end">

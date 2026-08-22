@@ -30,6 +30,7 @@ type Category = {
     code?: string;
     description?: string | null;
     expenses_count?: number;
+    created_at?: string | null;
 };
 
 const props = defineProps<{

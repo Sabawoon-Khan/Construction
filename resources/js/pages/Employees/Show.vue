@@ -169,6 +169,7 @@ defineOptions({
                             <th class="px-4 py-3 font-medium">{{ t('Started on project') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Working hours') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Created at') }}</th>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -193,6 +194,7 @@ defineOptions({
                             <td class="px-4 py-3">
                                 <StatusBadge :status="project.status" />
                             </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(project.created_at) }}</td>
                             <td class="px-4 py-3 text-end">
                                 <Button as-child size="sm" variant="outline">
                                     <Link :href="`/projects/${project.id}#employees`">{{ t('View on project') }}</Link>
@@ -200,7 +202,7 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!item.projects?.length">
-                            <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">
+                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">
                                 {{ t('Not assigned to any project yet. Add from a project page.') }}
                             </td>
                         </tr>
@@ -226,6 +228,7 @@ defineOptions({
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Notes') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Created at') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -240,9 +243,10 @@ defineOptions({
                             <td class="px-4 py-3">{{ translateStatus(record.status, t) }}</td>
                             <td class="px-4 py-3">{{ record.notes || '—' }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ record.creator?.name || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(record.created_at) }}</td>
                         </tr>
                         <tr v-if="!item.attendance?.length">
-                            <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No attendance records') }}</td>
+                            <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">{{ t('No attendance records') }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -268,6 +272,7 @@ defineOptions({
                             <th class="px-4 py-3 font-medium">{{ t('Net Salary') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Status') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Added by') }}</th>
+                            <th class="px-4 py-3 font-medium whitespace-nowrap">{{ t('Created at') }}</th>
                             <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -285,6 +290,7 @@ defineOptions({
                             <td class="px-4 py-3 tabular-nums font-medium">{{ money(record.net_salary, record.currency || baseCurrency) }}</td>
                             <td class="px-4 py-3">{{ translateStatus(record.status, t) }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ record.creator?.name || '—' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(record.created_at) }}</td>
                             <td class="px-4 py-3 text-end">
                                 <Button as-child size="sm" variant="outline">
                                     <Link :href="`/salaries/${record.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
@@ -292,7 +298,7 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!item.salaries?.length">
-                            <td colspan="9" class="px-4 py-10 text-center text-muted-foreground">{{ t('No salary records') }}</td>
+                            <td colspan="10" class="px-4 py-10 text-center text-muted-foreground">{{ t('No salary records') }}</td>
                         </tr>
                     </tbody>
                 </table>

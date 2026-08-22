@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
@@ -16,7 +17,9 @@ const tableColumns = computed(() => [
     { key: 'sale_no', label: t('Sale') },
     { key: 'customer.name', label: t('Customer') },
     { key: 'unit.list_price', label: t('Amount') },
+    { key: 'created_at', label: t('Created at') },
 ]);
+const { formatDate } = useMisPage();
 const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
 </script>
 
@@ -34,6 +37,7 @@ const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
                         {{ t('Customer') }}
                     </SortableTh>
                     <SortableTh column="unit.list_price">{{ t('Amount') }}</SortableTh>
+                    <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                 </tr>
             </thead>
             <tbody>
@@ -64,10 +68,11 @@ const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
                             )
                         }}
                     </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(sale.created_at) }}</td>
                 </tr>
                 <tr v-if="!item.sales?.length">
                     <td
-                        colspan="3"
+                        colspan="4"
                         class="px-4 py-10 text-center text-muted-foreground"
                     >
                         {{ t('No sales yet') }}

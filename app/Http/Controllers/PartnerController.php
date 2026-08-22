@@ -122,6 +122,7 @@ class PartnerController extends Controller implements HasMiddleware
                 'id' => $project->id,
                 'name' => $project->name,
                 'ownership_percentage' => (float) $project->pivot->ownership_percentage,
+                'created_at' => $project->created_at,
                 ...$share,
             ];
         });

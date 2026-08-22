@@ -31,6 +31,7 @@ const props = defineProps<{
         to_currency: string;
         rate: string | number;
         effective_date: string;
+        created_at?: string | null;
     }[];
     currency_pairs: { from: string; to: string }[];
 }>();
@@ -41,10 +42,12 @@ const tableColumns = computed(() => [
     { key: 'to_currency', label: t('To') },
     { key: 'rate', label: t('Rate') },
     { key: 'effective_date', label: t('Effective date') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { sortedRows } = provideTableSort(() => props.exchange_rates);
 const calendar = useCalendar();
+const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 
 const baseCurrency = ref(props.company.base_currency);
 const newRate = ref({
@@ -223,6 +226,7 @@ defineOptions({
                             <SortableTh class="py-2 pr-4" column="to_currency">{{ t('To') }}</SortableTh>
                             <SortableTh class="py-2 pr-4" column="rate">{{ t('Rate') }}</SortableTh>
                             <SortableTh class="py-2 pr-4" column="effective_date">{{ t('Effective date') }}</SortableTh>
+                            <SortableTh class="py-2 pr-4" column="created_at">{{ t('Created at') }}</SortableTh>
                             <th class="py-2 text-end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
@@ -232,6 +236,7 @@ defineOptions({
                             <td class="py-3 pr-4">{{ rate.to_currency }}</td>
                             <td class="py-3 pr-4 tabular-nums">{{ Number(rate.rate).toFixed(6) }}</td>
                             <td class="py-3 pr-4 whitespace-nowrap">{{ calendar.format(rate.effective_date) || '—' }}</td>
+                            <td class="py-3 pr-4 whitespace-nowrap text-muted-foreground">{{ formatDate(rate.created_at) }}</td>
                             <td class="py-3 text-end">
                                 <Form
                                     :action="`/settings/company/exchange-rates/${rate.id}`"
@@ -246,7 +251,7 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!exchange_rates.length">
-                            <td colspan="5" class="py-6 text-center text-muted-foreground">
+                            <td colspan="6" class="py-6 text-center text-muted-foreground">
                                 {{ t('No exchange rates yet') }}
                             </td>
                         </tr>

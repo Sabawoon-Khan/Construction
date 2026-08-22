@@ -72,6 +72,7 @@ const tableColumnsPurchases = computed(() => [
     { key: 'total_amount', label: t('Total') },
     { key: 'remaining_amount', label: t('Remaining') },
     { key: 'status', label: t('Status') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'pay', label: t('Pay'), locked: true },
 ]);
 const { baseCurrency } = useCurrency();
@@ -289,6 +290,14 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                             >
                                 {{ t('Status') }}
                             </SortableTh>
+                            <SortableTh
+                                column="created_at"
+                                :sort-key="purchaseSort.sortKey"
+                                :sort-dir="purchaseSort.sortDir"
+                                @sort="purchaseSort.sortBy"
+                            >
+                                {{ t('Created at') }}
+                            </SortableTh>
                             <th class="px-4 py-3 font-medium text-end">
                                 {{ t('Pay') }}
                             </th>
@@ -339,6 +348,9 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                             <td class="px-4 py-3">
                                 <StatusBadge :status="purchase.status" />
                             </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                                {{ formatDate(purchase.created_at) }}
+                            </td>
                             <td class="px-4 py-3 text-end">
                                 <Can permission="purchases.edit">
                                     <Form
@@ -365,7 +377,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                         </tr>
                         <tr v-if="!(purchases || []).length">
                             <td
-                                colspan="7"
+                                colspan="8"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{ t('No purchases yet') }}

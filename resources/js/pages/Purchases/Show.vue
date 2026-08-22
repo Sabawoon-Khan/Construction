@@ -160,6 +160,7 @@ defineOptions({
                         <SortableTh column="quantity" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Qty') }}</SortableTh>
                         <SortableTh column="unit_cost" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Unit cost') }}</SortableTh>
                         <SortableTh column="total_cost" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Total') }}</SortableTh>
+                        <SortableTh column="created_at" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Created at') }}</SortableTh>
                     </tr>
                 </thead>
                 <tbody>
@@ -168,6 +169,7 @@ defineOptions({
                         <td class="px-4 py-3 tabular-nums">{{ line.quantity }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(line.unit_cost, purchase.currency) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(line.total_cost, purchase.currency) }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(line.created_at) }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -230,9 +232,10 @@ defineOptions({
                         <td class="px-4 py-3">{{ formatDate(payment.paid_at) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(payment.amount, payment.currency || baseCurrency) }}</td>
                         <td class="px-4 py-3 capitalize">{{ payment.payment_method }}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(payment.created_at) }}</td>
                     </tr>
                     <tr v-if="!purchase.payments?.length">
-                        <td colspan="4" class="px-4 py-10 text-center text-muted-foreground">{{ t('No supplier payments yet') }}</td>
+                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No supplier payments yet') }}</td>
                     </tr>
                 </tbody>
             </table>

@@ -25,7 +25,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 
 const props = defineProps<{
-    items: { id: number; unit_name: string }[];
+    items: { id: number; unit_name: string; created_at?: string | null }[];
     filters?: { search?: string };
     totals?: { count: number };
 }>();

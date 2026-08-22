@@ -210,8 +210,8 @@
       "_RecordAttachments-DkIpYROW.js"
     ]
   },
-  "_ProjectShowEmployeesTab-CkkFAuXn.js": {
-    "file": "assets/ProjectShowEmployeesTab-CkkFAuXn.js",
+  "_ProjectShowEmployeesTab-BSSKPPmR.js": {
+    "file": "assets/ProjectShowEmployeesTab-BSSKPPmR.js",
     "name": "ProjectShowEmployeesTab",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
@@ -226,8 +226,8 @@
       "_StatusBadge-CEElHYIK.js"
     ]
   },
-  "_ProjectShowExpensesTab-CCoZEMcs.js": {
-    "file": "assets/ProjectShowExpensesTab-CCoZEMcs.js",
+  "_ProjectShowExpensesTab-DfGv15TL.js": {
+    "file": "assets/ProjectShowExpensesTab-DfGv15TL.js",
     "name": "ProjectShowExpensesTab",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
@@ -253,8 +253,8 @@
       "_StatusBadge-CEElHYIK.js"
     ]
   },
-  "_ProjectShowPurchasesTab-B3iYdhZ6.js": {
-    "file": "assets/ProjectShowPurchasesTab-B3iYdhZ6.js",
+  "_ProjectShowPurchasesTab-CrT0Qife.js": {
+    "file": "assets/ProjectShowPurchasesTab-CrT0Qife.js",
     "name": "ProjectShowPurchasesTab",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
@@ -270,17 +270,18 @@
       "_StatusBadge-CEElHYIK.js"
     ]
   },
-  "_ProjectShowSalesTab-Dy8XDdiw.js": {
-    "file": "assets/ProjectShowSalesTab-Dy8XDdiw.js",
+  "_ProjectShowSalesTab-BeC7Qpt1.js": {
+    "file": "assets/ProjectShowSalesTab-BeC7Qpt1.js",
     "name": "ProjectShowSalesTab",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
       "_useTranslations-BPynr0k6.js",
-      "_TableFrame-D2c8izsB.js"
+      "_TableFrame-D2c8izsB.js",
+      "_useMisPage-Ybnfqz63.js"
     ]
   },
-  "_ProjectShowShareholdersTab-57gDmI6-.js": {
-    "file": "assets/ProjectShowShareholdersTab-57gDmI6-.js",
+  "_ProjectShowShareholdersTab-k3f1ASEb.js": {
+    "file": "assets/ProjectShowShareholdersTab-k3f1ASEb.js",
     "name": "ProjectShowShareholdersTab",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
@@ -1298,7 +1299,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-CD4DOUM_.js",
+    "file": "assets/app-CBM99w7l.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -1401,12 +1402,12 @@
       "resources/js/pages/Projects/Index.vue",
       "resources/js/pages/Projects/Show.vue",
       "_ProjectShowAttachmentsTab-CwyFK6yd.js",
-      "_ProjectShowEmployeesTab-CkkFAuXn.js",
-      "_ProjectShowExpensesTab-CCoZEMcs.js",
+      "_ProjectShowEmployeesTab-BSSKPPmR.js",
+      "_ProjectShowExpensesTab-DfGv15TL.js",
       "_ProjectShowInfoTab-DYi2J0nU.js",
-      "_ProjectShowPurchasesTab-B3iYdhZ6.js",
-      "_ProjectShowSalesTab-Dy8XDdiw.js",
-      "_ProjectShowShareholdersTab-57gDmI6-.js",
+      "_ProjectShowPurchasesTab-CrT0Qife.js",
+      "_ProjectShowSalesTab-BeC7Qpt1.js",
+      "_ProjectShowShareholdersTab-k3f1ASEb.js",
       "_ProjectShowStockTab-Dw-x6JqM.js",
       "resources/js/pages/PublicPortfolio/Index.vue",
       "resources/js/pages/PublicPortfolio/Show.vue",
@@ -1704,7 +1705,7 @@
     ]
   },
   "resources/js/pages/Employees/Show.vue": {
-    "file": "assets/Show-DtCojPQn.js",
+    "file": "assets/Show-BdpmqqHi.js",
     "name": "Show",
     "src": "resources/js/pages/Employees/Show.vue",
     "isDynamicEntry": true,
@@ -2139,7 +2140,7 @@
     ]
   },
   "resources/js/pages/Projects/Show.vue": {
-    "file": "assets/Show-BCo6Hb0r2.js",
+    "file": "assets/Show-BRV1Abow2.js",
     "name": "Show",
     "src": "resources/js/pages/Projects/Show.vue",
     "isDynamicEntry": true,
@@ -2170,12 +2171,12 @@
       "_StatusBadge-CEElHYIK.js",
       "_ExpenseRecordDialog-LyW1cCXY.js",
       "_ProjectShowAttachmentsTab-CwyFK6yd.js",
-      "_ProjectShowEmployeesTab-CkkFAuXn.js",
-      "_ProjectShowExpensesTab-CCoZEMcs.js",
+      "_ProjectShowEmployeesTab-BSSKPPmR.js",
+      "_ProjectShowExpensesTab-DfGv15TL.js",
       "_ProjectShowInfoTab-DYi2J0nU.js",
-      "_ProjectShowPurchasesTab-B3iYdhZ6.js",
-      "_ProjectShowSalesTab-Dy8XDdiw.js",
-      "_ProjectShowShareholdersTab-57gDmI6-.js",
+      "_ProjectShowPurchasesTab-CrT0Qife.js",
+      "_ProjectShowSalesTab-BeC7Qpt1.js",
+      "_ProjectShowShareholdersTab-k3f1ASEb.js",
       "_ProjectShowStockTab-Dw-x6JqM.js"
     ]
   },
@@ -2249,7 +2250,7 @@
     ]
   },
   "resources/js/pages/Purchases/Show.vue": {
-    "file": "assets/Show-CGpkee1k.js",
+    "file": "assets/Show-CW1awLq0.js",
     "name": "Show",
     "src": "resources/js/pages/Purchases/Show.vue",
     "isDynamicEntry": true,
@@ -2273,7 +2274,7 @@
     ]
   },
   "resources/js/pages/Reports/Index.vue": {
-    "file": "assets/Index-CH6epyqj2.js",
+    "file": "assets/Index-B-VvcuuY2.js",
     "name": "Index",
     "src": "resources/js/pages/Reports/Index.vue",
     "isDynamicEntry": true,
@@ -2397,7 +2398,7 @@
     ]
   },
   "resources/js/pages/Sales/Show.vue": {
-    "file": "assets/Show-BVBH8R09.js",
+    "file": "assets/Show-CLX28H71.js",
     "name": "Show",
     "src": "resources/js/pages/Sales/Show.vue",
     "isDynamicEntry": true,
@@ -2868,7 +2869,7 @@
     ]
   },
   "resources/js/pages/settings/Company.vue": {
-    "file": "assets/Company-B8yQulCV.js",
+    "file": "assets/Company-aWAs_eC5.js",
     "name": "Company",
     "src": "resources/js/pages/settings/Company.vue",
     "isDynamicEntry": true,

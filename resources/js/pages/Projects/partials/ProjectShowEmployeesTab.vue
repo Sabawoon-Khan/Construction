@@ -47,6 +47,7 @@ const tableColumns = computed(() => [
     { key: 'basic_salary', label: t('Basic Salary') },
     { key: 'status', label: t('Status') },
     { key: 'notes', label: t('Notes') },
+    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { sortedRows } = provideTableSort(() => props.employees, {
@@ -120,6 +121,7 @@ function removeEmployee(employeeId: number) {
                         <th class="px-4 py-3 font-medium">
                             {{ t('Notes') }}
                         </th>
+                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
                         <th class="px-4 py-3 text-end font-medium">
                             {{ t('Actions') }}
                         </th>
@@ -169,6 +171,7 @@ function removeEmployee(employeeId: number) {
                         <td class="px-4 py-3 max-w-[220px] truncate" :title="employee.notes || undefined">
                             {{ employee.notes || '—' }}
                         </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(employee.created_at) }}</td>
                         <td class="px-4 py-3">
                             <div class="flex justify-end gap-2">
                                 <Button as-child size="sm" variant="outline">
@@ -193,7 +196,7 @@ function removeEmployee(employeeId: number) {
                     </tr>
                     <tr v-if="!employees.length">
                         <td
-                            colspan="10"
+                            colspan="11"
                             class="px-4 py-10 text-center text-muted-foreground"
                         >
                             {{ t('No employees assigned yet') }}
