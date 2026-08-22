@@ -34,12 +34,14 @@ const tableColumnsItems = computed(() => [
     { key: 'quantity', label: t('Qty') },
     { key: 'unit_cost', label: t('Unit cost') },
     { key: 'total_cost', label: t('Total') },
+    { key: 'created_at', label: t('Created at') },
 ]);
 const tableColumnsPayments = computed(() => [
     { key: 'payment_no', label: t('No') },
     { key: 'paid_at', label: t('Date') },
     { key: 'amount', label: t('Amount') },
     { key: 'payment_method', label: t('Method') },
+    { key: 'created_at', label: t('Created at') },
 ]);
 const itemsSort = useTableSort(() => props.purchase.items ?? []);
 const paymentsSort = useTableSort(() => props.purchase.payments ?? [], {

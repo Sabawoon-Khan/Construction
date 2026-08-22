@@ -268,6 +268,7 @@ function submitPayment() {
                         <SortableTh column="payment_no" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('No') }}</SortableTh>
                         <SortableTh column="paid_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Date') }}</SortableTh>
                         <SortableTh column="amount" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Amount') }}</SortableTh>
+                        <SortableTh column="created_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Created at') }}</SortableTh>
                         <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
                     </tr>
                 </thead>
