@@ -24,6 +24,9 @@ import ShareholderContributionDialog from '@/components/ShareholderContributionD
 import ShareholderPayoutDialog from '@/components/ShareholderPayoutDialog.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -162,6 +165,7 @@ const materialLineQuery = ref('');
 const tab = ref('info');
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'purchase_no', label: t('Purchase') },
     { key: 'purchase_date', label: t('Date') },
     { key: 'supplier', label: t('Supplier') },
@@ -448,6 +452,7 @@ defineOptions({
                         class="sticky top-0 bg-muted/90 text-start text-muted-foreground backdrop-blur"
                     >
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="purchase_no">
                                 {{ t('Purchase') }}
                             </SortableTh>
@@ -470,10 +475,11 @@ defineOptions({
                     </thead>
                     <tbody>
                         <tr
-                            v-for="line in sortedRows"
+                            v-for="(line, index) in sortedRows"
                             :key="line.id"
                             class="border-t hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 <Link
                                     :href="`/purchases/${line.purchase_id}`"
@@ -510,7 +516,7 @@ defineOptions({
                         </tr>
                         <tr v-if="!filteredMaterialLines.length">
                             <td
-                                colspan="6"
+                                colspan="7"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{

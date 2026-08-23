@@ -6,6 +6,24 @@ export type TableColumnDef = {
     locked?: boolean;
 };
 
+export const TABLE_INDEX_KEY = '__index';
+
+export function indexTableColumn(label = '#'): TableColumnDef {
+    return { key: TABLE_INDEX_KEY, label, locked: true };
+}
+
+export function withIndexColumn(columns: TableColumnDef[], label = '#'): TableColumnDef[] {
+    return [indexTableColumn(label), ...columns];
+}
+
+export function tableRowNumber(rowIndex: number, from?: number | null): number {
+    if (from != null && from > 0) {
+        return from + rowIndex;
+    }
+
+    return rowIndex + 1;
+}
+
 export type TableColumnsState = {
     columns: TableColumnDef[];
     isVisible: (key: string) => boolean;

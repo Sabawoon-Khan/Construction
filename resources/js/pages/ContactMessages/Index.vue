@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import {
     MisFilterBar,
     MisLoadingState,
@@ -41,6 +44,7 @@ const status = ref(props.filters.status ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'name', label: t('From') },
     { key: 'email', label: t('Email') },
     { key: 'message', label: t('Message') },
@@ -142,6 +146,7 @@ function preview(message: string): string {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="name">{{ t('From') }}</SortableTh>
                             <SortableTh column="email">{{ t('Email') }}</SortableTh>
                             <SortableTh column="message">{{ t('Message') }}</SortableTh>
@@ -152,11 +157,12 @@ function preview(message: string): string {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in sortedRows"
+                            v-for="(item, index) in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                             :class="{ 'font-medium': !item.read_at }"
                         >
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3">
                                 <Link
                                     :href="`/contact-messages/${item.id}`"
@@ -188,7 +194,7 @@ function preview(message: string): string {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="6"
+                            :colspan="7"
                             :title="t('No contact messages yet')"
                         />
                     </tbody>

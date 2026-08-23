@@ -9,6 +9,9 @@ import { MisTabs } from '@/components/mis';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
@@ -19,6 +22,7 @@ import { money, moneyByCurrency } from '@/lib/utils';
 const tab = ref('info');
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'sale_no', label: t('Sale') },
     { key: 'project.name', label: t('Project') },
     { key: 'unit.unit_no', label: t('Unit') },
@@ -128,6 +132,7 @@ defineOptions({
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="sale_no">{{ t('Sale') }}</SortableTh>
                         <SortableTh column="project.name">{{ t('Project') }}</SortableTh>
                         <SortableTh column="unit.unit_no">{{ t('Unit') }}</SortableTh>
@@ -137,7 +142,8 @@ defineOptions({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="sale in sortedRows" :key="sale.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="(sale, index) in sortedRows" :key="sale.id" class="border-t hover:bg-muted/30">
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3">
                             <Link :href="`/sales/${sale.id}`" class="font-medium text-primary hover:underline">{{ sale.sale_no }}</Link>
                         </td>
@@ -148,7 +154,7 @@ defineOptions({
                         <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(sale.created_at) }}</td>
                     </tr>
                     <tr v-if="!item.sales?.length">
-                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
+                        <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">{{ t('No sales yet') }}</td>
                     </tr>
                 </tbody>
             </table>

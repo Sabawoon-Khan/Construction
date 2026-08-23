@@ -5,6 +5,9 @@ import Can from '@/components/Can.vue';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
@@ -38,6 +41,7 @@ const emit = defineEmits<{
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'employee_no', label: t('Employee No') },
     { key: 'name', label: t('Name') },
     { key: 'role_on_project', label: t('Role on project') },
@@ -94,6 +98,7 @@ function removeEmployee(employeeId: number) {
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="employee_no">
                             {{ t('Employee No') }}
                         </SortableTh>
@@ -129,10 +134,11 @@ function removeEmployee(employeeId: number) {
                 </thead>
                 <tbody>
                     <tr
-                        v-for="employee in sortedRows"
+                        v-for="(employee, index) in sortedRows"
                         :key="employee.id"
                         class="border-t hover:bg-muted/30"
                     >
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3 font-medium">
                             {{ employee.employee_no || '—' }}
                         </td>
@@ -196,7 +202,7 @@ function removeEmployee(employeeId: number) {
                     </tr>
                     <tr v-if="!employees.length">
                         <td
-                            colspan="11"
+                            colspan="12"
                             class="px-4 py-10 text-center text-muted-foreground"
                         >
                             {{ t('No employees assigned yet') }}

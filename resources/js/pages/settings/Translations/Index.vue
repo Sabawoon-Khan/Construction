@@ -5,6 +5,9 @@ import { computed, ref, watch } from 'vue';
 import MisPagination from '@/components/MisPagination.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -34,6 +37,7 @@ const props = defineProps<Props>();
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'key', label: t('Key') },
     { key: 'value', label: t('Translation') },
 ]);
@@ -180,6 +184,7 @@ const hasSearch = computed(
                     <table class="w-full table-fixed text-xs sm:text-sm">
                         <thead>
                             <tr class="border-b bg-muted/30 text-start text-xs text-muted-foreground">
+                                <TableIndexTh />
                                 <SortableTh class="w-[36%] px-3 py-1.5 sm:w-[34%]" column="key">
                                     {{ t('Key') }}
                                 </SortableTh>
@@ -194,6 +199,7 @@ const hasSearch = computed(
                                 :key="entry.key"
                                 class="border-b last:border-b-0 hover:bg-muted/10"
                             >
+                                <TableIndexTd :index="index" />
                                 <td class="px-3 py-1 align-middle">
                                     <div class="flex items-center gap-2 min-w-0">
                                         <span

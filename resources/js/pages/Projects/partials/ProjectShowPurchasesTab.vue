@@ -6,6 +6,9 @@ import InputError from '@/components/InputError.vue';
 import { MisSearchInput } from '@/components/mis';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,12 +63,14 @@ const emit = defineEmits<{
 
 const { t } = useTranslations();
 const tableColumnsMaterials = computed(() => [
+    indexTableColumn(),
     { key: 'name', label: t('Material') },
     { key: 'purchase_count', label: t('Purchases') },
     { key: 'quantity', label: t('Total qty') },
     { key: 'total_cost_base', label: t('Total cost') },
 ]);
 const tableColumnsPurchases = computed(() => [
+    indexTableColumn(),
     { key: 'purchase_no', label: t('Purchase') },
     { key: 'purchase_date', label: t('Date') },
     { key: 'supplier.name', label: t('Supplier') },
@@ -138,6 +143,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
+                            <TableIndexTh />
                             <SortableTh
                                 column="name"
                                 :sort-key="materialSort.sortKey"
@@ -174,11 +180,12 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                     </thead>
                     <tbody>
                         <tr
-                            v-for="row in materialSort.sortedRows"
+                            v-for="(row, index) in materialSort.sortedRows"
                             :key="row.material_id"
                             class="cursor-pointer border-t hover:bg-muted/30"
                             @click="emit('open-material', row)"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 <div class="font-medium text-primary">
                                     {{ row.name }}
@@ -217,7 +224,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                         </tr>
                         <tr v-if="!filteredPurchaseMaterials.length">
                             <td
-                                colspan="4"
+                                colspan="5"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{
@@ -242,6 +249,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh
                                 column="purchase_no"
                                 :sort-key="purchaseSort.sortKey"
@@ -305,10 +313,11 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                     </thead>
                     <tbody>
                         <tr
-                            v-for="purchase in purchaseSort.sortedRows"
+                            v-for="(purchase, index) in purchaseSort.sortedRows"
                             :key="purchase.id"
                             class="border-t hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 <Link
                                     :href="`/purchases/${purchase.id}`"
@@ -377,7 +386,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                         </tr>
                         <tr v-if="!(purchases || []).length">
                             <td
-                                colspan="8"
+                                colspan="9"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{ t('No purchases yet') }}

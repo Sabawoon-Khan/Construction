@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
@@ -29,6 +32,7 @@ const search = ref(props.filters.search ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'expense_date', label: t('Date') },
     { key: 'paid_to', label: t('Paid to') },
     { key: 'description', label: t('Description') },
@@ -113,6 +117,7 @@ function rowActions(item: any): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
                             <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
                             <SortableTh column="description">{{ t('Description') }}</SortableTh>
@@ -128,11 +133,12 @@ function rowActions(item: any): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in sortedRows"
+                            v-for="(item, index) in sortedRows"
                             :key="item.id"
                             class="cursor-pointer border-b last:border-0 transition-colors hover:bg-muted/30"
                             @click="openRecord(item)"
                         >
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3">{{ formatDate(item.expense_date) }}</td>
                             <td class="px-4 py-3">{{ item.paid_to || '—' }}</td>
                             <td class="px-4 py-3">{{ item.description || '—' }}</td>
@@ -151,7 +157,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="11" :title="t('No expenses yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="12" :title="t('No expenses yet')" />
                     </tbody>
                 </table>
             </TableFrame>

@@ -20,6 +20,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
@@ -38,6 +41,7 @@ const props = defineProps<{
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'name', label: t('Project') },
     { key: 'progress_percent', label: t('Progress') },
     { key: 'revenue', label: t('Revenue') },
@@ -370,6 +374,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                     <table class="min-w-full text-sm">
                         <thead class="bg-muted/30 text-start text-muted-foreground">
                             <tr>
+                                <TableIndexTh />
                                 <SortableTh class="px-5" column="name">{{ t('Project') }}</SortableTh>
                                 <SortableTh class="px-5" column="progress_percent">{{ t('Progress') }}</SortableTh>
                                 <SortableTh class="px-5" column="revenue">{{ t('Revenue') }}</SortableTh>
@@ -379,10 +384,11 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                         </thead>
                         <tbody>
                             <tr
-                                v-for="p in sortedRows"
+                                v-for="(p, index) in sortedRows"
                                 :key="p.id"
                                 class="border-t"
                             >
+                                <TableIndexTd :index="index" />
                                 <td class="px-5 py-3">
                                     <div class="font-medium">{{ p.name }}</div>
                                     <div class="text-xs text-muted-foreground">
@@ -409,7 +415,7 @@ function applyPeriod(nextPreset?: 'today' | 'month' | 'year' | 'custom') {
                                 </td>
                             </tr>
                             <tr v-if="!(stats.projects || []).length">
-                                <td colspan="5" class="px-5 py-8 text-center text-muted-foreground">
+                                <td colspan="6" class="px-5 py-8 text-center text-muted-foreground">
                                     {{ t('No projects yet.') }}
                                 </td>
                             </tr>

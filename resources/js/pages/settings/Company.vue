@@ -6,6 +6,9 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +41,7 @@ const props = defineProps<{
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'from_currency', label: t('From') },
     { key: 'to_currency', label: t('To') },
     { key: 'rate', label: t('Rate') },
@@ -222,6 +226,7 @@ defineOptions({
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b text-start text-muted-foreground">
+                            <TableIndexTh />
                             <SortableTh class="py-2 pr-4" column="from_currency">{{ t('From') }}</SortableTh>
                             <SortableTh class="py-2 pr-4" column="to_currency">{{ t('To') }}</SortableTh>
                             <SortableTh class="py-2 pr-4" column="rate">{{ t('Rate') }}</SortableTh>
@@ -231,7 +236,8 @@ defineOptions({
                         </tr>
                     </thead>
                     <tbody class="divide-y">
-                        <tr v-for="rate in sortedRows" :key="rate.id">
+                        <tr v-for="(rate, index) in sortedRows" :key="rate.id">
+                            <TableIndexTd :index="index" />
                             <td class="py-3 pr-4">{{ rate.from_currency }}</td>
                             <td class="py-3 pr-4">{{ rate.to_currency }}</td>
                             <td class="py-3 pr-4 tabular-nums">{{ Number(rate.rate).toFixed(6) }}</td>
@@ -251,7 +257,7 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!exchange_rates.length">
-                            <td colspan="6" class="py-6 text-center text-muted-foreground">
+                            <td colspan="7" class="py-6 text-center text-muted-foreground">
                                 {{ t('No exchange rates yet') }}
                             </td>
                         </tr>

@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Banknote, Briefcase, CalendarDays, Clock, Mail, Phone, Printer, User, Wallet } from '@lucide/vue';
+import { Form, Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft, Banknote, Briefcase, CalendarDays, Clock, KeyRound, Mail, Phone, Printer, User, Wallet } from '@lucide/vue';
+import Can from '@/components/Can.vue';
+import InputError from '@/components/InputError.vue';
+import PasswordInput from '@/components/PasswordInput.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import Heading from '@/components/Heading.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { MisStatCard, MisStatGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
@@ -32,6 +38,7 @@ function paymentMethodLabel(method: string | null | undefined): string {
 const props = defineProps<{
     item: Record<string, any>;
     stats: { attendance_count: number; salaries_count: number; projects_count: number };
+    passwordRules: string;
 }>();
 
 const { t } = useTranslations();
@@ -143,6 +150,67 @@ defineOptions({
             </div>
 
             <div class="space-y-4">
+                <Can permission="employees.edit">
+                    <div class="rounded-xl border border-sidebar-border/70 bg-card p-6 shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <div class="rounded-lg bg-muted p-2">
+                                <KeyRound class="size-4 text-muted-foreground" />
+                            </div>
+                            <div class="min-w-0 flex-1 space-y-4">
+                                <div>
+                                    <h3 class="text-sm font-semibold">{{ t('Login password') }}</h3>
+                                    <p class="mt-1 text-sm text-muted-foreground">
+                                        <template v-if="item.login_user">
+                                            {{ t('Account') }}: {{ item.login_user.email }}
+                                        </template>
+                                        <template v-else-if="item.email">
+                                            {{ t('Sets a login for') }} {{ item.email }}
+                                        </template>
+                                        <template v-else>
+                                            {{ t('Add an email on the employee profile first.') }}
+                                        </template>
+                                    </p>
+                                </div>
+
+                                <Form
+                                    v-if="item.email"
+                                    :action="`/employees/${item.id}/password`"
+                                    method="put"
+                                    class="space-y-3"
+                                    :reset-on-success="['password', 'password_confirmation']"
+                                    v-slot="{ errors, processing }"
+                                >
+                                    <div class="grid gap-2">
+                                        <Label for="password">{{ t('New password') }}</Label>
+                                        <PasswordInput
+                                            id="password"
+                                            name="password"
+                                            required
+                                            autocomplete="new-password"
+                                            :passwordrules="passwordRules"
+                                        />
+                                        <InputError :message="errors.password" />
+                                    </div>
+                                    <div class="grid gap-2">
+                                        <Label for="password_confirmation">{{ t('Confirm password') }}</Label>
+                                        <PasswordInput
+                                            id="password_confirmation"
+                                            name="password_confirmation"
+                                            required
+                                            autocomplete="new-password"
+                                            :passwordrules="passwordRules"
+                                        />
+                                        <InputError :message="errors.password_confirmation" />
+                                    </div>
+                                    <Button type="submit" size="sm" :disabled="processing">
+                                        {{ processing ? t('Saving…') : t('Update password') }}
+                                    </Button>
+                                </Form>
+                            </div>
+                        </div>
+                    </div>
+                </Can>
+
                 <RecordAttachments
                     attachable="employees"
                     :attachable-id="item.id"
@@ -163,6 +231,7 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <th class="px-4 py-3 font-medium">{{ t('Code') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Project') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Role on project') }}</th>
@@ -175,10 +244,11 @@ defineOptions({
                     </thead>
                     <tbody>
                         <tr
-                            v-for="project in item.projects"
+                            v-for="(project, index) in item.projects"
                             :key="project.id"
                             class="border-t transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3 font-medium">{{ project.code || '—' }}</td>
                             <td class="px-4 py-3">
                                 <Link :href="`/projects/${project.id}`" class="inline-flex items-center gap-2 font-medium hover:text-primary hover:underline">
@@ -202,7 +272,7 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!item.projects?.length">
-                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">
+                            <td colspan="9" class="px-4 py-10 text-center text-muted-foreground">
                                 {{ t('Not assigned to any project yet. Add from a project page.') }}
                             </td>
                         </tr>
@@ -222,6 +292,7 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Check in') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Check out') }}</th>
@@ -233,10 +304,11 @@ defineOptions({
                     </thead>
                     <tbody>
                         <tr
-                            v-for="record in item.attendance"
+                            v-for="(record, index) in item.attendance"
                             :key="record.id"
                             class="border-t transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">{{ formatDate(record.date) }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ record.check_in || '—' }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ record.check_out || '—' }}</td>
@@ -246,7 +318,7 @@ defineOptions({
                             <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(record.created_at) }}</td>
                         </tr>
                         <tr v-if="!item.attendance?.length">
-                            <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">{{ t('No attendance records') }}</td>
+                            <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">{{ t('No attendance records') }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -264,6 +336,7 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <th class="px-4 py-3 font-medium">{{ t('Month') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Year') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Basic Salary') }}</th>
@@ -278,10 +351,11 @@ defineOptions({
                     </thead>
                     <tbody>
                         <tr
-                            v-for="record in item.salaries"
+                            v-for="(record, index) in item.salaries"
                             :key="record.id"
                             class="border-t transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">{{ record.month }}</td>
                             <td class="px-4 py-3">{{ record.year }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ money(record.basic_salary, record.currency || baseCurrency) }}</td>
@@ -298,7 +372,7 @@ defineOptions({
                             </td>
                         </tr>
                         <tr v-if="!item.salaries?.length">
-                            <td colspan="10" class="px-4 py-10 text-center text-muted-foreground">{{ t('No salary records') }}</td>
+                            <td colspan="11" class="px-4 py-10 text-center text-muted-foreground">{{ t('No salary records') }}</td>
                         </tr>
                     </tbody>
                 </table>

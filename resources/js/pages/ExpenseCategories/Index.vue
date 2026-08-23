@@ -6,6 +6,9 @@ import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import InputError from '@/components/InputError.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -42,6 +45,7 @@ const props = defineProps<{
 const { t } = useTranslations();
 const { can, formatDate } = useMisPage();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'name', label: t('Category') },
     { key: 'expenses_count', label: t('Used in') },
     { key: 'creator.name', label: t('Added by') },
@@ -141,6 +145,7 @@ function rowActions(item: Category): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="name">{{ t('Category') }}</SortableTh>
                             <SortableTh column="expenses_count">{{ t('Used in') }}</SortableTh>
                             <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
@@ -150,10 +155,11 @@ function rowActions(item: Category): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in sortedRows"
+                            v-for="(item, index) in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3 font-medium">{{ item.name }}</td>
                             <td class="px-4 py-3 tabular-nums text-muted-foreground">
                                 {{ item.expenses_count ?? 0 }} {{ t('expenses') }}
@@ -166,7 +172,7 @@ function rowActions(item: Category): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.length" :colspan="5" :title="t('No categories yet')" />
+                        <EmptyState v-if="!items.length" :colspan="6" :title="t('No categories yet')" />
                     </tbody>
                 </table>
             </TableFrame>

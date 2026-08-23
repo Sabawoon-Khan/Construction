@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
-import { Ban, CheckCircle2, Pencil, Shield, UserCog } from '@lucide/vue';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { Ban, CheckCircle2, KeyRound, Pencil, Shield, UserCog } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
+import InputError from '@/components/InputError.vue';
 import {
     MisEmptyState,
     MisListPage,
@@ -10,10 +11,19 @@ import {
     MisPagination,
     MisSearchInput,
 } from '@/components/mis';
+import PasswordInput from '@/components/PasswordInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SettingsAddButton from '@/components/SettingsAddButton.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/composables/useTranslations';
 import type { Paginated } from '@/lib/format';
@@ -33,6 +43,7 @@ const props = defineProps<{
     users: Paginated<UserRecord>;
     roles: Role[];
     filters?: { search?: string | null };
+    passwordRules?: string;
 }>();
 
 const { t } = useTranslations();
@@ -40,6 +51,23 @@ const page = usePage();
 const currentUserId = computed(() => page.props.auth?.user?.id as number | undefined);
 
 const search = ref(props.filters?.search ?? '');
+const passwordUser = ref<UserRecord | null>(null);
+const passwordForm = useForm({
+    password: '',
+    password_confirmation: '',
+});
+
+const passwordDialogOpen = computed({
+    get: () => passwordUser.value !== null,
+    set: (open: boolean) => {
+        if (!open) {
+            passwordUser.value = null;
+            passwordForm.reset();
+            passwordForm.clearErrors();
+        }
+    },
+});
+
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(
@@ -75,8 +103,32 @@ function updateRoles(user: UserRecord, event: Event): void {
     router.patch(`/settings/users/${user.id}`, { roles: selected }, { preserveScroll: true });
 }
 
+function openPasswordDialog(user: UserRecord): void {
+    passwordUser.value = user;
+    passwordForm.reset();
+    passwordForm.clearErrors();
+}
+
+function submitPassword(): void {
+    if (!passwordUser.value) {
+        return;
+    }
+
+    passwordForm.patch(`/settings/users/${passwordUser.value.id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            passwordDialogOpen.value = false;
+        },
+    });
+}
+
 function userActions(user: UserRecord): RowActionItem[] {
     const actions: RowActionItem[] = [
+        {
+            label: t('Change password'),
+            icon: KeyRound,
+            onClick: () => openPasswordDialog(user),
+        },
         {
             label: t('Edit roles'),
             icon: Pencil,
@@ -251,4 +303,60 @@ defineOptions({
             <MisPagination :pagination="users" />
         </template>
     </MisListPage>
+
+    <Dialog v-model:open="passwordDialogOpen">
+        <DialogContent class="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>{{ t('Change password') }}</DialogTitle>
+                <DialogDescription v-if="passwordUser">
+                    {{ passwordUser.name }} · {{ passwordUser.email }}
+                </DialogDescription>
+            </DialogHeader>
+
+            <form class="space-y-4" @submit.prevent="submitPassword">
+                <div class="grid gap-2">
+                    <Label for="user-password">{{ t('New password') }}</Label>
+                    <PasswordInput
+                        id="user-password"
+                        v-model="passwordForm.password"
+                        required
+                        autocomplete="new-password"
+                        :passwordrules="passwordRules"
+                    />
+                    <InputError :message="passwordForm.errors.password" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="user-password-confirmation">{{
+                        t('Confirm password')
+                    }}</Label>
+                    <PasswordInput
+                        id="user-password-confirmation"
+                        v-model="passwordForm.password_confirmation"
+                        required
+                        autocomplete="new-password"
+                        :passwordrules="passwordRules"
+                    />
+                    <InputError :message="passwordForm.errors.password_confirmation" />
+                </div>
+
+                <DialogFooter class="gap-2 sm:justify-end">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="passwordDialogOpen = false"
+                    >
+                        {{ t('Cancel') }}
+                    </Button>
+                    <Button type="submit" :disabled="passwordForm.processing">
+                        {{
+                            passwordForm.processing
+                                ? t('Saving…')
+                                : t('Update password')
+                        }}
+                    </Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
 </template>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Employee;
+use App\Models\User;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use Carbon\Carbon;
@@ -12,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -77,6 +79,7 @@ class EmployeeController extends Controller implements HasMiddleware
         $employee->loadCount(['attendance', 'salaries']);
         $employee->load([
             'attachments',
+            'loginUser:id,name,email,is_active',
             'projects' => fn ($q) => $q->orderBy('name'),
             'attendance' => fn ($q) => $q->with('creator:id,name')->latest('date')->limit(20),
             'salaries' => fn ($q) => $q->with('creator:id,name')->latest('year')->latest('month')->limit(20),
@@ -89,7 +92,78 @@ class EmployeeController extends Controller implements HasMiddleware
                 'salaries_count' => $employee->salaries_count ?? 0,
                 'projects_count' => $employee->projects->count(),
             ],
+            'passwordRules' => Password::defaults()->toPasswordRulesString(),
         ]);
+    }
+
+    public function updatePassword(Request $request, Employee $employee): RedirectResponse
+    {
+        $data = $request->validate([
+            'password' => ['required', 'string', Password::default(), 'confirmed'],
+        ]);
+
+        if (blank($employee->email)) {
+            return back()->withErrors([
+                'password' => __('Add an email on the employee profile before setting a login password.'),
+            ]);
+        }
+
+        $user = $this->resolveLoginUser($employee);
+
+        if (! $user) {
+            return back()->withErrors([
+                'password' => __('This email is already linked to another employee login.'),
+            ]);
+        }
+
+        $user->update([
+            'password' => $data['password'],
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Password updated.']);
+
+        return redirect()->route('employees.show', $employee);
+    }
+
+    private function resolveLoginUser(Employee $employee): ?User
+    {
+        if ($employee->login_user_id) {
+            return User::query()->find($employee->login_user_id);
+        }
+
+        $user = User::query()->where('email', $employee->email)->first();
+
+        if ($user) {
+            $alreadyLinked = Employee::query()
+                ->where('login_user_id', $user->id)
+                ->whereKeyNot($employee->id)
+                ->exists();
+
+            if ($alreadyLinked) {
+                return null;
+            }
+
+            $employee->update(['login_user_id' => $user->id]);
+
+            if (! $user->hasAnyRole(['Owner', 'Admin', 'Finance', 'Project Manager', 'Limited Employee'])) {
+                $user->assignRole('Limited Employee');
+            }
+
+            return $user->fresh();
+        }
+
+        $user = User::query()->create([
+            'name' => $employee->name,
+            'email' => $employee->email,
+            'password' => Str::password(),
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
+
+        $user->assignRole('Limited Employee');
+        $employee->update(['login_user_id' => $user->id]);
+
+        return $user;
     }
 
     public function edit(Employee $employee): Response

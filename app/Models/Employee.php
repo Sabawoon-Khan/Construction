@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Concerns\HasAttachments;
 use App\Concerns\Trashable;
 use App\Models\Concerns\HasCreator;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,7 +20,7 @@ class Employee extends Model
     use Trashable;
 
     protected $fillable = [
-        'user_id',
+        'login_user_id',
         'employee_no',
         'name',
         'takhallus',
@@ -56,6 +58,11 @@ class Employee extends Model
         'exchange_rate' => 1,
         'status' => 'active',
     ];
+
+    public function loginUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'login_user_id');
+    }
 
     public function attendance(): HasMany
     {

@@ -28,6 +28,9 @@ import {
 } from '@/components/ui/card';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { Input } from '@/components/ui/input';
 import { useCalendar } from '@/composables/useCalendar';
 import { provideTableSort } from '@/composables/useTableSort';
@@ -83,6 +86,7 @@ const props = defineProps<{
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'datetime', label: t('Time') },
     { key: 'level', label: t('Level') },
     { key: 'environment', label: t('Env') },
@@ -447,6 +451,7 @@ defineOptions({
                     <table class="w-full text-sm">
                         <thead class="bg-muted/40 text-start">
                             <tr class="border-b">
+                                <TableIndexTh />
                                 <SortableTh column="datetime">
                                     {{ t('Time') }}
                                 </SortableTh>
@@ -457,11 +462,12 @@ defineOptions({
                             </tr>
                         </thead>
                         <tbody>
-                            <template v-for="entry in sortedRows" :key="entry.id">
+                            <template v-for="(entry, index) in sortedRows" :key="entry.id">
                                 <tr
                                     class="cursor-pointer border-b hover:bg-muted/20"
                                     @click="toggleExpanded(entry.id)"
                                 >
+                                    <TableIndexTd :index="index" />
                                     <td class="px-4 py-3 align-top whitespace-nowrap text-muted-foreground">
                                         {{ formatDateTime(entry.datetime) }}
                                     </td>
@@ -492,7 +498,7 @@ defineOptions({
                                     </td>
                                 </tr>
                                 <tr v-if="expandedId === entry.id" class="border-b bg-muted/20">
-                                    <td colspan="5" class="px-4 py-4">
+                                    <td colspan="6" class="px-4 py-4">
                                         <div class="space-y-3">
                                             <div>
                                                 <p class="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">

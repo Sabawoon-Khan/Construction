@@ -421,6 +421,67 @@ class ProjectController extends Controller implements HasMiddleware
         ]);
     }
 
+    public function printExpenses(Request $request, Project $project): Response
+    {
+        abort_if(
+            $request->user()?->isRestrictedShareholder()
+                && ! in_array((int) $project->id, $request->user()->assignedProjectIds(), true),
+            403,
+        );
+
+        $expensesQuery = Expense::query()
+            ->where('project_id', $project->id)
+            ->where('status', 'approved');
+
+        $category = null;
+
+        if ($request->filled('category_id')) {
+            $categoryId = $request->input('category_id');
+
+            if ($categoryId === 'uncategorized') {
+                $expensesQuery->whereNull('expense_category_id');
+                $category = ['id' => null, 'name' => __('General')];
+            } else {
+                $categoryModel = ExpenseCategory::query()->find($request->integer('category_id'), ['id', 'name']);
+                abort_unless($categoryModel, 404);
+                $expensesQuery->where('expense_category_id', $categoryModel->id);
+                $category = $categoryModel->only(['id', 'name']);
+            }
+        }
+
+        $expenses = (clone $expensesQuery)
+            ->with(['category:id,name', 'expenseUnit:id,unit_name'])
+            ->orderBy('expense_date')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'expense_no',
+                'expense_date',
+                'paid_to',
+                'description',
+                'amount',
+                'amount_base',
+                'currency',
+                'purchase_id',
+                'reference_no',
+                'payment_method',
+                'expense_category_id',
+                'expense_unit_id',
+                'created_at',
+            ]);
+
+        return Inertia::render('Projects/ExpensesPrint', [
+            'item' => $project->only(['id', 'name', 'code', 'location']),
+            'category' => $category,
+            'expenses' => $expenses,
+            'summary' => [
+                'count' => $expenses->count(),
+                'total' => (float) (clone $expensesQuery)->sum('amount'),
+                'by_currency' => CurrencyAmounts::sum(clone $expensesQuery),
+            ],
+        ]);
+    }
+
     public function storeShareholderPayout(Request $request, Project $project, Partner $partner): RedirectResponse
     {
         abort_unless($project->partners()->where('partners.id', $partner->id)->exists(), 404);

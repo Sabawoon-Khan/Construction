@@ -3,6 +3,9 @@ import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
@@ -14,6 +17,7 @@ const props = defineProps<{
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'sale_no', label: t('Sale') },
     { key: 'customer.name', label: t('Customer') },
     { key: 'unit.list_price', label: t('Amount') },
@@ -32,6 +36,7 @@ const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
         <table class="min-w-full text-sm">
             <thead class="bg-muted/40 text-start text-muted-foreground">
                 <tr>
+                    <TableIndexTh />
                     <SortableTh column="sale_no">{{ t('Sale') }}</SortableTh>
                     <SortableTh column="customer.name">
                         {{ t('Customer') }}
@@ -42,10 +47,11 @@ const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
             </thead>
             <tbody>
                 <tr
-                    v-for="sale in sortedRows"
+                    v-for="(sale, index) in sortedRows"
                     :key="sale.id"
                     class="border-t hover:bg-muted/30"
                 >
+                    <TableIndexTd :index="index" />
                     <td class="px-4 py-3">
                         <Link
                             :href="`/sales/${sale.id}`"
@@ -72,7 +78,7 @@ const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
                 </tr>
                 <tr v-if="!item.sales?.length">
                     <td
-                        colspan="4"
+                        colspan="5"
                         class="px-4 py-10 text-center text-muted-foreground"
                     >
                         {{ t('No sales yet') }}

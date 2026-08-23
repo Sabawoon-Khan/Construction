@@ -125,6 +125,28 @@ class KitPhaseExtrasTest extends TestCase
         ]);
     }
 
+    public function test_owner_can_reset_user_password_from_settings(): void
+    {
+        $owner = User::factory()->create();
+        $owner->assignRole(Role::findByName('Owner'));
+
+        $user = User::factory()->create([
+            'session_version' => 2,
+        ]);
+
+        $this->actingAs($owner)
+            ->patch(route('settings.users.update', $user), [
+                'password' => 'NewPassword1!',
+                'password_confirmation' => 'NewPassword1!',
+            ])
+            ->assertRedirect();
+
+        $user->refresh();
+
+        $this->assertTrue(password_verify('NewPassword1!', $user->password));
+        $this->assertSame(3, $user->session_version);
+    }
+
     public function test_component_gallery_for_owner(): void
     {
         $this->withoutVite();

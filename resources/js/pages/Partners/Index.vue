@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -29,6 +32,7 @@ const props = defineProps<{
 }>();
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'partner_no', label: t('Partner No') },
     { key: 'name', label: t('Name') },
     { key: 'phone', label: t('Phone') },
@@ -97,6 +101,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="partner_no">{{ t('Partner No') }}</SortableTh>
                             <SortableTh column="name">{{ t('Name') }}</SortableTh>
                             <SortableTh column="phone">{{ t('Phone') }}</SortableTh>
@@ -107,7 +112,8 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr v-for="(item, index) in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3 font-medium">
                                 <Link :href="`/partners/${item.id}`" class="hover:text-primary hover:underline">{{ item.partner_no || '—' }}</Link>
                             </td>
@@ -122,7 +128,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="7" :title="t('No shareholders yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No shareholders yet')" />
                     </tbody>
                 </table>
             </TableFrame>

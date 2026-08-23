@@ -6,6 +6,9 @@ import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,11 +42,13 @@ const props = defineProps<{
 
 const { t } = useTranslations();
 const tableColumnsStock = computed(() => [
+    indexTableColumn(),
     { key: 'material_id', label: t('Material') },
     { key: 'unit', label: t('Unit') },
     { key: 'on_hand', label: t('On hand') },
 ]);
 const tableColumnsIssues = computed(() => [
+    indexTableColumn(),
     { key: 'material.name', label: t('Material') },
     { key: 'quantity', label: t('Issued qty') },
     { key: 'transaction_date', label: t('Issue date') },
@@ -140,6 +145,7 @@ const formatDate = (value: string | null | undefined) =>
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
+                            <TableIndexTh />
                             <SortableTh
                                 column="material_id"
                                 :sort-key="stockSort.sortKey"
@@ -163,10 +169,11 @@ const formatDate = (value: string | null | undefined) =>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="row in stockSort.sortedRows"
+                            v-for="(row, index) in stockSort.sortedRows"
                             :key="`onhand-${row.material_id}`"
                             class="border-t"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 {{
                                     stock_materials?.find(
@@ -187,7 +194,7 @@ const formatDate = (value: string | null | undefined) =>
                         </tr>
                         <tr v-if="!(stock || []).length">
                             <td
-                                colspan="3"
+                                colspan="4"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{ t('No stock yet') }}
@@ -212,6 +219,7 @@ const formatDate = (value: string | null | undefined) =>
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
+                            <TableIndexTh />
                             <SortableTh
                                 column="material.name"
                                 :sort-key="issueSort.sortKey"
@@ -240,10 +248,11 @@ const formatDate = (value: string | null | undefined) =>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="issue in issueSort.sortedRows"
+                            v-for="(issue, index) in issueSort.sortedRows"
                             :key="`issued-${issue.id}`"
                             class="border-t"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 {{
                                     issue.material?.name ||
@@ -266,7 +275,7 @@ const formatDate = (value: string | null | undefined) =>
                         </tr>
                         <tr v-if="!(stock_issues || []).length">
                             <td
-                                colspan="3"
+                                colspan="4"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{ t('No issue dates yet') }}

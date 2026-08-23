@@ -8,6 +8,9 @@ import Heading from '@/components/Heading.vue';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { useMisPage } from '@/composables/useMisPage';
@@ -17,6 +20,7 @@ import { money, moneyByCurrency } from '@/lib/utils';
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'purchase_no', label: t('Purchase') },
     { key: 'project.name', label: t('Project') },
     { key: 'total_amount', label: t('Total') },
@@ -109,6 +113,7 @@ defineOptions({
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="purchase_no">{{ t('Purchase') }}</SortableTh>
                         <SortableTh column="project.name">{{ t('Project') }}</SortableTh>
                         <SortableTh column="total_amount">{{ t('Total') }}</SortableTh>
@@ -118,7 +123,8 @@ defineOptions({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="purchase in sortedRows" :key="purchase.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="(purchase, index) in sortedRows" :key="purchase.id" class="border-t hover:bg-muted/30">
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3">
                             <Link :href="`/purchases/${purchase.id}`" class="font-medium text-primary hover:underline">{{ purchase.purchase_no }}</Link>
                         </td>
@@ -129,7 +135,7 @@ defineOptions({
                         <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(purchase.created_at) }}</td>
                     </tr>
                     <tr v-if="!item.purchases?.length">
-                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No purchases yet') }}</td>
+                        <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">{{ t('No purchases yet') }}</td>
                     </tr>
                 </tbody>
             </table>

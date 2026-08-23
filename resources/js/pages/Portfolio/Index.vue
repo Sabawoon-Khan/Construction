@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisFilterBar, MisLoadingState, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -26,6 +29,7 @@ const search = ref(props.filters.search ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'title', label: t('Title') },
     { key: 'category', label: t('Category') },
     { key: 'location', label: t('Location') },
@@ -99,6 +103,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="title">{{ t('Title') }}</SortableTh>
                             <SortableTh column="category">{{ t('Category') }}</SortableTh>
                             <SortableTh column="location">{{ t('Location') }}</SortableTh>
@@ -110,10 +115,11 @@ function rowActions(item: Item): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in sortedRows"
+                            v-for="(item, index) in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -161,7 +167,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="7" :title="t('No portfolio projects yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No portfolio projects yet')" />
                     </tbody>
                 </table>
             </TableFrame>

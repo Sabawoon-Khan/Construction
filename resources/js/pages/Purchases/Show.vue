@@ -9,6 +9,9 @@ import InputError from '@/components/InputError.vue';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +33,7 @@ const props = defineProps<{
 }>();
 const { t } = useTranslations();
 const tableColumnsItems = computed(() => [
+    indexTableColumn(),
     { key: 'material.name', label: t('Material') },
     { key: 'quantity', label: t('Qty') },
     { key: 'unit_cost', label: t('Unit cost') },
@@ -37,6 +41,7 @@ const tableColumnsItems = computed(() => [
     { key: 'created_at', label: t('Created at') },
 ]);
 const tableColumnsPayments = computed(() => [
+    indexTableColumn(),
     { key: 'payment_no', label: t('No') },
     { key: 'paid_at', label: t('Date') },
     { key: 'amount', label: t('Amount') },
@@ -156,6 +161,7 @@ defineOptions({
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="material.name" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Material') }}</SortableTh>
                         <SortableTh column="quantity" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Qty') }}</SortableTh>
                         <SortableTh column="unit_cost" :sort-key="itemsSort.sortKey" :sort-dir="itemsSort.sortDir" @sort="itemsSort.sortBy">{{ t('Unit cost') }}</SortableTh>
@@ -164,7 +170,8 @@ defineOptions({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="line in itemsSort.sortedRows" :key="line.id" class="border-t">
+                    <tr v-for="(line, index) in itemsSort.sortedRows" :key="line.id" class="border-t">
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3">{{ line.material?.name }} {{ line.material?.unit?.unit_name ? `(${line.material.unit.unit_name})` : '' }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ line.quantity }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(line.unit_cost, purchase.currency) }}</td>
@@ -218,6 +225,7 @@ defineOptions({
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="payment_no" :sort-key="paymentsSort.sortKey" :sort-dir="paymentsSort.sortDir" @sort="paymentsSort.sortBy">{{ t('No') }}</SortableTh>
                         <SortableTh column="paid_at" :sort-key="paymentsSort.sortKey" :sort-dir="paymentsSort.sortDir" @sort="paymentsSort.sortBy">{{ t('Date') }}</SortableTh>
                         <SortableTh column="amount" :sort-key="paymentsSort.sortKey" :sort-dir="paymentsSort.sortDir" @sort="paymentsSort.sortBy">{{ t('Amount') }}</SortableTh>
@@ -225,7 +233,8 @@ defineOptions({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="payment in paymentsSort.sortedRows" :key="payment.id" class="border-t">
+                    <tr v-for="(payment, index) in paymentsSort.sortedRows" :key="payment.id" class="border-t">
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3">
                             <Link :href="`/payments/${payment.id}`" class="hover:underline">{{ payment.payment_no }}</Link>
                         </td>
@@ -235,7 +244,7 @@ defineOptions({
                         <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(payment.created_at) }}</td>
                     </tr>
                     <tr v-if="!purchase.payments?.length">
-                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No supplier payments yet') }}</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No supplier payments yet') }}</td>
                     </tr>
                 </tbody>
             </table>

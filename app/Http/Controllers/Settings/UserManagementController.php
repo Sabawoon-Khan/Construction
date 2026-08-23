@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use App\Models\Role;
@@ -49,6 +50,7 @@ class UserManagementController extends Controller
             'users' => $users,
             'roles' => Role::query()->orderBy('name')->get(['id', 'name']),
             'filters' => ['search' => $search ?: null],
+            'passwordRules' => Password::defaults()->toPasswordRulesString(),
         ]);
     }
 
@@ -108,8 +110,22 @@ class UserManagementController extends Controller
             unset($validated['is_active']);
         }
 
+        if (array_key_exists('password', $validated)) {
+            $user->update([
+                'password' => $validated['password'],
+                'session_version' => ((int) $user->session_version) + 1,
+            ]);
+            unset($validated['password']);
+        }
+
         if ($validated !== []) {
             $user->update($validated);
+        }
+
+        if ($request->has('password')) {
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
+
+            return back();
         }
 
         return back()->with('success', __('User updated.'));

@@ -11,6 +11,9 @@ import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +33,7 @@ const props = defineProps<{
 }>();
 const { t } = useTranslations();
 const tableColumnsInstallments = computed(() => [
+    indexTableColumn(),
     { key: 'installment_no', label: '#' },
     { key: 'due_date', label: t('Due') },
     { key: 'amount', label: t('Amount') },
@@ -39,6 +43,7 @@ const tableColumnsInstallments = computed(() => [
     { key: 'action', label: t('Action'), locked: true },
 ]);
 const tableColumnsPayments = computed(() => [
+    indexTableColumn(),
     { key: 'payment_no', label: t('No') },
     { key: 'paid_at', label: t('Date') },
     { key: 'amount', label: t('Amount') },
@@ -221,6 +226,7 @@ function submitPayment() {
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="installment_no" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">#</SortableTh>
                         <SortableTh column="due_date" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Due') }}</SortableTh>
                         <SortableTh column="amount" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Amount') }}</SortableTh>
@@ -231,7 +237,8 @@ function submitPayment() {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="i in installmentSort.sortedRows" :key="i.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="(i, index) in installmentSort.sortedRows" :key="i.id" class="border-t hover:bg-muted/30">
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3">{{ i.installment_no }}</td>
                         <td class="px-4 py-3">{{ formatDate(i.due_date) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(i.amount) }}</td>
@@ -250,7 +257,7 @@ function submitPayment() {
                         </td>
                     </tr>
                     <tr v-if="!sale.installments?.length">
-                        <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">{{ t('No installments') }}</td>
+                        <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">{{ t('No installments') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -265,6 +272,7 @@ function submitPayment() {
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="payment_no" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('No') }}</SortableTh>
                         <SortableTh column="paid_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Date') }}</SortableTh>
                         <SortableTh column="amount" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Amount') }}</SortableTh>
@@ -273,7 +281,8 @@ function submitPayment() {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="p in paymentSort.sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="(p, index) in paymentSort.sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
                         <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
                         <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency) }}</td>
@@ -285,7 +294,7 @@ function submitPayment() {
                         </td>
                     </tr>
                     <tr v-if="!sale.payments?.length">
-                        <td colspan="5" class="px-4 py-10 text-center text-muted-foreground">{{ t('No receipts yet') }}</td>
+                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No receipts yet') }}</td>
                     </tr>
                 </tbody>
             </table>

@@ -2,7 +2,10 @@
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
 import { Spinner } from '@/components/ui/spinner';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
@@ -43,11 +46,11 @@ const { t } = useTranslations();
 const resolvedEmptyLabel = computed(() => props.emptyLabel ?? t('No results'));
 const { sortedRows } = provideTableSort(() => props.rows);
 const frameColumns = computed(() =>
-    props.columns.map((column) => ({
+    [indexTableColumn(), ...props.columns.map((column) => ({
         key: column.key,
         label: column.label,
         locked: column.sortable === false,
-    })),
+    }))],
 );
 
 function cellValue(row: Record<string, unknown>, key: string): string {
@@ -108,6 +111,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                             )
                         "
                     >
+                        <TableIndexTh />
                         <template v-for="column in columns" :key="column.key">
                             <th
                                 v-if="column.sortable === false"
@@ -148,7 +152,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                 <tbody>
                     <tr v-if="!loading && rows.length === 0">
                         <td
-                            :colspan="columns.length"
+                            :colspan="columns.length + 1"
                             class="px-4 py-10 text-center text-muted-foreground"
                         >
                             <slot name="empty">{{ resolvedEmptyLabel }}</slot>
@@ -159,6 +163,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                         :key="rowId(row, rowIndex, rowKey)"
                         class="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/20"
                     >
+                        <TableIndexTd :index="rowIndex" />
                         <td
                             v-for="column in columns"
                             :key="column.key"

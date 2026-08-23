@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
@@ -33,6 +36,7 @@ const year = ref(props.filters.year ?? new Date().getFullYear());
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'employee.name', label: t('Employee') },
     { key: 'year', label: t('Period') },
     { key: 'basic_salary', label: t('Basic Salary') },
@@ -165,6 +169,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="employee.name">{{ t('Employee') }}</SortableTh>
                             <SortableTh column="year">{{ t('Period') }}</SortableTh>
                             <SortableTh column="basic_salary" align="end">{{ t('Basic Salary') }}</SortableTh>
@@ -179,10 +184,11 @@ function rowActions(item: Item): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in sortedRows"
+                            v-for="(item, index) in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3">
                                 <Link v-if="item.employee" :href="`/salaries/${item.id}`" class="font-medium hover:text-primary hover:underline">
                                     {{ item.employee.name }}
@@ -211,7 +217,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="10"
+                            :colspan="11"
                             :title="t('No salary records')"
                         />
                     </tbody>

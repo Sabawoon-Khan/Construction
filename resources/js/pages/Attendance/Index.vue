@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -30,6 +33,7 @@ const date = ref(props.filters.date ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'date', label: t('Date') },
     { key: 'employee.name', label: t('Employee') },
     { key: 'check_in', label: t('Check in') },
@@ -112,6 +116,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="date">{{ t('Date') }}</SortableTh>
                             <SortableTh column="employee.name">{{ t('Employee') }}</SortableTh>
                             <SortableTh column="check_in">{{ t('Check in') }}</SortableTh>
@@ -125,10 +130,11 @@ function rowActions(item: Item): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in sortedRows"
+                            v-for="(item, index) in sortedRows"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3 whitespace-nowrap">{{ formatDate(item.date) }}</td>
                             <td class="px-4 py-3">
                                 <Link v-if="item.employee" :href="`/employees/${item.employee.id}`" class="hover:text-primary hover:underline">
@@ -150,7 +156,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="9"
+                            :colspan="10"
                             :title="t('No attendance records')"
                         />
                     </tbody>

@@ -12,6 +12,9 @@ import {
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
@@ -34,6 +37,7 @@ const props = defineProps<{
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'title', label: t('Title') },
     { key: 'location', label: t('Location') },
     { key: 'created_at', label: t('Created at') },
@@ -178,6 +182,7 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="title">{{ t('Title') }}</SortableTh>
                             <SortableTh column="location">{{ t('Location') }}</SortableTh>
                             <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
@@ -186,10 +191,11 @@ defineOptions({
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in sortedRows"
+                            v-for="(item, index) in sortedRows"
                             :key="item.client_uuid || item.id"
                             class="border-t align-middle"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 <Link
                                     v-if="item.id"

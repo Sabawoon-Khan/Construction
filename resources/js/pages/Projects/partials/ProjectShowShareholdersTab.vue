@@ -5,6 +5,9 @@ import Can from '@/components/Can.vue';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
@@ -41,6 +44,7 @@ const emit = defineEmits<{
 
 const { t } = useTranslations();
 const tableColumnsShareholders = computed(() => [
+    indexTableColumn(),
     { key: 'name', label: t('Name') },
     { key: 'ownership_percentage', label: t('Share') },
     { key: 'contributed_total', label: t('Money in') },
@@ -49,6 +53,7 @@ const tableColumnsShareholders = computed(() => [
     { key: 'balance_owed', label: t('Still owed') },
 ]);
 const tableColumnsContributions = computed(() => [
+    indexTableColumn(),
     { key: 'invested_at', label: t('Date') },
     { key: 'partner.name', label: t('Shareholder') },
     { key: 'amount', label: t('Amount') },
@@ -109,6 +114,7 @@ const formatDate = (value: string | null | undefined) =>
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh
                                 column="name"
                                 :sort-key="shareholderSort.sortKey"
@@ -161,10 +167,11 @@ const formatDate = (value: string | null | undefined) =>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="s in shareholderSort.sortedRows"
+                            v-for="(s, index) in shareholderSort.sortedRows"
                             :key="s.id"
                             class="border-t hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3 font-medium">
                                 {{ s.name }}
                             </td>
@@ -197,7 +204,7 @@ const formatDate = (value: string | null | undefined) =>
                         </tr>
                         <tr v-if="!shareholders.length">
                             <td
-                                colspan="6"
+                                colspan="7"
                                 class="px-4 py-10 text-center text-muted-foreground"
                             >
                                 {{ t('No shareholders yet') }}
@@ -223,6 +230,7 @@ const formatDate = (value: string | null | undefined) =>
                         class="bg-muted/40 text-start text-muted-foreground"
                     >
                         <tr>
+                            <TableIndexTh />
                             <SortableTh
                                 column="invested_at"
                                 :sort-key="contributionSort.sortKey"
@@ -262,10 +270,11 @@ const formatDate = (value: string | null | undefined) =>
                     </thead>
                     <tbody>
                         <tr
-                            v-for="c in contributionSort.sortedRows"
+                            v-for="(c, index) in contributionSort.sortedRows"
                             :key="c.id"
                             class="border-t hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 {{ formatDate(c.invested_at) }}
                             </td>

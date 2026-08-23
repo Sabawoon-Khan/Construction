@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -33,6 +36,7 @@ const search = ref(props.filters.search ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'sale_no', label: t('Sale No') },
     { key: 'customer.name', label: t('Customer') },
     { key: 'project.name', label: t('Project') },
@@ -127,6 +131,7 @@ function rowActions(item: any): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="sale_no">{{ t('Sale No') }}</SortableTh>
                             <SortableTh column="customer.name">{{ t('Customer') }}</SortableTh>
                             <SortableTh column="project.name">{{ t('Project') }}</SortableTh>
@@ -142,7 +147,8 @@ function rowActions(item: any): RowActionItem[] {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr v-for="(item, index) in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3 font-medium">
                                 <Link :href="`/sales/${item.id}`" class="hover:text-primary hover:underline">{{ item.sale_no }}</Link>
                             </td>
@@ -162,7 +168,7 @@ function rowActions(item: any): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="12" :title="t('No sales yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="13" :title="t('No sales yet')" />
                     </tbody>
                 </table>
             </TableFrame>

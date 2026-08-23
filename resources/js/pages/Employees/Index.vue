@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -27,6 +30,7 @@ const search = ref(props.filters.search ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'employee_no', label: t('Employee No') },
     { key: 'name', label: t('Name') },
     { key: 'takhallus', label: t('Takhallus') },
@@ -116,6 +120,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <th class="px-4 py-3 font-medium">{{ t('Employee No') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Name') }}</th>
                             <th class="px-4 py-3 font-medium">{{ t('Takhallus') }}</th>
@@ -135,10 +140,11 @@ function rowActions(item: Item): RowActionItem[] {
                     </thead>
                     <tbody>
                         <tr
-                            v-for="item in items.data"
+                            v-for="(item, index) in items.data"
                             :key="item.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3 font-medium">
                                 <Link :href="`/employees/${item.id}`" class="hover:text-primary hover:underline">
                                     {{ item.employee_no || '—' }}
@@ -167,7 +173,7 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="15"
+                            :colspan="16"
                             :title="t('No employees yet')"
                         />
                     </tbody>

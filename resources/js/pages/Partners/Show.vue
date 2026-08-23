@@ -8,6 +8,9 @@ import Heading from '@/components/Heading.vue';
 import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
 import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
@@ -34,6 +37,7 @@ const props = defineProps<{
 }>();
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'name', label: t('Project') },
     { key: 'ownership_percentage', label: t('Share') },
     { key: 'entitled_share', label: t('Profit share') },
@@ -107,6 +111,7 @@ defineOptions({
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="name">{{ t('Project') }}</SortableTh>
                         <SortableTh column="ownership_percentage">{{ t('Share') }}</SortableTh>
                         <SortableTh column="entitled_share">{{ t('Profit share') }}</SortableTh>
@@ -116,7 +121,8 @@ defineOptions({
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="p in sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
+                    <tr v-for="(p, index) in sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
+                        <TableIndexTd :index="index" />
                         <td class="px-4 py-3">
                             <Link :href="`/projects/${p.id}`" class="font-medium text-primary hover:underline">{{ p.name }}</Link>
                         </td>
@@ -127,7 +133,7 @@ defineOptions({
                         <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(p.created_at) }}</td>
                     </tr>
                     <tr v-if="!projects.length">
-                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">
+                        <td colspan="7" class="px-4 py-10 text-center text-muted-foreground">
                             {{ t('Not assigned to any project yet. Add from a project page.') }}
                         </td>
                     </tr>

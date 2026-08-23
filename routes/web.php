@@ -96,6 +96,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/expenses', [ProjectController::class, 'storeExpense'])
         ->middleware('permission:expenses.create')
         ->name('projects.expenses.store');
+    Route::get('projects/{project}/expenses/print', [ProjectController::class, 'printExpenses'])
+        ->middleware('permission:projects.view')
+        ->name('projects.expenses.print');
     Route::post('projects/{project}/shareholders', [ProjectController::class, 'storeShareholder'])
         ->middleware('permission:partners.create')
         ->name('projects.shareholders.store');

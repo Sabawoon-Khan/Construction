@@ -7,6 +7,9 @@ import EmptyState from '@/components/EmptyState.vue';
 import IssueStockDialog from '@/components/IssueStockDialog.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisFilterBar, MisPageHeader, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SettingsAddButton from '@/components/SettingsAddButton.vue';
@@ -247,6 +250,7 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="project_name">{{ t('Project') }}</SortableTh>
                             <SortableTh column="material_name">{{ t('Material') }}</SortableTh>
                             <SortableTh column="unit_name">{{ t('Unit') }}</SortableTh>
@@ -263,6 +267,7 @@ defineOptions({
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                             :class="isLowStock(row) ? 'bg-amber-500/5' : ''"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
                                 <Link :href="`/projects/${row.project_id}`" class="font-medium hover:underline">{{ row.project_name }}</Link>
                             </td>
@@ -314,6 +319,7 @@ defineOptions({
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="project_name">{{ t('Project') }}</SortableTh>
                             <SortableTh column="material_name">{{ t('Material') }}</SortableTh>
                             <SortableTh column="quantity">{{ t('Issued qty') }}</SortableTh>
@@ -325,10 +331,11 @@ defineOptions({
                     </thead>
                     <tbody>
                         <tr
-                            v-for="issue in sortedIssues"
+                            v-for="(issue, index) in sortedIssues"
                             :key="issue.id"
                             class="border-b last:border-0 transition-colors hover:bg-muted/30"
                         >
+                            <TableIndexTd :index="index" />
                             <td class="px-4 py-3">{{ issue.project_name || '—' }}</td>
                             <td class="px-4 py-3">
                                 <span>{{ issue.material_name || '—' }}</span>

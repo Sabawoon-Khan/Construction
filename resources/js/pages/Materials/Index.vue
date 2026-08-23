@@ -5,6 +5,9 @@ import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisFilterBar, MisLoadingState, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
 import Pagination from '@/components/Pagination.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
@@ -27,6 +30,7 @@ const search = ref(props.filters.search ?? '');
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'code', label: t('Code') },
     { key: 'name', label: t('Name') },
     { key: 'unit.unit_name', label: t('Unit') },
@@ -101,6 +105,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/30 text-start text-muted-foreground">
                         <tr>
+                            <TableIndexTh />
                             <SortableTh column="code">{{ t('Code') }}</SortableTh>
                             <SortableTh column="name">{{ t('Name') }}</SortableTh>
                             <SortableTh column="unit.unit_name">{{ t('Unit') }}</SortableTh>
@@ -112,7 +117,8 @@ function rowActions(item: Item): RowActionItem[] {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="item in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                        <tr v-for="(item, index) in sortedRows" :key="item.id" class="border-b last:border-0 transition-colors hover:bg-muted/30">
+                            <TableIndexTd :index="index" :from="items.meta?.from" />
                             <td class="px-4 py-3 font-medium">{{ item.code }}</td>
                             <td class="px-4 py-3">{{ item.name }}</td>
                             <td class="px-4 py-3">{{ item.unit?.unit_name || '—' }}</td>
@@ -126,7 +132,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 </div>
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No materials yet')" />
+                        <EmptyState v-if="!items.data.length" :colspan="9" :title="t('No materials yet')" />
                     </tbody>
                 </table>
             </TableFrame>
