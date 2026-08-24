@@ -1101,6 +1101,7 @@
     "Project / sale / purchase number": "شماره پروژه / فروش / خرید",
     "Project activity": "فعالیت پروژه",
     "Project code": "کد پروژه",
+    "This project code is already in use.": "این کد پروژه قبلاً استفاده شده است.",
     "Project details": "جزئیات پروژه",
     "Project expenses": "مصارف پروژه",
     "Project info": "اطلاعات پروژه",

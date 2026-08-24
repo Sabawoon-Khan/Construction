@@ -13,6 +13,7 @@ import { historyBack } from '@/lib/historyBack';
 
 const props = defineProps<{
     item: Record<string, any> | null;
+    suggestedCode?: string;
 }>();
 
 const isEdit = computed(() => !!props.item);
@@ -47,7 +48,7 @@ defineOptions({
             </div>
             <div class="grid gap-2">
                 <Label for="code">{{ t('Code') }}</Label>
-                <Input id="code" name="code" type="text" required :default-value="item?.code ?? ''" />
+                <Input id="code" name="code" type="text" required :default-value="item?.code ?? suggestedCode ?? ''" />
                 <InputError :message="errors.code" />
             </div>
             <div class="grid gap-2">

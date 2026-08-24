@@ -197,6 +197,9 @@ defineOptions({
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b border-neutral-300 text-neutral-500">
+                                <th class="w-10 pb-2 text-start text-xs font-medium">
+                                    #
+                                </th>
                                 <th class="pb-2 text-start text-xs font-medium">
                                     {{ t('Date') }}
                                 </th>
@@ -222,10 +225,13 @@ defineOptions({
                         </thead>
                         <tbody>
                             <tr
-                                v-for="expense in group.rows"
+                                v-for="(expense, index) in group.rows"
                                 :key="expense.id"
                                 class="border-b border-neutral-100"
                             >
+                                <td class="py-2.5 tabular-nums text-neutral-500">
+                                    {{ index + 1 }}
+                                </td>
                                 <td class="py-2.5 whitespace-nowrap">
                                     {{ formatDate(expense.expense_date) }}
                                 </td>
@@ -247,7 +253,7 @@ defineOptions({
                         <tfoot v-if="group.rows.length > 1">
                             <tr>
                                 <td
-                                    :colspan="category ? 4 : 5"
+                                    :colspan="category ? 5 : 6"
                                     class="pt-3 text-end text-xs font-medium text-neutral-500"
                                 >
                                     {{ t('Subtotal') }}

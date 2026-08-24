@@ -23,11 +23,13 @@ use App\Services\PurchaseService;
 use App\Services\ShareholderProfitService;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -77,28 +79,26 @@ class ProjectController extends Controller implements HasMiddleware
     {
         return Inertia::render('Projects/Form', [
             'item' => null,
+            'suggestedCode' => $this->nextProjectCode(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50',
-            'name' => 'required|string|max:255',
-            'type' => 'nullable|string|max:50',
-            'location' => 'nullable|string|max:255',
-            'start_date' => 'nullable|date',
-            'expected_completion_date' => 'nullable|date',
-            'estimated_budget' => 'nullable|numeric|min:0',
-            'estimated_revenue' => 'nullable|numeric|min:0',
-            'progress_percent' => 'nullable|numeric|min:0|max:100',
-            'status' => 'required|string|max:50',
-            'description' => 'nullable|string',
-            ...$this->attachmentValidationRules(),
-        ]);
+        $data = $request->validate(
+            $this->projectValidationRules(),
+            $this->projectValidationMessages(),
+        );
         unset($data['documents']);
 
-        $project = Project::create($this->withProjectDefaults($data));
+        try {
+            $project = Project::create($this->withProjectDefaults($data));
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages([
+                'code' => __('This project code is already in use.'),
+            ]);
+        }
+
         $this->storeRecordAttachments($request, $project);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects created.']);
@@ -556,23 +556,20 @@ class ProjectController extends Controller implements HasMiddleware
 
     public function update(Request $request, Project $project): RedirectResponse
     {
-        $data = $request->validate([
-            'code' => 'required|string|max:50',
-            'name' => 'required|string|max:255',
-            'type' => 'nullable|string|max:50',
-            'location' => 'nullable|string|max:255',
-            'start_date' => 'nullable|date',
-            'expected_completion_date' => 'nullable|date',
-            'estimated_budget' => 'nullable|numeric|min:0',
-            'estimated_revenue' => 'nullable|numeric|min:0',
-            'progress_percent' => 'nullable|numeric|min:0|max:100',
-            'status' => 'required|string|max:50',
-            'description' => 'nullable|string',
-            ...$this->attachmentValidationRules(),
-        ]);
+        $data = $request->validate(
+            $this->projectValidationRules($project->id),
+            $this->projectValidationMessages(),
+        );
         unset($data['documents']);
 
-        $project->update($this->withProjectDefaults($data));
+        try {
+            $project->update($this->withProjectDefaults($data));
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages([
+                'code' => __('This project code is already in use.'),
+            ]);
+        }
+
         $this->storeRecordAttachments($request, $project);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects updated.']);
@@ -587,6 +584,49 @@ class ProjectController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Projects deleted.']);
 
         return redirect()->route('projects.index');
+    }
+
+    /** @return array<string, string> */
+    private function projectValidationMessages(): array
+    {
+        return [
+            'code.unique' => __('This project code is already in use.'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function projectValidationRules(?int $ignoreId = null): array
+    {
+        return [
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('projects', 'code')->ignore($ignoreId),
+            ],
+            'name' => 'required|string|max:255',
+            'type' => 'nullable|string|max:50',
+            'location' => 'nullable|string|max:255',
+            'start_date' => 'nullable|date',
+            'expected_completion_date' => 'nullable|date',
+            'estimated_budget' => 'nullable|numeric|min:0',
+            'estimated_revenue' => 'nullable|numeric|min:0',
+            'progress_percent' => 'nullable|numeric|min:0|max:100',
+            'status' => 'required|string|max:50',
+            'description' => 'nullable|string',
+            ...$this->attachmentValidationRules(),
+        ];
+    }
+
+    private function nextProjectCode(): string
+    {
+        $max = Project::withTrashed()
+            ->pluck('code')
+            ->map(fn (string $code): ?int => is_numeric($code) ? (int) $code : null)
+            ->filter(fn (?int $code): bool => $code !== null && $code > 0)
+            ->max();
+
+        return (string) (($max ?? 0) + 1);
     }
 
     /**

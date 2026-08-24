@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { Printer, Trash2 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { ChevronLeft, ChevronRight, Printer, Trash2 } from '@lucide/vue';
+import { computed, ref, watch } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import Can from '@/components/Can.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
+import TableIndexTd from '@/components/TableIndexTd.vue';
+import TableIndexTh from '@/components/TableIndexTh.vue';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { MisSearchInput } from '@/components/mis';
+import type { MisSelectOption } from '@/components/mis/MisSelectField.vue';
 import { Button } from '@/components/ui/button';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
-import { cn, formatNumber, money, moneyByCurrency } from '@/lib/utils';
+import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     item: Record<string, any>;
@@ -44,6 +48,7 @@ const emit = defineEmits<{
 
 const { t } = useTranslations();
 const tableColumns = computed(() => [
+    indexTableColumn(),
     { key: 'expense_date', label: t('Date') },
     { key: 'reference_no', label: t('Bill number') },
     { key: 'paid_to', label: t('Paid to') },
@@ -62,6 +67,8 @@ const formatDate = (value: string | null | undefined) =>
 
 const expenseSearch = ref('');
 const categoryFilter = ref<string>('all');
+const currentPage = ref(1);
+const perPage = 15;
 const deletingId = ref<number | null>(null);
 
 function deleteExpense(expense: (typeof props.expenses)[number]) {
@@ -185,6 +192,42 @@ const filteredExpenses = computed(() => {
 });
 
 const { sortedRows } = provideTableSort(filteredExpenses);
+
+const categoryOptions = computed<MisSelectOption[]>(() => [
+    { value: 'all', label: t('All categories') },
+    ...categorySummaries.value.map((group) => ({
+        value: group.key,
+        label: `${group.name} (${formatNumber(group.count, 0)})`,
+    })),
+]);
+
+const totalPages = computed(() =>
+    Math.max(1, Math.ceil(filteredExpenses.value.length / perPage)),
+);
+
+const paginatedRows = computed(() => {
+    const start = (currentPage.value - 1) * perPage;
+
+    return sortedRows.value.slice(start, start + perPage);
+});
+
+const paginationFrom = computed(() =>
+    filteredExpenses.value.length ? (currentPage.value - 1) * perPage + 1 : 0,
+);
+
+const paginationTo = computed(() =>
+    Math.min(currentPage.value * perPage, filteredExpenses.value.length),
+);
+
+watch([expenseSearch, categoryFilter], () => {
+    currentPage.value = 1;
+});
+
+watch(totalPages, (pages) => {
+    if (currentPage.value > pages) {
+        currentPage.value = pages;
+    }
+});
 </script>
 
 <template>
@@ -223,76 +266,47 @@ const { sortedRows } = provideTableSort(filteredExpenses);
             </div>
         </div>
 
-        <div
-            v-if="categorySummaries.length"
-            class="flex flex-wrap items-center gap-2 border-b bg-muted/20 px-5 py-3"
-        >
-            <button
-                type="button"
-                :class="
-                    cn(
-                        'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
-                        categoryFilter === 'all'
-                            ? 'border-primary/30 bg-primary/10 text-primary'
-                            : 'border-transparent bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                    )
-                "
-                @click="categoryFilter = 'all'"
-            >
-                {{ t('All') }}
-            </button>
-            <div
-                v-for="group in categorySummaries"
-                :key="group.key"
-                class="group flex items-center"
-            >
-                <button
-                    type="button"
-                    :class="
-                        cn(
-                            'rounded-s-full border px-3 py-1.5 text-xs font-medium transition-colors',
-                            categoryFilter === group.key
-                                ? 'border-primary/30 bg-primary/10 text-primary'
-                                : 'border-transparent bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground',
-                        )
-                    "
-                    @click="categoryFilter = categoryFilter === group.key ? 'all' : group.key"
-                >
-                    <span>{{ group.name }}</span>
-                    <span class="ms-1.5 tabular-nums text-[11px] opacity-70">
-                        {{ formatNumber(group.count, 0) }} ·
-                        {{ moneyByCurrency(group.byCurrency) }}
-                    </span>
-                </button>
-                <Button
-                    as-child
-                    size="icon"
-                    variant="ghost"
-                    class="h-7 w-7 rounded-s-none rounded-e-full border border-s-0 border-transparent bg-background text-muted-foreground opacity-70 hover:bg-muted/60 hover:opacity-100 group-hover:border-border"
-                >
-                    <Link
-                        :href="printHref(group.key)"
-                        target="_blank"
-                        :title="t('Print')"
-                    >
-                        <Printer class="size-3.5" />
-                    </Link>
-                </Button>
-            </div>
-        </div>
-
-        <div class="border-b px-5 py-3">
+        <div class="flex flex-wrap items-center gap-2 border-b px-5 py-2.5">
             <MisSearchInput
                 v-model="expenseSearch"
-                class="max-w-sm"
+                class="h-8 min-w-[10rem] flex-1 sm:max-w-xs"
                 :placeholder="t('Search expenses...')"
             />
+            <select
+                v-if="categorySummaries.length"
+                v-model="categoryFilter"
+                class="h-8 max-w-[12rem] rounded-md border bg-background px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+            >
+                <option
+                    v-for="option in categoryOptions"
+                    :key="option.value"
+                    :value="option.value"
+                >
+                    {{ option.label }}
+                </option>
+            </select>
+            <Button
+                v-if="categoryFilter !== 'all'"
+                as-child
+                size="icon"
+                variant="ghost"
+                class="size-8 shrink-0"
+            >
+                <Link
+                    :href="printHref(categoryFilter)"
+                    target="_blank"
+                    :title="t('Print')"
+                >
+                    <Printer class="size-3.5" />
+                </Link>
+            </Button>
         </div>
 
         <TableFrame table-id="project-expenses" :columns="tableColumns">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-start text-muted-foreground">
                     <tr>
+                        <TableIndexTh />
                         <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
                         <SortableTh column="reference_no">{{ t('Bill number') }}</SortableTh>
                         <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
@@ -307,11 +321,12 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                 </thead>
                 <tbody>
                     <tr
-                        v-for="expense in sortedRows"
+                        v-for="(expense, index) in paginatedRows"
                         :key="expense.id"
                         class="cursor-pointer border-t hover:bg-muted/30"
                         @click="emit('open-expense', expense)"
                     >
+                        <TableIndexTd :index="index" :from="paginationFrom" />
                         <td class="px-4 py-3 whitespace-nowrap">
                             {{ formatDate(expense.expense_date) }}
                         </td>
@@ -416,7 +431,7 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                     </tr>
                     <tr v-if="!filteredExpenses.length">
                         <td
-                            colspan="10"
+                            colspan="11"
                             class="px-4 py-12 text-center text-muted-foreground"
                         >
                             {{
@@ -429,5 +444,45 @@ const { sortedRows } = provideTableSort(filteredExpenses);
                 </tbody>
             </table>
         </TableFrame>
+
+        <div
+            v-if="filteredExpenses.length > perPage"
+            class="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3"
+        >
+            <p class="text-xs text-muted-foreground">
+                {{
+                    t('Showing :from–:to of :total', {
+                        from: formatNumber(paginationFrom, 0),
+                        to: formatNumber(paginationTo, 0),
+                        total: formatNumber(filteredExpenses.length, 0),
+                    })
+                }}
+            </p>
+            <div class="flex items-center gap-1">
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    class="size-8"
+                    :disabled="currentPage <= 1"
+                    @click="currentPage -= 1"
+                >
+                    <ChevronLeft class="size-4" />
+                </Button>
+                <span class="min-w-[4rem] text-center text-xs tabular-nums text-muted-foreground">
+                    {{ currentPage }} / {{ totalPages }}
+                </span>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    class="size-8"
+                    :disabled="currentPage >= totalPages"
+                    @click="currentPage += 1"
+                >
+                    <ChevronRight class="size-4" />
+                </Button>
+            </div>
+        </div>
     </div>
 </template>
