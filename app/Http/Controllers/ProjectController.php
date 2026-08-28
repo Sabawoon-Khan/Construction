@@ -236,7 +236,6 @@ class ProjectController extends Controller implements HasMiddleware
             'expenses' => $expensesQuery
                 ->with(['expenseUnit:id,unit_name', 'category:id,name', 'attachments'])
                 ->latest('expense_date')
-                ->limit(50)
                 ->get([
                     'id',
                     'expense_no',
