@@ -48,6 +48,7 @@ const currency = ref(baseCurrency.value);
 const itemAmount = ref('');
 const perPrice = ref('');
 const paymentMethod = ref('cash');
+const description = ref('');
 const categoryId = ref('');
 const localCategories = ref<{ id: number; name: string; code: string }[]>([]);
 const newCategoryName = ref('');
@@ -71,6 +72,7 @@ watch(
         itemAmount.value = String(props.item?.item_amount ?? (isProjectExpense.value ? '1' : ''));
         perPrice.value = String(props.item?.per_price ?? props.item?.amount ?? '');
         paymentMethod.value = props.item?.payment_method === 'bank' ? 'bank' : 'cash';
+        description.value = props.item?.description ?? '';
         categoryId.value = props.item?.expense_category_id ? String(props.item.expense_category_id) : '';
         newCategoryName.value = '';
         categoryError.value = null;
@@ -200,11 +202,11 @@ async function addCategory() {
                             <Label for="expense-description">{{ t('Description') }}</Label>
                             <textarea
                                 id="expense-description"
+                                v-model="description"
                                 name="description"
                                 rows="2"
                                 required
                                 class="rounded-md border border-input bg-transparent px-3 py-2 text-sm"
-                                :value="item?.description ?? ''"
                             />
                             <InputError :message="errors.description" />
                         </div>

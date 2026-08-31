@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { Upload } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import FileUploadField, { type ExistingUploadFile } from '@/components/FileUploadField.vue';
 import InputError from '@/components/InputError.vue';
 import { Label } from '@/components/ui/label';
@@ -46,9 +47,37 @@ const existing = computed<ExistingUploadFile[]>(() =>
     })),
 );
 
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const selectedNames = ref<string[]>([]);
+const isDragging = ref(false);
+
+function applyFiles(files: File[]): void {
+    selectedNames.value = files.map((file) => file.name);
+    emit('update:files', files);
+
+    if (!fileInputRef.value) {
+        return;
+    }
+
+    const transfer = new DataTransfer();
+    for (const file of files) {
+        transfer.items.add(file);
+    }
+    fileInputRef.value.files = transfer.files;
+}
+
 function onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    emit('update:files', input.files ? Array.from(input.files) : []);
+    const files = input.files ? Array.from(input.files) : [];
+    selectedNames.value = files.map((file) => file.name);
+    emit('update:files', files);
+}
+
+function onDrop(event: DragEvent): void {
+    event.preventDefault();
+    isDragging.value = false;
+    const files = event.dataTransfer?.files ? Array.from(event.dataTransfer.files) : [];
+    applyFiles(files);
 }
 </script>
 
@@ -76,12 +105,43 @@ function onFileChange(event: Event): void {
         />
         <p v-else-if="readonly" class="text-sm text-muted-foreground">{{ t('No attachments.') }}</p>
         <template v-else>
+            <div
+                role="button"
+                tabindex="0"
+                class="group flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-6 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                :class="
+                    isDragging
+                        ? 'border-primary bg-primary/5'
+                        : 'cursor-pointer border-border/80 bg-muted/20 hover:border-border hover:bg-muted/35'
+                "
+                @click="fileInputRef?.click()"
+                @keydown.enter.prevent="fileInputRef?.click()"
+                @keydown.space.prevent="fileInputRef?.click()"
+                @dragenter.prevent="isDragging = true"
+                @dragover.prevent="isDragging = true"
+                @dragleave.prevent="isDragging = false"
+                @drop="onDrop"
+            >
+                <div
+                    class="flex size-10 items-center justify-center rounded-full border border-border/70 bg-background text-muted-foreground shadow-sm"
+                >
+                    <Upload class="size-4" />
+                </div>
+                <p class="text-sm font-medium">
+                    <span class="text-primary">{{ t('Choose files') }}</span>
+                    <span class="text-muted-foreground"> {{ t('or drag and drop') }}</span>
+                </p>
+                <p v-if="selectedNames.length" class="max-w-full truncate text-xs text-muted-foreground">
+                    {{ selectedNames.join(', ') }}
+                </p>
+            </div>
             <input
+                ref="fileInputRef"
                 type="file"
                 multiple
                 :name="files === undefined ? 'documents[]' : undefined"
                 :accept="accept"
-                class="text-sm"
+                class="hidden"
                 @change="onFileChange"
             />
             <InputError :message="error" />
