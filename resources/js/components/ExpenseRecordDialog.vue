@@ -197,7 +197,7 @@ async function addCategory() {
                     <h4 class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                         {{ t('Details') }}
                     </h4>
-                    <div class="grid gap-4 sm:grid-cols-2">
+                    <div class="grid items-start gap-4 sm:grid-cols-2">
                         <div class="grid gap-2 sm:col-span-2">
                             <Label for="expense-description">{{ t('Description') }}</Label>
                             <textarea
@@ -210,12 +210,12 @@ async function addCategory() {
                             />
                             <InputError :message="errors.description" />
                         </div>
-                        <div class="grid gap-2">
+                        <div class="grid min-w-0 gap-2">
                             <Label for="paid_to">{{ t('Paid to') }}</Label>
                             <Input id="paid_to" name="paid_to" required :default-value="item?.paid_to ?? ''" />
                             <InputError :message="errors.paid_to" />
                         </div>
-                        <div class="grid gap-2">
+                        <div class="grid min-w-0 gap-2">
                             <Label for="expense_date">{{ t('Date') }}</Label>
                             <Input
                                 id="expense_date"
@@ -226,56 +226,59 @@ async function addCategory() {
                             />
                             <InputError :message="errors.expense_date" />
                         </div>
-                        <div class="grid gap-2">
-                            <div class="flex items-center justify-between gap-2">
+                        <div class="grid min-w-0 gap-2 sm:col-span-2">
+                            <div class="flex min-w-0 flex-wrap items-center justify-between gap-2">
                                 <Label for="expense_category_id">{{ t('Category') }}</Label>
                                 <RelatedCreateLink href="/expense-categories" :label="t('Manage categories')" />
                             </div>
-                            <select
-                                id="expense_category_id"
-                                v-model="categoryId"
-                                name="expense_category_id"
-                                class="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
-                            >
-                                <option value="">{{ t('General') }}</option>
-                                <option v-for="c in localCategories" :key="c.id" :value="String(c.id)">
-                                    {{ c.name }}
-                                </option>
-                            </select>
-                            <div class="flex gap-2">
-                                <Input
-                                    v-if="showNewCategory"
-                                    v-model="newCategoryName"
-                                    :placeholder="t('New category name')"
-                                    class="min-w-0 flex-1"
-                                    @keydown.enter.prevent="addCategory"
-                                />
-                                <Button
-                                    v-if="showNewCategory"
-                                    type="button"
-                                    size="sm"
-                                    :disabled="addingCategory"
-                                    @click="addCategory"
+                            <div class="flex min-w-0 flex-col gap-2 sm:flex-row">
+                                <select
+                                    id="expense_category_id"
+                                    v-model="categoryId"
+                                    name="expense_category_id"
+                                    class="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 text-sm sm:flex-1"
                                 >
-                                    <LoaderCircle v-if="addingCategory" class="size-4 animate-spin" />
-                                    <Plus v-else class="size-4" />
-                                    {{ t('Add') }}
-                                </Button>
-                                <Button
-                                    v-else
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    class="w-full"
-                                    @click="showNewCategory = true"
-                                >
-                                    <Plus class="size-4" />
-                                    {{ t('Add category') }}
-                                </Button>
+                                    <option value="">{{ t('General') }}</option>
+                                    <option v-for="c in localCategories" :key="c.id" :value="String(c.id)">
+                                        {{ c.name }}
+                                    </option>
+                                </select>
+                                <div class="flex min-w-0 gap-2 sm:w-auto">
+                                    <Input
+                                        v-if="showNewCategory"
+                                        v-model="newCategoryName"
+                                        :placeholder="t('New category name')"
+                                        class="min-w-0 flex-1 sm:w-48"
+                                        @keydown.enter.prevent="addCategory"
+                                    />
+                                    <Button
+                                        v-if="showNewCategory"
+                                        type="button"
+                                        size="sm"
+                                        class="shrink-0"
+                                        :disabled="addingCategory"
+                                        @click="addCategory"
+                                    >
+                                        <LoaderCircle v-if="addingCategory" class="size-4 animate-spin" />
+                                        <Plus v-else class="size-4" />
+                                        {{ t('Add') }}
+                                    </Button>
+                                    <Button
+                                        v-else
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        class="w-full shrink-0 sm:w-auto"
+                                        @click="showNewCategory = true"
+                                    >
+                                        <Plus class="size-4" />
+                                        {{ t('Add category') }}
+                                    </Button>
+                                </div>
                             </div>
                             <p v-if="categoryError" class="text-sm text-destructive">{{ categoryError }}</p>
                         </div>
-                        <div class="grid gap-2">
+                        <div class="grid min-w-0 gap-2">
                             <Label for="reference_no">{{ t('Bill number') }}</Label>
                             <Input id="reference_no" name="reference_no" :default-value="item?.reference_no ?? ''" />
                             <InputError :message="errors.reference_no" />
