@@ -1,7 +1,7 @@
 .v2-list-page {
     /* Appearance tokens → table / list chrome (brand + accent drive tops) */
-    --v2-table-accent: var(--brand-accent, var(--primary, #0d9488));
-    --v2-table-brand: var(--school-navy, var(--app-v2-brand, #162238));
+    --v2-table-accent: var(--brand-accent, var(--primary, #ff8a3a));
+    --v2-table-brand: var(--school-navy, var(--app-v2-brand, #1a1a1a));
     --v2-table-secondary: var(--school-gold, var(--app-v2-secondary, #d4a853));
     --v2-table-surface: color-mix(
         in srgb,
@@ -55,9 +55,16 @@
     );
     --v2-table-pager-active-bg: var(--v2-table-brand);
     --v2-table-pager-active-fg: #ffffff;
+    /* Soft light wash — accent/gold tint, not muddy brand gray */
     --v2-hero-wash: color-mix(
         in srgb,
-        var(--background, #f5f6f2) 88%,
+        var(--background, #eef0ee) 92%,
+        var(--v2-table-accent) 8%
+    );
+    --v2-hero-ink: var(--foreground, #111111);
+    --v2-hero-muted: color-mix(
+        in srgb,
+        var(--muted-foreground, #6d7375) 88%,
         var(--v2-table-brand) 12%
     );
 
@@ -88,14 +95,34 @@
     position: relative;
     overflow: hidden;
     min-height: 280px;
-    border: 1px solid
-        color-mix(in srgb, var(--v2-table-brand) 12%, rgb(255 255 255 / 70%));
+    border: 1px solid rgb(255 255 255 / 70%);
     border-radius: 28px;
-    background: color-mix(in srgb, var(--v2-hero-wash) 78%, transparent);
+    background:
+        radial-gradient(
+            ellipse 52% 46% at 8% 0%,
+            rgb(255 255 255 / 95%) 0%,
+            transparent 72%
+        ),
+        radial-gradient(
+            ellipse 42% 40% at 96% 8%,
+            color-mix(in srgb, var(--v2-table-accent) 14%, transparent) 0%,
+            transparent 68%
+        ),
+        radial-gradient(
+            ellipse 36% 34% at 70% 100%,
+            color-mix(in srgb, var(--v2-table-secondary) 12%, transparent) 0%,
+            transparent 70%
+        ),
+        linear-gradient(
+            145deg,
+            color-mix(in srgb, var(--card, #fff) 88%, var(--v2-hero-wash)) 0%,
+            var(--v2-hero-wash) 48%,
+            color-mix(in srgb, var(--background, #eef0ee) 90%, var(--v2-table-accent) 10%)
+                100%
+        );
     box-shadow:
-        0 18px 44px
-            color-mix(in srgb, var(--v2-table-brand) 8%, transparent),
-        inset 0 1px rgb(255 255 255 / 90%);
+        0 18px 44px rgb(55 65 70 / 6%),
+        inset 0 1px rgb(255 255 255 / 92%);
 }
 
 .hero-image {
@@ -105,8 +132,9 @@
     height: 100%;
     object-fit: contain;
     object-position: right center;
-    opacity: 0.58;
+    opacity: 0.72;
     pointer-events: none;
+    filter: saturate(1.05) contrast(1.02);
 }
 
 .hero-fade {
@@ -115,15 +143,15 @@
     background:
         linear-gradient(
             105deg,
-            color-mix(in srgb, var(--v2-hero-wash) 96%, transparent) 0%,
-            color-mix(in srgb, var(--v2-hero-wash) 88%, transparent) 28%,
-            color-mix(in srgb, var(--v2-hero-wash) 42%, transparent) 58%,
-            color-mix(in srgb, var(--v2-hero-wash) 22%, transparent) 100%
+            color-mix(in srgb, var(--card, #fff) 94%, transparent) 0%,
+            color-mix(in srgb, var(--v2-hero-wash) 82%, transparent) 32%,
+            color-mix(in srgb, var(--v2-hero-wash) 28%, transparent) 62%,
+            transparent 100%
         ),
         linear-gradient(
             180deg,
-            transparent 50%,
-            color-mix(in srgb, var(--v2-hero-wash) 90%, transparent) 100%
+            transparent 42%,
+            color-mix(in srgb, var(--v2-hero-wash) 78%, transparent) 100%
         );
 }
 
@@ -135,15 +163,15 @@
     background:
         linear-gradient(
             255deg,
-            color-mix(in srgb, var(--v2-hero-wash) 96%, transparent) 0%,
-            color-mix(in srgb, var(--v2-hero-wash) 88%, transparent) 28%,
-            color-mix(in srgb, var(--v2-hero-wash) 42%, transparent) 58%,
-            color-mix(in srgb, var(--v2-hero-wash) 22%, transparent) 100%
+            color-mix(in srgb, var(--card, #fff) 94%, transparent) 0%,
+            color-mix(in srgb, var(--v2-hero-wash) 82%, transparent) 32%,
+            color-mix(in srgb, var(--v2-hero-wash) 28%, transparent) 62%,
+            transparent 100%
         ),
         linear-gradient(
             180deg,
-            transparent 50%,
-            color-mix(in srgb, var(--v2-hero-wash) 90%, transparent) 100%
+            transparent 42%,
+            color-mix(in srgb, var(--v2-hero-wash) 78%, transparent) 100%
         );
 }
 
@@ -223,9 +251,9 @@
 
 .eyebrow {
     margin: 0 0 8px;
-    color: #8a9090;
+    color: var(--v2-table-accent);
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 650;
     letter-spacing: 0.12em;
     text-transform: uppercase;
 }
@@ -236,6 +264,7 @@
 
 .hero-copy h1 {
     margin: 0;
+    color: var(--v2-hero-ink);
     font-size: clamp(34px, 3.6vw, 48px);
     font-weight: 650;
     letter-spacing: -1.8px;
@@ -245,7 +274,7 @@
 .hero-copy > p {
     margin: 12px 0 0;
     max-width: 360px;
-    color: #6d7375;
+    color: var(--v2-hero-muted);
     font-size: 13px;
     line-height: 1.55;
 }
@@ -271,18 +300,18 @@
     min-width: 0;
     flex: unset;
     padding: 10px 12px 8px;
-    border: 1px solid rgb(255 255 255 / 78%);
+    border: 1px solid rgb(255 255 255 / 82%);
     border-radius: 18px;
     background:
         linear-gradient(
             165deg,
-            rgb(255 255 255 / 80%) 0%,
-            rgb(255 255 255 / 52%) 100%
+            rgb(255 255 255 / 88%) 0%,
+            rgb(255 255 255 / 62%) 100%
         );
     box-shadow:
-        0 18px 40px rgb(40 45 50 / 10%),
+        0 14px 32px rgb(40 45 50 / 7%),
         inset 0 1px rgb(255 255 255 / 95%);
-    backdrop-filter: blur(22px) saturate(1.2);
+    backdrop-filter: blur(22px) saturate(1.15);
 }
 
 .money-card {
@@ -299,13 +328,13 @@
 }
 
 .indicator-head span {
-    color: #5f6567;
+    color: var(--v2-hero-muted);
     font-size: 11px;
     font-weight: 550;
 }
 
 .indicator-head em {
-    color: #9aa0a1;
+    color: color-mix(in srgb, var(--v2-hero-muted) 80%, transparent);
     font-size: 10px;
     font-style: normal;
     font-weight: 500;
@@ -327,6 +356,7 @@
 }
 
 .inventory-hero-copy strong {
+    color: var(--v2-hero-ink);
     font-size: 22px;
     font-weight: 650;
     letter-spacing: -1px;
@@ -334,7 +364,7 @@
 }
 
 .inventory-hero-copy small {
-    color: #8a9090;
+    color: var(--v2-hero-muted);
     font-size: 10px;
     font-weight: 500;
 }
@@ -458,7 +488,7 @@
 }
 
 .money-col span {
-    color: #6d7375;
+    color: var(--v2-hero-muted);
     font-size: 10px;
     font-weight: 550;
 }
@@ -557,7 +587,7 @@
 
 .indicator-list span {
     overflow: hidden;
-    color: #6d7375;
+    color: var(--v2-hero-muted);
     font-size: 11px;
     font-weight: 500;
     text-overflow: ellipsis;
@@ -567,7 +597,7 @@
 .indicator-list b {
     overflow: hidden;
     max-width: 62%;
-    color: #161616;
+    color: var(--v2-hero-ink);
     font-size: 11px;
     font-weight: 650;
     text-align: end;
@@ -585,8 +615,8 @@
     padding: 0 18px;
     border: 0;
     border-radius: 999px;
-    background: var(--v2-table-brand);
-    color: white;
+    background: var(--v2-table-accent);
+    color: #fff;
     font-size: 12px;
     font-weight: 550;
     text-decoration: none;
@@ -594,8 +624,8 @@
     flex-shrink: 0;
     box-shadow:
         0 10px 24px
-            color-mix(in srgb, var(--v2-table-brand) 28%, transparent),
-        0 0 0 1px rgb(255 255 255 / 8%) inset;
+            color-mix(in srgb, var(--v2-table-accent) 32%, transparent),
+        0 0 0 1px rgb(255 255 255 / 14%) inset;
     transition:
         transform 0.15s ease,
         box-shadow 0.15s ease,
@@ -614,13 +644,45 @@
 }
 
 .create-btn:hover {
-    background: color-mix(in srgb, var(--v2-table-brand) 88%, black);
+    background: color-mix(in srgb, var(--v2-table-accent) 82%, black);
     transform: translateY(-1px);
     box-shadow:
         0 14px 28px
-            color-mix(in srgb, var(--v2-table-brand) 32%, transparent),
+            color-mix(in srgb, var(--v2-table-accent) 36%, transparent),
         0 0 24px
-            color-mix(in srgb, var(--v2-table-accent) 28%, transparent);
+            color-mix(in srgb, var(--v2-table-accent) 22%, transparent);
+}
+
+.create-btn-ghost,
+.create-btn.create-btn-ghost {
+    border: 1px solid rgb(255 255 255 / 70%);
+    background: rgb(255 255 255 / 72%);
+    color: #1a1a1a;
+    box-shadow:
+        0 8px 18px rgb(40 45 50 / 6%),
+        inset 0 1px rgb(255 255 255 / 90%);
+}
+
+.create-btn-ghost:hover,
+.create-btn.create-btn-ghost:hover {
+    background: rgb(255 255 255 / 90%);
+    color: #1a1a1a;
+    box-shadow: 0 12px 24px rgb(40 45 50 / 10%);
+}
+
+.create-btn-outline,
+.create-btn.create-btn-outline {
+    border: 1px solid
+        color-mix(in srgb, var(--v2-table-accent) 35%, transparent);
+    background: color-mix(in srgb, var(--card, #fff) 78%, transparent);
+    color: var(--v2-table-accent);
+    box-shadow: inset 0 1px rgb(255 255 255 / 85%);
+}
+
+.create-btn-outline:hover,
+.create-btn.create-btn-outline:hover {
+    background: color-mix(in srgb, var(--v2-table-accent) 12%, white);
+    color: var(--v2-table-accent);
 }
 
 .stat-grid {
@@ -637,12 +699,12 @@
     align-items: center;
     gap: 12px;
     padding: 15px 16px;
-    border: 1px solid rgb(255 255 255 / 72%);
+    border: 1px solid rgb(255 255 255 / 82%);
     border-radius: 18px;
-    background: rgb(255 255 255 / 64%);
+    background: rgb(255 255 255 / 78%);
     box-shadow:
-        0 10px 24px rgb(55 65 70 / 4%),
-        inset 0 1px rgb(255 255 255 / 85%);
+        0 10px 24px rgb(55 65 70 / 5%),
+        inset 0 1px rgb(255 255 255 / 90%);
     backdrop-filter: blur(14px);
     animation: fade-up 0.45s calc(0.12s + var(--d, 0) * 0.05s) ease both;
     transition:
@@ -656,7 +718,8 @@
 }
 
 .stat-card.accent {
-    border-color: color-mix(in srgb, var(--v2-table-accent) 45%, transparent);
+    border-color: color-mix(in srgb, var(--v2-table-accent) 40%, transparent);
+    background: color-mix(in srgb, var(--card, #fff) 82%, var(--v2-table-accent) 18%);
 }
 
 .stat-icon {
@@ -665,14 +728,14 @@
     width: 36px;
     height: 36px;
     border-radius: 12px;
-    background: color-mix(in srgb, var(--v2-table-brand) 14%, transparent);
+    background: color-mix(in srgb, var(--v2-table-brand) 10%, transparent);
     color: var(--v2-table-brand);
     flex-shrink: 0;
 }
 
 .stat-icon.warm {
-    background: color-mix(in srgb, var(--v2-table-secondary) 16%, transparent);
-    color: var(--v2-table-secondary);
+    background: color-mix(in srgb, var(--v2-table-secondary) 18%, transparent);
+    color: color-mix(in srgb, var(--v2-table-secondary) 85%, #8a6a00);
 }
 
 .stat-icon.teal {
@@ -692,7 +755,7 @@
 
 .stat-card span {
     display: block;
-    color: #6d7375;
+    color: var(--v2-hero-muted);
     font-size: 11px;
     font-weight: 500;
 }
@@ -701,6 +764,7 @@
     display: block;
     margin-top: 4px;
     overflow: hidden;
+    color: var(--v2-hero-ink);
     font-size: 19px;
     font-weight: 550;
     letter-spacing: -0.7px;
@@ -1395,7 +1459,12 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     gap: 8px;
+}
+
+.v2-panel-actions :is(a, button) {
+    min-height: 36px;
 }
 
 .v2-panel-body {
@@ -1487,7 +1556,7 @@
 .v2-field :is(label, [data-slot='label']) {
     color: color-mix(
         in srgb,
-        var(--v2-table-brand, #162238) 55%,
+        var(--v2-table-brand, #1a1a1a) 55%,
         var(--muted-foreground, #6d7375)
     );
     font-size: 12px;
@@ -1573,6 +1642,32 @@
 .v2-list-page .mis-form-actions :is(button, a) {
     border-radius: 999px;
     min-height: 40px;
+}
+
+.v2-list-page .mis-form-actions button[data-slot='button'][data-variant='default'],
+.v2-list-page .mis-form-actions a[data-slot='button'][data-variant='default'] {
+    background: var(--v2-table-accent);
+    color: #fff;
+    box-shadow:
+        0 10px 24px color-mix(in srgb, var(--v2-table-accent) 28%, transparent),
+        inset 0 1px rgb(255 255 255 / 16%);
+}
+
+.v2-list-page .mis-form-actions button[data-slot='button'][data-variant='default']:hover,
+.v2-list-page .mis-form-actions a[data-slot='button'][data-variant='default']:hover {
+    background: color-mix(in srgb, var(--v2-table-accent) 82%, black);
+}
+
+.v2-list-page .mis-form-actions button[data-slot='button'][data-variant='outline'],
+.v2-list-page .mis-form-actions a[data-slot='button'][data-variant='outline'],
+.v2-list-page .mis-form-actions button[data-slot='button'][data-variant='secondary'],
+.v2-list-page .mis-form-actions a[data-slot='button'][data-variant='secondary'] {
+    border-color: rgb(255 255 255 / 70%);
+    background: rgb(255 255 255 / 72%);
+    color: #1a1a1a;
+    box-shadow:
+        0 8px 18px rgb(40 45 50 / 6%),
+        inset 0 1px rgb(255 255 255 / 90%);
 }
 
 .v2-list-page[dir='rtl'] .v2-form-section-head h2 {

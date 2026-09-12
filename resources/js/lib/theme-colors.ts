@@ -49,7 +49,7 @@ export const THEME_PRESETS: ThemePreset[] = [
         labelKey: 'Structo glass',
         descriptionKey: 'Soft frosted panels, orange accents, airy workspace',
         settings: {
-            brand: '#111111',
+            brand: '#1a1a1a',
             secondary: '#f3c14e',
             accent: '#ff8a3a',
             accentDark: '#fb923c',

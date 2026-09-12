@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Printer, Trash2 } from '@lucide/vue';
+import { ChevronLeft, ChevronRight, Plus, Printer, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import Can from '@/components/Can.vue';
@@ -11,7 +11,7 @@ import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisMoneyStack, MisSearchInput } from '@/components/mis';
+import { MisSearchInput } from '@/components/mis';
 import type { MisSelectOption } from '@/components/mis/MisSelectField.vue';
 import { Button } from '@/components/ui/button';
 import { V2Panel } from '@/components/v2';
@@ -139,20 +139,9 @@ const categorySummaries = computed(() => {
     return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
 });
 
-const expenseTotals = computed(() => {
-    const byCurrency: Record<string, number> = {};
-
-    for (const expense of props.expenses) {
-        const code = resolveCurrency(expense.currency || baseCurrency.value);
-        byCurrency[code] =
-            (byCurrency[code] ?? 0) + Number(expense.amount ?? 0);
-    }
-
-    return {
-        count: props.expenses.length,
-        byCurrency,
-    };
-});
+const expenseTotals = computed(() => ({
+    count: props.expenses.length,
+}));
 
 const headerSummary = computed(() => {
     const parts = [
@@ -250,48 +239,46 @@ watch(totalPages, (pages) => {
 </script>
 
 <template>
-    <V2Panel :padded="false">
+    <V2Panel :padded="false" class="project-money-panel">
         <template #header>
-            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h2>{{ t('Project expenses') }}</h2>
-                <MisMoneyStack
-                    class="text-base font-semibold text-rose-700 sm:text-lg"
-                    :amounts="expenseTotals.byCurrency"
-                />
+            <div>
+                <h2>{{ t('Expenses') }}</h2>
+                <p>{{ headerSummary }}</p>
             </div>
-            <p>{{ headerSummary }}</p>
         </template>
         <template #actions>
-            <Button as-child size="sm" variant="outline">
+            <Button as-child size="sm" variant="outline" class="h-9 gap-1.5">
                 <Link :href="printHref()" target="_blank">
                     <Printer class="size-4" />
-                    {{ t('Print all') }}
+                    {{ t('Print') }}
                 </Link>
             </Button>
             <Can permission="purchases.create">
-                <Button as-child size="sm" variant="outline">
+                <Button as-child size="sm" variant="outline" class="h-9 gap-1.5">
                     <Link :href="`/purchases/create?project_id=${item.id}`">
-                        {{ t('New purchase') }}
+                        <Plus class="size-4" />
+                        {{ t('Purchase') }}
                     </Link>
                 </Button>
             </Can>
             <Can permission="expenses.create">
-                <Button size="sm" @click="emit('open-expense', null)">
+                <Button size="sm" class="h-9 gap-1.5" @click="emit('open-expense', null)">
+                    <Plus class="size-4" />
                     {{ t('Add expense') }}
                 </Button>
             </Can>
         </template>
 
-        <div class="flex flex-col gap-2 border-b px-3 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
+        <div class="flex flex-col gap-2 border-b border-border/50 bg-muted/15 px-3 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
             <MisSearchInput
                 v-model="expenseSearch"
-                class="h-9 min-w-0 w-full flex-1 sm:h-8 sm:min-w-[10rem] sm:max-w-xs"
+                class="h-9 min-w-0 w-full flex-1 sm:min-w-[12rem] sm:max-w-sm"
                 :placeholder="t('Search expenses...')"
             />
             <select
                 v-if="categorySummaries.length"
                 v-model="categoryFilter"
-                class="h-9 w-full rounded-md border bg-background px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] sm:h-8 sm:max-w-[12rem] sm:w-auto"
+                class="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] sm:max-w-[14rem] sm:w-auto"
             >
                 <option
                     v-for="option in categoryOptions"
@@ -304,16 +291,16 @@ watch(totalPages, (pages) => {
             <Button
                 v-if="categoryFilter !== 'all'"
                 as-child
-                size="icon"
-                variant="ghost"
-                class="size-8 shrink-0"
+                size="sm"
+                variant="outline"
+                class="h-9 gap-1.5 shrink-0"
             >
                 <Link
                     :href="printHref(categoryFilter)"
                     target="_blank"
-                    :title="t('Print')"
                 >
-                    <Printer class="size-3.5" />
+                    <Printer class="size-4" />
+                    {{ t('Print') }}
                 </Link>
             </Button>
         </div>
@@ -373,7 +360,7 @@ watch(totalPages, (pages) => {
                                     : t('Cash')
                             }}
                         </td>
-                        <td class="px-4 py-3 tabular-nums font-medium whitespace-nowrap">
+                        <td class="px-4 py-3 tabular-nums font-semibold whitespace-nowrap text-rose-700">
                             {{
                                 money(
                                     expense.amount,
@@ -388,29 +375,28 @@ watch(totalPages, (pages) => {
                             {{ formatDate(expense.created_at) }}
                         </td>
                         <td class="px-4 py-3" @click.stop>
-                            <div class="flex justify-end gap-0.5">
+                            <div class="flex justify-end gap-1">
                                 <Button
                                     as-child
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    class="size-8 text-muted-foreground"
+                                    size="sm"
+                                    variant="outline"
+                                    class="h-8 gap-1.5"
                                 >
                                     <Link
                                         :href="`/expenses/${expense.id}`"
                                         target="_blank"
-                                        :title="t('Print')"
                                     >
                                         <Printer class="size-4" />
+                                        {{ t('Print') }}
                                     </Link>
                                 </Button>
                                 <Can permission="expenses.edit">
                                     <Button
                                         v-if="!expense.purchase_id"
                                         type="button"
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
-                                        class="h-8 px-2 text-muted-foreground"
+                                        class="h-8"
                                         @click="emit('open-expense', expense, true)"
                                     >
                                         {{ t('Edit') }}
@@ -420,9 +406,9 @@ watch(totalPages, (pages) => {
                                     <Button
                                         v-if="!expense.purchase_id"
                                         type="button"
-                                        variant="ghost"
+                                        variant="outline"
                                         size="icon"
-                                        class="size-9 text-destructive hover:text-destructive sm:size-8"
+                                        class="size-8 text-destructive hover:text-destructive"
                                         :disabled="deletingId === expense.id"
                                         @click.stop="requestDeleteExpense(expense)"
                                     >
@@ -433,9 +419,9 @@ watch(totalPages, (pages) => {
                                     <Button
                                         v-if="expense.purchase_id"
                                         type="button"
-                                        variant="ghost"
+                                        variant="outline"
                                         size="icon"
-                                        class="size-9 text-destructive hover:text-destructive sm:size-8"
+                                        class="size-8 text-destructive hover:text-destructive"
                                         :disabled="deletingId === expense.id"
                                         @click.stop="requestDeleteExpense(expense)"
                                     >
@@ -464,8 +450,10 @@ watch(totalPages, (pages) => {
                             <Can permission="expenses.create">
                                 <Button
                                     size="sm"
+                                    class="h-9 gap-1.5"
                                     @click="emit('open-expense', null)"
                                 >
+                                    <Plus class="size-4" />
                                     {{ t('Add expense') }}
                                 </Button>
                             </Can>

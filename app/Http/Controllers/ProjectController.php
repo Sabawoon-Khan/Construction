@@ -506,7 +506,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Contribution recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#shareholders');
+        return redirect()->to(route('projects.show', $project).'#money-in');
     }
 
     public function showContribution(Project $project, PartnerInvestment $investment): Response
@@ -661,7 +661,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Loan recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#money');
+        return redirect()->to(route('projects.show', $project).'#loans');
     }
 
     public function payLoan(Request $request, Project $project, Loan $loan): RedirectResponse
@@ -685,7 +685,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Loan payout recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#money');
+        return redirect()->to(route('projects.show', $project).'#loans');
     }
 
     public function edit(Request $request, Project $project): Response

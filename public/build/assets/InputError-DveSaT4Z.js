@@ -1,1 +1,0 @@
-import{Bn as e,Tr as t,U as n,an as r,bt as i,ct as a,dt as o}from"./useTranslations-DhNR1bho.js";var s=[`id`],c=i({__name:`InputError`,props:{message:{},id:{}},setup(i){return(c,l)=>e((r(),o(`div`,null,[a(`p`,{id:i.id,class:`text-sm text-red-600 dark:text-red-500`},t(i.message),9,s)],512)),[[n,i.message]])}});export{c as t};

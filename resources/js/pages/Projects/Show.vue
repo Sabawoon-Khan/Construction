@@ -60,6 +60,7 @@ import ProjectShowEmployeesTab from './partials/ProjectShowEmployeesTab.vue';
 import ProjectShowExpensesTab from './partials/ProjectShowExpensesTab.vue';
 import ProjectShowInfoTab from './partials/ProjectShowInfoTab.vue';
 import ProjectShowLoansTab from './partials/ProjectShowLoansTab.vue';
+import ProjectShowMoneyInTab from './partials/ProjectShowMoneyInTab.vue';
 import ProjectShowPurchasesTab, {
     type PurchaseMaterial,
 } from './partials/ProjectShowPurchasesTab.vue';
@@ -264,7 +265,8 @@ const { sortedRows } = provideTableSort(filteredMaterialLines);
 const tabs = computed(() => [
     { id: 'overview', label: t('Overview'), icon: Info },
     { id: 'sell', label: t('Sell'), icon: Banknote },
-    { id: 'money', label: t('Money'), icon: Receipt },
+    { id: 'expenses', label: t('Expenses'), icon: Receipt },
+    { id: 'money-in', label: t('Money in'), icon: CircleDollarSign },
     { id: 'loans', label: t('Loans'), icon: HandCoins },
     { id: 'stock', label: t('Stock'), icon: Warehouse },
     { id: 'people', label: t('People'), icon: UserRound },
@@ -276,8 +278,10 @@ const legacyTabMap: Record<string, string> = {
     overview: 'overview',
     sales: 'sell',
     sell: 'sell',
-    expenses: 'money',
-    money: 'money',
+    expenses: 'expenses',
+    money: 'expenses',
+    'money-in': 'money-in',
+    contributions: 'money-in',
     loans: 'loans',
     purchases: 'stock',
     stock: 'stock',
@@ -504,21 +508,21 @@ defineOptions({
             <ProjectShowSalesTab :item="item" />
         </div>
 
-        <div v-show="tab === 'money'" class="space-y-4">
+        <div v-show="tab === 'expenses'" class="space-y-4">
             <ProjectShowExpensesTab
                 :item="item"
                 :expenses="expenses"
                 @open-expense="openExpense"
             />
-            <ProjectShowShareholdersTab
+        </div>
+
+        <div v-show="tab === 'money-in'" class="space-y-4">
+            <ProjectShowMoneyInTab
                 :item="item"
-                :shareholders="shareholders"
                 :contributions="contributions"
-                :show-ownership="false"
-                :show-contributions="true"
-                @add-shareholder="addShareholderOpen = true"
+                :has-shareholders="shareholders.length > 0"
                 @record-contribution="contributionDialogOpen = true"
-                @record-payout="payoutDialogOpen = true"
+                @add-shareholder="addShareholderOpen = true"
             />
         </div>
 

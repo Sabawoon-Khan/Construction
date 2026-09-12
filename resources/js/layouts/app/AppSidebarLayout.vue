@@ -7,7 +7,7 @@ import {
     PanelLeftOpen,
     X,
 } from '@lucide/vue';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AiHeaderButton from '@/components/AiHeaderButton.vue';
 import GlobalSearch from '@/components/GlobalSearch.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
@@ -73,6 +73,12 @@ watch(sidebarOpen, (open) => {
 watch(currentUrl, () => {
     mobileNavOpen.value = false;
     hideTip();
+});
+
+watch(mobileNavOpen, (open) => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = open ? 'hidden' : '';
 });
 
 function toggleSidebar() {
@@ -164,6 +170,12 @@ onMounted(() => {
     restoreSidebarOpen();
     window.setTimeout(() => startAdminShellTour(), 600);
 });
+
+onBeforeUnmount(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+});
 </script>
 
 <template>
@@ -196,6 +208,7 @@ onMounted(() => {
                             type="button"
                             class="app-v2-mobile-toggle"
                             :aria-label="t('Menu')"
+                            :aria-expanded="mobileNavOpen"
                             @click="mobileNavOpen = !mobileNavOpen"
                         >
                             <X v-if="mobileNavOpen" />
@@ -206,7 +219,7 @@ onMounted(() => {
                             <path d="m2 14 14 8 14-8v7l-14 8L2 21Z" />
                             <path d="m2 26 14 8 14-8v5l-14 7L2 31Z" />
                         </svg>
-                        <span>{{ companyName }}</span>
+                        <span class="app-v2-brand-name">{{ companyName }}</span>
                     </div>
 
                     <nav v-if="showTopnav" class="app-v2-topnav">
@@ -226,10 +239,13 @@ onMounted(() => {
                         <div class="app-v2-action-slot app-v2-search">
                             <GlobalSearch />
                         </div>
-                        <div class="app-v2-action-slot lang-wrap" :title="t('Language')">
+                        <div
+                            class="app-v2-action-slot lang-wrap app-v2-desktop-only"
+                            :title="t('Language')"
+                        >
                             <LanguageSwitcher />
                         </div>
-                        <div class="app-v2-action-slot app-v2-ai">
+                        <div class="app-v2-action-slot app-v2-ai app-v2-desktop-only">
                             <AiHeaderButton />
                         </div>
                         <div class="app-v2-action-slot app-v2-bell">
@@ -350,9 +366,22 @@ onMounted(() => {
                         v-if="mobileNavOpen"
                         class="app-v2-mobile-drawer print:hidden"
                         :dir="dir"
+                        aria-label="Mobile navigation"
                     >
                         <div class="app-v2-mobile-drawer-head">
-                            <span>{{ companyName }}</span>
+                            <div class="app-v2-mobile-brand">
+                                <div class="app-v2-mobile-brand-mark" aria-hidden="true">
+                                    <svg viewBox="0 0 32 38">
+                                        <path d="M16 1 30 9 16 17 2 9Z" />
+                                        <path d="m2 14 14 8 14-8v7l-14 8L2 21Z" />
+                                        <path d="m2 26 14 8 14-8v5l-14 7L2 31Z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <strong>{{ companyName }}</strong>
+                                    <small v-if="user">{{ user.name }}</small>
+                                </div>
+                            </div>
                             <button
                                 type="button"
                                 :aria-label="t('Close')"
@@ -361,32 +390,68 @@ onMounted(() => {
                                 <X />
                             </button>
                         </div>
+
                         <div class="app-v2-mobile-drawer-body">
-                            <Link
-                                v-for="item in sidebarItems"
-                                :key="`m-${item.title}-${toUrl(item.href)}`"
-                                :href="toUrl(item.href)"
-                                :class="{ active: navActive(item) }"
-                                class="app-v2-mobile-link"
+                            <section
+                                v-for="group in navGroups.filter((g) => g.items.length)"
+                                :key="group.label"
+                                class="app-v2-mobile-group"
                             >
-                                <component :is="item.icon" />
-                                <span>{{ item.title }}</span>
-                            </Link>
+                                <p class="app-v2-mobile-group-label">
+                                    {{ group.label }}
+                                </p>
+                                <Link
+                                    v-for="item in group.items"
+                                    :key="`m-${item.title}-${toUrl(item.href)}`"
+                                    :href="toUrl(item.href)"
+                                    :class="{ active: navActive(item) }"
+                                    class="app-v2-mobile-link"
+                                >
+                                    <span class="app-v2-mobile-link-icon">
+                                        <component :is="item.icon" />
+                                    </span>
+                                    <span>{{ item.title }}</span>
+                                </Link>
+                            </section>
+
+                            <section
+                                v-if="!isSettingsArea && moduleTabs.length > 1"
+                                class="app-v2-mobile-group"
+                            >
+                                <p class="app-v2-mobile-group-label">
+                                    {{ t('Modules') }}
+                                </p>
+                                <div class="app-v2-mobile-tabs">
+                                    <Link
+                                        v-for="item in moduleTabs"
+                                        :key="`mt-${tabHref(item)}`"
+                                        :href="tabHref(item)"
+                                        :class="{ active: tabActive(item) }"
+                                        class="app-v2-mobile-tab"
+                                    >
+                                        <component :is="item.icon" />
+                                        {{ item.title }}
+                                    </Link>
+                                </div>
+                            </section>
                         </div>
-                        <div
-                            v-if="!isSettingsArea && moduleTabs.length"
-                            class="app-v2-mobile-tabs"
-                        >
-                            <Link
-                                v-for="item in moduleTabs"
-                                :key="`mt-${tabHref(item)}`"
-                                :href="tabHref(item)"
-                                :class="{ active: tabActive(item) }"
-                                class="app-v2-mobile-tab"
-                            >
-                                <component :is="item.icon" />
-                                {{ item.title }}
-                            </Link>
+
+                        <div class="app-v2-mobile-drawer-foot">
+                            <div class="app-v2-mobile-foot-row">
+                                <span>{{ t('Language') }}</span>
+                                <LanguageSwitcher />
+                            </div>
+                            <div class="app-v2-mobile-foot-actions">
+                                <AiHeaderButton />
+                                <Link
+                                    :href="logout()"
+                                    as="button"
+                                    class="app-v2-mobile-logout"
+                                >
+                                    <LogOut />
+                                    {{ t('Log out') }}
+                                </Link>
+                            </div>
                         </div>
                     </nav>
                 </Teleport>
@@ -412,7 +477,8 @@ onMounted(() => {
             v-if="mounted"
             :position="toasterPosition"
             :duration="5000"
-            rich-colors
+            close-button
+            close-button-position="top-right"
         />
     </AppShell>
 </template>
@@ -906,8 +972,9 @@ onMounted(() => {
     position: fixed;
     inset: 0;
     z-index: 90;
-    background: color-mix(in srgb, var(--school-navy, #0f172a) 35%, transparent);
-    backdrop-filter: blur(2px);
+    background: color-mix(in srgb, var(--school-navy, #0f172a) 48%, transparent);
+    backdrop-filter: blur(6px);
+    animation: app-v2-fade-up 0.2s ease both;
 }
 
 .app-v2-mobile-drawer {
@@ -917,26 +984,85 @@ onMounted(() => {
     z-index: 95;
     display: flex;
     flex-direction: column;
-    width: min(320px, 88vw);
-    background: linear-gradient(
-        180deg,
-        var(--app-shell, var(--background)) 0%,
-        color-mix(in srgb, var(--background) 92%, var(--brand-accent, var(--primary)))
-            100%
-    );
-    box-shadow: 20px 0 50px
-        color-mix(in srgb, var(--school-navy, #0f172a) 18%, transparent);
+    width: min(328px, 86vw);
+    padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+    border-radius: 0 22px 22px 0;
+    border: 1px solid color-mix(in srgb, var(--card, #fff) 70%, transparent);
+    border-inline-start: 0;
+    background:
+        linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--card, #fff) 96%, transparent) 0%,
+            color-mix(in srgb, var(--background) 94%, var(--brand-accent, var(--primary)))
+                100%
+        );
+    box-shadow: 18px 0 48px
+        color-mix(in srgb, var(--school-navy, #0f172a) 24%, transparent);
     color: var(--app-v2-ink);
+    animation: app-v2-drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.app-v2-mobile-drawer[dir='rtl'] {
+    border-radius: 22px 0 0 22px;
+    border-inline-start: 1px solid
+        color-mix(in srgb, var(--card, #fff) 70%, transparent);
+    border-inline-end: 0;
 }
 
 .app-v2-mobile-drawer-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 16px;
+    gap: 12px;
+    padding: 20px 16px 16px;
+}
+
+.app-v2-mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.app-v2-mobile-brand-mark {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background: color-mix(
+        in srgb,
+        var(--school-gold, var(--brand-accent, #f08b3d)) 16%,
+        var(--card, #fff)
+    );
+    box-shadow: inset 0 1px color-mix(in srgb, #fff 70%, transparent);
+}
+
+.app-v2-mobile-brand-mark svg {
+    width: 22px;
+    color: var(--school-gold, var(--brand-accent, #f08b3d));
+    fill: none;
+    stroke: currentcolor;
+    stroke-width: 1.6;
+}
+
+.app-v2-mobile-brand strong {
+    display: block;
+    overflow: hidden;
     font-size: 16px;
     font-weight: 650;
-    letter-spacing: -0.4px;
+    letter-spacing: -0.35px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-v2-mobile-brand small {
+    display: block;
+    margin-top: 3px;
+    color: var(--app-v2-muted);
+    font-size: 11px;
+    font-weight: 500;
 }
 
 .app-v2-mobile-drawer-head button {
@@ -944,6 +1070,7 @@ onMounted(() => {
     place-items: center;
     width: 36px;
     height: 36px;
+    flex-shrink: 0;
     border: 0;
     border-radius: 50%;
     background: var(--app-v2-surface-strong);
@@ -951,7 +1078,7 @@ onMounted(() => {
     cursor: pointer;
 }
 
-.app-v2-mobile-drawer-head svg {
+.app-v2-mobile-drawer-head > button svg {
     width: 18px;
     height: 18px;
 }
@@ -960,40 +1087,89 @@ onMounted(() => {
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 12px 16px;
+    gap: 18px;
+    padding: 4px 12px 18px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.app-v2-mobile-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--card, #fff) 58%, transparent);
+    box-shadow: inset 0 1px color-mix(in srgb, #fff 75%, transparent);
+}
+
+.app-v2-mobile-group-label {
+    margin: 0 0 4px;
+    padding: 0 8px;
+    color: var(--app-v2-muted);
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
 }
 
 .app-v2-mobile-link {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 44px;
-    padding: 0 14px;
-    border-radius: calc(var(--radius, 0.875rem) * 1.15);
-    color: var(--app-v2-muted);
+    min-height: 46px;
+    padding: 0 10px;
+    border-radius: 14px;
+    color: var(--app-v2-ink);
     font-size: 13px;
     font-weight: 550;
     text-decoration: none;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease;
 }
 
-.app-v2-mobile-link svg {
-    width: 18px;
-    height: 18px;
+.app-v2-mobile-link:active {
+    transform: scale(0.985);
+}
+
+.app-v2-mobile-link-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--school-navy, #162238) 6%, transparent);
+    color: var(--app-v2-muted);
+}
+
+.app-v2-mobile-link-icon svg,
+.app-v2-mobile-link > svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
 }
 
 .app-v2-mobile-link.active {
     background: var(--app-v2-active-bg);
     color: var(--app-v2-active-fg);
+    box-shadow: 0 10px 22px
+        color-mix(in srgb, var(--app-v2-active-bg) 28%, transparent);
+}
+
+.app-v2-mobile-link.active .app-v2-mobile-link-icon {
+    background: color-mix(in srgb, #fff 16%, transparent);
+    color: var(--app-v2-active-fg);
 }
 
 .app-v2-mobile-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    padding: 12px;
-    overflow-x: auto;
-    border-top: 1px solid color-mix(in srgb, var(--card, #fff) 60%, transparent);
+    padding: 2px 2px 2px;
 }
 
 .app-v2-mobile-tab {
@@ -1003,15 +1179,17 @@ onMounted(() => {
     height: 36px;
     padding: 0 12px;
     border-radius: 999px;
-    background: var(--app-v2-surface);
+    border: 1px solid color-mix(in srgb, var(--border, #e5e7eb) 80%, transparent);
+    background: color-mix(in srgb, var(--card, #fff) 80%, transparent);
     color: var(--app-v2-ink);
     font-size: 11px;
-    font-weight: 500;
+    font-weight: 550;
     white-space: nowrap;
     text-decoration: none;
 }
 
 .app-v2-mobile-tab.active {
+    border-color: transparent;
     background: var(--app-v2-active-bg);
     color: var(--app-v2-active-fg);
 }
@@ -1019,6 +1197,70 @@ onMounted(() => {
 .app-v2-mobile-tab svg {
     width: 14px;
     height: 14px;
+}
+
+.app-v2-mobile-drawer-foot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px calc(16px + env(safe-area-inset-bottom, 0));
+    border-top: 1px solid
+        color-mix(in srgb, var(--border, #e5e7eb) 70%, transparent);
+    background: color-mix(in srgb, var(--card, #fff) 72%, transparent);
+}
+
+.app-v2-mobile-foot-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 44px;
+    padding: 0 10px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--background) 55%, transparent);
+    color: var(--app-v2-muted);
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.app-v2-mobile-foot-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-v2-mobile-foot-actions :deep(button) {
+    flex: 1;
+    justify-content: center;
+    height: 42px;
+    border-radius: 14px;
+    background: var(--app-v2-surface) !important;
+}
+
+.app-v2-mobile-foot-actions :deep(span) {
+    display: inline !important;
+}
+
+.app-v2-mobile-logout {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 42px;
+    border: 0;
+    border-radius: 14px;
+    background: color-mix(in srgb, #df315b 12%, var(--card, #fff));
+    color: #df315b;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.app-v2-mobile-logout svg {
+    width: 16px;
+    height: 16px;
 }
 
 @keyframes app-v2-fade-up {
@@ -1039,6 +1281,32 @@ onMounted(() => {
     }
 }
 
+@keyframes app-v2-drawer-in {
+    from {
+        opacity: 0.6;
+        transform: translateX(-12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.app-v2-mobile-drawer[dir='rtl'] {
+    animation-name: app-v2-drawer-in-rtl;
+}
+
+@keyframes app-v2-drawer-in-rtl {
+    from {
+        opacity: 0.6;
+        transform: translateX(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 @media (max-width: 1100px) {
     .app-v2-topbar {
         grid-template-columns: 180px 1fr auto;
@@ -1052,36 +1320,92 @@ onMounted(() => {
 
 @media (max-width: 820px) {
     .app-v2-page {
-        height: auto;
-        min-height: 100dvh;
-        overflow: auto;
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        height: 100%;
+        max-height: 100%;
+        min-height: 0;
+        overflow: hidden;
         --app-v2-sidebar-width: 0px;
+        --app-v2-topbar-height: 56px;
     }
 
     .app-v2-shell {
-        display: block;
-        height: auto;
-        min-height: 100dvh;
-        overflow: visible;
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        height: 100%;
+        max-height: 100%;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .app-v2-topbar {
-        position: sticky;
-        top: 0;
+        position: relative;
         z-index: 30;
         display: flex;
+        flex-shrink: 0;
         justify-content: space-between;
-        height: 68px;
+        align-items: center;
+        gap: 8px;
+        height: var(--app-v2-topbar-height);
+        min-height: var(--app-v2-topbar-height);
+        padding: 0 12px;
         background: color-mix(
             in srgb,
-            var(--app-shell, var(--background)) 88%,
+            var(--app-shell, var(--background)) 92%,
             transparent
         );
-        backdrop-filter: blur(15px);
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid
+            color-mix(in srgb, var(--card, #fff) 45%, transparent);
+    }
+
+    .app-v2-brand {
+        min-width: 0;
+        gap: 6px;
+    }
+
+    .app-v2-brand-name {
+        display: none;
+    }
+
+    .app-v2-brand svg {
+        width: 20px;
     }
 
     .app-v2-mobile-toggle {
         display: grid;
+        width: 36px;
+        height: 36px;
+        margin-inline-end: 2px;
+    }
+
+    .app-v2-top-actions {
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .app-v2-action-slot,
+    .app-v2-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .app-v2-action-slot:not(.app-v2-search):not(.app-v2-ai) :deep(button),
+    .app-v2-action-slot:not(.app-v2-search):not(.app-v2-ai) :deep(a) {
+        width: 36px;
+        height: 36px;
+    }
+
+    .app-v2-search :deep(button[data-search-variant='icon']) {
+        width: 36px;
+        height: 36px;
+    }
+
+    .app-v2-desktop-only {
+        display: none !important;
     }
 
     .app-v2-topnav,
@@ -1091,8 +1415,20 @@ onMounted(() => {
     }
 
     .app-v2-content {
-        overflow: visible;
-        padding: 16px;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        padding: 12px 12px 20px;
+    }
+
+    .app-v2-content:has(.dashboard-v2) {
+        padding: 8px 10px 16px;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
 
     .app-v2-ai :deep(span) {
@@ -1122,11 +1458,15 @@ onMounted(() => {
 
 @media (prefers-reduced-motion: reduce) {
     .app-v2-topbar,
-    .app-v2-sidebar {
+    .app-v2-sidebar,
+    .app-v2-mobile-drawer,
+    .app-v2-mobile-scrim {
         animation: none !important;
+        transition: none !important;
     }
 }
 </style>
+
 
 <style>
 .app-v2-nav-tip {

@@ -45,9 +45,7 @@ const visible = computed(
                 <MisCreateButton
                     :href="activeItem!.createHref!"
                     :permission="activeItem!.createPermission!"
-                    variant="ghost"
                     size="sm"
-                    class="text-primary"
                 >
                     {{ t('Create') }}
                 </MisCreateButton>

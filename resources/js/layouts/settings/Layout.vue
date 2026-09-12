@@ -330,8 +330,7 @@ const pageDescription = computed(() => {
     place-items: center;
     width: 34px;
     height: 34px;
-    border-radius: 12px;
-    background: rgba(255, 138, 58, 0.14);
+    border-radius: 16px;
     color: #ff8a3a;
     flex-shrink: 0;
 }

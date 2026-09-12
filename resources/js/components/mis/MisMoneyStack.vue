@@ -43,26 +43,26 @@ const inlineText = computed(() =>
 <template>
     <div
         v-if="layout === 'stack'"
-        :class="cn('space-y-2', props.class)"
+        :class="cn('space-y-2.5', props.class)"
     >
         <div
             v-for="line in lines"
             :key="line.code"
-            class="flex items-center justify-between gap-3"
+            class="flex items-baseline justify-between gap-3"
         >
             <span
-                class="inline-flex min-w-11 items-center justify-center rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-muted-foreground"
+                class="inline-flex min-w-12 items-center justify-center rounded-md border border-border/60 bg-background/80 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-foreground/75"
             >
                 {{ line.code }}
             </span>
             <span
-                class="text-right text-base font-semibold tabular-nums tracking-tight sm:text-lg"
+                class="text-right text-lg font-semibold tabular-nums tracking-tight sm:text-xl"
                 :class="
                     line.isZero
                         ? 'text-muted-foreground/70'
                         : line.isNegative
                           ? 'text-rose-600 dark:text-rose-400'
-                          : ''
+                          : 'text-foreground'
                 "
             >
                 {{ line.amountLabel }}

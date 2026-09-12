@@ -32,20 +32,21 @@ withDefaults(
     <div
         :class="
             cn(
-                'rounded-2xl border border-white/55 bg-white/40 p-5 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-white/5',
+                'rounded-2xl border border-white/70 bg-white/70 p-5 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-white/5',
                 $props.class,
             )
         "
     >
         <div class="mb-4 flex items-start justify-between gap-3">
             <div class="min-w-0 space-y-1">
-                <div class="flex items-center gap-2">
-                    <component
-                        :is="icon"
+                <div class="flex items-center gap-2.5">
+                    <span
                         v-if="icon"
-                        class="size-4 shrink-0 text-muted-foreground"
-                    />
-                    <h3 class="text-sm font-semibold tracking-tight">
+                        class="inline-flex size-8 shrink-0 items-center justify-center rounded-xl bg-foreground/5 text-foreground/70"
+                    >
+                        <component :is="icon" class="size-4" />
+                    </span>
+                    <h3 class="text-[15px] font-semibold tracking-tight text-foreground">
                         {{ title }}
                     </h3>
                 </div>

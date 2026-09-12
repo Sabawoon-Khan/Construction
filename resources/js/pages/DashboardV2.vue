@@ -205,53 +205,59 @@ const profitTrend = computed(() => {
     return pctChange(last, prev);
 });
 
+function compactAmount(value: number): string {
+    const amount = Number(value ?? 0);
+    if (!Number.isFinite(amount)) return '0';
+    return new Intl.NumberFormat('en-US', {
+        notation: Math.abs(amount) >= 1000 ? 'compact' : 'standard',
+        maximumFractionDigits: Math.abs(amount) >= 1000 ? 1 : 0,
+    }).format(amount);
+}
+
+const chartMax = computed(() => {
+    const { sales, expenses } = monthly.value;
+    return Math.max(...sales, ...expenses, 1);
+});
+
+const yTicks = computed(() => {
+    const max = chartMax.value;
+    return [
+        { label: compactAmount(max), value: max },
+        { label: compactAmount(max / 2), value: max / 2 },
+        { label: '0', value: 0 },
+    ];
+});
+
 const bars = computed(() => {
     const { labels, sales, expenses } = monthly.value;
     if (!labels.length) return [];
+    const max = chartMax.value;
 
-    const count = Math.max(36, labels.length * 4);
-    const samples = Array.from({ length: count }, (_, index) => {
-        const pos =
-            labels.length === 1
-                ? 0
-                : (index / (count - 1)) * (labels.length - 1);
-        const lo = Math.floor(pos);
-        const hi = Math.min(labels.length - 1, Math.ceil(pos));
-        const mix = pos - lo;
-        const sale =
-            (sales[lo] ?? 0) * (1 - mix) + (sales[hi] ?? 0) * mix;
-        const expense =
-            (expenses[lo] ?? 0) * (1 - mix) + (expenses[hi] ?? 0) * mix;
+    return labels.map((label, index) => {
+        const sale = Number(sales[index] ?? 0);
+        const expense = Number(expenses[index] ?? 0);
         return {
-            labelIndex: Math.round(pos),
-            sale,
-            expense,
+            label: String(label).slice(0, 3),
+            fullLabel: String(label),
+            salesHeight: Math.max(4, (sale / max) * 100),
+            expenseHeight: Math.max(4, (expense / max) * 100),
+            sales: sale,
+            expenses: expense,
+            salesLabel: money(sale),
+            expensesLabel: money(expense),
+            salesCompact: compactAmount(sale),
+            expensesCompact: compactAmount(expense),
+            index,
         };
     });
-    const max = Math.max(
-        ...samples.map((item) => Math.max(item.sale, item.expense)),
-        1,
-    );
-
-    return samples.map((item, index) => ({
-        label:
-            index % 5 === 0
-                ? String(labels[item.labelIndex] ?? '').slice(0, 3)
-                : '',
-        fullLabel: String(labels[item.labelIndex] ?? ''),
-        salesHeight: 12 + (item.sale / max) * 88,
-        expenseHeight: 12 + (item.expense / max) * 88,
-        sales: item.sale,
-        expenses: item.expense,
-        index,
-    }));
 });
 
-const rangeStart = ref(30);
-const rangeEnd = ref(58);
+const rangeStart = ref(0);
+const rangeEnd = ref(100);
 const rangeDrag = ref<'start' | 'end' | 'fill' | null>(null);
-const rangeDragOrigin = ref({ x: 0, start: 30, end: 58 });
+const rangeDragOrigin = ref({ x: 0, start: 0, end: 100 });
 const activeRangeTrack = ref<HTMLElement | null>(null);
+const hoverBarIndex = ref<number | null>(null);
 
 const rangeStyle = computed(() => {
     const left = Math.min(rangeStart.value, rangeEnd.value);
@@ -268,7 +274,8 @@ const visibleBars = computed(() => {
     const total = Math.max(bars.value.length - 1, 1);
 
     return bars.value.map((bar) => {
-        const pct = (bar.index / total) * 100;
+        const pct =
+            bars.value.length === 1 ? 50 : (bar.index / total) * 100;
         return {
             ...bar,
             active: pct >= start && pct <= end,
@@ -292,6 +299,16 @@ const rangeTotals = computed(() => {
         expensesLabel: money(expenses),
     };
 });
+
+watch(
+    () => bars.value.length,
+    (len) => {
+        if (!len) return;
+        rangeStart.value = 0;
+        rangeEnd.value = 100;
+    },
+    { immediate: true },
+);
 
 function pointerPct(event: PointerEvent, el: HTMLElement): number {
     const rect = el.getBoundingClientRect();
@@ -408,15 +425,6 @@ function onFillDrag(event: PointerEvent) {
         (event.currentTarget as HTMLElement | null)?.parentElement ?? null;
     startRangeDrag(event, 'fill', track);
 }
-
-watch(
-    () => bars.value.length,
-    (len) => {
-        if (!len) return;
-        rangeStart.value = 30;
-        rangeEnd.value = 58;
-    },
-);
 
 onBeforeUnmount(() => {
     if (typeof window === 'undefined') return;
@@ -642,26 +650,71 @@ function openProject(id?: number | string) {
                         </div>
                     </div>
 
-                    <div v-if="visibleBars.length" class="bar-chart structo">
+                    <div v-if="visibleBars.length" class="chart-plot">
+                        <div class="y-axis" aria-hidden="true">
+                            <span
+                                v-for="tick in yTicks"
+                                :key="tick.label"
+                                >{{ tick.label }}</span
+                            >
+                        </div>
                         <div
-                            v-for="(bar, index) in visibleBars"
-                            :key="`${bar.fullLabel}-${index}`"
-                            class="bar-column"
-                            :title="`${bar.fullLabel}: ${money(bar.sales)} / ${money(bar.expenses)}`"
+                            class="bar-chart structo"
+                            :style="{ '--bar-count': visibleBars.length }"
                         >
-                            <div class="bar-pair">
-                                <i
-                                    class="sales"
-                                    :class="{ active: bar.active }"
-                                    :style="{ height: `${bar.salesHeight}%` }"
-                                />
-                                <i
-                                    class="expense"
-                                    :class="{ active: bar.active }"
-                                    :style="{ height: `${bar.expenseHeight}%` }"
-                                />
+                            <div
+                                v-for="(bar, index) in visibleBars"
+                                :key="`${bar.fullLabel}-${index}`"
+                                class="bar-column"
+                                :class="{
+                                    active: bar.active,
+                                    hovering: hoverBarIndex === index,
+                                }"
+                                tabindex="0"
+                                @mouseenter="hoverBarIndex = index"
+                                @mouseleave="hoverBarIndex = null"
+                                @focusin="hoverBarIndex = index"
+                                @focusout="hoverBarIndex = null"
+                                @click.stop="
+                                    hoverBarIndex =
+                                        hoverBarIndex === index ? null : index
+                                "
+                            >
+                                <div
+                                    v-if="hoverBarIndex === index"
+                                    class="bar-tooltip"
+                                >
+                                    <strong>{{ bar.fullLabel }}</strong>
+                                    <span
+                                        >{{ t('Sales') }}:
+                                        {{ bar.salesLabel }}</span
+                                    >
+                                    <span
+                                        >{{ t('Expenses') }}:
+                                        {{ bar.expensesLabel }}</span
+                                    >
+                                </div>
+                                <div class="bar-pair">
+                                    <i
+                                        class="sales"
+                                        :class="{ active: bar.active }"
+                                        :style="{
+                                            height: `${bar.salesHeight}%`,
+                                        }"
+                                    />
+                                    <i
+                                        class="expense"
+                                        :class="{ active: bar.active }"
+                                        :style="{
+                                            height: `${bar.expenseHeight}%`,
+                                        }"
+                                    />
+                                </div>
+                                <em class="bar-amount">{{
+                                    bar.salesCompact
+                                }}</em>
+                                <small>{{ bar.label }}</small>
                             </div>
-                            <small v-if="bar.label">{{ bar.label }}</small>
                         </div>
                     </div>
                     <div v-else class="chart-empty">
@@ -846,26 +899,71 @@ function openProject(id?: number | string) {
                         </div>
                     </div>
 
-                    <div v-if="visibleBars.length" class="bar-chart structo">
+                    <div v-if="visibleBars.length" class="chart-plot">
+                        <div class="y-axis" aria-hidden="true">
+                            <span
+                                v-for="tick in yTicks"
+                                :key="`below-${tick.label}`"
+                                >{{ tick.label }}</span
+                            >
+                        </div>
                         <div
-                            v-for="(bar, index) in visibleBars"
-                            :key="`below-${bar.fullLabel}-${index}`"
-                            class="bar-column"
-                            :title="`${bar.fullLabel}: ${money(bar.sales)} / ${money(bar.expenses)}`"
+                            class="bar-chart structo"
+                            :style="{ '--bar-count': visibleBars.length }"
                         >
-                            <div class="bar-pair">
-                                <i
-                                    class="sales"
-                                    :class="{ active: bar.active }"
-                                    :style="{ height: `${bar.salesHeight}%` }"
-                                />
-                                <i
-                                    class="expense"
-                                    :class="{ active: bar.active }"
-                                    :style="{ height: `${bar.expenseHeight}%` }"
-                                />
+                            <div
+                                v-for="(bar, index) in visibleBars"
+                                :key="`below-${bar.fullLabel}-${index}`"
+                                class="bar-column"
+                                :class="{
+                                    active: bar.active,
+                                    hovering: hoverBarIndex === index,
+                                }"
+                                tabindex="0"
+                                @mouseenter="hoverBarIndex = index"
+                                @mouseleave="hoverBarIndex = null"
+                                @focusin="hoverBarIndex = index"
+                                @focusout="hoverBarIndex = null"
+                                @click.stop="
+                                    hoverBarIndex =
+                                        hoverBarIndex === index ? null : index
+                                "
+                            >
+                                <div
+                                    v-if="hoverBarIndex === index"
+                                    class="bar-tooltip"
+                                >
+                                    <strong>{{ bar.fullLabel }}</strong>
+                                    <span
+                                        >{{ t('Sales') }}:
+                                        {{ bar.salesLabel }}</span
+                                    >
+                                    <span
+                                        >{{ t('Expenses') }}:
+                                        {{ bar.expensesLabel }}</span
+                                    >
+                                </div>
+                                <div class="bar-pair">
+                                    <i
+                                        class="sales"
+                                        :class="{ active: bar.active }"
+                                        :style="{
+                                            height: `${bar.salesHeight}%`,
+                                        }"
+                                    />
+                                    <i
+                                        class="expense"
+                                        :class="{ active: bar.active }"
+                                        :style="{
+                                            height: `${bar.expenseHeight}%`,
+                                        }"
+                                    />
+                                </div>
+                                <em class="bar-amount">{{
+                                    bar.salesCompact
+                                }}</em>
+                                <small>{{ bar.label }}</small>
                             </div>
-                            <small v-if="bar.label">{{ bar.label }}</small>
                         </div>
                     </div>
                     <div v-else class="chart-empty">
@@ -1426,15 +1524,38 @@ function openProject(id?: number | string) {
 .bar-chart {
     display: flex;
     align-items: end;
-    gap: clamp(2px, 0.35vw, 5px);
+    gap: clamp(4px, 0.8vw, 12px);
     height: 108px;
     margin-top: 14px;
 }
 
 .bar-chart.structo {
-    gap: 3px;
-    height: 120px;
-    padding-bottom: 14px;
+    flex: 1;
+    gap: clamp(6px, 1vw, 14px);
+    height: 100%;
+    min-height: 120px;
+    padding: 22px 4px 18px;
+}
+
+.chart-plot {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+    margin-top: 10px;
+    min-height: 140px;
+}
+
+.y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 42px;
+    padding: 22px 0 18px;
+    color: #8b9192;
+    font-size: 9px;
+    font-weight: 550;
+    font-variant-numeric: tabular-nums;
 }
 
 .bar-column {
@@ -1444,6 +1565,7 @@ function openProject(id?: number | string) {
     justify-content: center;
     align-items: end;
     height: 100%;
+    min-width: 18px;
 }
 
 .bar-column i {
@@ -1465,9 +1587,59 @@ function openProject(id?: number | string) {
 
 .bar-column small {
     position: absolute;
-    bottom: -14px;
+    bottom: -16px;
     color: #9a9d9d;
-    font-size: 7px;
+    font-size: 8px;
+    white-space: nowrap;
+}
+
+.bar-amount {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    z-index: 2;
+    color: #667085;
+    font-size: 8px;
+    font-style: normal;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    transform: translate(-50%, -100%);
+}
+
+.bar-column.active .bar-amount,
+.bar-column.hovering .bar-amount {
+    color: #1a1a1a;
+}
+
+.bar-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    z-index: 8;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 132px;
+    padding: 8px 10px;
+    border: 1px solid rgb(255 255 255 / 70%);
+    border-radius: 12px;
+    background: rgb(255 255 255 / 94%);
+    box-shadow: 0 12px 28px rgb(40 50 55 / 14%);
+    color: #1a1a1a;
+    font-size: 10px;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+.bar-tooltip strong {
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.bar-tooltip span {
+    color: #667085;
 }
 
 .range-track {
@@ -1616,11 +1788,17 @@ function openProject(id?: number | string) {
     -webkit-backdrop-filter: blur(28px) saturate(1.3);
 }
 
+.structo-sales-chart .chart-plot {
+    flex: 1;
+    min-height: 180px;
+    margin-top: 14px;
+}
+
 .structo-sales-chart .bar-chart.structo {
     flex: 1;
     height: auto;
     min-height: 160px;
-    margin-top: 18px;
+    margin-top: 0;
 }
 
 .structo-sales-chart .chart-number {
@@ -1628,7 +1806,7 @@ function openProject(id?: number | string) {
 }
 
 .structo-sales-chart .range-track {
-    margin-top: auto;
+    margin-top: 18px;
     height: 40px;
 }
 
@@ -2222,7 +2400,22 @@ function openProject(id?: number | string) {
 }
 
 @media (max-width: 820px) {
+    .dashboard-page {
+        gap: 12px;
+        padding-bottom: 16px;
+    }
+
     .dashboard-v2 {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 0;
+        max-height: none;
+        overflow: visible;
+        border-radius: 20px;
+    }
+
+    .visual-area {
         display: flex;
         flex-direction: column;
         height: auto;
@@ -2230,41 +2423,259 @@ function openProject(id?: number | string) {
         overflow: visible;
     }
 
-    .visual-area {
-        height: 850px;
+    .hero-copy {
+        position: relative;
+        top: auto;
+        left: auto;
+        z-index: 6;
+        padding: 18px 16px 0;
+    }
+
+    .hero-copy h1 {
+        max-width: none;
+        font-size: clamp(28px, 9vw, 40px);
+        letter-spacing: -1.6px;
+        line-height: 0.95;
     }
 
     .building-wrap {
-        top: 80px;
-        right: -40px;
-        width: 120%;
-        height: 55%;
+        position: relative;
+        top: auto;
+        right: auto;
+        width: 100%;
+        height: 220px;
+        margin: 4px 0 8px;
+        -webkit-mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 18%,
+            #000 82%,
+            transparent 100%
+        );
+        mask-image: linear-gradient(
+            90deg,
+            transparent 0%,
+            #000 18%,
+            #000 82%,
+            transparent 100%
+        );
+    }
+
+    .building {
+        object-position: center bottom;
     }
 
     .project-float {
-        top: 315px;
-        right: 20px;
+        position: relative;
+        top: auto;
+        right: auto;
         left: auto;
+        z-index: 8;
+        width: calc(100% - 24px);
+        max-width: 320px;
+        margin: 0 12px 12px;
     }
 
     .chart-panel {
-        height: 44%;
+        position: relative;
+        right: auto;
+        bottom: auto;
+        left: auto;
+        height: auto;
+        margin: 0 10px 12px;
+        padding: 14px 14px 12px;
+        border-radius: 20px;
+    }
+
+    .chart-header {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .chart-number {
+        font-size: 24px;
+        letter-spacing: -0.8px;
+    }
+
+    .chart-plot {
+        gap: 6px;
+        min-height: 150px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .y-axis {
+        width: 34px;
+        flex-shrink: 0;
+        font-size: 8px;
+        padding: 18px 0 16px;
+    }
+
+    .bar-chart.structo {
+        gap: 8px;
+        min-width: max(100%, calc(var(--bar-count, 12) * 28px));
+        min-height: 130px;
+        padding: 18px 2px 20px;
+    }
+
+    .bar-amount {
+        display: none;
+    }
+
+    .bar-column.active .bar-amount,
+    .bar-column.hovering .bar-amount {
+        display: block;
+        font-size: 7px;
+    }
+
+    .bar-tooltip {
+        min-width: 118px;
+        font-size: 9px;
+    }
+
+    .range-track {
+        height: 40px;
+        margin-top: 18px;
+    }
+
+    .range-handle {
+        width: 22px;
+        height: 22px;
     }
 
     .right-panel {
-        padding: 0 12px 14px;
+        padding: 0 10px 12px;
+    }
+
+    .right-glass {
+        border-radius: 20px;
+        padding: 12px 10px 12px;
     }
 
     .metric-stack {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
     }
 
-    .metric-card + .metric-card {
-        margin-top: 0;
+    .metric-card {
+        min-height: 112px;
+    }
+
+    .metric-card.featured {
+        grid-column: 1 / -1;
+    }
+
+    .metric-value {
+        font-size: 13px;
+        max-width: calc(100% - 64px);
+    }
+
+    .metric-hint {
+        max-width: calc(100% - 64px);
+    }
+
+    .cut-card {
+        margin-top: 10px;
+    }
+
+    .project-list {
+        height: auto;
+        max-height: 240px;
+    }
+
+    .structo-sales-chart {
+        min-height: 0;
+        padding: 16px 14px 14px;
+        border-radius: 20px;
+    }
+
+    .structo-sales-chart .chart-plot {
+        min-height: 160px;
     }
 
     .below-grid.alerts {
         grid-template-columns: 1fr;
+    }
+
+    .glass-panel {
+        border-radius: 18px;
+    }
+
+    .panel-head {
+        padding: 12px 14px;
+    }
+
+    .alert-strip {
+        margin-top: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-v2 {
+        border-radius: 16px;
+    }
+
+    .hero-copy {
+        padding: 14px 12px 0;
+    }
+
+    .hero-copy h1 {
+        font-size: 26px;
+        letter-spacing: -1.2px;
+    }
+
+    .building-wrap {
+        height: 180px;
+    }
+
+    .project-float {
+        width: calc(100% - 20px);
+        margin: 0 10px 10px;
+        padding: 12px 12px;
+        border-radius: 16px;
+    }
+
+    .project-bottom > b {
+        font-size: 24px;
+    }
+
+    .chart-panel {
+        margin: 0 8px 10px;
+        padding: 12px 10px 10px;
+        border-radius: 16px;
+    }
+
+    .legend.dual {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .legend i,
+    .legend .sales,
+    .legend .expense {
+        width: 18px;
+    }
+
+    .metric-stack {
+        grid-template-columns: 1fr;
+    }
+
+    .metric-card.featured {
+        grid-column: auto;
+    }
+
+    .right-panel {
+        padding: 0 8px 10px;
+    }
+
+    .y-axis {
+        width: 30px;
+    }
+
+    .chart-sub {
+        white-space: normal;
     }
 }
 </style>

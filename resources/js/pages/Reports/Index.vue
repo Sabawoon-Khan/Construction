@@ -23,9 +23,10 @@ import {
     MisChartCard,
     MisFilterBar,
     MisLoadingState,
-    MisMoneyStack,
     MisPageHeader,
     MisSection,
+    MisStatCard,
+    MisStatGrid,
 } from '@/components/mis';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import { useCalendar } from '@/composables/useCalendar';
@@ -449,123 +450,48 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
         <MisLoadingState v-if="pending" :label="t('Loading report…')" />
 
         <template v-else>
-            <!-- KPI strip: stacked currency lines stay readable -->
-            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="min-w-0 rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
-                            {{ t('Sales') }}
-                        </span>
-                        <CircleDollarSign class="size-4 shrink-0 text-muted-foreground" />
-                    </div>
-                    <MisMoneyStack
-                        class="mt-3 text-lg font-semibold sm:text-xl"
-                        :amounts="sales_by_currency"
-                        :fallback="summary.sales_total"
-                    />
-                    <p class="mt-2 text-xs text-muted-foreground">
-                        {{ t('Base total') }}: {{ money(summary.sales_total) }}
-                    </p>
-                </div>
-
-                <div class="min-w-0 rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
-                            {{ t('Other income') }}
-                        </span>
-                        <Wallet class="size-4 shrink-0 text-muted-foreground" />
-                    </div>
-                    <div class="mt-3 text-emerald-700 dark:text-emerald-400">
-                        <MisMoneyStack
-                            class="text-lg font-semibold sm:text-xl"
-                            :amounts="incomes_by_currency"
-                            :fallback="summary.income_total"
-                        />
-                    </div>
-                    <p class="mt-2 text-xs text-muted-foreground">
-                        {{ t('Base total') }}: {{ money(summary.income_total) }}
-                    </p>
-                </div>
-
-                <div class="min-w-0 rounded-2xl border border-border/70 bg-card p-5 shadow-soft">
-                    <div class="flex items-center justify-between gap-2">
-                        <span class="text-[11px] font-semibold tracking-[0.12em] uppercase text-muted-foreground">
-                            {{ t('All expenses') }}
-                        </span>
-                        <Receipt class="size-4 shrink-0 text-muted-foreground" />
-                    </div>
-                    <div class="mt-3 text-rose-700 dark:text-rose-400">
-                        <MisMoneyStack
-                            class="text-lg font-semibold sm:text-xl"
-                            :amounts="expenses_by_currency"
-                            :fallback="summary.expense_total"
-                        />
-                    </div>
-                    <p class="mt-2 text-xs text-muted-foreground">
-                        {{ t('Operating') }} {{ money(summary.operating_expense_total) }}
-                        · {{ t('Salaries') }} {{ money(summary.salary_total) }}
-                    </p>
-                </div>
-
-                <div
-                    class="min-w-0 rounded-2xl border p-5 shadow-soft"
-                    :class="
-                        profitPositive
-                            ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40'
-                            : 'border-rose-200 bg-rose-50 dark:border-rose-900 dark:bg-rose-950/40'
+            <MisStatGrid :columns="4" class="reports-kpi-grid">
+                <MisStatCard
+                    :label="t('Sales')"
+                    :hint="`${t('Base total')}: ${money(summary.sales_total)}`"
+                    :amounts="sales_by_currency"
+                    :fallback-amount="summary.sales_total"
+                    :icon="CircleDollarSign"
+                    tone="default"
+                />
+                <MisStatCard
+                    :label="t('Other income')"
+                    :hint="`${t('Base total')}: ${money(summary.income_total)}`"
+                    :amounts="incomes_by_currency"
+                    :fallback-amount="summary.income_total"
+                    :icon="Wallet"
+                    tone="success"
+                />
+                <MisStatCard
+                    :label="t('All expenses')"
+                    :hint="`${t('Operating')} ${money(summary.operating_expense_total)} · ${t('Salaries')} ${money(summary.salary_total)}`"
+                    :amounts="expenses_by_currency"
+                    :fallback-amount="summary.expense_total"
+                    :icon="Receipt"
+                    tone="danger"
+                />
+                <MisStatCard
+                    :label="t('Net profit')"
+                    :hint="
+                        marginPercent != null
+                            ? `${t('Sales + income − expenses − salaries')} · ${formatNumber(marginPercent, 1)}% ${t('margin')}`
+                            : t('Sales + income − expenses − salaries')
                     "
-                >
-                    <div class="flex items-center justify-between gap-2">
-                        <span
-                            class="text-[11px] font-semibold tracking-[0.12em] uppercase"
-                            :class="
-                                profitPositive
-                                    ? 'text-emerald-800 dark:text-emerald-300'
-                                    : 'text-rose-800 dark:text-rose-300'
-                            "
-                        >
-                            {{ t('Net profit') }}
-                        </span>
-                        <component
-                            :is="profitPositive ? TrendingUp : TrendingDown"
-                            class="size-4 shrink-0"
-                            :class="
-                                profitPositive
-                                    ? 'text-emerald-700 dark:text-emerald-300'
-                                    : 'text-rose-700 dark:text-rose-300'
-                            "
-                        />
-                    </div>
-                    <p
-                        class="mt-3 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl"
-                        :class="
-                            profitPositive
-                                ? 'text-emerald-900 dark:text-emerald-100'
-                                : 'text-rose-900 dark:text-rose-100'
-                        "
-                    >
-                        {{ money(summary.net_profit) }}
-                    </p>
-                    <p
-                        class="mt-2 text-xs"
-                        :class="
-                            profitPositive
-                                ? 'text-emerald-800/80 dark:text-emerald-200/80'
-                                : 'text-rose-800/80 dark:text-rose-200/80'
-                        "
-                    >
-                        {{ t('Sales + income − expenses − salaries') }}
-                        <template v-if="marginPercent != null">
-                            · {{ formatNumber(marginPercent, 1) }}% {{ t('margin') }}
-                        </template>
-                    </p>
-                </div>
-            </div>
+                    :value="money(summary.net_profit)"
+                    :icon="profitPositive ? TrendingUp : TrendingDown"
+                    :tone="profitPositive ? 'success' : 'danger'"
+                />
+            </MisStatGrid>
 
             <!-- Charts -->
-            <div class="grid gap-4 xl:grid-cols-5 print:hidden">
+            <div class="reports-chart-grid grid gap-4 xl:grid-cols-5 print:hidden">
                 <MisChartCard
-                    class="xl:col-span-3"
+                    class="reports-chart-card xl:col-span-3"
                     :title="t('Sales vs expenses')"
                     :description="t('Trend across the selected period')"
                     type="bar"
@@ -574,7 +500,7 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                     :icon="TrendingUp"
                 />
                 <MisChartCard
-                    class="xl:col-span-2"
+                    class="reports-chart-card xl:col-span-2"
                     :title="t('Profit & loss')"
                     :description="t('How revenue turns into profit')"
                     type="bar"
@@ -584,9 +510,9 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                 />
             </div>
 
-            <div class="grid gap-4 xl:grid-cols-4 print:hidden">
+            <div class="reports-chart-grid grid gap-4 xl:grid-cols-4 print:hidden">
                 <MisChartCard
-                    class="xl:col-span-2"
+                    class="reports-chart-card xl:col-span-2"
                     :title="t('Expenses by category')"
                     :description="t('Top spending categories')"
                     type="bar"
@@ -596,6 +522,7 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                     :icon="Receipt"
                 />
                 <MisChartCard
+                    class="reports-chart-card"
                     :title="t('Expenses by currency')"
                     :description="t('Spent in each currency')"
                     type="pie"
@@ -603,6 +530,7 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                     :datasets="expenseCurrencyChart.datasets"
                 />
                 <MisChartCard
+                    class="reports-chart-card"
                     :title="t('Income by currency')"
                     :description="t('Received in each currency')"
                     type="pie"
@@ -613,6 +541,7 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
 
             <div class="print:hidden">
                 <MisChartCard
+                    class="reports-chart-card"
                     :title="t('Shareholder distribution')"
                     :description="t('Entitled share vs paid distributions')"
                     type="bar"
@@ -623,11 +552,13 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                 />
             </div>
 
-            <MisSection :title="t('Details')">
+            <MisSection :title="t('Details')" class="reports-details">
                 <div class="grid gap-4 xl:grid-cols-2">
-                    <div class="rounded-2xl border border-border/80 bg-card shadow-soft">
-                        <div class="border-b px-5 py-4">
-                            <h2 class="font-medium">{{ t('Expenses by category') }}</h2>
+                    <div class="reports-table-panel rounded-2xl border border-border/80 bg-card shadow-soft">
+                        <div class="border-b border-border/60 px-5 py-4">
+                            <h2 class="text-sm font-semibold tracking-tight">
+                                {{ t('Expenses by category') }}
+                            </h2>
                         </div>
                         <TableFrame table-id="reports-category" :columns="tableColumnsCategory">
                             <table class="min-w-full text-sm">
@@ -725,9 +656,11 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border border-border/80 bg-card shadow-soft">
-                        <div class="border-b px-5 py-4">
-                            <h2 class="font-medium">{{ t('Shareholder distribution') }}</h2>
+                    <div class="reports-table-panel rounded-2xl border border-border/80 bg-card shadow-soft">
+                        <div class="border-b border-border/60 px-5 py-4">
+                            <h2 class="text-sm font-semibold tracking-tight">
+                                {{ t('Shareholder distribution') }}
+                            </h2>
                         </div>
                         <TableFrame table-id="reports-partners" :columns="tableColumnsPartners">
                             <table class="min-w-full text-sm">
@@ -864,9 +797,9 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
             </MisSection>
 
             <div v-if="!restricted" class="grid gap-4 lg:grid-cols-2">
-                <div class="rounded-2xl border border-border/80 bg-card shadow-soft">
-                    <div class="border-b px-5 py-4">
-                        <h2 class="font-medium">{{ t('New sales') }}</h2>
+                <div class="reports-table-panel rounded-2xl border border-border/80 bg-card shadow-soft">
+                    <div class="border-b border-border/60 px-5 py-4">
+                        <h2 class="text-sm font-semibold tracking-tight">{{ t('New sales') }}</h2>
                     </div>
                     <TableFrame table-id="reports-sales" :columns="tableColumnsSales">
                         <table class="min-w-full text-sm">
@@ -980,9 +913,9 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-border/80 bg-card shadow-soft">
-                    <div class="border-b px-5 py-4">
-                        <h2 class="font-medium">{{ t('New expenses & salaries') }}</h2>
+                <div class="reports-table-panel rounded-2xl border border-border/80 bg-card shadow-soft">
+                    <div class="border-b border-border/60 px-5 py-4">
+                        <h2 class="text-sm font-semibold tracking-tight">{{ t('New expenses & salaries') }}</h2>
                     </div>
                     <TableFrame table-id="reports-expenses" :columns="tableColumnsExpenses">
                         <table class="min-w-full text-sm">
@@ -1101,9 +1034,9 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                 </div>
             </div>
 
-            <div v-if="!restricted && activity.length" class="rounded-2xl border border-border/80 bg-card shadow-soft">
-                <div class="border-b px-5 py-4">
-                    <h2 class="font-medium">{{ t('Project activity') }}</h2>
+            <div v-if="!restricted && activity.length" class="reports-table-panel rounded-2xl border border-border/80 bg-card shadow-soft">
+                <div class="border-b border-border/60 px-5 py-4">
+                    <h2 class="text-sm font-semibold tracking-tight">{{ t('Project activity') }}</h2>
                 </div>
                 <TableFrame table-id="reports-activity" :columns="tableColumnsActivity">
                     <table class="min-w-full text-sm">
@@ -1196,3 +1129,26 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
         </template>
     </div>
 </template>
+
+<style scoped>
+.reports-kpi-grid :deep(.text-2xl) {
+    font-size: 1.55rem;
+    letter-spacing: -0.04em;
+}
+
+.reports-chart-card {
+    border-color: rgb(255 255 255 / 78%);
+    background: rgb(255 255 255 / 78%);
+}
+
+.reports-table-panel {
+    overflow: hidden;
+    background: rgb(255 255 255 / 82%);
+    backdrop-filter: blur(12px);
+}
+
+.dark .reports-chart-card,
+.dark .reports-table-panel {
+    background: rgb(255 255 255 / 5%);
+}
+</style>

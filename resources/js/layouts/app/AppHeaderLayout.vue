@@ -56,6 +56,11 @@ const toasterPosition = computed(() =>
                 <slot />
             </div>
         </AppContent>
-        <Toaster :position="toasterPosition" :duration="5000" rich-colors />
+        <Toaster
+            :position="toasterPosition"
+            :duration="5000"
+            close-button
+            close-button-position="top-right"
+        />
     </AppShell>
 </template>

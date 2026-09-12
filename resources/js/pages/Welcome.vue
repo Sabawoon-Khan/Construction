@@ -293,7 +293,7 @@ onUnmounted(() => {
         :description="
             lt(
                 'home.hero.lead',
-                'Luxury residential developments crafted with disciplined delivery, refined finishes, and lasting quality.',
+                                'Luxury residential developments — apartments built and finished for modern living.',
             )
         "
         :image="publicStockImages.hero"
@@ -305,7 +305,7 @@ onUnmounted(() => {
         <PublicSiteHeader on-home />
 
         <main>
-            <!-- Hero: full-bleed luxury composition — marketing stock only -->
+            <!-- Hero: soft-light luxury apartment tower -->
             <section id="top" class="lx-hero">
                 <div class="lx-hero-backdrop" aria-hidden="true">
                     <img
@@ -314,12 +314,11 @@ onUnmounted(() => {
                         :alt="
                             lt(
                                 'home.hero.imageAlt',
-                                'Luxury residential tower and compound at dusk',
+                                'Luxury residential apartment tower',
                             )
                         "
                     />
                     <div class="lx-hero-veil" />
-                    <div class="lx-hero-grain" />
                     <div class="lx-hero-edge" />
                 </div>
 

@@ -68,19 +68,33 @@
 .settings-v2 .settings-content-body input,
 .settings-v2 .settings-content-body select,
 .settings-v2 .settings-content-body textarea {
-    border-radius: 12px;
+    border-radius: 16px;
     border-color: rgba(26, 26, 26, 0.08);
     background: rgba(255, 255, 255, 0.62);
 }
 
 .settings-v2 .settings-content-body button[data-slot='button'] {
-    border-radius: 12px;
+    border-radius: 999px;
+    min-height: 40px;
 }
 
 .settings-v2 .settings-content-body button[data-slot='button'][data-variant='default'],
 .settings-v2 .settings-content-body .bg-primary {
     background: var(--settings-accent) !important;
     color: #fff !important;
+    box-shadow:
+        0 10px 24px rgba(255, 138, 58, 0.28),
+        inset 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.settings-v2 .settings-content-body button[data-slot='button'][data-variant='outline'],
+.settings-v2 .settings-content-body button[data-slot='button'][data-variant='secondary'] {
+    border-color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.72) !important;
+    color: #1a1a1a !important;
+    box-shadow:
+        0 8px 18px rgba(40, 45, 50, 0.06),
+        inset 0 1px rgba(255, 255, 255, 0.9);
 }
 
 .settings-v2[dir='rtl'] .settings-content-body [data-slot='card-title'] {
