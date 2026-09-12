@@ -3,6 +3,7 @@ export { default as V2Hero } from './V2Hero.vue';
 export { default as V2DetailHero } from './V2DetailHero.vue';
 export { default as V2Panel } from './V2Panel.vue';
 export { default as V2FormPage } from './V2FormPage.vue';
+export { default as V2FormSection } from './V2FormSection.vue';
 export { default as V2AmountCard } from './V2AmountCard.vue';
 export { default as V2StatGrid } from './V2StatGrid.vue';
 export { default as V2StatCard } from './V2StatCard.vue';

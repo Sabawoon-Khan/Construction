@@ -1475,107 +1475,271 @@
     min-width: 0;
 }
 
+.v2-form-page {
+    gap: 18px;
+}
+
+.v2-form-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 16px;
+    padding: 4px 2px 0;
+}
+
+.v2-form-page-copy {
+    min-width: 0;
+    max-width: 720px;
+}
+
+.v2-form-page-eyebrow {
+    display: none;
+}
+
+.v2-form-page-head h1 {
+    margin: 0;
+    color: #1a1a1a;
+    font-size: clamp(26px, 2.8vw, 32px);
+    font-weight: 700;
+    letter-spacing: -0.9px;
+    line-height: 1.1;
+}
+
+.v2-form-page-desc {
+    display: none;
+}
+
+.v2-form-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.v2-form-layout {
+    display: grid;
+    gap: 12px;
+}
+
+.v2-form-layout.has-aside {
+    grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.85fr);
+    align-items: start;
+}
+
+.v2-form-main,
+.v2-form-aside {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 .v2-list-page .v2-form-card,
 .v2-list-page .mis-form-card {
     width: 100%;
-    padding: 8px 8px 16px;
-    border: 1px solid
-        color-mix(in srgb, var(--v2-table-brand) 12%, rgb(255 255 255 / 72%));
-    border-radius: 22px;
-    background: color-mix(
-        in srgb,
-        var(--card, #ffffff) 72%,
-        transparent
-    );
-    box-shadow:
-        0 12px 34px
-            color-mix(in srgb, var(--v2-table-brand) 6%, transparent),
-        inset 0 1px rgb(255 255 255 / 90%);
-    backdrop-filter: blur(18px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
 }
 
 .v2-list-page .mis-form-card.v2-project-form,
-.v2-list-page .mis-form-card:has(.v2-form-section) {
+.v2-list-page .mis-form-card:has(.v2-form-section),
+.v2-list-page .mis-form-card:has(.v2-form-split) {
     display: flex;
     flex-direction: column;
-    gap: 0;
-    padding: 6px;
+    gap: 18px;
+    padding: 0;
     background: transparent;
     border: 0;
     box-shadow: none;
     backdrop-filter: none;
 }
 
-.v2-form-section {
-    padding: 20px 22px 22px;
-    border: 1px solid
-        color-mix(in srgb, var(--v2-table-brand) 10%, rgb(255 255 255 / 72%));
-    border-radius: 20px;
-    background: color-mix(in srgb, var(--card, #ffffff) 78%, transparent);
+/* Two-column form like Create Job */
+.v2-form-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(300px, 0.95fr);
+    gap: 28px;
+    align-items: start;
+}
+
+.v2-form-split-main,
+.v2-form-split-aside {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.v2-form-split-aside {
+    position: static;
+}
+
+.v2-form-split-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid rgba(26, 26, 26, 0.08);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
     box-shadow:
-        0 10px 28px
-            color-mix(in srgb, var(--v2-table-brand) 5%, transparent),
-        inset 0 1px rgb(255 255 255 / 92%);
-    backdrop-filter: blur(16px);
+        0 10px 28px rgba(26, 26, 26, 0.04),
+        inset 0 1px rgba(255, 255, 255, 0.95);
+}
+
+.v2-form-split-block + .v2-form-split-block {
+    padding-top: 14px;
+    border-top: 1px solid rgba(26, 26, 26, 0.06);
+}
+
+.v2-form-split-block-title {
+    margin: 0 0 10px;
+    color: #1a1a1a;
+    font-size: 13px;
+    font-weight: 650;
+    letter-spacing: -0.15px;
+}
+
+.v2-form-page .v2-form-split-main .mis-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 16px;
+}
+
+.v2-form-page .v2-form-split-aside .mis-form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.v2-form-page .v2-form-split .mis-form-span {
+    grid-column: 1 / -1;
+}
+
+.v2-form-split-main .v2-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.v2-form-split-main .v2-form-group-title {
+    margin: 0;
+    color: #1a1a1a;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+@media (max-width: 980px) {
+    .v2-form-split {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .v2-form-page .v2-form-split-aside .mis-form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Flat forms (no sections): one clean card */
+.v2-list-page .mis-form-card:not(:has(.v2-form-section)):not(:has(.v2-form-split)) {
+    gap: 14px;
+    padding: 16px 18px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow:
+        0 10px 24px rgba(26, 26, 26, 0.04),
+        inset 0 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
+}
+
+.v2-form-section {
+    padding: 16px 18px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow:
+        0 8px 22px rgba(26, 26, 26, 0.035),
+        inset 0 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
 }
 
 .v2-form-section + .v2-form-section,
 .v2-form-section + .mis-form-actions {
-    margin-top: 12px;
+    margin-top: 0;
 }
 
 .v2-form-section-plain {
-    padding-bottom: 18px;
+    padding-bottom: 14px;
 }
 
 .v2-form-section-head {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    padding-bottom: 0;
+    border-bottom: 0;
 }
 
 .v2-form-section-head h2 {
     margin: 0;
-    color: var(--foreground, #111);
-    font-size: 14px;
+    color: #1a1a1a;
+    font-size: 13px;
     font-weight: 650;
-    letter-spacing: -0.2px;
+    letter-spacing: -0.15px;
 }
 
 .v2-form-section-head p {
-    margin: 4px 0 0;
-    color: var(--muted-foreground, #8a9090);
-    font-size: 12px;
-    line-height: 1.45;
+    display: none;
 }
 
-.v2-field {
+.v2-field,
+.v2-list-page .mis-form-grid > .grid {
     display: grid;
-    gap: 7px;
+    gap: 6px;
     min-width: 0;
 }
 
-.v2-field :is(label, [data-slot='label']) {
-    color: color-mix(
-        in srgb,
-        var(--v2-table-brand, #1a1a1a) 55%,
-        var(--muted-foreground, #6d7375)
-    );
+.v2-field :is(label, [data-slot='label']),
+.v2-list-page .mis-form-card :is(label, [data-slot='label']) {
+    color: #5f6567;
     font-size: 12px;
     font-weight: 550;
+    line-height: 1.2;
 }
 
 .v2-list-page .mis-form-card .mis-form-grid {
-    gap: 14px 16px;
+    gap: 12px 14px;
+}
+
+@media (min-width: 900px) {
+    .v2-form-page .mis-form-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .v2-form-page .mis-form-span {
+        grid-column: 1 / -1;
+    }
+
+    .v2-form-page .mis-form-span-2 {
+        grid-column: span 2;
+    }
 }
 
 .v2-list-page .v2-field :is([data-slot='input'], .mis-form-select, .mis-form-textarea),
 .v2-list-page .mis-form-card :is([data-slot='input'], .mis-form-select, .mis-form-textarea),
 .v2-list-page .v2-field > .relative > button[type='button'] {
-    height: 42px;
-    border: 1px solid
-        color-mix(in srgb, var(--v2-table-brand) 12%, var(--border, rgb(15 23 42 / 10%)));
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--card, #fff) 88%, transparent);
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
+    height: 40px;
+    border: 1px solid rgba(26, 26, 26, 0.1);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: none;
+    font-size: 13px;
     transition:
         border-color 0.15s ease,
         box-shadow 0.15s ease,
@@ -1585,72 +1749,64 @@
 .v2-list-page .v2-field .mis-form-textarea,
 .v2-list-page .mis-form-card .mis-form-textarea {
     height: auto;
-    min-height: 112px;
-    padding-top: 12px;
-    padding-bottom: 12px;
+    min-height: 120px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     resize: vertical;
 }
 
 .v2-list-page .v2-field :is([data-slot='input'], .mis-form-select, .mis-form-textarea):hover,
 .v2-list-page .mis-form-card :is([data-slot='input'], .mis-form-select, .mis-form-textarea):hover,
 .v2-list-page .v2-field > .relative > button[type='button']:hover {
-    border-color: color-mix(
-        in srgb,
-        var(--v2-table-brand) 22%,
-        var(--border, rgb(15 23 42 / 12%))
-    );
+    border-color: rgba(26, 26, 26, 0.16);
 }
 
 .v2-list-page .v2-field :is([data-slot='input'], .mis-form-select, .mis-form-textarea):focus-visible,
 .v2-list-page .mis-form-card :is([data-slot='input'], .mis-form-select, .mis-form-textarea):focus-visible,
 .v2-list-page .v2-field > .relative > button[type='button']:focus-visible {
-    border-color: color-mix(
-        in srgb,
-        var(--v2-table-accent, var(--brand-accent)) 55%,
-        var(--border)
-    );
+    border-color: color-mix(in srgb, var(--v2-table-accent, #ff8a3a) 55%, transparent);
+    background: #fff;
     box-shadow:
-        0 0 0 3px
-            color-mix(
-                in srgb,
-                var(--v2-table-accent, var(--brand-accent)) 16%,
-                transparent
-            ),
-        inset 0 1px 0 rgb(255 255 255 / 70%);
+        0 0 0 3px color-mix(in srgb, var(--v2-table-accent, #ff8a3a) 14%, transparent);
+    outline: none;
 }
 
+/* Save bar: only at the end, not floating */
 .v2-list-page .mis-form-actions {
+    position: static;
+    z-index: auto;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    margin-top: 12px;
-    padding: 14px 16px;
-    border: 1px solid
-        color-mix(in srgb, var(--v2-table-brand) 10%, rgb(255 255 255 / 72%));
-    border-radius: 18px;
-    border-top-color: color-mix(
-        in srgb,
-        var(--v2-table-brand) 10%,
-        rgb(255 255 255 / 72%)
-    );
-    background: color-mix(in srgb, var(--card, #ffffff) 78%, transparent);
-    box-shadow: 0 8px 22px
-        color-mix(in srgb, var(--v2-table-brand) 5%, transparent);
+    gap: 8px;
+    margin-top: 4px;
+    padding: 16px 0 0;
+    border: 0;
+    border-top: 1px solid rgba(26, 26, 26, 0.08);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.v2-list-page .mis-form-card:not(:has(.v2-form-section)):not(:has(.v2-form-split)) .mis-form-actions {
+    margin: 2px 0 0;
+    padding: 14px 0 0;
 }
 
 .v2-list-page .mis-form-actions :is(button, a) {
-    border-radius: 999px;
+    border-radius: 10px;
     min-height: 40px;
+    padding-inline: 16px;
+    font-size: 13px;
+    font-weight: 550;
 }
 
 .v2-list-page .mis-form-actions button[data-slot='button'][data-variant='default'],
 .v2-list-page .mis-form-actions a[data-slot='button'][data-variant='default'] {
     background: var(--v2-table-accent);
     color: #fff;
-    box-shadow:
-        0 10px 24px color-mix(in srgb, var(--v2-table-accent) 28%, transparent),
-        inset 0 1px rgb(255 255 255 / 16%);
+    box-shadow: none;
 }
 
 .v2-list-page .mis-form-actions button[data-slot='button'][data-variant='default']:hover,
@@ -1662,16 +1818,125 @@
 .v2-list-page .mis-form-actions a[data-slot='button'][data-variant='outline'],
 .v2-list-page .mis-form-actions button[data-slot='button'][data-variant='secondary'],
 .v2-list-page .mis-form-actions a[data-slot='button'][data-variant='secondary'] {
-    border-color: rgb(255 255 255 / 70%);
-    background: rgb(255 255 255 / 72%);
+    border-color: rgba(26, 26, 26, 0.12);
+    background: #fff;
     color: #1a1a1a;
-    box-shadow:
-        0 8px 18px rgb(40 45 50 / 6%),
-        inset 0 1px rgb(255 255 255 / 90%);
+    box-shadow: none;
+}
+
+.v2-form-page .mis-form-card [role='button'].border-dashed {
+    gap: 4px;
+    padding: 12px;
+    border-radius: 12px;
+}
+
+.v2-form-page .mis-form-card [role='button'].border-dashed .size-10 {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.v2-form-page .mis-form-card [role='button'].border-dashed p {
+    font-size: 12px;
+    line-height: 1.3;
+}
+
+.v2-form-lines {
+    overflow: hidden;
+    border: 1px solid rgba(26, 26, 26, 0.08);
+    border-radius: 12px;
+    background: #fff;
+}
+
+.v2-form-lines-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.v2-form-lines-toolbar h3 {
+    margin: 0;
+    color: #1a1a1a;
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.v2-form-lines-toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.v2-form-lines table {
+    width: 100%;
+    min-width: 560px;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.v2-form-lines thead th {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+    background: rgba(26, 26, 26, 0.03);
+    color: #6a7072;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: start;
+    white-space: nowrap;
+}
+
+.v2-form-lines tbody td {
+    padding: 8px 10px;
+    border-top: 1px solid rgba(26, 26, 26, 0.06);
+    vertical-align: middle;
+}
+
+.v2-form-lines tbody tr:first-child td {
+    border-top: 0;
+}
+
+.v2-form-lines .mis-form-select,
+.v2-form-lines [data-slot='input'] {
+    height: 36px;
+    min-width: 0;
+}
+
+.v2-form-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(26, 26, 26, 0.08);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--v2-table-accent, #ff8a3a) 8%, #fff);
+}
+
+.v2-form-total-label {
+    color: #5f6567;
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.v2-form-total-value {
+    color: #1a1a1a;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.4px;
+    font-variant-numeric: tabular-nums;
 }
 
 .v2-list-page[dir='rtl'] .v2-form-section-head h2 {
     letter-spacing: 0;
+}
+
+@media (max-width: 980px) {
+    .v2-form-layout.has-aside {
+        grid-template-columns: 1fr;
+    }
 }
 
 .v2-amount-card {

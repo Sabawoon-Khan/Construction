@@ -21,7 +21,13 @@ const props = defineProps<{
     item: any;
     projects: { id: number; name: string }[];
     suppliers: { id: number; name: string; supplier_no: string }[];
-    materials: { id: number; name: string; code: string; unit_cost: number; unit?: { unit_name: string } | null }[];
+    materials: {
+        id: number;
+        name: string;
+        code: string;
+        unit_cost: number;
+        unit?: { unit_name: string } | null;
+    }[];
     project_id?: number | null;
 }>();
 
@@ -32,7 +38,9 @@ const { baseCurrency } = useCurrency();
 const form = useForm({
     project_id: String(props.item?.project_id ?? props.project_id ?? ''),
     supplier_id: String(props.item?.supplier_id ?? ''),
-    purchase_date: props.item?.purchase_date?.slice?.(0, 10) ?? new Date().toISOString().slice(0, 10),
+    purchase_date:
+        props.item?.purchase_date?.slice?.(0, 10) ??
+        new Date().toISOString().slice(0, 10),
     reference_no: String(props.item?.reference_no ?? ''),
     notes: String(props.item?.notes ?? ''),
     currency: props.item?.currency ?? baseCurrency.value,
@@ -56,7 +64,9 @@ const lineTotal = (line: Line) => {
     return qty * cost;
 };
 
-const grandTotal = computed(() => form.items.reduce((sum, line) => sum + lineTotal(line), 0));
+const grandTotal = computed(() =>
+    form.items.reduce((sum, line) => sum + lineTotal(line), 0),
+);
 
 function addLine() {
     form.items.push({ material_id: '', quantity: '', unit_cost: '' });
@@ -65,7 +75,6 @@ function addLine() {
 function removeLine(index: number) {
     if (form.items.length === 1) {
         form.items[0] = { material_id: '', quantity: '', unit_cost: '' };
-
         return;
     }
 
@@ -73,7 +82,9 @@ function removeLine(index: number) {
 }
 
 function onMaterialChange(index: number) {
-    const material = props.materials.find((m) => String(m.id) === form.items[index].material_id);
+    const material = props.materials.find(
+        (m) => String(m.id) === form.items[index].material_id,
+    );
     if (material && !form.items[index].unit_cost) {
         form.items[index].unit_cost = String(material.unit_cost ?? '');
     }
@@ -81,12 +92,13 @@ function onMaterialChange(index: number) {
 
 function submit() {
     if (isEdit.value) {
-        form.transform((data) => ({
-            purchase_date: data.purchase_date,
-            reference_no: data.reference_no,
-            notes: data.notes,
-        })).put(`/purchases/${props.item.id}`);
-
+        form
+            .transform((data) => ({
+                purchase_date: data.purchase_date,
+                reference_no: data.reference_no,
+                notes: data.notes,
+            }))
+            .put(`/purchases/${props.item.id}`);
         return;
     }
 
@@ -117,140 +129,287 @@ defineOptions({
     <V2FormPage
         :title="isEdit ? t('Edit purchase') : t('New purchase')"
         :eyebrow="t('Purchases')"
-        :description="isEdit ? t('Update this purchase.') : t('Record a purchase to add materials to a project.')"
         :back-href="isEdit ? '/purchases' : undefined"
     >
-        <form class="mis-form-card" @submit.prevent="submit">
-            <div class="mis-form-grid">
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <Label>{{ t('Project') }}</Label>
-                        <RelatedCreateLink href="/projects/create" :label="t('Add project')" />
+        <form class="mis-form-card v2-purchase-form" @submit.prevent="submit">
+            <div class="v2-form-split">
+                <div class="v2-form-split-main">
+                    <div class="v2-form-group">
+                        <div class="mis-form-grid">
+                            <div class="v2-field">
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label>{{ t('Project') }}</Label>
+                                    <RelatedCreateLink
+                                        href="/projects/create"
+                                        :label="t('Add project')"
+                                    />
+                                </div>
+                                <select
+                                    v-model="form.project_id"
+                                    :disabled="isEdit"
+                                    required
+                                    class="mis-form-select"
+                                >
+                                    <option value="" disabled>
+                                        {{ t('Select project') }}
+                                    </option>
+                                    <option
+                                        v-for="project in projects"
+                                        :key="project.id"
+                                        :value="String(project.id)"
+                                    >
+                                        {{ project.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.project_id" />
+                            </div>
+                            <div class="v2-field">
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label>{{ t('Supplier') }}</Label>
+                                    <RelatedCreateLink
+                                        href="/suppliers/create"
+                                        :label="t('Add supplier')"
+                                    />
+                                </div>
+                                <select
+                                    v-model="form.supplier_id"
+                                    :disabled="isEdit"
+                                    required
+                                    class="mis-form-select"
+                                >
+                                    <option value="" disabled>
+                                        {{ t('Select supplier') }}
+                                    </option>
+                                    <option
+                                        v-for="supplier in suppliers"
+                                        :key="supplier.id"
+                                        :value="String(supplier.id)"
+                                    >
+                                        {{ supplier.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.supplier_id" />
+                            </div>
+                            <div class="v2-field">
+                                <Label>{{ t('Date') }}</Label>
+                                <Input
+                                    v-model="form.purchase_date"
+                                    type="date"
+                                    required
+                                />
+                                <InputError :message="form.errors.purchase_date" />
+                            </div>
+                            <div class="v2-field">
+                                <Label>{{ t('Reference') }}</Label>
+                                <Input v-model="form.reference_no" />
+                                <InputError :message="form.errors.reference_no" />
+                            </div>
+                        </div>
                     </div>
-                    <select v-model="form.project_id" :disabled="isEdit" required class="mis-form-select">
-                        <option value="" disabled>{{ t('Select project') }}</option>
-                        <option v-for="project in projects" :key="project.id" :value="String(project.id)">{{ project.name }}</option>
-                    </select>
-                    <InputError :message="form.errors.project_id" />
-                </div>
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <Label>{{ t('Supplier') }}</Label>
-                        <RelatedCreateLink href="/suppliers/create" :label="t('Add supplier')" />
-                    </div>
-                    <select v-model="form.supplier_id" :disabled="isEdit" required class="mis-form-select">
-                        <option value="" disabled>{{ t('Select supplier') }}</option>
-                        <option v-for="supplier in suppliers" :key="supplier.id" :value="String(supplier.id)">{{ supplier.name }}</option>
-                    </select>
-                    <InputError :message="form.errors.supplier_id" />
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Date') }}</Label>
-                    <Input v-model="form.purchase_date" type="date" required />
-                    <InputError :message="form.errors.purchase_date" />
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Reference') }}</Label>
-                    <Input v-model="form.reference_no" />
-                    <InputError :message="form.errors.reference_no" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="currency">{{ t('Currency') }}</Label>
-                    <CurrencySelect id="currency" v-model="form.currency" class="max-w-[9rem]" />
-                    <InputError :message="form.errors.currency" />
-                </div>
-            </div>
 
-            <div v-if="!isEdit" class="space-y-3">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-semibold">{{ t('Materials') }}</h3>
-                    <div class="flex items-center gap-2">
-                        <RelatedCreateLink href="/materials/create" :label="t('Add material')" />
-                        <Button type="button" variant="outline" size="sm" @click="addLine">
-                            <Plus class="size-4" /> {{ t('Add line') }}
-                        </Button>
+                    <div v-if="!isEdit" class="v2-form-group">
+                        <div class="v2-form-lines-toolbar">
+                            <h3>{{ t('Materials') }}</h3>
+                            <div class="v2-form-lines-toolbar-actions">
+                                <RelatedCreateLink
+                                    href="/materials/create"
+                                    :label="t('Add material')"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    @click="addLine"
+                                >
+                                    <Plus class="size-4" />
+                                    {{ t('Add line') }}
+                                </Button>
+                            </div>
+                        </div>
+                        <InputError :message="form.errors.items" />
+                        <div class="v2-form-lines overflow-x-auto">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>{{ t('Material') }}</th>
+                                        <th>{{ t('Qty') }}</th>
+                                        <th>{{ t('Unit cost') }}</th>
+                                        <th>{{ t('Line total') }}</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="(line, index) in form.items"
+                                        :key="index"
+                                    >
+                                        <td>
+                                            <select
+                                                v-model="line.material_id"
+                                                required
+                                                class="mis-form-select min-w-[180px]"
+                                                @change="onMaterialChange(index)"
+                                            >
+                                                <option value="">
+                                                    {{ t('Select') }}
+                                                </option>
+                                                <option
+                                                    v-for="material in materials"
+                                                    :key="material.id"
+                                                    :value="String(material.id)"
+                                                >
+                                                    {{ material.name
+                                                    }}{{
+                                                        material.unit?.unit_name
+                                                            ? ` (${material.unit.unit_name})`
+                                                            : ''
+                                                    }}
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <Input
+                                                v-model="line.quantity"
+                                                type="number"
+                                                step="0.001"
+                                                min="0.001"
+                                                required
+                                                class="min-w-[96px]"
+                                            />
+                                        </td>
+                                        <td>
+                                            <Input
+                                                v-model="line.unit_cost"
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                required
+                                                class="min-w-[96px]"
+                                            />
+                                        </td>
+                                        <td class="tabular-nums whitespace-nowrap">
+                                            {{ money(lineTotal(line), form.currency) }}
+                                        </td>
+                                        <td>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                @click="removeLine(index)"
+                                            >
+                                                <Trash2 class="size-4" />
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="v2-form-group">
+                        <h2 class="v2-form-group-title">{{ t('Notes') }}</h2>
+                        <div class="v2-field">
+                            <Label class="sr-only">{{ t('Notes') }}</Label>
+                            <textarea
+                                v-model="form.notes"
+                                rows="4"
+                                class="mis-form-textarea"
+                            ></textarea>
+                        </div>
                     </div>
                 </div>
-                <InputError :message="form.errors.items" />
-                <div class="overflow-x-auto rounded-xl border border-border/80">
-                    <table class="min-w-full text-sm">
-                        <thead class="table-chrome-head text-start text-muted-foreground">
-                            <tr>
-                                <th class="px-3 py-2 font-medium">{{ t('Material') }}</th>
-                                <th class="px-3 py-2 font-medium">{{ t('Qty') }}</th>
-                                <th class="px-3 py-2 font-medium">{{ t('Unit cost') }}</th>
-                                <th class="px-3 py-2 font-medium">{{ t('Line total') }}</th>
-                                <th class="px-3 py-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(line, index) in form.items" :key="index" class="border-t">
-                                <td class="px-3 py-2">
-                                    <select v-model="line.material_id" required class="mis-form-select min-w-[180px]" @change="onMaterialChange(index)">
-                                        <option value="">{{ t('Select') }}</option>
-                                        <option v-for="material in materials" :key="material.id" :value="String(material.id)">
-                                            {{ material.name }}{{ material.unit?.unit_name ? ` (${material.unit.unit_name})` : '' }}
+
+                <aside class="v2-form-split-aside">
+                    <div class="v2-form-split-panel">
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">
+                                {{ t('Payment') }}
+                            </h2>
+                            <div class="mis-form-grid">
+                                <div class="v2-field">
+                                    <Label for="currency">{{ t('Currency') }}</Label>
+                                    <CurrencySelect
+                                        id="currency"
+                                        v-model="form.currency"
+                                    />
+                                    <InputError :message="form.errors.currency" />
+                                </div>
+                                <div v-if="!isEdit" class="v2-field">
+                                    <Label>{{ t('Paid now') }}</Label>
+                                    <Input
+                                        v-model="form.paid_now"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                    />
+                                    <InputError :message="form.errors.paid_now" />
+                                </div>
+                                <div v-if="!isEdit" class="v2-field">
+                                    <Label>{{ t('Payment method') }}</Label>
+                                    <select
+                                        v-model="form.payment_method"
+                                        class="mis-form-select"
+                                    >
+                                        <option value="cash">{{ t('Cash') }}</option>
+                                        <option value="bank">{{ t('Bank') }}</option>
+                                        <option value="transfer">
+                                            {{ t('Transfer') }}
                                         </option>
                                     </select>
-                                </td>
-                                <td class="px-3 py-2">
-                                    <Input v-model="line.quantity" type="number" step="0.001" min="0.001" required class="min-w-[100px]" />
-                                </td>
-                                <td class="px-3 py-2">
-                                    <Input v-model="line.unit_cost" type="number" step="0.01" min="0" required class="min-w-[100px]" />
-                                </td>
-                                <td class="px-3 py-2 tabular-nums">{{ money(lineTotal(line), form.currency) }}</td>
-                                <td class="px-3 py-2">
-                                    <Button type="button" variant="ghost" size="sm" @click="removeLine(index)">
-                                        <Trash2 class="size-4" />
-                                    </Button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                                </div>
+                            </div>
+                        </div>
 
-            <div class="mis-form-grid">
-                <div v-if="!isEdit" class="grid gap-2">
-                    <Label>{{ t('Paid now') }}</Label>
-                    <Input v-model="form.paid_now" type="number" step="0.01" min="0" />
-                    <InputError :message="form.errors.paid_now" />
-                </div>
-                <div v-if="!isEdit" class="grid gap-2">
-                    <Label>{{ t('Payment method') }}</Label>
-                    <select v-model="form.payment_method" class="mis-form-select">
-                        <option value="cash">{{ t('Cash') }}</option>
-                        <option value="bank">{{ t('Bank') }}</option>
-                        <option value="transfer">{{ t('Transfer') }}</option>
-                    </select>
-                </div>
-                <div class="grid gap-2 mis-form-span">
-                    <Label>{{ t('Notes') }}</Label>
-                    <textarea v-model="form.notes" rows="3" class="mis-form-textarea"></textarea>
-                </div>
-            </div>
+                        <div v-if="!isEdit" class="v2-form-split-block">
+                            <div class="v2-form-total">
+                                <span class="v2-form-total-label">
+                                    {{ t('Purchase total') }}
+                                </span>
+                                <span class="v2-form-total-value">
+                                    {{ money(grandTotal, form.currency) }}
+                                </span>
+                            </div>
+                        </div>
 
-            <RecordAttachments
-                attachable="purchases"
-                :attachable-id="isEdit ? item?.id : null"
-                :attachments="item?.attachments"
-                v-model:files="form.documents"
-                :error="form.errors.documents"
-            />
-
-            <div v-if="!isEdit" class="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
-                <span class="text-sm text-muted-foreground">{{ t('Purchase total (project expense)') }}</span>
-                <span class="text-lg font-semibold tabular-nums">{{ money(grandTotal, form.currency) }}</span>
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">
+                                {{ t('Attachments') }}
+                            </h2>
+                            <RecordAttachments
+                                attachable="purchases"
+                                :attachable-id="isEdit ? item?.id : null"
+                                :attachments="item?.attachments"
+                                v-model:files="form.documents"
+                                :error="form.errors.documents"
+                            />
+                        </div>
+                    </div>
+                </aside>
             </div>
 
             <div class="mis-form-actions">
-                <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
-                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button type="submit" :disabled="form.processing">
+                    {{ form.processing ? t('Saving…') : t('Save') }}
+                </Button>
+                <Button
+                    v-if="!isEdit"
+                    type="button"
+                    variant="secondary"
+                    @click="historyBack"
+                >
+                    {{ t('Cancel') }}
+                </Button>
                 <Button v-else as-child variant="secondary">
                     <Link href="/purchases">{{ t('Cancel') }}</Link>
                 </Button>
-                <Button v-if="isEdit" type="button" variant="destructive" class="ml-auto" :disabled="form.processing" @click="removePurchase">
+                <Button
+                    v-if="isEdit"
+                    type="button"
+                    variant="destructive"
+                    class="ml-auto"
+                    :disabled="form.processing"
+                    @click="removePurchase"
+                >
                     <Trash2 class="size-4" />
                     {{ form.processing ? t('Deleting…') : t('Delete') }}
                 </Button>

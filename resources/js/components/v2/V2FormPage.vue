@@ -4,7 +4,6 @@ import { ArrowLeft } from '@lucide/vue';
 import { computed } from 'vue';
 import { useLocale } from '@/composables/useLocale';
 import { useTranslations } from '@/composables/useTranslations';
-import V2DetailHero from './V2DetailHero.vue';
 
 const props = withDefaults(
     defineProps<{
@@ -13,14 +12,12 @@ const props = withDefaults(
         description?: string;
         /** When set, shows Back that goes here (typically edit forms). Omit on create. */
         backHref?: string | null;
-        image?: string;
         dir?: 'ltr' | 'rtl';
     }>(),
     {
         eyebrow: undefined,
         description: undefined,
         backHref: null,
-        image: '/images/dashboard-v2-building.png',
         dir: undefined,
     },
 );
@@ -31,16 +28,24 @@ const resolvedDir = computed(() => props.dir ?? localeDir.value);
 </script>
 
 <template>
-    <div class="v2-list-page" :dir="resolvedDir">
-        <V2DetailHero :image="image" compact>
-            <template v-if="eyebrow || $slots.eyebrow" #eyebrow>
-                <slot name="eyebrow">{{ eyebrow }}</slot>
-            </template>
-            <template #title>{{ title }}</template>
-            <template v-if="description || $slots.description" #description>
-                <slot name="description">{{ description }}</slot>
-            </template>
-            <template v-if="backHref || $slots.actions" #actions>
+    <div class="v2-list-page v2-form-page" :dir="resolvedDir">
+        <header class="v2-form-page-head">
+            <div class="v2-form-page-copy">
+                <p v-if="eyebrow || $slots.eyebrow" class="v2-form-page-eyebrow">
+                    <slot name="eyebrow">{{ eyebrow }}</slot>
+                </p>
+                <h1>{{ title }}</h1>
+                <p
+                    v-if="description || $slots.description"
+                    class="v2-form-page-desc"
+                >
+                    <slot name="description">{{ description }}</slot>
+                </p>
+            </div>
+            <div
+                v-if="backHref || $slots.actions"
+                class="v2-form-page-actions"
+            >
                 <Link
                     v-if="backHref"
                     :href="backHref"
@@ -50,11 +55,18 @@ const resolvedDir = computed(() => props.dir ?? localeDir.value);
                     {{ t('Back') }}
                 </Link>
                 <slot name="actions" />
-            </template>
-        </V2DetailHero>
+            </div>
+        </header>
 
-        <div class="v2-form-shell reveal delay">
-            <slot />
+        <div class="v2-form-shell">
+            <div class="v2-form-layout" :class="{ 'has-aside': !!$slots.aside }">
+                <div class="v2-form-main">
+                    <slot />
+                </div>
+                <aside v-if="$slots.aside" class="v2-form-aside">
+                    <slot name="aside" />
+                </aside>
+            </div>
         </div>
     </div>
 </template>
