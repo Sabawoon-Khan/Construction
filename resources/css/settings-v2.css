@@ -1,0 +1,114 @@
+/* Shared V2 surface styles for all settings pages — Structo palette */
+
+.settings-v2 {
+    --settings-ink: #1a1a1a;
+    --settings-muted: #667085;
+    --settings-soft: #98a2b3;
+    --settings-accent: #ff8a3a;
+    --settings-brand: #1a1a1a;
+    --settings-blue: #4c7cf3;
+    --settings-pink: #e51f56;
+    --settings-green: #42bfa7;
+    --settings-gold: #f3c14e;
+    --settings-wash: #eef0ee;
+    --settings-panel: rgba(255, 255, 255, 0.52);
+    --settings-panel-strong: rgba(255, 255, 255, 0.72);
+    --settings-line: rgba(255, 255, 255, 0.62);
+    --settings-shadow:
+        0 14px 36px rgba(26, 26, 26, 0.07),
+        inset 0 1px rgba(255, 255, 255, 0.95);
+}
+
+.settings-v2 .settings-content-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+}
+
+/* Unify cards / panels inside settings */
+.settings-v2 .settings-content-body > .space-y-6,
+.settings-v2 .settings-content-body > .flex.flex-col {
+    gap: 14px;
+}
+
+.settings-v2 .settings-content-body :is([data-slot='card'], .rounded-2xl.border, .shadow-soft) {
+    overflow: hidden;
+    border-color: var(--settings-line) !important;
+    border-radius: 22px !important;
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.72) 0%,
+            rgba(255, 255, 255, 0.38) 100%
+        ) !important;
+    box-shadow: var(--settings-shadow) !important;
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+.settings-v2 .settings-content-body [data-slot='card-header'] {
+    background: rgba(255, 255, 255, 0.32) !important;
+    border-bottom: 1px solid rgba(26, 26, 26, 0.06) !important;
+}
+
+.settings-v2 .settings-content-body [data-slot='card-title'] {
+    color: var(--settings-ink);
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: -0.2px;
+}
+
+.settings-v2 .settings-content-body :is(h1, h2, h3).sr-only + *,
+.settings-v2 .settings-content-body .sr-only + .space-y-6,
+.settings-v2 .settings-content-body .sr-only + .flex {
+    margin-top: 0;
+}
+
+.settings-v2 .settings-content-body input,
+.settings-v2 .settings-content-body select,
+.settings-v2 .settings-content-body textarea {
+    border-radius: 12px;
+    border-color: rgba(26, 26, 26, 0.08);
+    background: rgba(255, 255, 255, 0.62);
+}
+
+.settings-v2 .settings-content-body button[data-slot='button'] {
+    border-radius: 12px;
+}
+
+.settings-v2 .settings-content-body button[data-slot='button'][data-variant='default'],
+.settings-v2 .settings-content-body .bg-primary {
+    background: var(--settings-accent) !important;
+    color: #fff !important;
+}
+
+.settings-v2[dir='rtl'] .settings-content-body [data-slot='card-title'] {
+    letter-spacing: 0;
+}
+
+/* Soft Structo wash behind settings workspace */
+.app-v2-page.settings-shell .app-v2-shell {
+    background:
+        radial-gradient(
+            ellipse 46% 40% at 88% 8%,
+            rgba(255, 138, 58, 0.14) 0%,
+            transparent 68%
+        ),
+        radial-gradient(
+            ellipse 42% 36% at 8% 92%,
+            rgba(76, 124, 243, 0.1) 0%,
+            transparent 70%
+        ),
+        linear-gradient(145deg, #f5f6f4 0%, #eef0ee 48%, #e8ebe9 100%);
+}
+
+.app-v2-page.settings-shell {
+    --app-v2-surface: rgba(255, 255, 255, 0.5);
+    --app-v2-surface-strong: rgba(255, 255, 255, 0.74);
+    --app-v2-ink: #1a1a1a;
+    --app-v2-muted: #667085;
+    --app-v2-active-bg: #1a1a1a;
+    --app-v2-active-fg: #ffffff;
+    background: #eef0ee;
+}

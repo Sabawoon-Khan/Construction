@@ -1,22 +1,43 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Banknote, Briefcase, CalendarDays, Clock, KeyRound, Mail, Phone, Printer, User, Wallet } from '@lucide/vue';
+import { Form, Head, Link, router } from '@inertiajs/vue3';
+import {
+    Briefcase,
+    CalendarDays,
+    FolderKanban,
+    KeyRound,
+    Pencil,
+    Printer,
+    Trash2,
+    Wallet,
+} from '@lucide/vue';
+import { ref } from 'vue';
 import Can from '@/components/Can.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import Heading from '@/components/Heading.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
-import { MisStatCard, MisStatGrid } from '@/components/mis';
+import { MisDetailGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+    V2DetailHero,
+    V2ListPage,
+    V2Panel,
+    V2StatCard,
+    V2StatGrid,
+} from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTranslations } from '@/composables/useTranslations';
 import { translateStatus } from '@/lib/translateStatus';
 import { money } from '@/lib/utils';
+import {
+    consumePendingTrashUndo,
+    expectTrashUndo,
+} from '@/lib/trashUndoToast';
 
 const { baseCurrency } = useCurrency();
 
@@ -42,6 +63,21 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const deleteOpen = ref(false);
+const deleting = ref(false);
+
+function confirmDelete() {
+    deleting.value = true;
+    expectTrashUndo({ type: 'employees', id: props.item.id });
+    router.delete(`/employees/${props.item.id}`, {
+        onError: () => consumePendingTrashUndo(),
+        onCancel: () => consumePendingTrashUndo(),
+        onFinish: () => {
+            deleting.value = false;
+            deleteOpen.value = false;
+        },
+    });
+}
 
 defineOptions({
     layout: {
@@ -57,120 +93,101 @@ defineOptions({
 <template>
     <Head :title="item.name" />
 
-    <div class="flex h-full flex-1 flex-col gap-4">
-        <div class="space-y-3">
-            <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                <Link href="/employees"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-            </Button>
-            <Heading
-                :title="item.name"
-                :description="`${item.employee_no || '—'} · ${item.designation || '—'} · ${item.department || '—'}`"
-            />
-        </div>
-
-        <MisStatGrid :columns="4">
-            <MisStatCard :label="t('Projects')" :value="stats.projects_count" />
-            <MisStatCard :label="t('Attendance records')" :value="stats.attendance_count" />
-            <MisStatCard :label="t('Salary records')" :value="stats.salaries_count" />
-            <MisStatCard :label="t('Basic salary')" :value="item.basic_salary != null ? money(item.basic_salary, item.currency) : '—'" />
-        </MisStatGrid>
+    <V2ListPage>
+        <V2DetailHero image="/images/dashboard-v2-building.png">
+            <template #eyebrow>{{ t('Employees') }}</template>
+            <template #title>{{ item.name }}</template>
+            <template #description>
+                {{ item.employee_no || '—' }} · {{ item.designation || '—' }} · {{ item.department || '—' }}
+            </template>
+            <template #actions>
+                <Can permission="employees.edit">
+                    <Button as-child>
+                        <Link :href="`/employees/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                    </Button>
+                </Can>
+                <Can permission="employees.delete">
+                    <Button type="button" variant="destructive" @click="deleteOpen = true">
+                        <Trash2 class="size-4" /> {{ t('Delete') }}
+                    </Button>
+                </Can>
+            </template>
+            <template #stats>
+                <V2StatGrid class="detail-stat-grid">
+                    <V2StatCard
+                        :delay="0"
+                        :title="t('Projects')"
+                        :value="stats.projects_count"
+                    >
+                        <template #icon><FolderKanban /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="1"
+                        icon-tone="warm"
+                        :title="t('Attendance records')"
+                        :value="stats.attendance_count"
+                    >
+                        <template #icon><CalendarDays /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="2"
+                        icon-tone="teal"
+                        :title="t('Salary records')"
+                        :value="stats.salaries_count"
+                    >
+                        <template #icon><Briefcase /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="3"
+                        accent
+                        icon-tone="orange"
+                        :title="t('Basic salary')"
+                        :value="item.basic_salary != null ? money(item.basic_salary, item.currency) : '—'"
+                    >
+                        <template #icon><Wallet /></template>
+                    </V2StatCard>
+                </V2StatGrid>
+            </template>
+        </V2DetailHero>
 
         <div class="grid gap-6 lg:grid-cols-2">
-            <div class="space-y-6 rounded-xl border border-sidebar-border/70 bg-card p-6 shadow-sm">
-                <h3 class="text-sm font-semibold">{{ t('Employee Details') }}</h3>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="flex items-center gap-3">
-                        <User class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Takhallus') }}</p>
-                            <p>{{ item.takhallus || '—' }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <User class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Father name') }}</p>
-                            <p>{{ item.father_name || '—' }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <User class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Status') }}</p>
-                            <p>{{ translateStatus(item.status, t) }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Mail class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Email') }}</p>
-                            <p>{{ item.email || '—' }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Phone class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Phone') }}</p>
-                            <p>{{ item.phone || '—' }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <CalendarDays class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Employment Date') }}</p>
-                            <p>{{ formatDate(item.joining_date) }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Clock class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Working hours') }}</p>
-                            <p>{{ item.working_hours || '—' }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Banknote class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Basic Salary') }}</p>
-                            <p class="tabular-nums">{{ item.basic_salary != null ? money(item.basic_salary, item.currency) : '—' }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Wallet class="size-4 text-muted-foreground" />
-                        <div>
-                            <p class="text-xs text-muted-foreground">{{ t('Salary payment method') }}</p>
-                            <p>{{ paymentMethodLabel(item.salary_payment_method) }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div v-if="item.notes">
-                    <p class="text-xs text-muted-foreground">{{ t('Notes') }}</p>
-                    <p class="mt-1 whitespace-pre-line text-sm">{{ item.notes }}</p>
-                </div>
-            </div>
+            <V2Panel :title="t('Employee Details')">
+                <MisDetailGrid
+                    :columns="2"
+                    :items="[
+                        { label: t('Takhallus'), value: item.takhallus },
+                        { label: t('Father name'), value: item.father_name },
+                        { label: t('Status'), value: translateStatus(item.status, t) },
+                        { label: t('Email'), value: item.email },
+                        { label: t('Phone'), value: item.phone },
+                        { label: t('Employment Date'), value: formatDate(item.joining_date) },
+                        { label: t('Working hours'), value: item.working_hours },
+                        { label: t('Basic Salary'), value: item.basic_salary != null ? money(item.basic_salary, item.currency) : '—' },
+                        { label: t('Salary payment method'), value: paymentMethodLabel(item.salary_payment_method) },
+                        { label: t('Notes'), value: item.notes, span: 2 },
+                    ]"
+                />
+            </V2Panel>
 
             <div class="space-y-4">
                 <Can permission="employees.edit">
-                    <div class="rounded-xl border border-sidebar-border/70 bg-card p-6 shadow-sm">
+                    <V2Panel :title="t('Login password')">
                         <div class="flex items-start gap-3">
                             <div class="rounded-lg bg-muted p-2">
                                 <KeyRound class="size-4 text-muted-foreground" />
                             </div>
                             <div class="min-w-0 flex-1 space-y-4">
-                                <div>
-                                    <h3 class="text-sm font-semibold">{{ t('Login password') }}</h3>
-                                    <p class="mt-1 text-sm text-muted-foreground">
-                                        <template v-if="item.login_user">
-                                            {{ t('Account') }}: {{ item.login_user.email }}
-                                        </template>
-                                        <template v-else-if="item.email">
-                                            {{ t('Sets a login for') }} {{ item.email }}
-                                        </template>
-                                        <template v-else>
-                                            {{ t('Add an email on the employee profile first.') }}
-                                        </template>
-                                    </p>
-                                </div>
+                                <p class="text-sm text-muted-foreground">
+                                    <template v-if="item.login_user">
+                                        {{ t('Account') }}: {{ item.login_user.email }}
+                                    </template>
+                                    <template v-else-if="item.email">
+                                        {{ t('Sets a login for') }} {{ item.email }}
+                                    </template>
+                                    <template v-else>
+                                        {{ t('Add an email on the employee profile first.') }}
+                                    </template>
+                                </p>
 
                                 <Form
                                     v-if="item.email"
@@ -208,7 +225,7 @@ defineOptions({
                                 </Form>
                             </div>
                         </div>
-                    </div>
+                    </V2Panel>
                 </Can>
 
                 <RecordAttachments
@@ -220,16 +237,14 @@ defineOptions({
             </div>
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
-            <div class="flex items-center justify-between border-b px-5 py-3">
-                <div>
-                    <h3 class="text-sm font-semibold">{{ t('Assigned projects') }}</h3>
-                    <p class="mt-0.5 text-sm text-muted-foreground">{{ t('Projects this employee works on') }}</p>
-                </div>
-            </div>
+        <V2Panel
+            :padded="false"
+            :title="t('Assigned projects')"
+            :description="t('Projects this employee works on')"
+        >
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-start text-muted-foreground">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
                         <tr>
                             <TableIndexTh />
                             <th class="px-4 py-3 font-medium">{{ t('Code') }}</th>
@@ -279,18 +294,17 @@ defineOptions({
                     </tbody>
                 </table>
             </div>
-        </div>
+        </V2Panel>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
-            <div class="flex items-center justify-between border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">{{ t('Attendance') }}</h3>
+        <V2Panel :padded="false" :title="t('Attendance')">
+            <template #actions>
                 <Button as-child variant="link" size="sm" class="h-auto p-0">
                     <Link :href="`/attendance?employee_id=${item.id}`">{{ t('View all') }}</Link>
                 </Button>
-            </div>
+            </template>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-start text-muted-foreground">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
                         <tr>
                             <TableIndexTh />
                             <th class="px-4 py-3 font-medium">{{ t('Date') }}</th>
@@ -323,18 +337,17 @@ defineOptions({
                     </tbody>
                 </table>
             </div>
-        </div>
+        </V2Panel>
 
-        <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-card shadow-sm">
-            <div class="flex items-center justify-between border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">{{ t('Salaries') }}</h3>
+        <V2Panel :padded="false" :title="t('Salaries')">
+            <template #actions>
                 <Button as-child variant="link" size="sm" class="h-auto p-0">
                     <Link :href="`/salaries?employee_id=${item.id}`">{{ t('View all') }}</Link>
                 </Button>
-            </div>
+            </template>
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-start text-muted-foreground">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
                         <tr>
                             <TableIndexTh />
                             <th class="px-4 py-3 font-medium">{{ t('Month') }}</th>
@@ -377,6 +390,15 @@ defineOptions({
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
+        </V2Panel>
+
+        <ConfirmActionDialog
+            v-model:open="deleteOpen"
+            :title="t('Delete employee')"
+            :description="t('Are you sure you want to delete this employee? This action cannot be undone.')"
+            :confirm-label="t('Delete')"
+            :processing="deleting"
+            @confirm="confirmDelete"
+        />
+    </V2ListPage>
 </template>

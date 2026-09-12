@@ -41,16 +41,43 @@ class EmployeeController extends Controller implements HasMiddleware
             });
         }
 
+        $statusCounts = (clone $query)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $active = (int) ($statusCounts['active'] ?? 0);
+        $inactive = (int) ($statusCounts['inactive'] ?? 0);
+        $onLeave = (int) ($statusCounts['on_leave'] ?? 0);
+        $count = (clone $query)->count();
+
+        $byDepartment = (clone $query)
+            ->selectRaw("COALESCE(NULLIF(TRIM(department), ''), 'Unassigned') as department_name, COUNT(*) as aggregate")
+            ->groupByRaw("COALESCE(NULLIF(TRIM(department), ''), 'Unassigned')")
+            ->orderByDesc('aggregate')
+            ->limit(8)
+            ->pluck('aggregate', 'department_name')
+            ->map(fn ($value) => (int) $value)
+            ->all();
+
         $totals = [
-            'count' => (clone $query)->count(),
-            'active' => (clone $query)->where('status', 'active')->count(),
-            'inactive' => (clone $query)->where('status', '!=', 'active')->count(),
+            'count' => $count,
+            'active' => $active,
+            'inactive' => max(0, $count - $active),
+            'on_leave' => $onLeave,
+            'by_status' => [
+                'active' => $active,
+                'inactive' => $inactive,
+                'on_leave' => $onLeave,
+            ],
+            'by_department' => $byDepartment,
         ];
 
         return Inertia::render('Employees/Index', [
             'items' => $query->with('creator:id,name')->latest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'hireChart' => $this->hiresByMonth(clone $query),
         ]);
     }
 
@@ -243,5 +270,47 @@ class EmployeeController extends Controller implements HasMiddleware
         }
 
         return $data;
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Employee>  $query
+     * @return list<array{key: string, label: string, value: int}>
+     */
+    protected function hiresByMonth($query): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'value' => 0,
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $rows = (clone $query)
+            ->whereNotNull('joining_date')
+            ->whereDate('joining_date', '>=', $from->toDateString())
+            ->whereDate('joining_date', '<=', $to->toDateString())
+            ->get(['joining_date']);
+
+        foreach ($rows as $row) {
+            $date = $row->joining_date;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['value']++;
+        }
+
+        return array_values($buckets);
     }
 }

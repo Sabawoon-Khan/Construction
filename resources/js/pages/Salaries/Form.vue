@@ -6,7 +6,7 @@ import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -90,7 +90,12 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit salary') : t('Add salary')" />
 
-    <MisFormPage :title="isEdit ? t('Edit salary') : t('Add salary')" :back-href="isEdit ? '/salaries' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit salary') : t('Add salary')"
+        :eyebrow="t('Salaries')"
+        :description="isEdit ? t('Update this salary.') : t('Add a new salary payment.')"
+        :back-href="isEdit ? '/salaries' : undefined"
+    >
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
                 <div class="grid gap-2">
@@ -181,5 +186,5 @@ defineOptions({
                 </Button>
             </div>
         </form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

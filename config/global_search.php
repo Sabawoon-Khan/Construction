@@ -1,19 +1,26 @@
 <?php
 
+use App\Models\Attendance;
+use App\Models\ContactMessage;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
+use App\Models\ExpenseUnit;
 use App\Models\FieldReport;
 use App\Models\Income;
+use App\Models\InventoryTransaction;
 use App\Models\Material;
 use App\Models\Partner;
 use App\Models\Payment;
+use App\Models\PortfolioProject;
 use App\Models\Project;
 use App\Models\Purchase;
 use App\Models\Salary;
 use App\Models\Sale;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Models\User;
 
 /**
  * Resources included in the header global search.
@@ -80,7 +87,7 @@ return [
         'route_param' => 'supplier',
     ],
     'partners' => [
-        'label' => 'Partners',
+        'label' => 'Shareholders',
         'model' => Partner::class,
         'permission' => 'partners',
         'search' => ['partner_no', 'name', 'phone', 'email', 'national_id', 'address', 'notes'],
@@ -105,6 +112,25 @@ return [
         'show_route' => null,
         'index_route' => 'materials.index',
         'route_param' => 'material',
+    ],
+    'inventory' => [
+        'label' => 'Stock',
+        'model' => InventoryTransaction::class,
+        'permission' => 'inventory',
+        'search' => ['reference_no', 'notes', 'type'],
+        'priority' => ['reference_no'],
+        'relations' => [
+            'material' => ['name', 'code'],
+            'project' => ['name', 'code'],
+        ],
+        'title' => 'reference_no',
+        'title_from' => 'material.name',
+        'subtitle' => ['type', 'reference_no'],
+        'edit_route' => null,
+        'show_route' => null,
+        'index_route' => 'inventory.index',
+        'route_param' => 'inventoryTransaction',
+        'with' => ['material:id,name,code', 'project:id,name,code'],
     ],
     'purchases' => [
         'label' => 'Purchases',
@@ -160,6 +186,32 @@ return [
         'route_param' => 'expense',
         'with' => ['project:id,name,code'],
     ],
+    'expense_categories' => [
+        'label' => 'Expense categories',
+        'model' => ExpenseCategory::class,
+        'permission' => 'expenses',
+        'search' => ['name', 'code', 'description'],
+        'priority' => ['name', 'code'],
+        'title' => 'name',
+        'subtitle' => ['code'],
+        'edit_route' => null,
+        'show_route' => null,
+        'index_route' => 'expense-categories.index',
+        'route_param' => 'expense_category',
+    ],
+    'expense_units' => [
+        'label' => 'Expense units',
+        'model' => ExpenseUnit::class,
+        'permission' => 'expenses',
+        'search' => ['unit_name'],
+        'priority' => ['unit_name'],
+        'title' => 'unit_name',
+        'subtitle' => [],
+        'edit_route' => null,
+        'show_route' => null,
+        'index_route' => 'expense-units.index',
+        'route_param' => 'expense_unit',
+    ],
     'incomes' => [
         'label' => 'Incomes',
         'model' => Income::class,
@@ -206,6 +258,24 @@ return [
         'index_route' => 'employees.index',
         'route_param' => 'employee',
     ],
+    'attendance' => [
+        'label' => 'Attendance',
+        'model' => Attendance::class,
+        'permission' => 'attendance',
+        'search' => ['status', 'notes'],
+        'priority' => [],
+        'relations' => [
+            'employee' => ['name', 'employee_no', 'phone'],
+        ],
+        'title' => 'id',
+        'title_from' => 'employee.name',
+        'subtitle' => ['status'],
+        'edit_route' => 'attendance.edit',
+        'show_route' => 'attendance.show',
+        'index_route' => 'attendance.index',
+        'route_param' => 'attendance',
+        'with' => ['employee:id,name,employee_no'],
+    ],
     'salaries' => [
         'label' => 'Salaries',
         'model' => Salary::class,
@@ -223,6 +293,46 @@ return [
         'route_param' => 'salary',
         'with' => ['employee:id,name,employee_no'],
         'title_from' => 'employee.name',
+    ],
+    'portfolio' => [
+        'label' => 'Portfolio',
+        'model' => PortfolioProject::class,
+        'permission' => 'portfolio',
+        'search' => ['title', 'slug', 'summary', 'location', 'category', 'client_name', 'project_status'],
+        'priority' => ['title', 'slug'],
+        'title' => 'title',
+        'subtitle' => ['location', 'project_status'],
+        'edit_route' => 'portfolio.edit',
+        'show_route' => null,
+        'index_route' => 'portfolio.index',
+        'route_param' => 'portfolio',
+    ],
+    'contact_messages' => [
+        'label' => 'Contact messages',
+        'model' => ContactMessage::class,
+        'permission' => 'contact_messages',
+        'search' => ['name', 'phone', 'email', 'message'],
+        'priority' => ['name', 'phone', 'email'],
+        'phone' => ['phone'],
+        'title' => 'name',
+        'subtitle' => ['email', 'phone'],
+        'edit_route' => null,
+        'show_route' => 'contact-messages.show',
+        'index_route' => 'contact-messages.index',
+        'route_param' => 'contact_message',
+    ],
+    'users' => [
+        'label' => 'Users',
+        'model' => User::class,
+        'permission' => 'users',
+        'search' => ['name', 'email'],
+        'priority' => ['name', 'email'],
+        'title' => 'name',
+        'subtitle' => ['email'],
+        'edit_route' => null,
+        'show_route' => null,
+        'index_route' => 'settings.users.index',
+        'route_param' => 'user',
     ],
     'field_reports' => [
         'label' => 'Field reports',

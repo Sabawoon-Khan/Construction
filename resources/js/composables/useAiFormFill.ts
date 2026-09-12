@@ -327,13 +327,20 @@ export function useAiFormFill() {
         close();
     }
 
-    function accept(): void {
+    function accept(selectedIds?: string[]): void {
         if (preview.value.length === 0) {
             return;
         }
 
+        const allow =
+            selectedIds && selectedIds.length > 0
+                ? new Set(selectedIds)
+                : null;
         const byId = new Map(fields.value.map((f) => [f.id, f]));
         for (const row of preview.value) {
+            if (allow && !allow.has(row.id)) {
+                continue;
+            }
             const field = byId.get(row.id);
             if (!field) {
                 continue;

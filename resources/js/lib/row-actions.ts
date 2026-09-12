@@ -21,4 +21,8 @@ export interface RowActionItem {
     download?: boolean;
     /** Render as a non-interactive dropdown label instead of an action item. */
     isLabel?: boolean;
+    /** Soft-delete registry key for Undo toast after a successful delete. */
+    trashType?: string;
+    /** Soft-deleted record id (defaults to last path segment of href). */
+    trashId?: string | number;
 }

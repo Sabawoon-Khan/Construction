@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\ContactMessage;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -36,9 +37,12 @@ class ContactMessageController extends Controller implements HasMiddleware
             $query->whereNotNull('read_at');
         }
 
+        $count = ContactMessage::query()->count();
+        $unread = ContactMessage::query()->unread()->count();
         $totals = [
-            'count' => ContactMessage::query()->count(),
-            'unread' => ContactMessage::query()->unread()->count(),
+            'count' => $count,
+            'unread' => $unread,
+            'read' => max(0, $count - $unread),
         ];
 
         return Inertia::render('ContactMessages/Index', [
@@ -48,6 +52,7 @@ class ContactMessageController extends Controller implements HasMiddleware
                 'status' => in_array($status, ['unread', 'read'], true) ? $status : null,
             ],
             'totals' => $totals,
+            'volumeChart' => $this->messagesByMonth(),
         ]);
     }
 
@@ -70,5 +75,43 @@ class ContactMessageController extends Controller implements HasMiddleware
         ]);
 
         return redirect()->route('contact-messages.index');
+    }
+
+    /**
+     * @return list<array{key: string, label: string, value: int}>
+     */
+    private function messagesByMonth(): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'value' => 0,
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $rows = ContactMessage::query()
+            ->whereDate('created_at', '>=', $from->toDateString())
+            ->whereDate('created_at', '<=', $to->toDateString())
+            ->get(['created_at']);
+
+        foreach ($rows as $row) {
+            if (! $row->created_at) {
+                continue;
+            }
+            $key = $row->created_at->format('Y-m');
+            if (isset($buckets[$key])) {
+                $buckets[$key]['value']++;
+            }
+        }
+
+        return array_values($buckets);
     }
 }

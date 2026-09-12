@@ -6,7 +6,7 @@ import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +36,12 @@ defineOptions({
 
 <template>
     <Head :title="isEdit ? t('Edit unit') : t('Create unit')" />
-    <MisFormPage :title="isEdit ? t('Edit unit') : t('Create unit')" :back-href="isEdit ? '/units' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit unit') : t('Create unit')"
+        :eyebrow="t('Units')"
+        :description="isEdit ? t('Update this unit.') : t('Add a new unit or home.')"
+        :back-href="isEdit ? '/units' : undefined"
+    >
         <Form
             :action="isEdit ? `/units/${item.id}` : '/units'"
             :method="isEdit ? 'put' : 'post'"
@@ -130,7 +135,7 @@ defineOptions({
                     <Input name="bedrooms" type="number" :default-value="item?.bedrooms ?? ''" />
                 </div>
                 <div class="grid gap-2">
-                    <Label>{{ t('Planned unit cost') }}</Label>
+                    <Label>{{ t('Unit cost') }}</Label>
                     <Input name="cost_price" type="number" step="0.01" :default-value="item?.cost_price ?? 0" />
                 </div>
                 <div class="grid gap-2">
@@ -165,5 +170,5 @@ defineOptions({
                 </Form>
             </div>
         </Form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

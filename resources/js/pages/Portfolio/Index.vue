@@ -1,31 +1,64 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
-import { Trash2 } from '@lucide/vue';
-import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
+import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
-import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
+import TableToolbar from '@/components/TableToolbar.vue';
+import { MisSearchInput } from '@/components/mis';
+import {
+    V2FilterBar,
+    V2Hero,
+    V2IndicatorCard,
+    V2ListPage,
+    V2Pager,
+    V2StatCard,
+    V2StatGrid,
+    V2TablePanel,
+} from '@/components/v2';
 import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisFilterBar, MisLoadingState, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
-import Pagination from '@/components/Pagination.vue';
-import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import { useInertiaLoading } from '@/composables/useInertiaLoading';
+import { useMisFilters } from '@/composables/useMisFilters';
 import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
+import { Eye, FileImage, Plus, Trash2 } from '@lucide/vue';
+import { computed } from 'vue';
+import { Head, Link } from '@inertiajs/vue3';
 
 type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
     filters: { search?: string };
-    totals: { count: number; published: number };
+    totals: {
+        count: number;
+        published: number;
+        draft?: number;
+        with_media?: number;
+    };
+    categoryChart?: Array<{ key: string; label: string; value: number }>;
+    volumeChart?: Array<{ key: string; label: string; value: number }>;
 }>();
 
-const search = ref(props.filters.search ?? '');
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Portfolio', href: '/portfolio' },
+        ],
+    },
+});
+
+const onlyKeys = ['items', 'filters', 'totals', 'categoryChart', 'volumeChart'];
+
+const { filters, pending, apply, clear } = useMisFilters(
+    '/portfolio',
+    { search: props.filters.search ?? '' },
+    { search: '' },
+    { only: onlyKeys, liveKeys: ['search'] },
+);
+
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
@@ -39,25 +72,53 @@ const tableColumns = computed(() => [
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { editAction, can, formatDate } = useMisPage();
-const { loading } = useInertiaLoading();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Dashboard', href: '/dashboard' },
-            { title: 'Portfolio', href: '/portfolio' },
-        ],
-    },
+const publishMix = computed(() => {
+    const published = Number(props.totals.published ?? 0);
+    const draft = Number(
+        props.totals.draft ?? Math.max(0, Number(props.totals.count ?? 0) - published),
+    );
+    const total = Math.max(published + draft, Number(props.totals.count ?? 0), 0);
+    const publishedShare = total > 0 ? Math.round((published / total) * 100) : 0;
+    const segments = [
+        { key: 'published', label: t('Published'), value: published, color: 'var(--brand-accent)' },
+        { key: 'draft', label: t('Draft'), value: draft, color: 'var(--muted-foreground)' },
+    ].map((seg) => ({
+        ...seg,
+        width:
+            total > 0
+                ? Math.max(seg.value > 0 ? 6 : 0, (seg.value / total) * 100)
+                : 0,
+    }));
+
+    return { published, publishedShare, segments };
 });
 
-function applySearch() {
-    router.get('/portfolio', { search: search.value || undefined }, { preserveState: true, replace: true });
-}
+const categoryBars = computed(() => {
+    const rows =
+        (props.categoryChart?.length ? props.categoryChart : props.volumeChart) ??
+        [];
+    const source =
+        rows.length > 0
+            ? rows
+            : Array.from({ length: 6 }, (_, index) => ({
+                  key: `c-${index}`,
+                  label: ['A', 'B', 'C', 'D', 'E', 'F'][index],
+                  value: 0,
+              }));
+    const max = Math.max(...source.map((row) => Number(row.value) || 0), 1);
 
-function clearFilters() {
-    search.value = '';
-    applySearch();
-}
+    return source.map((row) => {
+        const value = Number(row.value) || 0;
+        return {
+            key: row.key,
+            label: row.label,
+            value,
+            height: Math.max(value > 0 ? 6 : 3, Math.round((value / max) * 44)),
+            peak: value === max && value > 0,
+        };
+    });
+});
 
 function rowActions(item: Item): RowActionItem[] {
     return [
@@ -83,25 +144,148 @@ function rowActions(item: Item): RowActionItem[] {
 <template>
     <Head :title="t('Portfolio')" />
 
-    <div class="flex h-full flex-1 flex-col gap-4">
-        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="applySearch" @clear="clearFilters">
-            <MisSearchInput v-model="search" class="min-w-[220px] flex-1" :placeholder="t('Search portfolio...')" />
-        </MisFilterBar>
+    <V2ListPage>
+        <V2Hero image="/images/projects-v2-hero-luxury.png">
+            <template #eyebrow>{{ t('Marketing') }}</template>
+            <template #title>{{ t('Portfolio') }}</template>
+            <template #description>
+                {{ t('Showcase completed and ongoing work with media and publish status.') }}
+            </template>
 
-        <MisStatGrid :columns="2">
-            <MisStatCard :label="t('Portfolio')" :value="totals.count" />
-            <MisStatCard :label="t('Published')" :value="totals.published" />
-        </MisStatGrid>
+            <template #side>
+                <Link
+                    v-if="can('portfolio.create')"
+                    href="/portfolio/create"
+                    class="create-btn"
+                >
+                    <Plus />
+                    {{ t('Create') }}
+                </Link>
 
-        <MisLoadingState v-if="loading" />
+                <div class="hero-cards">
+                    <V2IndicatorCard card-class="inventory-card">
+                        <template #head>{{ t('Publish status') }}</template>
+                        <template #meta
+                            >{{ publishMix.publishedShare }}% {{ t('Published') }}</template
+                        >
 
-        <div
-            v-else
-            class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
+                        <div class="inventory-hero">
+                            <div class="inventory-hero-copy">
+                                <strong>{{ publishMix.published }}</strong>
+                                <small>{{ t('Published') }}</small>
+                            </div>
+                        </div>
+
+                        <div class="inventory-bar" aria-hidden="true">
+                            <i
+                                v-for="seg in publishMix.segments"
+                                :key="seg.key"
+                                :style="{
+                                    width: `${seg.width}%`,
+                                    background: seg.color,
+                                }"
+                            />
+                        </div>
+
+                        <ul class="indicator-list compact">
+                            <li
+                                v-for="seg in publishMix.segments"
+                                :key="seg.key"
+                            >
+                                <i :style="{ background: seg.color }" />
+                                <span>{{ seg.label }}</span>
+                                <b>{{ seg.value }}</b>
+                            </li>
+                        </ul>
+                    </V2IndicatorCard>
+
+                    <V2IndicatorCard card-class="money-card">
+                        <template #head>{{ t('By category') }}</template>
+                        <template #meta>{{ totals.count }} {{ t('Portfolio') }}</template>
+
+                        <div class="money-chart">
+                            <div
+                                v-for="bar in categoryBars"
+                                :key="bar.key"
+                                class="money-col"
+                                :class="{ peak: bar.peak }"
+                                :title="`${bar.label}: ${bar.value}`"
+                            >
+                                <div class="money-pair">
+                                    <i
+                                        class="afn"
+                                        :style="{ height: `${bar.height}px` }"
+                                    />
+                                </div>
+                                <span>{{ bar.label }}</span>
+                            </div>
+                        </div>
+                    </V2IndicatorCard>
+                </div>
+            </template>
+
+            <template #stats>
+                <V2StatGrid>
+                    <V2StatCard
+                        :delay="0"
+                        :title="t('Portfolio')"
+                        :value="totals.count"
+                    >
+                        <template #icon><FileImage /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="1"
+                        icon-tone="teal"
+                        :title="t('Published')"
+                        :value="totals.published"
+                    >
+                        <template #icon><Eye /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="2"
+                        icon-tone="warm"
+                        :title="t('Draft')"
+                        :value="totals.draft ?? 0"
+                    >
+                        <template #icon><FileImage /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="3"
+                        accent
+                        icon-tone="orange"
+                        :title="t('With media')"
+                        :value="totals.with_media ?? 0"
+                    >
+                        <template #icon><FileImage /></template>
+                    </V2StatCard>
+                </V2StatGrid>
+            </template>
+        </V2Hero>
+
+        <V2TablePanel
+            table-id="portfolio"
+            :columns="tableColumns"
+            :pending="pending && items.data.length > 0"
         >
-            <TableFrame table-id="portfolio" :columns="tableColumns">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-start text-muted-foreground">
+            <template #filters>
+                <V2FilterBar>
+                    <div class="filter-search">
+                        <MisSearchInput
+                            v-model="filters.search"
+                            :placeholder="t('Search portfolio...')"
+                            @submit="apply()"
+                            @clear="clear"
+                        />
+                    </div>
+                    <template #columns>
+                        <TableToolbar />
+                    </template>
+                </V2FilterBar>
+            </template>
+
+            <template #default="{ visibleColCount }">
+                <table>
+                    <thead>
                         <tr>
                             <TableIndexTh />
                             <SortableTh column="title">{{ t('Title') }}</SortableTh>
@@ -110,68 +294,88 @@ function rowActions(item: Item): RowActionItem[] {
                             <SortableTh column="media.length">{{ t('Media') }}</SortableTh>
                             <SortableTh column="is_published">{{ t('Published') }}</SortableTh>
                             <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
-                            <th class="px-4 py-3 font-medium text-end">{{ t('Actions') }}</th>
+                            <th class="end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
                             v-for="(item, index) in sortedRows"
                             :key="item.id"
-                            class="border-b last:border-0 transition-colors hover:bg-muted/30"
+                            :style="{ '--i': index }"
                         >
-                            <TableIndexTd :index="index" :from="items.meta?.from" />
-                            <td class="px-4 py-3">
-                                <div class="flex items-center gap-3">
+                            <TableIndexTd
+                                :index="index"
+                                :from="items.meta?.from"
+                            />
+                            <td>
+                                <div class="name-cell">
                                     <div
                                         class="size-10 shrink-0 overflow-hidden rounded-lg bg-muted"
                                     >
                                         <img
-                                            v-if="item.media?.[0]?.type === 'image' && item.media?.[0]?.url"
+                                            v-if="
+                                                item.media?.[0]?.type === 'image' &&
+                                                item.media?.[0]?.url
+                                            "
                                             :src="item.media[0].url"
                                             :alt="item.title"
                                             class="size-full object-cover"
                                         />
                                         <video
-                                            v-else-if="item.media?.[0]?.type === 'video' && item.media?.[0]?.url"
+                                            v-else-if="
+                                                item.media?.[0]?.type === 'video' &&
+                                                item.media?.[0]?.url
+                                            "
                                             :src="item.media[0].url"
                                             class="size-full object-cover"
                                             muted
                                             playsinline
                                         />
                                     </div>
-                                    <div class="min-w-0">
-                                        <div class="truncate font-medium">{{ item.title }}</div>
-                                        <div class="truncate text-xs text-muted-foreground">{{ item.slug }}</div>
+                                    <div>
+                                        <b>{{ item.title }}</b>
+                                        <small>{{ item.slug }}</small>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-4 py-3">{{ item.category || '—' }}</td>
-                            <td class="px-4 py-3">{{ item.location || '—' }}</td>
-                            <td class="px-4 py-3 tabular-nums">{{ item.media_count ?? 0 }}</td>
-                            <td class="px-4 py-3">
-                                <span
-                                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
-                                    :class="
-                                        item.is_published
-                                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                                            : 'bg-muted text-muted-foreground'
-                                    "
-                                >
+                            <td>{{ item.category || '—' }}</td>
+                            <td class="muted">{{ item.location || '—' }}</td>
+                            <td>
+                                <span class="pill">{{ item.media_count ?? 0 }}</span>
+                            </td>
+                            <td>
+                                <span class="pill">
                                     {{ item.is_published ? t('Published') : t('Draft') }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
-                            <td class="px-4 py-3">
-                                <div class="flex justify-end">
-                                    <RowActionsMenu :actions="rowActions(item)" />
-                                </div>
+                            <td class="muted nowrap">{{ formatDate(item.created_at) }}</td>
+                            <td class="end" @click.stop>
+                                <RowActionsMenu :actions="rowActions(item)" />
                             </td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="8" :title="t('No portfolio projects yet')" />
+                        <EmptyState
+                            v-if="!items.data.length"
+                            :colspan="visibleColCount"
+                            :title="t('No portfolio projects yet')"
+                        >
+                            <template #actions>
+                                <Link
+                                    v-if="can('portfolio.create')"
+                                    href="/portfolio/create"
+                                    class="create-btn"
+                                >
+                                    <Plus />
+                                    {{ t('Create') }}
+                                </Link>
+                            </template>
+                        </EmptyState>
                     </tbody>
                 </table>
-            </TableFrame>
-            <Pagination :paginator="items" />
-        </div>
-    </div>
+            </template>
+
+            <template #pager>
+                <V2Pager :items="items" :only="onlyKeys" />
+            </template>
+        </V2TablePanel>
+    </V2ListPage>
 </template>

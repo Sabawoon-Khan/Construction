@@ -358,6 +358,8 @@ function backupActions(backup: Backup): RowActionItem[] {
             separator: true,
             href: `/settings/backups/${backup.id}`,
             method: 'delete',
+            trashType: 'backup_records',
+            trashId: backup.id,
             confirm: {
                 title: t('Move to trash'),
                 description: t('The backup will move to trash. Files are kept until permanently deleted.'),

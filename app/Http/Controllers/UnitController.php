@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Project;
+use App\Models\Sale;
 use App\Models\Unit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
+use App\Support\CurrencyAmounts;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -50,18 +53,33 @@ class UnitController extends Controller implements HasMiddleware
             $query->where('unit_no', 'like', "%{$search}%");
         }
 
+        $ids = (clone $query)->select('id');
+        $available = (clone $query)->where('status', 'available')->count();
+        $reserved = (clone $query)->where('status', 'reserved')->count();
+        $sold = (clone $query)->where('status', 'sold')->count();
+
         $totals = [
             'count' => (clone $query)->count(),
-            'available' => (clone $query)->where('status', 'available')->count(),
-            'reserved' => (clone $query)->where('status', 'reserved')->count(),
-            'sold' => (clone $query)->where('status', 'sold')->count(),
+            'available' => $available,
+            'reserved' => $reserved,
+            'sold' => $sold,
+            'units_available' => $available,
+            'units_reserved' => $reserved,
+            'units_sold' => $sold,
+            'list_price_total' => (float) (clone $query)->sum('list_price'),
+            'list_price_by_currency' => CurrencyAmounts::sum(clone $query, 'list_price'),
         ];
+
+        $salesQuery = Sale::query()
+            ->whereIn('unit_id', clone $ids)
+            ->where('status', '!=', 'cancelled');
 
         return Inertia::render('Units/Index', [
             'items' => $query->latest()->paginate(20)->withQueryString(),
             'filters' => $request->only(['search', 'project_id', 'status']),
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
             'totals' => $totals,
+            'moneyChart' => $this->soldByMonth(clone $salesQuery),
         ]);
     }
 
@@ -237,5 +255,67 @@ class UnitController extends Controller implements HasMiddleware
         return [
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
         ];
+    }
+
+    /**
+     * @return list<array{key: string, label: string, by_currency: array{AFN: float, USD: float}}>
+     */
+    protected function soldByMonth($salesQuery): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'by_currency' => ['AFN' => 0.0, 'USD' => 0.0],
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $sales = (clone $salesQuery)
+            ->with(['unit:id,list_price,currency'])
+            ->whereDate('contract_date', '>=', $from->toDateString())
+            ->whereDate('contract_date', '<=', $to->toDateString())
+            ->get(['id', 'unit_id', 'contract_date', 'discount', 'currency']);
+
+        foreach ($sales as $sale) {
+            $date = $sale->contract_date;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+
+            $code = CurrencyService::normalize(
+                (string) ($sale->currency ?: $sale->unit?->currency ?: 'USD'),
+            );
+            $amount = max(
+                0,
+                (float) ($sale->unit?->list_price ?? 0) - (float) ($sale->discount ?? 0),
+            );
+            $buckets[$key]['by_currency'][$code] = round(
+                ($buckets[$key]['by_currency'][$code] ?? 0) + $amount,
+                2,
+            );
+        }
+
+        return array_values(array_map(
+            static fn (array $bucket) => [
+                'key' => $bucket['key'],
+                'label' => $bucket['label'],
+                'by_currency' => [
+                    'AFN' => round((float) ($bucket['by_currency']['AFN'] ?? 0), 2),
+                    'USD' => round((float) ($bucket['by_currency']['USD'] ?? 0), 2),
+                ],
+            ],
+            $buckets,
+        ));
     }
 }

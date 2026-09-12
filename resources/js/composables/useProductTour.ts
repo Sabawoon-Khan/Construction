@@ -41,25 +41,25 @@ export function useProductTour() {
                 },
             },
             {
-                element: '[data-tour="app-header"]',
+                element: '[data-tour="global-search"]',
                 popover: {
-                    title: t('Page header'),
+                    title: t('Search'),
                     description: t(
-                        'Switch language, check notifications, and open your account menu here.',
+                        'Find projects, people, expenses, and more — or press Ctrl+K / ⌘K.',
                     ),
                     side: 'bottom',
                     align: 'end',
                 },
             },
             {
-                element: '[data-tour="sidebar-nav"]',
+                element: '[data-tour="create-primary"]',
                 popover: {
-                    title: t('Settings'),
+                    title: t('Create'),
                     description: t(
-                        'Profile, security, users, roles, backups, login logs, and system logs live under Settings.',
+                        'Use Create on list pages to add a new record. Field reports also work offline.',
                     ),
-                    side: 'right',
-                    align: 'start',
+                    side: 'bottom',
+                    align: 'end',
                 },
             },
         ];
@@ -76,9 +76,13 @@ export function useProductTour() {
             return;
         }
 
+        const prefersReducedMotion = window.matchMedia(
+            '(prefers-reduced-motion: reduce)',
+        ).matches;
+
         const tour = driver({
             showProgress: true,
-            animate: true,
+            animate: !prefersReducedMotion,
             allowClose: true,
             nextBtnText: t('Next'),
             prevBtnText: t('Back'),

@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { Form } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
+import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
-import { computed } from 'vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -12,9 +14,11 @@ import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
+import { formatNumber } from '@/lib/utils';
 
 const props = defineProps<{
     item: Record<string, any>;
@@ -58,29 +62,66 @@ const issueSort = useTableSort(() => props.stock_issues ?? []);
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
+
+const issueForm = useForm({
+    project_id: props.item.id,
+    material_id: '',
+    quantity: '',
+    transaction_date: new Date().toISOString().slice(0, 10),
+    redirect_to: `/projects/${props.item.id}`,
+});
+
+const issueConfirmOpen = ref(false);
+
+function materialName(materialId: number) {
+    return (
+        props.stock_materials?.find((m) => m.id === materialId)?.name ||
+        String(materialId)
+    );
+}
+
+function materialUnit(materialId: number) {
+    return (
+        props.stock_materials?.find((m) => m.id === materialId)?.unit?.unit_name ||
+        ''
+    );
+}
+
+function requestIssue() {
+    if (!issueForm.material_id || !issueForm.quantity) {
+        return;
+    }
+    issueConfirmOpen.value = true;
+}
+
+function confirmIssue() {
+    issueForm.post('/inventory', {
+        preserveScroll: true,
+        onFinish: () => {
+            issueConfirmOpen.value = false;
+        },
+        onSuccess: () => {
+            issueForm.reset('material_id', 'quantity');
+            issueForm.transaction_date = new Date().toISOString().slice(0, 10);
+        },
+    });
+}
 </script>
 
 <template>
     <div class="space-y-4">
-        <Form
-            action="/inventory"
-            method="post"
-            class="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-4"
-            v-slot="{ errors, processing }"
-        >
-            <input type="hidden" name="project_id" :value="item.id" />
-            <input
-                type="hidden"
-                name="redirect_to"
-                :value="`/projects/${item.id}`"
-            />
+        <V2Panel :title="t('Issue from stock')">
+            <form
+                class="grid gap-4 sm:grid-cols-4"
+                @submit.prevent="requestIssue"
+            >
             <div class="grid gap-2 sm:col-span-2">
                 <div class="flex items-center justify-between gap-2">
                     <Label>{{ t('Material') }}</Label>
                     <RelatedCreateLink href="/materials/create" :label="t('Add material')" />
                 </div>
                 <select
-                    name="material_id"
+                    v-model="issueForm.material_id"
                     required
                     class="h-9 rounded-md border px-3 text-sm"
                 >
@@ -90,59 +131,51 @@ const formatDate = (value: string | null | undefined) =>
                             (s) => s.on_hand > 0,
                         )"
                         :key="row.material_id"
-                        :value="row.material_id"
+                        :value="String(row.material_id)"
                     >
-                        {{
-                            stock_materials?.find(
-                                (m) => m.id === row.material_id,
-                            )?.name || row.material_id
-                        }}
-                        ({{ t('on hand') }} {{ row.on_hand }})
+                        {{ materialName(row.material_id) }}
+                        ({{ t('on hand') }} {{ formatNumber(row.on_hand, 3) }}
+                        <template v-if="materialUnit(row.material_id)">
+                            {{ materialUnit(row.material_id) }}
+                        </template>)
                     </option>
                 </select>
-                <InputError :message="errors.material_id" />
+                <InputError :message="issueForm.errors.material_id" />
             </div>
             <div class="grid gap-2">
                 <Label>{{ t('Qty to issue') }}</Label>
                 <Input
-                    name="quantity"
+                    v-model="issueForm.quantity"
                     type="number"
                     step="0.001"
                     min="0.001"
                     required
                 />
-                <InputError :message="errors.quantity" />
+                <InputError :message="issueForm.errors.quantity" />
             </div>
             <div class="grid gap-2">
                 <Label>{{ t('Date') }}</Label>
                 <Input
-                    name="transaction_date"
+                    v-model="issueForm.transaction_date"
                     type="date"
-                    :default-value="new Date().toISOString().slice(0, 10)"
                 />
             </div>
             <div class="sm:col-span-4">
                 <Can permission="inventory.create">
-                    <Button type="submit" :disabled="processing">{{
-                        processing ? t('Saving…') : t('Issue from stock')
-                    }}</Button>
+                    <Button type="submit" :disabled="issueForm.processing">
+                        {{ issueForm.processing ? t('Saving…') : t('Issue from stock') }}
+                    </Button>
                 </Can>
             </div>
-        </Form>
+            </form>
+        </V2Panel>
 
         <div class="grid gap-4 lg:grid-cols-2">
-            <div
-                class="overflow-hidden rounded-xl border bg-card shadow-sm"
-            >
-                <div class="border-b px-5 py-4">
-                    <h3 class="text-sm font-semibold">
-                        {{ t('Stock on hand') }}
-                    </h3>
-                </div>
+            <V2Panel :padded="false" :title="t('Stock on hand')">
                 <TableFrame table-id="project-stock-on-hand" :columns="tableColumnsStock">
                 <table class="min-w-full text-sm">
                     <thead
-                        class="bg-muted/40 text-start text-muted-foreground"
+                        class="table-chrome-head text-start text-muted-foreground"
                     >
                         <tr>
                             <TableIndexTh />
@@ -175,48 +208,48 @@ const formatDate = (value: string | null | undefined) =>
                         >
                             <TableIndexTd :index="index" />
                             <td class="px-4 py-3">
-                                {{
-                                    stock_materials?.find(
-                                        (m) => m.id === row.material_id,
-                                    )?.name || '—'
-                                }}
+                                {{ materialName(row.material_id) }}
                             </td>
                             <td class="px-4 py-3">
-                                {{
-                                    stock_materials?.find(
-                                        (m) => m.id === row.material_id,
-                                    )?.unit?.unit_name || '—'
-                                }}
+                                {{ materialUnit(row.material_id) || '—' }}
                             </td>
                             <td class="px-4 py-3 font-medium tabular-nums">
-                                {{ row.on_hand }}
+                                {{ formatNumber(row.on_hand, 3) }}
+                                <span
+                                    v-if="materialUnit(row.material_id)"
+                                    class="text-muted-foreground"
+                                >
+                                    {{ materialUnit(row.material_id) }}
+                                </span>
                             </td>
                         </tr>
-                        <tr v-if="!(stock || []).length">
-                            <td
-                                colspan="4"
-                                class="px-4 py-10 text-center text-muted-foreground"
-                            >
-                                {{ t('No stock yet') }}
-                            </td>
-                        </tr>
+                        <EmptyState
+                            v-if="!(stock || []).length"
+                            :colspan="4"
+                            :title="t('No stock yet')"
+                        >
+                            <template #actions>
+                                <Can permission="purchases.create">
+                                    <Button as-child size="sm">
+                                        <Link
+                                            :href="`/purchases/create?project_id=${item.id}`"
+                                        >
+                                            {{ t('New purchase') }}
+                                        </Link>
+                                    </Button>
+                                </Can>
+                            </template>
+                        </EmptyState>
                     </tbody>
                 </table>
                 </TableFrame>
-            </div>
+            </V2Panel>
 
-            <div
-                class="overflow-hidden rounded-xl border bg-card shadow-sm"
-            >
-                <div class="border-b px-5 py-4">
-                    <h3 class="text-sm font-semibold">
-                        {{ t('Stock issue dates') }}
-                    </h3>
-                </div>
+            <V2Panel :padded="false" :title="t('Stock issue dates')">
                 <TableFrame table-id="project-stock-issues" :columns="tableColumnsIssues">
                 <table class="min-w-full text-sm">
                     <thead
-                        class="bg-muted/40 text-start text-muted-foreground"
+                        class="table-chrome-head text-start text-muted-foreground"
                     >
                         <tr>
                             <TableIndexTh />
@@ -256,14 +289,17 @@ const formatDate = (value: string | null | undefined) =>
                             <td class="px-4 py-3">
                                 {{
                                     issue.material?.name ||
-                                    stock_materials?.find(
-                                        (m) => m.id === issue.material_id,
-                                    )?.name ||
-                                    '—'
+                                    materialName(issue.material_id)
                                 }}
                             </td>
                             <td class="px-4 py-3 tabular-nums">
-                                {{ issue.quantity }}
+                                {{ formatNumber(issue.quantity, 3) }}
+                                <span
+                                    v-if="materialUnit(issue.material_id)"
+                                    class="text-muted-foreground"
+                                >
+                                    {{ materialUnit(issue.material_id) }}
+                                </span>
                             </td>
                             <td class="px-4 py-3">
                                 {{
@@ -273,18 +309,25 @@ const formatDate = (value: string | null | undefined) =>
                                 }}
                             </td>
                         </tr>
-                        <tr v-if="!(stock_issues || []).length">
-                            <td
-                                colspan="4"
-                                class="px-4 py-10 text-center text-muted-foreground"
-                            >
-                                {{ t('No issue dates yet') }}
-                            </td>
-                        </tr>
+                        <EmptyState
+                            v-if="!(stock_issues || []).length"
+                            :colspan="4"
+                            :title="t('No issue dates yet')"
+                        />
                     </tbody>
                 </table>
                 </TableFrame>
-            </div>
+            </V2Panel>
         </div>
+
+        <ConfirmActionDialog
+            v-model:open="issueConfirmOpen"
+            :title="t('Issue from stock')"
+            :description="t('Remove this quantity from project stock on hand?')"
+            :confirm-label="t('Issue from stock')"
+            variant="default"
+            :processing="issueForm.processing"
+            @confirm="confirmIssue"
+        />
     </div>
 </template>

@@ -820,7 +820,7 @@ defineOptions({
 
                 <div v-else class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
                     <div
-                        class="hidden grid-cols-[7rem_minmax(0,1.4fr)_minmax(0,1fr)_7.5rem_6.5rem_2rem] gap-3 border-b bg-muted/30 px-4 py-2.5 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase md:grid"
+                        class="hidden grid-cols-[7rem_minmax(0,1.4fr)_minmax(0,1fr)_7.5rem_6.5rem_2rem] gap-3 border-b table-chrome-head px-4 py-2.5 text-[11px] font-semibold tracking-[0.12em] text-muted-foreground uppercase md:grid"
                     >
                         <span>{{ t('Status') }}</span>
                         <span>{{ t('Subject') }}</span>

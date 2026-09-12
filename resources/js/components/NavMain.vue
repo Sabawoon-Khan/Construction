@@ -6,6 +6,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { isNavItemActive } from '@/composables/useAppNavigation';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
@@ -17,6 +18,13 @@ const props = defineProps<{
 }>();
 
 const { currentUrl } = useCurrentUrl();
+const { isMobile, setOpenMobile } = useSidebar();
+
+function onNavigate() {
+    if (isMobile.value) {
+        setOpenMobile(false);
+    }
+}
 </script>
 
 <template>
@@ -33,9 +41,9 @@ const { currentUrl } = useCurrentUrl();
                     as-child
                     :is-active="isNavItemActive(item, currentUrl)"
                     :tooltip="item.title"
-                    class="h-9 gap-2.5 rounded-xl px-2.5 text-[13.5px] font-medium transition-all duration-200 hover:translate-x-[1px] [&>svg]:size-[18px]"
+                    class="h-10 gap-2.5 rounded-xl px-2.5 text-[13.5px] font-medium transition-all duration-200 hover:translate-x-px rtl:hover:-translate-x-px md:h-9 [&>svg]:size-[18px]"
                 >
-                    <Link :href="item.href">
+                    <Link :href="item.href" @click="onNavigate">
                         <component :is="item.icon" stroke-width="1.75" />
                         <span class="group-data-[collapsible=icon]:hidden">{{
                             item.title

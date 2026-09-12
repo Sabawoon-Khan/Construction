@@ -7,6 +7,7 @@ import RichTextEditorLite from '@/components/RichTextEditorLite.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { V2FormPage } from '@/components/v2';
 import { useTranslations } from '@/composables/useTranslations';
 import { useOfflineResourceForm } from '@/offline/useOfflineResourceForm';
 
@@ -58,69 +59,75 @@ const {
         });
     },
 });
+
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Field reports', href: '/field-reports' },
+            { title: 'Create', href: '/field-reports/create' },
+        ],
+    },
+});
 </script>
 
 <template>
     <Head :title="t('Create field report')" />
 
-    <OfflineResourceForm
+    <V2FormPage
         :title="t('Create field report')"
-        full-width
-        :offline-enabled="offlineEnabled"
-        :online="online"
-        :processing="processing || form.processing"
-        :client-uuid="clientUuid"
-        resource="field_reports"
-        :show-attachments="attachmentsEnabled"
-        @submit="onSubmit"
-        @attachment-stored="onAttachmentStored"
+        :eyebrow="t('Field')"
+        :description="t('Capture site notes offline — they sync when you reconnect.')"
+        back-href="/field-reports"
     >
-        <div class="space-y-6">
-            <div class="mis-form-grid">
+        <OfflineResourceForm
+            embedded
+            :title="t('Create field report')"
+            full-width
+            :offline-enabled="offlineEnabled"
+            :online="online"
+            :processing="processing || form.processing"
+            :client-uuid="clientUuid"
+            resource="field_reports"
+            :show-attachments="attachmentsEnabled"
+            @submit="onSubmit"
+            @attachment-stored="onAttachmentStored"
+        >
+            <div class="space-y-6">
+                <div class="mis-form-grid">
                     <div class="grid gap-2 md:col-span-2 lg:col-span-2">
                         <Label for="title">{{ t('Title') }}</Label>
-                        <Input
-                            id="title"
-                            v-model="local.title"
-                            required
-                        />
+                        <Input id="title" v-model="local.title" required />
                     </div>
 
                     <div class="grid gap-2">
                         <Label for="location">{{ t('Location') }}</Label>
-                        <Input
-                            id="location"
-                            v-model="local.location"
-                        />
+                        <Input id="location" v-model="local.location" />
                     </div>
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="body">{{ t('Notes') }}</Label>
+                    <RichTextEditorLite v-model="local.body" />
+                </div>
+
+                <div v-if="online" class="grid gap-2">
+                    <Label>{{ t('Attachments') }}</Label>
+                    <FileUploadField
+                        mode="deferred"
+                        multiple
+                        :max-files="5"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        @update:deferred="(files) => (deferredAttachments = files)"
+                    />
+                </div>
             </div>
 
-            <div class="grid gap-2">
-                <Label for="body">{{ t('Notes') }}</Label>
-                <RichTextEditorLite
-                    v-model="local.body"
-                />
-            </div>
-
-            <div v-if="online" class="grid gap-2">
-                <Label>{{ t('Attachments') }}</Label>
-                <FileUploadField
-                    mode="deferred"
-                    multiple
-                    :max-files="5"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    @update:deferred="(files) => (deferredAttachments = files)"
-                />
-            </div>
-        </div>
-
-        <template #actions>
-            <Button
-                type="submit"
-                :disabled="processing || form.processing"
-            >
-                {{ t('Save') }}
-            </Button>
-        </template>
-    </OfflineResourceForm>
+            <template #actions>
+                <Button type="submit" :disabled="processing || form.processing">
+                    {{ t('Save') }}
+                </Button>
+            </template>
+        </OfflineResourceForm>
+    </V2FormPage>
 </template>

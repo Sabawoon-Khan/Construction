@@ -20,6 +20,7 @@ class Payment extends Model
         'sale_id',
         'sale_installment_id',
         'purchase_id',
+        'loan_id',
         'customer_id',
         'supplier_id',
         'bank_account_id',
@@ -72,6 +73,11 @@ class Payment extends Model
     public function purchase(): BelongsTo
     {
         return $this->belongsTo(Purchase::class);
+    }
+
+    public function loan(): BelongsTo
+    {
+        return $this->belongsTo(Loan::class);
     }
 
     public function supplier(): BelongsTo

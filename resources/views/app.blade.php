@@ -53,22 +53,43 @@
                         root.style.setProperty('--kit-brand', c.brand);
                         root.style.setProperty('--sidebar-background', c.brand);
                         root.style.setProperty('--sidebar', c.brand);
+                        root.style.setProperty('--app-v2-brand', c.brand);
                     }
                     if (c.secondary) {
                         root.style.setProperty('--school-gold', c.secondary);
+                        root.style.setProperty('--app-v2-secondary', c.secondary);
                     }
                     if (accent) {
                         root.style.setProperty('--primary', accent);
+                        root.style.setProperty('--primary-foreground', '#ffffff');
                         root.style.setProperty('--brand-accent', accent);
                         root.style.setProperty('--school-accent', accent);
                         root.style.setProperty('--kit-accent', accent);
                         root.style.setProperty('--sidebar-primary', accent);
+                        root.style.setProperty('--app-v2-accent', accent);
+                        try {
+                            var a = accent.replace('#', '');
+                            if (a.length === 3) {
+                                a = a[0] + a[0] + a[1] + a[1] + a[2] + a[2];
+                            }
+                            if (a.length === 6) {
+                                var ar = parseInt(a.slice(0, 2), 16);
+                                var ag = parseInt(a.slice(2, 4), 16);
+                                var ab = parseInt(a.slice(4, 6), 16);
+                                var aa = dark ? 0.15 : 0.1;
+                                root.style.setProperty(
+                                    '--accent',
+                                    'rgba(' + ar + ', ' + ag + ', ' + ab + ', ' + aa + ')'
+                                );
+                            }
+                        } catch (e2) {}
                     }
                     if (bg) {
                         root.style.setProperty('--background', bg);
                         root.style.setProperty('--school-panel', bg);
                         root.style.setProperty('--app-shell', bg);
                         root.style.setProperty('--kit-panel', bg);
+                        root.style.setProperty('--app-v2-background', bg);
                     }
                     if (c.radius && radiusMap[c.radius]) {
                         root.style.setProperty('--radius', radiusMap[c.radius]);

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { Form, Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
-import InputError from '@/components/InputError.vue';
-import { MisSearchInput } from '@/components/mis';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
+import EmptyState from '@/components/EmptyState.vue';
+import { MisMoneyStack, MisSearchInput } from '@/components/mis';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -12,11 +13,12 @@ import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
+import { formatNumber, money } from '@/lib/utils';
 
 export type PurchaseMaterial = {
     material_id: number;
@@ -53,6 +55,7 @@ const props = defineProps<{
         currency?: string;
         status: string;
         supplier?: { id: number; name: string };
+        created_at?: string;
     }[];
     purchase_materials?: PurchaseMaterial[];
 }>();
@@ -94,7 +97,7 @@ const filteredPurchaseMaterials = computed(() => {
         return rows;
     }
 
-        return rows.filter((row) =>
+    return rows.filter((row) =>
         [row.name, row.code, row.unit]
             .filter(Boolean)
             .join(' ')
@@ -105,22 +108,95 @@ const filteredPurchaseMaterials = computed(() => {
 
 const materialSort = useTableSort(filteredPurchaseMaterials, { defaultKey: 'material_id' });
 const purchaseSort = useTableSort(() => props.purchases ?? []);
+
+type PayDraft = {
+    purchaseId: number;
+    purchaseNo: string;
+    amount: number;
+    currency: string;
+    payment_method: string;
+    reference_no: string;
+    paid_at: string;
+};
+
+const payConfirmOpen = ref(false);
+const payProcessing = ref(false);
+const payDraft = ref<PayDraft | null>(null);
+
+function remainingOf(purchase: {
+    total_amount: number;
+    paid_amount: number;
+    remaining_amount?: number;
+}) {
+    return (
+        purchase.remaining_amount ??
+        Math.max(0, Number(purchase.total_amount) - Number(purchase.paid_amount))
+    );
+}
+
+function openPayConfirm(
+    purchase: {
+        id: number;
+        purchase_no: string;
+        total_amount: number;
+        paid_amount: number;
+        remaining_amount?: number;
+        currency?: string;
+    },
+    formEl: HTMLFormElement | null,
+) {
+    if (!formEl) {
+        return;
+    }
+
+    const data = new FormData(formEl);
+    payDraft.value = {
+        purchaseId: purchase.id,
+        purchaseNo: purchase.purchase_no,
+        amount: remainingOf(purchase),
+        currency: purchase.currency || baseCurrency.value,
+        payment_method: String(data.get('payment_method') || 'cash'),
+        reference_no: String(data.get('reference_no') || ''),
+        paid_at: String(data.get('paid_at') || new Date().toISOString().slice(0, 10)),
+    };
+    payConfirmOpen.value = true;
+}
+
+function confirmPay() {
+    if (!payDraft.value) {
+        return;
+    }
+
+    const draft = payDraft.value;
+    payProcessing.value = true;
+    router.post(
+        `/projects/${props.item.id}/purchases/${draft.purchaseId}/pay-remaining`,
+        {
+            amount: draft.amount,
+            payment_method: draft.payment_method,
+            reference_no: draft.reference_no || undefined,
+            paid_at: draft.paid_at,
+        },
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                payProcessing.value = false;
+                payConfirmOpen.value = false;
+                payDraft.value = null;
+            },
+        },
+    );
+}
 </script>
 
 <template>
     <div class="space-y-4">
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <div
-                class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4"
-            >
-                <div>
-                    <h3 class="text-sm font-semibold">
-                        {{ t('Materials purchased') }}
-                    </h3>
-                    <p class="mt-0.5 text-sm text-muted-foreground">
-                        {{ t('Qty and cost by material for this project') }}
-                    </p>
-                </div>
+        <V2Panel
+            :padded="false"
+            :title="t('Materials purchased')"
+            :description="t('Qty and cost by material for this project')"
+        >
+            <template #actions>
                 <Can permission="purchases.create">
                     <Button as-child size="sm">
                         <Link
@@ -129,7 +205,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                         >
                     </Button>
                 </Can>
-            </div>
+            </template>
             <div class="border-b px-5 py-3">
                 <MisSearchInput
                     v-model="materialQuery"
@@ -140,7 +216,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
             <TableFrame table-id="project-purchase-materials" :columns="tableColumnsMaterials">
                 <table class="min-w-full text-sm">
                     <thead
-                        class="bg-muted/40 text-start text-muted-foreground"
+                        class="table-chrome-head text-start text-muted-foreground"
                     >
                         <tr>
                             <TableIndexTh />
@@ -213,41 +289,45 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                                     {{ row.unit }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 font-medium tabular-nums">
-                                {{
-                                    moneyByCurrency(
-                                        row.total_cost_by_currency,
-                                        row.total_cost_base,
-                                    )
-                                }}
+                            <td class="px-4 py-3 font-medium">
+                                <MisMoneyStack
+                                    layout="inline"
+                                    class="font-medium"
+                                    :amounts="row.total_cost_by_currency"
+                                    :fallback="row.total_cost_base"
+                                />
                             </td>
                         </tr>
-                        <tr v-if="!filteredPurchaseMaterials.length">
-                            <td
-                                colspan="5"
-                                class="px-4 py-10 text-center text-muted-foreground"
-                            >
-                                {{
-                                    materialQuery.trim()
-                                        ? t('No matching materials')
-                                        : t('No materials purchased yet')
-                                }}
-                            </td>
-                        </tr>
+                        <EmptyState
+                            v-if="!filteredPurchaseMaterials.length"
+                            :colspan="5"
+                            :title="
+                                materialQuery.trim()
+                                    ? t('No matching materials')
+                                    : t('No materials purchased yet')
+                            "
+                        >
+                            <template v-if="!materialQuery.trim()" #actions>
+                                <Can permission="purchases.create">
+                                    <Button as-child size="sm">
+                                        <Link
+                                            :href="`/purchases/create?project_id=${item.id}`"
+                                        >
+                                            {{ t('New purchase') }}
+                                        </Link>
+                                    </Button>
+                                </Can>
+                            </template>
+                        </EmptyState>
                     </tbody>
                 </table>
             </TableFrame>
-        </div>
+        </V2Panel>
 
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <div class="border-b px-5 py-4">
-                <h3 class="text-sm font-semibold">
-                    {{ t('Project purchases') }}
-                </h3>
-            </div>
+        <V2Panel :padded="false" :title="t('Project purchases')">
             <TableFrame table-id="project-purchases" :columns="tableColumnsPurchases">
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-start text-muted-foreground">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
                         <tr>
                             <TableIndexTh />
                             <SortableTh
@@ -342,14 +422,7 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                             <td class="px-4 py-3 text-amber-700 tabular-nums">
                                 {{
                                     money(
-                                        purchase.remaining_amount ??
-                                            Math.max(
-                                                0,
-                                                Number(purchase.total_amount) -
-                                                    Number(
-                                                        purchase.paid_amount,
-                                                    ),
-                                            ),
+                                        remainingOf(purchase),
                                         purchase.currency || baseCurrency,
                                     )
                                 }}
@@ -362,14 +435,11 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                             </td>
                             <td class="px-4 py-3 text-end">
                                 <Can permission="purchases.edit">
-                                    <Form
-                                        v-if="(purchase.remaining_amount ?? Math.max(0, Number(purchase.total_amount) - Number(purchase.paid_amount))) > 0"
-                                        :action="`/projects/${item.id}/purchases/${purchase.id}/pay-remaining`"
-                                        method="post"
+                                    <form
+                                        v-if="remainingOf(purchase) > 0"
                                         class="flex flex-wrap items-center justify-end gap-2"
-                                        v-slot="{ errors, processing }"
+                                        @submit.prevent="openPayConfirm(purchase, ($event.target as HTMLFormElement))"
                                     >
-                                        <input type="hidden" name="amount" :value="purchase.remaining_amount ?? Math.max(0, Number(purchase.total_amount) - Number(purchase.paid_amount))" />
                                         <select name="payment_method" class="h-8 rounded-md border border-input bg-transparent px-2 text-xs">
                                             <option value="cash">{{ t('Cash') }}</option>
                                             <option value="bank">{{ t('Bank') }}</option>
@@ -377,24 +447,46 @@ const purchaseSort = useTableSort(() => props.purchases ?? []);
                                         </select>
                                         <Input name="reference_no" type="text" class="h-8 w-[100px] text-xs" :placeholder="t('Ref')" />
                                         <Input name="paid_at" type="date" class="h-8 w-[130px] text-xs" :default-value="new Date().toISOString().slice(0, 10)" />
-                                        <Button type="submit" size="sm" :disabled="processing">{{ t('Pay') }}</Button>
-                                        <InputError :message="errors.amount" />
-                                    </Form>
+                                        <Button type="submit" size="sm">{{ t('Pay') }}</Button>
+                                    </form>
                                     <span v-else class="text-xs text-muted-foreground">—</span>
                                 </Can>
                             </td>
                         </tr>
-                        <tr v-if="!(purchases || []).length">
-                            <td
-                                colspan="9"
-                                class="px-4 py-10 text-center text-muted-foreground"
-                            >
-                                {{ t('No purchases yet') }}
-                            </td>
-                        </tr>
+                        <EmptyState
+                            v-if="!(purchases || []).length"
+                            :colspan="9"
+                            :title="t('No purchases yet')"
+                        >
+                            <template #actions>
+                                <Can permission="purchases.create">
+                                    <Button as-child size="sm">
+                                        <Link
+                                            :href="`/purchases/create?project_id=${item.id}`"
+                                        >
+                                            {{ t('New purchase') }}
+                                        </Link>
+                                    </Button>
+                                </Can>
+                            </template>
+                        </EmptyState>
                     </tbody>
                 </table>
             </TableFrame>
-        </div>
+        </V2Panel>
+
+        <ConfirmActionDialog
+            v-model:open="payConfirmOpen"
+            :title="t('Record payment')"
+            :description="
+                payDraft
+                    ? `${payDraft.purchaseNo} · ${money(payDraft.amount, payDraft.currency)}`
+                    : undefined
+            "
+            :confirm-label="t('Pay')"
+            variant="default"
+            :processing="payProcessing"
+            @confirm="confirmPay"
+        />
     </div>
 </template>

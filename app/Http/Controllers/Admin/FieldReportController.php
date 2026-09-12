@@ -45,10 +45,34 @@ class FieldReportController extends Controller
             $query->where('status', $status);
         }
 
-        $items = $query
+        $base = FieldReport::query()->where('user_id', $request->user()->id);
+
+        $items = (clone $query)
             ->latest()
             ->paginate(20)
             ->withQueryString();
+
+        $totals = [
+            'count' => (clone $base)->count(),
+            'draft' => (clone $base)->where('status', 'draft')->count(),
+            'submitted' => (clone $base)->where('status', 'submitted')->count(),
+        ];
+
+        $volumeChart = collect(range(5, 0))
+            ->map(function (int $monthsAgo) use ($base) {
+                $start = now()->startOfMonth()->subMonths($monthsAgo);
+                $end = (clone $start)->endOfMonth();
+
+                return [
+                    'key' => $start->format('Y-m'),
+                    'label' => $start->format('M'),
+                    'value' => (clone $base)
+                        ->whereBetween('created_at', [$start, $end])
+                        ->count(),
+                ];
+            })
+            ->values()
+            ->all();
 
         return Inertia::render('resources/field-reports/Index', [
             'items' => $this->inertiaPagination($items),
@@ -56,6 +80,8 @@ class FieldReportController extends Controller
                 'search' => $search,
                 'status' => in_array($status, ['draft', 'submitted'], true) ? $status : '',
             ],
+            'totals' => $totals,
+            'volumeChart' => $volumeChart,
             ...$this->offlineInertiaProps('field_reports'),
         ]);
     }

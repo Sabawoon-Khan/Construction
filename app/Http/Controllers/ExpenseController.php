@@ -7,8 +7,10 @@ use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseUnit;
+use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Support\CurrencyAmounts;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -58,6 +60,7 @@ class ExpenseController extends Controller implements HasMiddleware
             'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name', 'attachments'])->latest('expense_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'moneyChart' => $this->expensesByMonth(clone $query),
             'categories' => $this->categories(),
             'units' => ExpenseUnit::options(),
         ]);
@@ -198,5 +201,61 @@ class ExpenseController extends Controller implements HasMiddleware
     private function categories()
     {
         return ExpenseCategory::nonMaterialOptions();
+    }
+
+    /**
+     * @return list<array{key: string, label: string, by_currency: array{AFN: float, USD: float}}>
+     */
+    protected function expensesByMonth($expenseQuery): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'by_currency' => ['AFN' => 0.0, 'USD' => 0.0],
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $expenses = (clone $expenseQuery)
+            ->whereDate('expense_date', '>=', $from->toDateString())
+            ->whereDate('expense_date', '<=', $to->toDateString())
+            ->get(['id', 'expense_date', 'amount', 'currency']);
+
+        foreach ($expenses as $expense) {
+            $date = $expense->expense_date;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+
+            $code = CurrencyService::normalize((string) ($expense->currency ?: 'USD'));
+            $amount = max(0, (float) ($expense->amount ?? 0));
+            $buckets[$key]['by_currency'][$code] = round(
+                ($buckets[$key]['by_currency'][$code] ?? 0) + $amount,
+                2,
+            );
+        }
+
+        return array_values(array_map(
+            static fn (array $bucket) => [
+                'key' => $bucket['key'],
+                'label' => $bucket['label'],
+                'by_currency' => [
+                    'AFN' => round((float) ($bucket['by_currency']['AFN'] ?? 0), 2),
+                    'USD' => round((float) ($bucket['by_currency']['USD'] ?? 0), 2),
+                ],
+            ],
+            $buckets,
+        ));
     }
 }

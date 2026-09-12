@@ -7,13 +7,21 @@ import { cn } from '@/lib/utils';
 withDefaults(
     defineProps<{
         title: string;
+        description?: string;
         type: 'bar' | 'line' | 'pie';
         labels: string[];
         datasets: MisChartDataset[];
+        orientation?: 'vertical' | 'horizontal';
+        showValues?: boolean;
+        pageSize?: number;
         icon?: Component;
         class?: string;
     }>(),
     {
+        description: undefined,
+        orientation: 'vertical',
+        showValues: true,
+        pageSize: undefined,
         icon: undefined,
         class: undefined,
     },
@@ -24,7 +32,7 @@ withDefaults(
     <div
         :class="
             cn(
-                'rounded-2xl border border-border/70 bg-card p-5 shadow-soft',
+                'rounded-2xl border border-white/55 bg-white/40 p-5 shadow-soft backdrop-blur-xl dark:border-white/10 dark:bg-white/5',
                 $props.class,
             )
         "
@@ -41,12 +49,25 @@ withDefaults(
                         {{ title }}
                     </h3>
                 </div>
+                <p
+                    v-if="description"
+                    class="text-xs leading-relaxed text-muted-foreground"
+                >
+                    {{ description }}
+                </p>
             </div>
             <div v-if="$slots.actions" class="shrink-0">
                 <slot name="actions" />
             </div>
         </div>
-        <MisChart :type="type" :labels="labels" :datasets="datasets" />
+        <MisChart
+            :type="type"
+            :labels="labels"
+            :datasets="datasets"
+            :orientation="orientation"
+            :show-values="showValues"
+            :page-size="pageSize"
+        />
         <div v-if="$slots.footer" class="mt-4 border-t border-border/60 pt-3">
             <slot name="footer" />
         </div>

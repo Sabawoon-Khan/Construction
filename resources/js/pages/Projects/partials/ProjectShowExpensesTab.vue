@@ -4,19 +4,22 @@ import { ChevronLeft, ChevronRight, Printer, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import Can from '@/components/Can.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
+import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisSearchInput } from '@/components/mis';
+import { MisMoneyStack, MisSearchInput } from '@/components/mis';
 import type { MisSelectOption } from '@/components/mis/MisSelectField.vue';
 import { Button } from '@/components/ui/button';
+import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
+import { formatNumber, money, resolveCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     item: Record<string, any>;
@@ -70,8 +73,20 @@ const categoryFilter = ref<string>('all');
 const currentPage = ref(1);
 const perPage = 15;
 const deletingId = ref<number | null>(null);
+const pendingDelete = ref<(typeof props.expenses)[number] | null>(null);
+const confirmDeleteOpen = ref(false);
 
-function deleteExpense(expense: (typeof props.expenses)[number]) {
+function requestDeleteExpense(expense: (typeof props.expenses)[number]) {
+    pendingDelete.value = expense;
+    confirmDeleteOpen.value = true;
+}
+
+function deleteExpense() {
+    const expense = pendingDelete.value;
+    if (!expense) {
+        return;
+    }
+
     deletingId.value = expense.id;
     const href = expense.purchase_id
         ? `/purchases/${expense.purchase_id}`
@@ -81,6 +96,10 @@ function deleteExpense(expense: (typeof props.expenses)[number]) {
         preserveScroll: true,
         onFinish: () => {
             deletingId.value = null;
+        },
+        onSuccess: () => {
+            confirmDeleteOpen.value = false;
+            pendingDelete.value = null;
         },
     });
 }
@@ -105,7 +124,7 @@ const categorySummaries = computed(() => {
             ? String(expense.category.id)
             : 'uncategorized';
         const name = expense.category?.name || t('General');
-        const code = expense.currency || baseCurrency.value;
+        const code = resolveCurrency(expense.currency || baseCurrency.value);
 
         if (!groups.has(key)) {
             groups.set(key, { key, name, count: 0, byCurrency: {} });
@@ -124,7 +143,7 @@ const expenseTotals = computed(() => {
     const byCurrency: Record<string, number> = {};
 
     for (const expense of props.expenses) {
-        const code = expense.currency || baseCurrency.value;
+        const code = resolveCurrency(expense.currency || baseCurrency.value);
         byCurrency[code] =
             (byCurrency[code] ?? 0) + Number(expense.amount ?? 0);
     }
@@ -231,51 +250,48 @@ watch(totalPages, (pages) => {
 </script>
 
 <template>
-    <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-4 border-b px-5 py-4">
-            <div class="min-w-0 space-y-1">
-                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h3 class="text-sm font-semibold">{{ t('Project expenses') }}</h3>
-                    <span class="text-lg font-semibold tabular-nums text-rose-700">
-                        {{ moneyByCurrency(expenseTotals.byCurrency) }}
-                    </span>
-                </div>
-                <p class="text-sm text-muted-foreground">
-                    {{ headerSummary }}
-                </p>
+    <V2Panel :padded="false">
+        <template #header>
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2>{{ t('Project expenses') }}</h2>
+                <MisMoneyStack
+                    class="text-base font-semibold text-rose-700 sm:text-lg"
+                    :amounts="expenseTotals.byCurrency"
+                />
             </div>
-            <div class="flex flex-wrap gap-2">
+            <p>{{ headerSummary }}</p>
+        </template>
+        <template #actions>
+            <Button as-child size="sm" variant="outline">
+                <Link :href="printHref()" target="_blank">
+                    <Printer class="size-4" />
+                    {{ t('Print all') }}
+                </Link>
+            </Button>
+            <Can permission="purchases.create">
                 <Button as-child size="sm" variant="outline">
-                    <Link :href="printHref()" target="_blank">
-                        <Printer class="size-4" />
-                        {{ t('Print all') }}
+                    <Link :href="`/purchases/create?project_id=${item.id}`">
+                        {{ t('New purchase') }}
                     </Link>
                 </Button>
-                <Can permission="purchases.create">
-                    <Button as-child size="sm" variant="outline">
-                        <Link :href="`/purchases/create?project_id=${item.id}`">
-                            {{ t('New purchase') }}
-                        </Link>
-                    </Button>
-                </Can>
-                <Can permission="expenses.create">
-                    <Button size="sm" @click="emit('open-expense', null)">
-                        {{ t('Add expense') }}
-                    </Button>
-                </Can>
-            </div>
-        </div>
+            </Can>
+            <Can permission="expenses.create">
+                <Button size="sm" @click="emit('open-expense', null)">
+                    {{ t('Add expense') }}
+                </Button>
+            </Can>
+        </template>
 
-        <div class="flex flex-wrap items-center gap-2 border-b px-5 py-2.5">
+        <div class="flex flex-col gap-2 border-b px-3 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
             <MisSearchInput
                 v-model="expenseSearch"
-                class="h-8 min-w-[10rem] flex-1 sm:max-w-xs"
+                class="h-9 min-w-0 w-full flex-1 sm:h-8 sm:min-w-[10rem] sm:max-w-xs"
                 :placeholder="t('Search expenses...')"
             />
             <select
                 v-if="categorySummaries.length"
                 v-model="categoryFilter"
-                class="h-8 max-w-[12rem] rounded-md border bg-background px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                class="h-9 w-full rounded-md border bg-background px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] sm:h-8 sm:max-w-[12rem] sm:w-auto"
             >
                 <option
                     v-for="option in categoryOptions"
@@ -304,7 +320,7 @@ watch(totalPages, (pages) => {
 
         <TableFrame table-id="project-expenses" :columns="tableColumns">
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-start text-muted-foreground">
+                <thead class="table-chrome-head text-start text-muted-foreground">
                     <tr>
                         <TableIndexTh />
                         <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
@@ -406,9 +422,9 @@ watch(totalPages, (pages) => {
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        class="size-8 text-destructive hover:text-destructive"
+                                        class="size-9 text-destructive hover:text-destructive sm:size-8"
                                         :disabled="deletingId === expense.id"
-                                        @click.stop="deleteExpense(expense)"
+                                        @click.stop="requestDeleteExpense(expense)"
                                     >
                                         <Trash2 class="size-4" />
                                     </Button>
@@ -419,9 +435,9 @@ watch(totalPages, (pages) => {
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        class="size-8 text-destructive hover:text-destructive"
+                                        class="size-9 text-destructive hover:text-destructive sm:size-8"
                                         :disabled="deletingId === expense.id"
-                                        @click.stop="deleteExpense(expense)"
+                                        @click.stop="requestDeleteExpense(expense)"
                                     >
                                         <Trash2 class="size-4" />
                                     </Button>
@@ -429,18 +445,32 @@ watch(totalPages, (pages) => {
                             </div>
                         </td>
                     </tr>
-                    <tr v-if="!filteredExpenses.length">
-                        <td
-                            colspan="11"
-                            class="px-4 py-12 text-center text-muted-foreground"
+                    <EmptyState
+                        v-if="!filteredExpenses.length"
+                        :colspan="11"
+                        :title="
+                            expenseSearch.trim() || categoryFilter !== 'all'
+                                ? t('No matching expenses')
+                                : t('No expenses yet')
+                        "
+                    >
+                        <template
+                            v-if="
+                                !expenseSearch.trim() &&
+                                categoryFilter === 'all'
+                            "
+                            #actions
                         >
-                            {{
-                                expenseSearch.trim() || categoryFilter !== 'all'
-                                    ? t('No matching expenses')
-                                    : t('No expenses yet')
-                            }}
-                        </td>
-                    </tr>
+                            <Can permission="expenses.create">
+                                <Button
+                                    size="sm"
+                                    @click="emit('open-expense', null)"
+                                >
+                                    {{ t('Add expense') }}
+                                </Button>
+                            </Can>
+                        </template>
+                    </EmptyState>
                 </tbody>
             </table>
         </TableFrame>
@@ -463,11 +493,11 @@ watch(totalPages, (pages) => {
                     type="button"
                     variant="outline"
                     size="icon"
-                    class="size-8"
+                    class="size-9 sm:size-8"
                     :disabled="currentPage <= 1"
                     @click="currentPage -= 1"
                 >
-                    <ChevronLeft class="size-4" />
+                    <ChevronLeft class="size-4 rtl:rotate-180" />
                 </Button>
                 <span class="min-w-[4rem] text-center text-xs tabular-nums text-muted-foreground">
                     {{ currentPage }} / {{ totalPages }}
@@ -476,13 +506,22 @@ watch(totalPages, (pages) => {
                     type="button"
                     variant="outline"
                     size="icon"
-                    class="size-8"
+                    class="size-9 sm:size-8"
                     :disabled="currentPage >= totalPages"
                     @click="currentPage += 1"
                 >
-                    <ChevronRight class="size-4" />
+                    <ChevronRight class="size-4 rtl:rotate-180" />
                 </Button>
             </div>
         </div>
-    </div>
+    </V2Panel>
+
+    <ConfirmActionDialog
+        v-model:open="confirmDeleteOpen"
+        :title="t('Delete expense?')"
+        :description="t('This cannot be undone.')"
+        :confirm-label="t('Delete')"
+        :processing="deletingId !== null"
+        @confirm="deleteExpense"
+    />
 </template>

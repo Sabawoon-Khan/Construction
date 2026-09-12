@@ -183,7 +183,7 @@ const hasSearch = computed(
                 <TableFrame table-id="translations" :columns="tableColumns">
                     <table class="w-full table-fixed text-xs sm:text-sm">
                         <thead>
-                            <tr class="border-b bg-muted/30 text-start text-xs text-muted-foreground">
+                            <tr class="table-chrome-head border-b text-start text-xs text-muted-foreground">
                                 <TableIndexTh />
                                 <SortableTh class="w-[36%] px-3 py-1.5 sm:w-[34%]" column="key">
                                     {{ t('Key') }}

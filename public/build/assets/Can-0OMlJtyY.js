@@ -1,1 +1,0 @@
-import{_t as e,it as t,ln as n,st as r}from"./useTranslations-BPynr0k6.js";import{t as i}from"./usePermissions-CIk04X5e.js";var a=e({__name:`Can`,props:{permission:{}},setup(e){let a=e,{can:o,canAny:s}=i(),c=t(()=>Array.isArray(a.permission)?s(a.permission):o(a.permission));return(e,t)=>c.value?n(e.$slots,`default`,{},void 0,void 0,0):r(``,!0)}});export{a as t};

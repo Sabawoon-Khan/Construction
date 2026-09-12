@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { Form, Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import {
-    ArrowLeft,
     Banknote,
-    Handshake,
+    Building2,
+    CircleDollarSign,
+    HandCoins,
     Info,
-    Package,
     Paperclip,
     Pencil,
     Receipt,
@@ -13,21 +13,24 @@ import {
     UserRound,
     Warehouse,
 } from '@lucide/vue';
-import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import EmployeeAddDialog from '@/components/EmployeeAddDialog.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
-import Heading from '@/components/Heading.vue';
-import { MisSearchInput, MisTabs } from '@/components/mis';
+import {
+    MisAlert,
+    MisSearchInput,
+    MisTabs,
+} from '@/components/mis';
 import ShareholderAddDialog from '@/components/ShareholderAddDialog.vue';
 import ShareholderContributionDialog from '@/components/ShareholderContributionDialog.vue';
 import ShareholderPayoutDialog from '@/components/ShareholderPayoutDialog.vue';
 import SortableTh from '@/components/SortableTh.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
-import { indexTableColumn } from '@/composables/useTableColumns';
-import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -36,15 +39,27 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    V2DetailHero,
+    V2ListPage,
+    V2StatCard,
+    V2StatGrid,
+} from '@/components/v2';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
+import {
+    consumePendingTrashUndo,
+    expectTrashUndo,
+} from '@/lib/trashUndoToast';
 import ProjectShowAttachmentsTab from './partials/ProjectShowAttachmentsTab.vue';
 import ProjectShowEmployeesTab from './partials/ProjectShowEmployeesTab.vue';
 import ProjectShowExpensesTab from './partials/ProjectShowExpensesTab.vue';
 import ProjectShowInfoTab from './partials/ProjectShowInfoTab.vue';
+import ProjectShowLoansTab from './partials/ProjectShowLoansTab.vue';
 import ProjectShowPurchasesTab, {
     type PurchaseMaterial,
 } from './partials/ProjectShowPurchasesTab.vue';
@@ -52,7 +67,7 @@ import ProjectShowSalesTab from './partials/ProjectShowSalesTab.vue';
 import ProjectShowShareholdersTab from './partials/ProjectShowShareholdersTab.vue';
 import ProjectShowStockTab from './partials/ProjectShowStockTab.vue';
 
-defineProps<{
+const props = defineProps<{
     item: Record<string, any>;
     stats: Record<string, any>;
     shareholders: {
@@ -150,6 +165,28 @@ defineProps<{
         transaction_date?: string | null;
         material?: { id: number; name: string } | null;
     }[];
+    loans?: {
+        id: number;
+        loan_no: string;
+        lender_name: string;
+        loan_date: string;
+        due_date?: string | null;
+        principal: number;
+        paid_amount: number;
+        remaining_amount?: number;
+        currency?: string;
+        status: string;
+        reference_no?: string | null;
+        notes?: string | null;
+        payments?: {
+            id: number;
+            amount: number;
+            currency?: string;
+            paid_at?: string | null;
+            payment_method?: string | null;
+            reference_no?: string | null;
+        }[];
+    }[];
 }>();
 
 const expenseDialogOpen = ref(false);
@@ -162,7 +199,9 @@ const payoutDialogOpen = ref(false);
 const materialDialogOpen = ref(false);
 const selectedMaterial = ref<PurchaseMaterial | null>(null);
 const materialLineQuery = ref('');
-const tab = ref('info');
+const deleteOpen = ref(false);
+const deleting = ref(false);
+const tab = ref('overview');
 const { t } = useTranslations();
 const tableColumns = computed(() => [
     indexTableColumn(),
@@ -187,6 +226,19 @@ function openMaterial(row: PurchaseMaterial) {
     materialDialogOpen.value = true;
 }
 
+function deleteProject() {
+    deleting.value = true;
+    expectTrashUndo({ type: 'projects', id: props.item.id });
+    router.delete(`/projects/${props.item.id}`, {
+        onError: () => consumePendingTrashUndo(),
+        onCancel: () => consumePendingTrashUndo(),
+        onFinish: () => {
+            deleting.value = false;
+            deleteOpen.value = false;
+        },
+    });
+}
+
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
@@ -209,27 +261,104 @@ const filteredMaterialLines = computed(() => {
 
 const { sortedRows } = provideTableSort(filteredMaterialLines);
 
-const tabs = [
-    { id: 'info', label: t('Project info'), icon: Info },
-    { id: 'attachments', label: t('Attachments'), icon: Paperclip },
-    { id: 'shareholders', label: t('Shareholders'), icon: Handshake },
-    { id: 'employees', label: t('Employees'), icon: UserRound },
-    { id: 'expenses', label: t('Expenses'), icon: Receipt },
-    { id: 'purchases', label: t('Purchases'), icon: Package },
+const tabs = computed(() => [
+    { id: 'overview', label: t('Overview'), icon: Info },
+    { id: 'sell', label: t('Sell'), icon: Banknote },
+    { id: 'money', label: t('Money'), icon: Receipt },
+    { id: 'loans', label: t('Loans'), icon: HandCoins },
     { id: 'stock', label: t('Stock'), icon: Warehouse },
-    { id: 'sales', label: t('Sales'), icon: Banknote },
-];
-const tabIds = new Set(tabs.map((entry) => entry.id));
+    { id: 'people', label: t('People'), icon: UserRound },
+    { id: 'files', label: t('Files'), icon: Paperclip },
+]);
+
+const legacyTabMap: Record<string, string> = {
+    info: 'overview',
+    overview: 'overview',
+    sales: 'sell',
+    sell: 'sell',
+    expenses: 'money',
+    money: 'money',
+    loans: 'loans',
+    purchases: 'stock',
+    stock: 'stock',
+    shareholders: 'people',
+    employees: 'people',
+    people: 'people',
+    attachments: 'files',
+    files: 'files',
+};
+
+const tabIds = computed(() => new Set(tabs.value.map((item) => item.id)));
+
+const attentionItems = computed(() => {
+    const items: { tone: 'warning' | 'danger'; text: string }[] = [];
+    const doneStatuses = new Set(['completed', 'sold']);
+    const expected = props.item.expected_completion_date;
+    if (
+        expected &&
+        !doneStatuses.has(String(props.item.status || '')) &&
+        new Date(`${expected}T23:59:59`) < new Date()
+    ) {
+        items.push({
+            tone: 'warning',
+            text: `${t('Expected completion passed')}: ${formatDate(expected)}`,
+        });
+    }
+
+    const owedSuppliers = Number(props.stats.purchases_remaining ?? 0);
+    if (owedSuppliers > 0) {
+        items.push({
+            tone: 'warning',
+            text: `${t('Supplier balance outstanding')}: ${moneyByCurrency(
+                props.stats.purchases_remaining_by_currency,
+                owedSuppliers,
+            )}`,
+        });
+    }
+
+    const shareholderOwed = props.shareholders.reduce(
+        (sum, row) => sum + Number(row.balance_owed ?? 0),
+        0,
+    );
+    if (shareholderOwed > 0) {
+        items.push({
+            tone: 'warning',
+            text: `${t('Owed to shareholders')}: ${money(shareholderOwed, baseCurrency.value)}`,
+        });
+    }
+
+    const loanRemaining = (props.loans ?? []).reduce(
+        (sum, loan) =>
+            sum +
+            Number(
+                loan.remaining_amount ??
+                    Math.max(
+                        0,
+                        Number(loan.principal) - Number(loan.paid_amount),
+                    ),
+            ),
+        0,
+    );
+    if (loanRemaining > 0) {
+        items.push({
+            tone: 'warning',
+            text: `${t('Loan balance outstanding')}: ${money(loanRemaining, baseCurrency.value)}`,
+        });
+    }
+
+    return items;
+});
 
 function syncTabFromHash() {
     const hashTab = window.location.hash.replace('#', '');
-    if (hashTab && tabIds.has(hashTab)) {
-        tab.value = hashTab;
+    const mapped = legacyTabMap[hashTab];
+    if (mapped && tabIds.value.has(mapped)) {
+        tab.value = mapped;
     }
 }
 
 function persistTabHash(value: string) {
-    if (!tabIds.has(value) || window.location.hash === `#${value}`) {
+    if (!tabIds.value.has(value) || window.location.hash === `#${value}`) {
         return;
     }
     window.history.replaceState(window.history.state, '', `#${value}`);
@@ -243,7 +372,7 @@ watch(tab, persistTabHash);
 
 const stopNavigate = router.on('navigate', () => {
     syncTabFromHash();
-    if (tab.value !== 'info') {
+    if (tab.value !== 'overview') {
         persistTabHash(tab.value);
     }
 });
@@ -265,152 +394,145 @@ defineOptions({
 
 <template>
     <Head :title="item.name" />
-    <div class="flex h-full flex-1 flex-col gap-4">
-        <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-        >
-            <div class="space-y-3">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/projects"
-                        ><ArrowLeft class="size-4" /> {{ t('Back') }}</Link
-                    >
-                </Button>
-                <Heading
-                    :title="item.name"
-                    :description="`${item.code} · ${item.location || t('No location')}`"
-                />
-            </div>
-            <div class="flex items-center gap-2">
+    <V2ListPage>
+        <V2DetailHero image="/images/projects-v2-hero-luxury.png">
+            <template #eyebrow>{{ t('Projects') }}</template>
+            <template #title>{{ item.name }}</template>
+            <template #description>
+                {{ item.code }} · {{ item.location || t('No location') }}
+            </template>
+            <template #actions>
                 <StatusBadge :status="item.status" />
-                <Button as-child variant="outline">
+                <Button as-child variant="outline" size="sm">
                     <Link :href="`/reports?project_id=${item.id}`">{{
                         t('Full report')
                     }}</Link>
                 </Button>
                 <Can permission="projects.edit">
-                    <Button as-child>
-                        <Link :href="`/projects/${item.id}/edit`"
-                            ><Pencil class="size-4" /> {{ t('Edit') }}</Link
-                        >
+                    <Button as-child size="sm">
+                        <Link :href="`/projects/${item.id}/edit`">
+                            <Pencil class="size-4" /> {{ t('Edit') }}
+                        </Link>
                     </Button>
                 </Can>
                 <Can permission="projects.delete">
-                    <Form :action="`/projects/${item.id}`" method="delete" v-slot="{ processing }">
-                        <Button type="submit" variant="destructive" :disabled="processing">
-                            <Trash2 class="size-4" /> {{ processing ? t('Deleting…') : t('Delete') }}
-                        </Button>
-                    </Form>
+                    <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        @click="deleteOpen = true"
+                    >
+                        <Trash2 class="size-4" /> {{ t('Move to trash') }}
+                    </Button>
                 </Can>
-            </div>
+            </template>
+            <template #stats>
+                <V2StatGrid class="detail-stat-grid">
+                    <V2StatCard
+                        :delay="0"
+                        :title="t('Sales')"
+                        :value="
+                            moneyByCurrency(
+                                stats.sales_by_currency,
+                                stats.sales_total,
+                            )
+                        "
+                    >
+                        <template #icon><Banknote /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="1"
+                        icon-tone="warm"
+                        :title="t('Expenses')"
+                        :value="
+                            moneyByCurrency(
+                                stats.expenses_by_currency,
+                                stats.expenses_total,
+                            )
+                        "
+                    >
+                        <template #icon><Receipt /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="2"
+                        icon-tone="teal"
+                        :title="t('Net profit')"
+                        :value="
+                            moneyByCurrency(
+                                stats.net_profit_by_currency,
+                                stats.net_profit,
+                            )
+                        "
+                    >
+                        <template #icon><CircleDollarSign /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="3"
+                        icon-tone="orange"
+                        :title="t('Units')"
+                        :value="formatNumber(stats.units_count, 0)"
+                    >
+                        <template #icon><Building2 /></template>
+                    </V2StatCard>
+                </V2StatGrid>
+            </template>
+        </V2DetailHero>
+
+        <MisAlert
+            v-if="attentionItems.length"
+            tone="warning"
+            :title="t('Attention')"
+        >
+            <ul class="list-disc space-y-1 ps-4">
+                <li v-for="(alert, index) in attentionItems" :key="index">
+                    {{ alert.text }}
+                </li>
+            </ul>
+        </MisAlert>
+
+        <MisTabs v-model="tab" nowrap :tabs="tabs" />
+
+        <div v-show="tab === 'overview'">
+            <ProjectShowInfoTab
+                :item="item"
+                :stats="stats"
+                :shareholders="shareholders"
+            />
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">
-                    {{ t('Sales') }}
-                </div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">
-                    {{
-                        moneyByCurrency(
-                            stats.sales_by_currency,
-                            stats.sales_total,
-                        )
-                    }}
-                </div>
-            </div>
-            <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">
-                    {{ t('Project spend') }}
-                </div>
-                <div
-                    class="mt-1 text-2xl font-semibold text-rose-700 tabular-nums"
-                >
-                    {{
-                        moneyByCurrency(
-                            stats.expenses_by_currency,
-                            stats.expenses_total,
-                        )
-                    }}
-                </div>
-            </div>
-            <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">
-                    {{ t('Owed to suppliers') }}
-                </div>
-                <div
-                    class="mt-1 text-2xl font-semibold text-amber-700 tabular-nums"
-                >
-                    {{
-                        moneyByCurrency(
-                            stats.purchases_remaining_by_currency,
-                            stats.purchases_remaining ?? 0,
-                        )
-                    }}
-                </div>
-            </div>
-            <div class="rounded-xl border bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">
-                    {{ t('Net profit') }}
-                </div>
-                <div
-                    class="mt-1 text-2xl font-semibold text-emerald-700 tabular-nums"
-                >
-                    {{ money(stats.net_profit, baseCurrency) }}
-                </div>
-            </div>
-        </div>
-
-        <MisTabs v-model="tab" :tabs="tabs" />
-
-        <div v-show="tab === 'info'">
-            <ProjectShowInfoTab :item="item" />
-        </div>
-
-        <div v-show="tab === 'attachments'">
-            <ProjectShowAttachmentsTab :item="item" />
-        </div>
-
-        <div v-show="tab === 'sales'">
+        <div v-show="tab === 'sell'" class="space-y-4">
             <ProjectShowSalesTab :item="item" />
         </div>
 
-        <div v-show="tab === 'shareholders'">
+        <div v-show="tab === 'money'" class="space-y-4">
+            <ProjectShowExpensesTab
+                :item="item"
+                :expenses="expenses"
+                @open-expense="openExpense"
+            />
             <ProjectShowShareholdersTab
                 :item="item"
                 :shareholders="shareholders"
                 :contributions="contributions"
+                :show-ownership="false"
+                :show-contributions="true"
                 @add-shareholder="addShareholderOpen = true"
                 @record-contribution="contributionDialogOpen = true"
                 @record-payout="payoutDialogOpen = true"
             />
         </div>
 
-        <div v-show="tab === 'employees'">
-            <ProjectShowEmployeesTab
-                :item="item"
-                :employees="employees"
-                @add-employee="addEmployeeOpen = true"
-            />
+        <div v-show="tab === 'loans'" class="space-y-4">
+            <ProjectShowLoansTab :item="item" :loans="loans" />
         </div>
 
-        <div v-show="tab === 'expenses'">
-            <ProjectShowExpensesTab
-                :item="item"
-                :expenses="expenses"
-                @open-expense="openExpense"
-            />
-        </div>
-
-        <div v-show="tab === 'purchases'">
+        <div v-show="tab === 'stock'" class="space-y-4">
             <ProjectShowPurchasesTab
                 :item="item"
                 :purchases="purchases"
                 :purchase_materials="purchase_materials"
                 @open-material="openMaterial"
             />
-        </div>
-
-        <div v-show="tab === 'stock'">
             <ProjectShowStockTab
                 :item="item"
                 :stock="stock"
@@ -418,7 +540,42 @@ defineOptions({
                 :stock_issues="stock_issues"
             />
         </div>
-    </div>
+
+        <div v-show="tab === 'people'" class="space-y-4">
+            <ProjectShowEmployeesTab
+                :item="item"
+                :employees="employees"
+                @add-employee="addEmployeeOpen = true"
+            />
+            <ProjectShowShareholdersTab
+                :item="item"
+                :shareholders="shareholders"
+                :contributions="contributions"
+                :show-ownership="true"
+                :show-contributions="false"
+                @add-shareholder="addShareholderOpen = true"
+                @record-contribution="contributionDialogOpen = true"
+                @record-payout="payoutDialogOpen = true"
+            />
+        </div>
+
+        <div v-show="tab === 'files'">
+            <ProjectShowAttachmentsTab :item="item" />
+        </div>
+    </V2ListPage>
+
+    <ConfirmActionDialog
+        v-model:open="deleteOpen"
+        :title="t('Move project to trash?')"
+        :description="
+            t(
+                'Are you sure you want to delete this project? This action cannot be undone.',
+            )
+        "
+        :confirm-label="t('Move to trash')"
+        :processing="deleting"
+        @confirm="deleteProject"
+    />
 
     <Dialog v-model:open="materialDialogOpen">
         <DialogContent
@@ -446,88 +603,91 @@ defineOptions({
                 :placeholder="t('Search purchases...')"
             />
             <div class="-mx-6 min-h-0 flex-1 overflow-auto border-t">
-                <TableFrame table-id="project-material-lines" :columns="tableColumns">
-                <table class="min-w-full text-sm">
-                    <thead
-                        class="sticky top-0 bg-muted/90 text-start text-muted-foreground backdrop-blur"
-                    >
-                        <tr>
-                            <TableIndexTh />
-                            <SortableTh column="purchase_no">
-                                {{ t('Purchase') }}
-                            </SortableTh>
-                            <SortableTh column="purchase_date">
-                                {{ t('Date') }}
-                            </SortableTh>
-                            <SortableTh column="supplier">
-                                {{ t('Supplier') }}
-                            </SortableTh>
-                            <SortableTh column="quantity">
-                                {{ t('Qty') }}
-                            </SortableTh>
-                            <SortableTh column="unit_cost">
-                                {{ t('Unit cost') }}
-                            </SortableTh>
-                            <SortableTh column="total_cost">
-                                {{ t('Total') }}
-                            </SortableTh>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-for="(line, index) in sortedRows"
-                            :key="line.id"
-                            class="border-t hover:bg-muted/30"
+                <TableFrame
+                    table-id="project-material-lines"
+                    :columns="tableColumns"
+                >
+                    <table class="min-w-full text-sm">
+                        <thead
+                            class="sticky top-0 bg-muted/90 text-start text-muted-foreground backdrop-blur"
                         >
-                            <TableIndexTd :index="index" />
-                            <td class="px-4 py-3">
-                                <Link
-                                    :href="`/purchases/${line.purchase_id}`"
-                                    class="font-medium text-primary hover:underline"
-                                >
-                                    {{ line.purchase_no }}
-                                </Link>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                {{ formatDate(line.purchase_date) }}
-                            </td>
-                            <td class="px-4 py-3">
-                                {{ line.supplier || '—' }}
-                            </td>
-                            <td class="px-4 py-3 tabular-nums">
-                                {{ formatNumber(line.quantity, 3) }}
-                            </td>
-                            <td class="px-4 py-3 tabular-nums">
-                                {{
-                                    money(
-                                        line.unit_cost,
-                                        line.currency || baseCurrency,
-                                    )
-                                }}
-                            </td>
-                            <td class="px-4 py-3 tabular-nums">
-                                {{
-                                    money(
-                                        line.total_cost,
-                                        line.currency || baseCurrency,
-                                    )
-                                }}
-                            </td>
-                        </tr>
-                        <tr v-if="!filteredMaterialLines.length">
-                            <td
-                                colspan="7"
-                                class="px-4 py-10 text-center text-muted-foreground"
+                            <tr>
+                                <TableIndexTh />
+                                <SortableTh column="purchase_no">
+                                    {{ t('Purchase') }}
+                                </SortableTh>
+                                <SortableTh column="purchase_date">
+                                    {{ t('Date') }}
+                                </SortableTh>
+                                <SortableTh column="supplier">
+                                    {{ t('Supplier') }}
+                                </SortableTh>
+                                <SortableTh column="quantity">
+                                    {{ t('Qty') }}
+                                </SortableTh>
+                                <SortableTh column="unit_cost">
+                                    {{ t('Unit cost') }}
+                                </SortableTh>
+                                <SortableTh column="total_cost">
+                                    {{ t('Total') }}
+                                </SortableTh>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr
+                                v-for="(line, index) in sortedRows"
+                                :key="line.id"
+                                class="border-t hover:bg-muted/30"
                             >
-                                {{
-                                    materialLineQuery.trim()
-                                        ? t('No matching purchases')
-                                        : t('No purchases yet')
-                                }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                                <TableIndexTd :index="index" />
+                                <td class="px-4 py-3">
+                                    <Link
+                                        :href="`/purchases/${line.purchase_id}`"
+                                        class="font-medium text-primary hover:underline"
+                                    >
+                                        {{ line.purchase_no }}
+                                    </Link>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    {{ formatDate(line.purchase_date) }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    {{ line.supplier || '—' }}
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{ formatNumber(line.quantity, 3) }}
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{
+                                        money(
+                                            line.unit_cost,
+                                            line.currency || baseCurrency,
+                                        )
+                                    }}
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">
+                                    {{
+                                        money(
+                                            line.total_cost,
+                                            line.currency || baseCurrency,
+                                        )
+                                    }}
+                                </td>
+                            </tr>
+                            <tr v-if="!filteredMaterialLines.length">
+                                <td
+                                    colspan="7"
+                                    class="px-4 py-10 text-center text-muted-foreground"
+                                >
+                                    {{
+                                        materialLineQuery.trim()
+                                            ? t('No matching purchases')
+                                            : t('No purchases yet')
+                                    }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </TableFrame>
             </div>
         </DialogContent>

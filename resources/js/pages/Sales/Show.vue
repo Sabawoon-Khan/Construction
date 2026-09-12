@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, CalendarClock, FileText, Info, Pencil, Printer } from '@lucide/vue';
+import {
+    CalendarClock,
+    CircleDollarSign,
+    FileText,
+    Info,
+    Pencil,
+    Printer,
+    Wallet,
+} from '@lucide/vue';
 import { computed, onMounted, ref } from 'vue';
 import Can from '@/components/Can.vue';
-import DetailGrid from '@/components/DetailGrid.vue';
-import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import { MisTabs } from '@/components/mis';
+import { MisDetailGrid, MisTabs } from '@/components/mis';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import SortableTh from '@/components/SortableTh.vue';
@@ -18,6 +24,13 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    V2DetailHero,
+    V2ListPage,
+    V2Panel,
+    V2StatCard,
+    V2StatGrid,
+} from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
@@ -127,50 +140,60 @@ function submitPayment() {
 
 <template>
     <Head :title="`${t('Sale')} ${sale.sale_no}`" />
-    <div class="voucher-print-page flex h-full flex-1 flex-col gap-4 print:gap-0 print:p-0">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
-            <div class="space-y-3">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/sales"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-                </Button>
-                <Heading
-                    :title="sale.sale_no"
-                    :description="`${sale.customer?.name || '—'} · ${sale.project?.name || '—'} · ${t('Unit')} ${sale.unit?.unit_no || '—'}`"
-                />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <StatusBadge :status="sale.status" />
-                <Button variant="outline" @click="printPage">
-                    <Printer class="size-4" /> {{ t('Print statement') }}
-                </Button>
-                <Can permission="sales.edit">
-                    <Button as-child variant="outline">
-                        <Link :href="`/sales/${sale.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+    <V2ListPage class="voucher-print-page print:gap-0 print:p-0">
+        <div class="print:hidden">
+            <V2DetailHero image="/images/dashboard-v2-building.png">
+                <template #eyebrow>{{ t('Sales') }}</template>
+                <template #title>{{ sale.sale_no }}</template>
+                <template #description>
+                    {{ sale.customer?.name || '—' }} · {{ sale.project?.name || '—' }} · {{ t('Unit') }} {{ sale.unit?.unit_no || '—' }}
+                </template>
+                <template #actions>
+                    <StatusBadge :status="sale.status" />
+                    <Button variant="outline" @click="printPage">
+                        <Printer class="size-4" /> {{ t('Print statement') }}
                     </Button>
-                </Can>
-            </div>
+                    <Can permission="sales.edit">
+                        <Button as-child variant="outline">
+                            <Link :href="`/sales/${sale.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+                        </Button>
+                    </Can>
+                </template>
+                <template #stats>
+                    <V2StatGrid class="detail-stat-grid">
+                        <V2StatCard
+                            :delay="0"
+                            :title="t('Total due')"
+                            :value="money(total_price, sale.currency)"
+                        >
+                            <template #icon><CircleDollarSign /></template>
+                        </V2StatCard>
+                        <V2StatCard
+                            :delay="1"
+                            icon-tone="teal"
+                            :title="t('Paid')"
+                            :value="money(paid_amount)"
+                        >
+                            <template #icon><Wallet /></template>
+                        </V2StatCard>
+                        <V2StatCard
+                            :delay="2"
+                            accent
+                            icon-tone="orange"
+                            :title="t('Remaining')"
+                            :value="money(remaining_amount)"
+                        >
+                            <template #icon><CalendarClock /></template>
+                        </V2StatCard>
+                    </V2StatGrid>
+                </template>
+            </V2DetailHero>
         </div>
 
         <MisTabs v-model="tab" :tabs="tabs" class="print:hidden" />
 
-        <div v-show="tab === 'info'" class="grid gap-4 md:grid-cols-3 print:hidden">
-            <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Total due') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums">{{ money(total_price, sale.currency) }}</div>
-            </div>
-            <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Paid') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-emerald-700">{{ money(paid_amount) }}</div>
-            </div>
-            <div class="rounded-xl border border-sidebar-border/70 bg-card p-4 shadow-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Remaining') }}</div>
-                <div class="mt-1 text-2xl font-semibold tabular-nums text-amber-700">{{ money(remaining_amount) }}</div>
-            </div>
-        </div>
-
-        <div v-show="tab === 'info'" class="print:hidden">
-            <DetailGrid
-                :title="t('Contract details')"
+        <V2Panel v-show="tab === 'info'" class="print:hidden" :title="t('Contract details')">
+            <MisDetailGrid
                 :items="[
                     { label: t('Customer'), value: sale.customer?.name },
                     { label: t('Project'), value: sale.project?.name },
@@ -179,127 +202,129 @@ function submitPayment() {
                     { label: t('Discount'), value: money(sale.discount, sale.currency) },
                     { label: t('Currency'), value: sale.currency },
                     { label: t('Contract date'), value: formatDate(sale.contract_date) },
-                    { label: t('Terms'), value: sale.terms, span: true },
-                    { label: t('Notes'), value: sale.notes, span: true },
+                    { label: t('Terms'), value: sale.terms, span: 2 },
+                    { label: t('Notes'), value: sale.notes, span: 2 },
                 ]"
             />
-        </div>
+        </V2Panel>
 
         <div v-show="tab === 'schedule'" class="space-y-4 print:hidden">
-        <div id="receive-payment" v-if="remaining_amount > 0" class="space-y-4 rounded-xl border border-sidebar-border/70 bg-card p-5 shadow-sm">
-            <div>
-                <h3 class="text-sm font-semibold">{{ t('Receive payment') }}</h3>
-            </div>
-            <form class="grid gap-4 sm:grid-cols-2" @submit.prevent="submitPayment">
-                <div class="grid gap-2">
-                    <Label>{{ t('Amount') }}</Label>
-                    <Input v-model="payForm.amount" type="number" step="0.01" min="0.01" required :placeholder="String(remaining_amount)" />
-                    <InputError :message="payForm.errors.amount" />
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Method') }}</Label>
-                    <select v-model="payForm.payment_method" class="h-9 rounded-md border px-3 text-sm">
-                        <option value="cash">{{ t('Cash') }}</option>
-                        <option value="bank">{{ t('Bank') }}</option>
-                        <option value="transfer">{{ t('Transfer') }}</option>
-                    </select>
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Reference') }}</Label>
-                    <Input v-model="payForm.reference_no" :placeholder="t('Receipt / slip no')" />
-                </div>
-                <div class="grid gap-2 sm:col-span-2">
-                    <Label>{{ t('Notes') }}</Label>
-                    <Input v-model="payForm.notes" :placeholder="t('Optional')" />
-                </div>
-                <div class="sm:col-span-2">
-                    <Button type="submit" :disabled="payForm.processing">{{ t('Record receipt') }}</Button>
-                </div>
-            </form>
-        </div>
+            <V2Panel v-if="remaining_amount > 0" id="receive-payment" :title="t('Receive payment')">
+                <form
+                    class="grid gap-4 sm:grid-cols-2"
+                    @submit.prevent="submitPayment"
+                    @keydown="
+                        (event) => {
+                            if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+                                event.preventDefault();
+                                submitPayment();
+                            }
+                        }
+                    "
+                >
+                    <div class="grid gap-2">
+                        <Label>{{ t('Amount') }} ({{ sale.currency }})</Label>
+                        <Input v-model="payForm.amount" type="number" step="0.01" min="0.01" required :placeholder="String(remaining_amount)" />
+                        <InputError :message="payForm.errors.amount" />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label>{{ t('Method') }}</Label>
+                        <select v-model="payForm.payment_method" class="h-9 rounded-md border px-3 text-sm">
+                            <option value="cash">{{ t('Cash') }}</option>
+                            <option value="bank">{{ t('Bank') }}</option>
+                            <option value="transfer">{{ t('Transfer') }}</option>
+                        </select>
+                    </div>
+                    <div class="grid gap-2">
+                        <Label>{{ t('Reference') }}</Label>
+                        <Input v-model="payForm.reference_no" :placeholder="t('Receipt / slip no')" />
+                    </div>
+                    <div class="grid gap-2 sm:col-span-2">
+                        <Label>{{ t('Notes') }}</Label>
+                        <Input v-model="payForm.notes" :placeholder="t('Optional')" />
+                    </div>
+                    <div class="sm:col-span-2">
+                        <Button type="submit" :disabled="payForm.processing">{{ t('Record receipt') }}</Button>
+                    </div>
+                </form>
+            </V2Panel>
 
-        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">{{ t('Installments') }}</h3>
-            </div>
-            <TableFrame table-id="sale-installments" :columns="tableColumnsInstallments">
-            <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-start text-muted-foreground">
-                    <tr>
-                        <TableIndexTh />
-                        <SortableTh column="installment_no" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">#</SortableTh>
-                        <SortableTh column="due_date" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Due') }}</SortableTh>
-                        <SortableTh column="amount" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Amount') }}</SortableTh>
-                        <SortableTh column="paid_amount" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Paid') }}</SortableTh>
-                        <SortableTh column="status" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Status') }}</SortableTh>
-                        <SortableTh column="created_at" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Created at') }}</SortableTh>
-                        <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(i, index) in installmentSort.sortedRows" :key="i.id" class="border-t hover:bg-muted/30">
-                        <TableIndexTd :index="index" />
-                        <td class="px-4 py-3">{{ i.installment_no }}</td>
-                        <td class="px-4 py-3">{{ formatDate(i.due_date) }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(i.amount) }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(i.paid_amount) }}</td>
-                        <td class="px-4 py-3"><StatusBadge :status="i.status" /></td>
-                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(i.created_at) }}</td>
-                        <td class="px-4 py-3 text-end">
-                            <Button
-                                v-if="installmentRemaining(i) > 0"
-                                size="sm"
-                                variant="outline"
-                                @click="fillInstallment(i)"
-                            >
-                                {{ t('Receive') }} {{ money(installmentRemaining(i), sale.currency) }}
-                            </Button>
-                        </td>
-                    </tr>
-                    <tr v-if="!sale.installments?.length">
-                        <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">{{ t('No installments') }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            </TableFrame>
-        </div>
+            <V2Panel :padded="false" :title="t('Installments')">
+                <TableFrame table-id="sale-installments" :columns="tableColumnsInstallments">
+                    <table class="min-w-full text-sm">
+                        <thead class="table-chrome-head text-start text-muted-foreground">
+                            <tr>
+                                <TableIndexTh />
+                                <SortableTh column="installment_no" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">#</SortableTh>
+                                <SortableTh column="due_date" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Due') }}</SortableTh>
+                                <SortableTh column="amount" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Amount') }}</SortableTh>
+                                <SortableTh column="paid_amount" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Paid') }}</SortableTh>
+                                <SortableTh column="status" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Status') }}</SortableTh>
+                                <SortableTh column="created_at" :sort-key="installmentSort.sortKey" :sort-dir="installmentSort.sortDir" @sort="installmentSort.sortBy">{{ t('Created at') }}</SortableTh>
+                                <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(i, index) in installmentSort.sortedRows" :key="i.id" class="border-t hover:bg-muted/30">
+                                <TableIndexTd :index="index" />
+                                <td class="px-4 py-3">{{ i.installment_no }}</td>
+                                <td class="px-4 py-3">{{ formatDate(i.due_date) }}</td>
+                                <td class="px-4 py-3 tabular-nums">{{ money(i.amount) }}</td>
+                                <td class="px-4 py-3 tabular-nums">{{ money(i.paid_amount) }}</td>
+                                <td class="px-4 py-3"><StatusBadge :status="i.status" /></td>
+                                <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(i.created_at) }}</td>
+                                <td class="px-4 py-3 text-end">
+                                    <Button
+                                        v-if="installmentRemaining(i) > 0"
+                                        size="sm"
+                                        variant="outline"
+                                        @click="fillInstallment(i)"
+                                    >
+                                        {{ t('Receive') }} {{ money(installmentRemaining(i), sale.currency) }}
+                                    </Button>
+                                </td>
+                            </tr>
+                            <tr v-if="!sale.installments?.length">
+                                <td colspan="8" class="px-4 py-10 text-center text-muted-foreground">{{ t('No installments') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </TableFrame>
+            </V2Panel>
 
-        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <div class="border-b px-5 py-3">
-                <h3 class="text-sm font-semibold">{{ t('Receipts') }}</h3>
-            </div>
-            <TableFrame table-id="sale-receipts" :columns="tableColumnsPayments">
-            <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-start text-muted-foreground">
-                    <tr>
-                        <TableIndexTh />
-                        <SortableTh column="payment_no" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('No') }}</SortableTh>
-                        <SortableTh column="paid_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Date') }}</SortableTh>
-                        <SortableTh column="amount" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Amount') }}</SortableTh>
-                        <SortableTh column="created_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Created at') }}</SortableTh>
-                        <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(p, index) in paymentSort.sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
-                        <TableIndexTd :index="index" />
-                        <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
-                        <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
-                        <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency) }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(p.created_at) }}</td>
-                        <td class="px-4 py-3 text-end">
-                            <Button as-child size="sm" variant="outline">
-                                <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
-                            </Button>
-                        </td>
-                    </tr>
-                    <tr v-if="!sale.payments?.length">
-                        <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No receipts yet') }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            </TableFrame>
-        </div>
+            <V2Panel :padded="false" :title="t('Receipts')">
+                <TableFrame table-id="sale-receipts" :columns="tableColumnsPayments">
+                    <table class="min-w-full text-sm">
+                        <thead class="table-chrome-head text-start text-muted-foreground">
+                            <tr>
+                                <TableIndexTh />
+                                <SortableTh column="payment_no" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('No') }}</SortableTh>
+                                <SortableTh column="paid_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Date') }}</SortableTh>
+                                <SortableTh column="amount" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Amount') }}</SortableTh>
+                                <SortableTh column="created_at" :sort-key="paymentSort.sortKey" :sort-dir="paymentSort.sortDir" @sort="paymentSort.sortBy">{{ t('Created at') }}</SortableTh>
+                                <th class="px-4 py-3 font-medium text-end">{{ t('Action') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(p, index) in paymentSort.sortedRows" :key="p.id" class="border-t hover:bg-muted/30">
+                                <TableIndexTd :index="index" />
+                                <td class="px-4 py-3 font-medium">{{ p.payment_no }}</td>
+                                <td class="px-4 py-3">{{ formatDate(p.paid_at) }}</td>
+                                <td class="px-4 py-3 tabular-nums">{{ money(p.amount, sale.currency) }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(p.created_at) }}</td>
+                                <td class="px-4 py-3 text-end">
+                                    <Button as-child size="sm" variant="outline">
+                                        <Link :href="`/payments/${p.id}`"><Printer class="size-4" /> {{ t('Print') }}</Link>
+                                    </Button>
+                                </td>
+                            </tr>
+                            <tr v-if="!sale.payments?.length">
+                                <td colspan="6" class="px-4 py-10 text-center text-muted-foreground">{{ t('No receipts yet') }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </TableFrame>
+            </V2Panel>
         </div>
 
         <div v-show="tab === 'documents'" class="print:hidden">
@@ -337,5 +362,5 @@ function submitPayment() {
                 { label: t('Balance due'), value: money(remaining_amount, sale.currency) },
             ]"
         />
-    </div>
+    </V2ListPage>
 </template>

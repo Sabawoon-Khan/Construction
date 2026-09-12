@@ -3,6 +3,7 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, Printer } from '@lucide/vue';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
+import { V2DetailHero, V2ListPage } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
@@ -110,35 +111,33 @@ defineOptions({
 <template>
     <Head :title="`${item.name} — ${title}`" />
 
-    <div
-        class="print-document mx-auto flex h-full w-full max-w-4xl flex-1 flex-col gap-5 p-4 md:p-6 print:gap-0 print:p-0"
-    >
-        <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden"
-        >
-            <div class="space-y-2">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link :href="`/projects/${item.id}#expenses`">
-                        <ArrowLeft class="size-4" /> {{ t('Back') }}
-                    </Link>
-                </Button>
-                <div>
-                    <h1 class="text-xl font-semibold tracking-tight">{{ title }}</h1>
-                    <p class="text-sm text-muted-foreground">
-                        {{ item.name }} · {{ item.code }}
-                    </p>
-                </div>
-            </div>
-            <Button variant="outline" @click="printPage">
-                <Printer class="size-4" /> {{ t('Print') }}
-            </Button>
+    <V2ListPage class="print:gap-0">
+        <div class="print:hidden">
+            <V2DetailHero image="/images/dashboard-v2-building.png">
+                <template #eyebrow>{{ t('Expense report') }}</template>
+                <template #title>{{ title }}</template>
+                <template #description>
+                    {{ item.name }} · {{ item.code }}
+                </template>
+                <template #actions>
+                    <Button as-child variant="outline" size="sm">
+                        <Link :href="`/projects/${item.id}#expenses`">
+                            <ArrowLeft class="size-4 rtl:rotate-180" />
+                            {{ t('Back') }}
+                        </Link>
+                    </Button>
+                    <Button variant="outline" size="sm" @click="printPage">
+                        <Printer class="size-4" /> {{ t('Print') }}
+                    </Button>
+                </template>
+            </V2DetailHero>
         </div>
 
         <article
-            class="voucher-sheet overflow-hidden rounded-xl border bg-white text-neutral-900 shadow-sm print:rounded-none print:border-0 print:shadow-none"
+            class="voucher-sheet mx-auto w-full max-w-4xl overflow-hidden rounded-xl border bg-white text-neutral-900 shadow-sm print:rounded-none print:border-0 print:shadow-none"
         >
-            <header class="border-b border-neutral-200 px-8 py-6 text-center print:px-0 print:py-5">
-                <p class="text-[11px] font-medium tracking-[0.14em] text-neutral-400 uppercase">
+            <header class="border-b border-neutral-200 px-8 py-7 text-center print:px-0 print:py-5">
+                <p class="text-[11px] font-medium tracking-[0.15em] text-neutral-400 uppercase">
                     {{ t('Expense report') }}
                 </p>
                 <h2 class="mt-2 text-xl font-semibold tracking-tight">{{ companyName }}</h2>
@@ -179,7 +178,7 @@ defineOptions({
                 </div>
             </header>
 
-            <div class="space-y-7 px-8 py-6 print:space-y-5 print:px-0 print:py-4">
+            <div class="space-y-7 px-8 py-7 print:space-y-5 print:px-0 print:py-5">
                 <section v-for="group in groupedExpenses" :key="group.key">
                     <div
                         v-if="!category"
@@ -292,5 +291,5 @@ defineOptions({
                 {{ companyName }} · {{ t('Printed') }} {{ printedAt }}
             </div>
         </article>
-    </div>
+    </V2ListPage>
 </template>

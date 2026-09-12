@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Printer } from '@lucide/vue';
-import DetailGrid from '@/components/DetailGrid.vue';
-import RecordAttachments from '@/components/RecordAttachments.vue';
-import Heading from '@/components/Heading.vue';
+import { Printer } from '@lucide/vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import { MisDetailGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
+import {
+    V2AmountCard,
+    V2DetailHero,
+    V2ListPage,
+    V2Panel,
+} from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
@@ -30,70 +35,61 @@ defineOptions({
 
 <template>
     <Head :title="item.payment_no" />
-    <div class="voucher-print-page flex h-full flex-1 flex-col gap-4 print:gap-0 print:p-0">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
-            <div class="space-y-3">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/payments"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-                </Button>
-                <Heading :title="item.payment_no" :description="item.supplier?.name || item.customer?.name || t('Payment details')" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <StatusBadge :status="item.status" />
-                <Button variant="outline" @click="printPage">
-                    <Printer class="size-4" /> {{ t('Print receipt') }}
-                </Button>
-            </div>
-        </div>
-
-        <div class="print:hidden">
-            <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Amount') }}</div>
-                <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
-                    {{ money(item.amount, item.currency) }}
-                </div>
-            </div>
-        </div>
-
-        <div class="print:hidden">
-            <DetailGrid
-                :title="t('Payment details')"
-                :items="[
-                    { label: t('Date'), value: formatDate(item.paid_at) },
-                    { label: t('Type'), value: item.type },
-                    { label: t('Customer'), value: item.customer?.name },
-                    { label: t('Supplier'), value: item.supplier?.name },
-                    { label: t('Project'), value: item.project?.name },
-                    { label: t('Sale'), value: item.sale?.sale_no },
-                    { label: t('Purchase'), value: item.purchase?.purchase_no },
-                    { label: t('Installment #'), value: item.installment?.installment_no },
-                    { label: t('Payment method'), value: item.payment_method },
-                    { label: t('Reference'), value: item.reference_no },
-                    { label: t('Currency'), value: item.currency },
-                    { label: t('Notes'), value: item.notes, span: true },
-                ]"
-            >
-                <template v-if="item.sale_id">
-                    <Button as-child variant="outline" size="sm">
-                        <Link :href="`/sales/${item.sale_id}`">{{ t('View related sale') }}</Link>
+    <V2ListPage>
+        <div class="voucher-print-page flex flex-col gap-4 print:gap-0">
+            <V2DetailHero class="print:hidden" image="/images/dashboard-v2-building.png">
+                <template #eyebrow>{{ t('Payments') }}</template>
+                <template #title>{{ item.payment_no }}</template>
+                <template #description>{{ item.supplier?.name || item.customer?.name || t('Payment details') }}</template>
+                <template #actions>
+                    <StatusBadge :status="item.status" />
+                    <Button variant="outline" @click="printPage">
+                        <Printer class="size-4" /> {{ t('Print receipt') }}
                     </Button>
                 </template>
-                <template v-else-if="item.purchase_id">
-                    <Button as-child variant="outline" size="sm">
+            </V2DetailHero>
+
+            <div class="print:hidden">
+                <V2AmountCard :label="t('Amount')" tone="rose">
+                    {{ money(item.amount, item.currency) }}
+                </V2AmountCard>
+            </div>
+
+            <V2Panel class="print:hidden" :title="t('Payment details')">
+                <template v-if="item.sale_id || item.purchase_id" #actions>
+                    <Button v-if="item.sale_id" as-child variant="outline" size="sm">
+                        <Link :href="`/sales/${item.sale_id}`">{{ t('View related sale') }}</Link>
+                    </Button>
+                    <Button v-else-if="item.purchase_id" as-child variant="outline" size="sm">
                         <Link :href="`/purchases/${item.purchase_id}`">{{ t('View related purchase') }}</Link>
                     </Button>
                 </template>
-            </DetailGrid>
-        </div>
+                <MisDetailGrid
+                    :items="[
+                        { label: t('Date'), value: formatDate(item.paid_at) },
+                        { label: t('Type'), value: item.type },
+                        { label: t('Customer'), value: item.customer?.name },
+                        { label: t('Supplier'), value: item.supplier?.name },
+                        { label: t('Project'), value: item.project?.name },
+                        { label: t('Sale'), value: item.sale?.sale_no },
+                        { label: t('Purchase'), value: item.purchase?.purchase_no },
+                        { label: t('Installment #'), value: item.installment?.installment_no },
+                        { label: t('Payment method'), value: item.payment_method },
+                        { label: t('Reference'), value: item.reference_no },
+                        { label: t('Currency'), value: item.currency },
+                        { label: t('Notes'), value: item.notes, span: 3 },
+                    ]"
+                />
+            </V2Panel>
 
-        <RecordAttachments
-            attachable="payments"
-            :attachable-id="item.id"
-            :attachments="item.attachments"
-            boxed
-        />
+            <RecordAttachments
+                attachable="payments"
+                :attachable-id="item.id"
+                :attachments="item.attachments"
+                boxed
+            />
 
-        <PrintableVoucher
+            <PrintableVoucher
                 :kind="item.type === 'disbursement' ? 'payment' : 'receipt'"
                 :title="item.type === 'disbursement' ? t('Supplier Payment Voucher') : t('Customer Payment Receipt')"
                 :document-no="item.payment_no"
@@ -114,5 +110,6 @@ defineOptions({
                     { label: t('Voucher type'), value: item.type },
                 ]"
             />
-    </div>
+        </div>
+    </V2ListPage>
 </template>

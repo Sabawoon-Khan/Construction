@@ -22,14 +22,14 @@ class DashboardController extends Controller
         $service = DashboardService::forUser($user);
 
         if ($user->isRestrictedShareholder() && $user->partner) {
-            return Inertia::render('Dashboard', [
+            return Inertia::render('DashboardV2', [
                 'mode' => 'shareholder',
                 'preset' => $preset,
                 'stats' => $service->shareholderView($user->partner, $from, $to),
             ]);
         }
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('DashboardV2', [
             'mode' => 'admin',
             'preset' => $preset,
             'stats' => $service->summary($from, $to),

@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
+import Can from '@/components/Can.vue';
+import EmptyState from '@/components/EmptyState.vue';
+import MisCreateButton from '@/components/MisCreateButton.vue';
 import SortableTh from '@/components/SortableTh.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
+import { Button } from '@/components/ui/button';
+import { V2Panel } from '@/components/v2';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import { useMisPage } from '@/composables/useMisPage';
-import { provideTableSort } from '@/composables/useTableSort';
+import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 
@@ -16,76 +22,224 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
-const tableColumns = computed(() => [
+const salesColumns = computed(() => [
     indexTableColumn(),
     { key: 'sale_no', label: t('Sale') },
     { key: 'customer.name', label: t('Customer') },
     { key: 'unit.list_price', label: t('Amount') },
     { key: 'created_at', label: t('Created at') },
 ]);
+const unitsColumns = computed(() => [
+    indexTableColumn(),
+    { key: 'unit_no', label: t('Unit') },
+    { key: 'status', label: t('Status') },
+    { key: 'list_price', label: t('List price') },
+]);
 const { formatDate } = useMisPage();
-const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
+const salesSort = useTableSort(
+    () => (props.item.sales ?? []) as Record<string, any>[],
+);
+const unitsSort = useTableSort(
+    () => (props.item.units ?? []) as Record<string, any>[],
+);
 </script>
 
 <template>
-    <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <div class="border-b px-5 py-3">
-            <h3 class="text-sm font-semibold">{{ t('Recent sales') }}</h3>
-        </div>
-        <TableFrame table-id="project-sales" :columns="tableColumns">
-        <table class="min-w-full text-sm">
-            <thead class="bg-muted/40 text-start text-muted-foreground">
-                <tr>
-                    <TableIndexTh />
-                    <SortableTh column="sale_no">{{ t('Sale') }}</SortableTh>
-                    <SortableTh column="customer.name">
-                        {{ t('Customer') }}
-                    </SortableTh>
-                    <SortableTh column="unit.list_price">{{ t('Amount') }}</SortableTh>
-                    <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
-                </tr>
-            </thead>
-            <tbody>
-                <tr
-                    v-for="(sale, index) in sortedRows"
-                    :key="sale.id"
-                    class="border-t hover:bg-muted/30"
+    <div class="space-y-4">
+        <V2Panel :padded="false" :title="t('Recent sales')">
+            <template #actions>
+                <MisCreateButton
+                    size="sm"
+                    permission="sales.create"
+                    :href="`/sales/create?project_id=${item.id}`"
                 >
-                    <TableIndexTd :index="index" />
-                    <td class="px-4 py-3">
-                        <Link
-                            :href="`/sales/${sale.id}`"
-                            class="font-medium text-primary hover:underline"
-                            >{{ sale.sale_no }}</Link
+                    {{ t('Create sale') }}
+                </MisCreateButton>
+            </template>
+            <TableFrame table-id="project-sales" :columns="salesColumns">
+                <table class="min-w-full text-sm">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
+                        <tr>
+                            <TableIndexTh />
+                            <SortableTh
+                                column="sale_no"
+                                :sort-key="salesSort.sortKey"
+                                :sort-dir="salesSort.sortDir"
+                                @sort="salesSort.sortBy"
+                            >
+                                {{ t('Sale') }}
+                            </SortableTh>
+                            <SortableTh
+                                column="customer.name"
+                                :sort-key="salesSort.sortKey"
+                                :sort-dir="salesSort.sortDir"
+                                @sort="salesSort.sortBy"
+                            >
+                                {{ t('Customer') }}
+                            </SortableTh>
+                            <SortableTh
+                                column="unit.list_price"
+                                :sort-key="salesSort.sortKey"
+                                :sort-dir="salesSort.sortDir"
+                                @sort="salesSort.sortBy"
+                            >
+                                {{ t('Amount') }}
+                            </SortableTh>
+                            <SortableTh
+                                column="created_at"
+                                :sort-key="salesSort.sortKey"
+                                :sort-dir="salesSort.sortDir"
+                                @sort="salesSort.sortBy"
+                            >
+                                {{ t('Created at') }}
+                            </SortableTh>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="(sale, index) in salesSort.sortedRows"
+                            :key="sale.id"
+                            class="border-t hover:bg-muted/30"
                         >
-                    </td>
-                    <td class="px-4 py-3">
-                        {{ sale.customer?.name || '—' }}
-                    </td>
-                    <td class="px-4 py-3 tabular-nums">
-                        {{
-                            money(
-                                Math.max(
-                                    0,
-                                    Number(sale.unit?.list_price ?? 0) -
-                                        Number(sale.discount ?? 0),
-                                ),
-                                sale.currency,
-                            )
-                        }}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(sale.created_at) }}</td>
-                </tr>
-                <tr v-if="!item.sales?.length">
-                    <td
-                        colspan="5"
-                        class="px-4 py-10 text-center text-muted-foreground"
-                    >
-                        {{ t('No sales yet') }}
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        </TableFrame>
+                            <TableIndexTd :index="index" />
+                            <td class="px-4 py-3">
+                                <Link
+                                    :href="`/sales/${sale.id}`"
+                                    class="font-medium text-primary hover:underline"
+                                    >{{ sale.sale_no }}</Link
+                                >
+                            </td>
+                            <td class="px-4 py-3">
+                                {{ sale.customer?.name || '—' }}
+                            </td>
+                            <td class="px-4 py-3 tabular-nums">
+                                {{
+                                    money(
+                                        Math.max(
+                                            0,
+                                            Number(sale.unit?.list_price ?? 0) -
+                                                Number(sale.discount ?? 0),
+                                        ),
+                                        sale.currency,
+                                    )
+                                }}
+                            </td>
+                            <td
+                                class="px-4 py-3 whitespace-nowrap text-muted-foreground"
+                            >
+                                {{ formatDate(sale.created_at) }}
+                            </td>
+                        </tr>
+                        <EmptyState
+                            v-if="!item.sales?.length"
+                            :colspan="5"
+                            :title="t('No sales yet')"
+                        >
+                            <template #actions>
+                                <Can permission="sales.create">
+                                    <Button as-child size="sm">
+                                        <Link
+                                            :href="`/sales/create?project_id=${item.id}`"
+                                        >
+                                            {{ t('Create sale') }}
+                                        </Link>
+                                    </Button>
+                                </Can>
+                            </template>
+                        </EmptyState>
+                    </tbody>
+                </table>
+            </TableFrame>
+        </V2Panel>
+
+        <V2Panel :padded="false" :title="t('Project units')">
+            <template #actions>
+                <MisCreateButton
+                    size="sm"
+                    permission="units.create"
+                    :href="`/units/create?project_id=${item.id}`"
+                >
+                    {{ t('Add unit') }}
+                </MisCreateButton>
+            </template>
+            <TableFrame table-id="project-units" :columns="unitsColumns">
+                <table class="min-w-full text-sm">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
+                        <tr>
+                            <TableIndexTh />
+                            <SortableTh
+                                column="unit_no"
+                                :sort-key="unitsSort.sortKey"
+                                :sort-dir="unitsSort.sortDir"
+                                @sort="unitsSort.sortBy"
+                            >
+                                {{ t('Unit') }}
+                            </SortableTh>
+                            <SortableTh
+                                column="status"
+                                :sort-key="unitsSort.sortKey"
+                                :sort-dir="unitsSort.sortDir"
+                                @sort="unitsSort.sortBy"
+                            >
+                                {{ t('Status') }}
+                            </SortableTh>
+                            <SortableTh
+                                column="list_price"
+                                :sort-key="unitsSort.sortKey"
+                                :sort-dir="unitsSort.sortDir"
+                                @sort="unitsSort.sortBy"
+                            >
+                                {{ t('List price') }}
+                            </SortableTh>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="(unit, index) in unitsSort.sortedRows"
+                            :key="unit.id"
+                            class="border-t hover:bg-muted/30"
+                        >
+                            <TableIndexTd :index="index" />
+                            <td class="px-4 py-3">
+                                <Link
+                                    :href="`/units/${unit.id}`"
+                                    class="font-medium text-primary hover:underline"
+                                >
+                                    {{ unit.unit_no || unit.code || unit.id }}
+                                </Link>
+                            </td>
+                            <td class="px-4 py-3">
+                                <StatusBadge :status="unit.status" />
+                            </td>
+                            <td class="px-4 py-3 tabular-nums">
+                                {{
+                                    money(
+                                        unit.list_price,
+                                        unit.currency,
+                                    )
+                                }}
+                            </td>
+                        </tr>
+                        <EmptyState
+                            v-if="!item.units?.length"
+                            :colspan="4"
+                            :title="t('No units yet')"
+                        >
+                            <template #actions>
+                                <Can permission="units.create">
+                                    <Button as-child size="sm">
+                                        <Link
+                                            :href="`/units/create?project_id=${item.id}`"
+                                        >
+                                            {{ t('Add unit') }}
+                                        </Link>
+                                    </Button>
+                                </Can>
+                            </template>
+                        </EmptyState>
+                    </tbody>
+                </table>
+            </TableFrame>
+        </V2Panel>
     </div>
 </template>

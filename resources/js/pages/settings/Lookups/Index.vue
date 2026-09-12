@@ -151,6 +151,8 @@ function rowActions(row: LookupRow): RowActionItem[] {
             variant: 'destructive',
             method: 'delete',
             href: `/settings/lookups/${props.activeGroup}/${row.id}`,
+            trashType: 'lookup_items',
+            trashId: row.id,
             confirm: {
                 title: t('Move to trash'),
                 description: t('This item will move to trash. You can restore it later.'),

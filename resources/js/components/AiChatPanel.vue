@@ -19,8 +19,9 @@ import {
     X,
     XCircle,
 } from '@lucide/vue';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import AiChatMessageContent from '@/components/AiChatMessageContent.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -66,6 +67,44 @@ const {
 const listEl = ref<HTMLElement | null>(null);
 const inputEl = ref<HTMLTextAreaElement | null>(null);
 const fileInputEl = ref<HTMLInputElement | null>(null);
+const deleteOpen = ref(false);
+const deleting = ref(false);
+const pendingDeleteId = ref<string | null>(null);
+const tipOpen = ref(false);
+/** Avoid DialogPortal SSR hydration mismatches against #app / Inertia page JSON. */
+const mounted = ref(false);
+const AI_TIP_KEY = 'kit.ai.first-open-tip.dismissed';
+
+onMounted(() => {
+    mounted.value = true;
+});
+
+function hasDismissedAiTip(): boolean {
+    try {
+        return localStorage.getItem(AI_TIP_KEY) === '1';
+    } catch {
+        return true;
+    }
+}
+
+function markAiTipSeen(): void {
+    try {
+        localStorage.setItem(AI_TIP_KEY, '1');
+    } catch {
+        // ignore
+    }
+}
+
+function dismissAiTip(): void {
+    tipOpen.value = false;
+    markAiTipSeen();
+}
+
+watch(tipOpen, (isOpen) => {
+    if (!isOpen) {
+        markAiTipSeen();
+    }
+});
 
 const sheetSide = computed<'left' | 'right'>(() =>
     page.props.dir === 'rtl' ? 'left' : 'right',
@@ -122,6 +161,9 @@ watch(
 
 watch(open, async (isOpen) => {
     if (isOpen) {
+        if (!hasDismissedAiTip()) {
+            tipOpen.value = true;
+        }
         await nextTick();
         if (view.value === 'chat') {
             inputEl.value?.focus();
@@ -244,22 +286,36 @@ function formatWhen(value: string | null): string {
     return calendar.format(value) || '';
 }
 
-async function confirmDelete(id: string): Promise<void> {
-    if (!window.confirm(t('Delete this chat from history?'))) {
+async function confirmDelete(): Promise<void> {
+    if (!pendingDeleteId.value) {
         return;
     }
-    await deleteConversation(id);
+    const id = pendingDeleteId.value;
+    deleting.value = true;
+    try {
+        await deleteConversation(id);
+        deleteOpen.value = false;
+        pendingDeleteId.value = null;
+    } finally {
+        deleting.value = false;
+    }
+}
+
+function askDelete(id: string): void {
+    pendingDeleteId.value = id;
+    deleteOpen.value = true;
 }
 </script>
 
 <template>
     <Sheet
+        v-if="mounted"
         :open="available && open"
         @update:open="(value) => (!value ? closeChat() : undefined)"
     >
         <SheetContent
             :side="sheetSide"
-            class="flex w-full max-w-[24rem] flex-col gap-0 border-border/60 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--school-navy)_4%,var(--background))_0%,var(--background)_7.5rem)] p-0 shadow-2xl sm:max-w-[24rem]"
+            class="print:hidden flex w-full max-w-[24rem] flex-col gap-0 border-border/60 bg-[linear-gradient(180deg,color-mix(in_oklab,var(--school-navy)_4%,var(--background))_0%,var(--background)_7.5rem)] p-0 shadow-2xl sm:max-w-[24rem]"
         >
             <SheetHeader class="relative border-b border-border/60 px-3.5 py-3 text-start">
                 <div
@@ -398,7 +454,7 @@ async function confirmDelete(id: string): Promise<void> {
                             type="button"
                             class="mt-0.5 size-7 shrink-0 rounded-full text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                             :aria-label="t('Delete')"
-                            @click="confirmDelete(item.id)"
+                            @click="askDelete(item.id)"
                         >
                             <Trash2 class="mx-auto size-3.5" />
                         </button>
@@ -817,8 +873,42 @@ async function confirmDelete(id: string): Promise<void> {
                             )
                         }}
                     </p>
+                    <p class="mt-1 px-1 text-[10px] text-muted-foreground/90">
+                        {{
+                            t(
+                                'Prompts and attached files may be sent to your configured AI provider. Do not share secrets.',
+                            )
+                        }}
+                    </p>
                 </form>
             </template>
         </SheetContent>
     </Sheet>
+
+    <ConfirmActionDialog
+        v-if="mounted"
+        v-model:open="tipOpen"
+        :title="t('About AI in this app')"
+        :description="
+            t(
+                'AI can draft text, fill forms you open, and — when enabled — create or update records after you approve. It only sees what you type, attach, or the fields on the current form. Review every suggestion before applying.',
+            )
+        "
+        :confirm-label="t('Got it')"
+        :cancel-label="t('Close')"
+        variant="default"
+        class="print:hidden"
+        @confirm="dismissAiTip"
+    />
+
+    <ConfirmActionDialog
+        v-if="mounted"
+        v-model:open="deleteOpen"
+        :title="t('Delete chat')"
+        :description="t('Delete this chat from history?')"
+        :confirm-label="t('Delete')"
+        :processing="deleting"
+        class="print:hidden"
+        @confirm="confirmDelete"
+    />
 </template>

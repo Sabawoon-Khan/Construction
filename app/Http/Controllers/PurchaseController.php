@@ -71,12 +71,16 @@ class PurchaseController extends Controller implements HasMiddleware
             'total_by_currency' => $totalByCurrency,
             'paid_by_currency' => $paidByCurrency,
             'remaining_by_currency' => $remainingByCurrency,
+            'unpaid_count' => (clone $query)->where('status', 'unpaid')->count(),
+            'partial_count' => (clone $query)->where('status', 'partial')->count(),
+            'paid_count' => (clone $query)->where('status', 'paid')->count(),
         ];
 
         return Inertia::render('Purchases/Index', [
             'items' => $query->latest('purchase_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'moneyChart' => CurrencyAmounts::sumByMonth(clone $query, 'purchase_date', 'total_amount'),
         ]);
     }
 

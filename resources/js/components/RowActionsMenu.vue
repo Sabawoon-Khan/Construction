@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
+import { consumePendingTrashUndo, expectTrashUndo } from '@/lib/trashUndoToast';
 
 const props = withDefaults(
     defineProps<{
@@ -76,10 +77,27 @@ function runAction(action: RowActionItem): void {
 
     processing.value = true;
 
-    const payload = action.data ?? {};
+    const payload = (action.data ?? {}) as Record<string, string | number | boolean | null>;
+
+    if (action.trashType && action.trashId != null) {
+        expectTrashUndo({
+            type: action.trashType,
+            id: action.trashId,
+        });
+    }
 
     const options = {
         preserveScroll: true,
+        onError: () => {
+            if (action.trashType) {
+                consumePendingTrashUndo();
+            }
+        },
+        onCancel: () => {
+            if (action.trashType) {
+                consumePendingTrashUndo();
+            }
+        },
         onFinish: () => {
             processing.value = false;
             pendingAction.value = null;
@@ -112,7 +130,7 @@ function confirmPendingAction(): void {
 <template>
     <DropdownMenu v-if="visibleActions.length > 0">
         <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="icon" class="size-8">
+            <Button variant="ghost" size="icon" class="size-9 touch-manipulation sm:size-8">
                 <MoreHorizontal class="size-4" />
                 <span class="sr-only">{{ t('Actions') }}</span>
             </Button>

@@ -28,6 +28,7 @@ export type TableColumnsState = {
     columns: TableColumnDef[];
     isVisible: (key: string) => boolean;
     toggle: (key: string) => void;
+    setVisible: (key: string, visible: boolean) => void;
     visibleCount: ReturnType<typeof computed<number>>;
 };
 
@@ -74,7 +75,7 @@ export function provideTableColumns(
         return !hidden.value.has(key);
     }
 
-    function toggle(key: string): void {
+    function setVisible(key: string, visible: boolean): void {
         const column = resolved.value.find((item) => item.key === key);
 
         if (!column || column.locked) {
@@ -83,7 +84,7 @@ export function provideTableColumns(
 
         const next = new Set(hidden.value);
 
-        if (next.has(key)) {
+        if (visible) {
             next.delete(key);
         } else {
             next.add(key);
@@ -91,6 +92,10 @@ export function provideTableColumns(
 
         hidden.value = next;
         writeHidden(tableId, [...next]);
+    }
+
+    function toggle(key: string): void {
+        setVisible(key, !isVisible(key));
     }
 
     const visibleCount = computed(
@@ -103,6 +108,7 @@ export function provideTableColumns(
         },
         isVisible,
         toggle,
+        setVisible,
         visibleCount,
     };
 

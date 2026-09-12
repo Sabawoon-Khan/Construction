@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
 import { Menu } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
@@ -45,6 +45,11 @@ const { t } = useTranslations();
 const { getInitials } = useInitials();
 const { currentUrl } = useCurrentUrl();
 const { navGroups } = useAppNavigation();
+const mobileNavOpen = ref(false);
+
+watch(currentUrl, () => {
+    mobileNavOpen.value = false;
+});
 
 const user = computed(() => page.props.auth.user);
 const showAvatar = computed(() =>
@@ -58,16 +63,16 @@ const showAvatar = computed(() =>
         data-tour="app-header-nav"
     >
         <div
-            class="mx-auto flex h-16 w-full max-w-[90rem] items-center gap-3 px-4 md:px-6"
+            class="mx-auto flex h-14 w-full max-w-[90rem] items-center gap-2 px-3 sm:h-16 sm:gap-3 sm:px-4 md:px-6"
         >
             <div class="lg:hidden">
-                <Sheet>
+                <Sheet :open="mobileNavOpen" @update:open="mobileNavOpen = $event">
                     <SheetTrigger as-child>
                         <Button variant="ghost" size="icon" class="size-9">
                             <Menu class="size-5" />
                         </Button>
                     </SheetTrigger>
-                    <SheetContent side="left" class="w-[300px] p-0">
+                    <SheetContent side="left" class="w-[min(300px,88vw)] p-0">
                         <SheetTitle class="sr-only">{{
                             t('Navigation')
                         }}</SheetTitle>
@@ -77,11 +82,12 @@ const showAvatar = computed(() =>
                             <Link
                                 :href="dashboard()"
                                 class="flex items-center gap-2"
+                                @click="mobileNavOpen = false"
                             >
                                 <AppLogo tone="on-light" />
                             </Link>
                         </SheetHeader>
-                        <nav class="space-y-4 overflow-y-auto p-3">
+                        <nav class="space-y-4 overflow-y-auto p-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
                             <div
                                 v-for="group in navGroups"
                                 :key="group.label"
@@ -94,12 +100,13 @@ const showAvatar = computed(() =>
                                     v-for="item in group.items"
                                     :key="toUrl(item.href)"
                                     :href="item.href"
-                                    class="flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-2.5 text-sm font-medium transition"
+                                    class="flex items-center gap-3 rounded-[var(--radius-control)] px-3 py-3 text-sm font-medium transition touch-manipulation"
                                     :class="
                                         isNavItemActive(item, currentUrl)
                                             ? 'bg-primary text-primary-foreground'
                                             : 'text-foreground/80 hover:bg-muted'
                                     "
+                                    @click="mobileNavOpen = false"
                                 >
                                     <component
                                         :is="item.icon"
@@ -162,7 +169,7 @@ const showAvatar = computed(() =>
                 </template>
             </nav>
 
-            <div class="ms-auto flex shrink-0 items-center gap-1.5">
+            <div class="ms-auto flex shrink-0 items-center gap-0.5 sm:gap-1.5">
                 <GlobalSearch />
                 <LanguageSwitcher />
                 <AiHeaderButton />

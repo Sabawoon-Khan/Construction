@@ -12,7 +12,7 @@ class MisPeriod
      */
     public static function resolve(?string $preset, mixed $from = null, mixed $to = null): array
     {
-        $preset = in_array($preset, ['today', 'month', 'year', 'custom'], true)
+        $preset = in_array($preset, ['today', 'month', 'year', 'all', 'custom'], true)
             ? $preset
             : (($from || $to) ? 'custom' : 'month');
 
@@ -22,6 +22,11 @@ class MisPeriod
 
         if ($preset === 'year') {
             return [now()->startOfYear(), now()->endOfDay(), 'year'];
+        }
+
+        if ($preset === 'all') {
+            // Far-back lower bound so period filters include full history.
+            return [Carbon::create(2000, 1, 1)->startOfDay(), now()->endOfDay(), 'all'];
         }
 
         if ($preset === 'custom' && $from && $to) {

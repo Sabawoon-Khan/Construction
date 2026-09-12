@@ -1,21 +1,48 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Pencil, Printer, Trash2 } from '@lucide/vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Pencil, Printer, Trash2 } from '@lucide/vue';
+import { ref } from 'vue';
 import Can from '@/components/Can.vue';
-import DetailGrid from '@/components/DetailGrid.vue';
-import RecordAttachments from '@/components/RecordAttachments.vue';
-import Heading from '@/components/Heading.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
+import RecordAttachments from '@/components/RecordAttachments.vue';
+import { MisDetailGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
+import {
+    V2AmountCard,
+    V2DetailHero,
+    V2ListPage,
+    V2Panel,
+} from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
+import {
+    consumePendingTrashUndo,
+    expectTrashUndo,
+} from '@/lib/trashUndoToast';
 
-defineProps<{ item: Record<string, any> }>();
+const props = defineProps<{ item: Record<string, any> }>();
 const { t } = useTranslations();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
+
+const deleteOpen = ref(false);
+const deleting = ref(false);
+
+function confirmDelete() {
+    deleting.value = true;
+    expectTrashUndo({ type: 'incomes', id: props.item.id });
+    router.delete(`/incomes/${props.item.id}`, {
+        onError: () => consumePendingTrashUndo(),
+        onCancel: () => consumePendingTrashUndo(),
+        onFinish: () => {
+            deleting.value = false;
+            deleteOpen.value = false;
+        },
+    });
+}
 
 defineOptions({
     layout: {
@@ -30,71 +57,73 @@ defineOptions({
 
 <template>
     <Head :title="item.income_no" />
-    <div class="voucher-print-page flex h-full flex-1 flex-col gap-4 print:gap-0 print:p-0">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
-            <div class="space-y-3">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/incomes"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-                </Button>
-                <Heading :title="item.income_no" />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <Button variant="outline" @click="printPage">
-                    <Printer class="size-4" /> {{ t('Print voucher') }}
-                </Button>
-                <Can permission="incomes.edit">
-                    <Button as-child>
-                        <Link :href="`/incomes/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+    <V2ListPage>
+        <div class="voucher-print-page flex flex-col gap-4 print:gap-0">
+            <V2DetailHero class="print:hidden" image="/images/dashboard-v2-building.png">
+                <template #eyebrow>{{ t('Incomes') }}</template>
+                <template #title>{{ item.income_no }}</template>
+                <template #actions>
+                    <Button variant="outline" @click="printPage">
+                        <Printer class="size-4" /> {{ t('Print voucher') }}
                     </Button>
-                </Can>
-                <Can permission="incomes.delete">
-                    <Form :action="`/incomes/${item.id}`" method="delete" v-slot="{ processing }">
-                        <Button type="submit" variant="destructive" :disabled="processing">
-                            <Trash2 class="size-4" /> {{ processing ? t('Deleting…') : t('Delete') }}
+                    <Can permission="incomes.edit">
+                        <Button as-child>
+                            <Link :href="`/incomes/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
                         </Button>
-                    </Form>
-                </Can>
-            </div>
-        </div>
+                    </Can>
+                    <Can permission="incomes.delete">
+                        <Button type="button" variant="destructive" @click="deleteOpen = true">
+                            <Trash2 class="size-4" /> {{ t('Move to trash') }}
+                        </Button>
+                    </Can>
+                </template>
+            </V2DetailHero>
 
-        <div class="print:hidden">
-            <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Total amount') }}</div>
-                <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
+            <div class="print:hidden">
+                <V2AmountCard :label="t('Total amount')" tone="emerald">
                     {{ money(item.amount, item.currency) }}
-                </div>
+                </V2AmountCard>
             </div>
-        </div>
 
-        <div class="print:hidden">
-            <DetailGrid
-                :title="t('Income details')"
-                :items="[
-                    { label: t('Date'), value: formatDate(item.income_date) },
-                    { label: t('Description'), value: item.description, span: true },
-                ]"
+            <V2Panel class="print:hidden" :title="t('Income details')">
+                <MisDetailGrid
+                    :columns="2"
+                    :items="[
+                        { label: t('Date'), value: formatDate(item.income_date) },
+                        { label: t('Description'), value: item.description, span: 2 },
+                    ]"
+                />
+            </V2Panel>
+
+            <RecordAttachments
+                attachable="incomes"
+                :attachable-id="item.id"
+                :attachments="item.attachments"
+                boxed
+            />
+
+            <PrintableVoucher
+                kind="receipt"
+                :title="t('Income Receipt Voucher')"
+                :document-no="item.income_no"
+                :date="item.income_date"
+                :party-label="t('Received for')"
+                :party-name="t('Company-wide')"
+                :amount="item.amount"
+                :currency="item.currency"
+                :payment-method="item.payment_method"
+                :description="item.description"
+                :status="item.status"
+            />
+
+            <ConfirmActionDialog
+                v-model:open="deleteOpen"
+                :title="t('Move to trash')"
+                :description="t('This item will move to trash. You can restore it later.')"
+                :confirm-label="t('Move to trash')"
+                :processing="deleting"
+                @confirm="confirmDelete"
             />
         </div>
-
-        <RecordAttachments
-            attachable="incomes"
-            :attachable-id="item.id"
-            :attachments="item.attachments"
-            boxed
-        />
-
-        <PrintableVoucher
-            kind="receipt"
-            :title="t('Income Receipt Voucher')"
-            :document-no="item.income_no"
-            :date="item.income_date"
-            :party-label="t('Received for')"
-            :party-name="t('Company-wide')"
-            :amount="item.amount"
-            :currency="item.currency"
-            :payment-method="item.payment_method"
-            :description="item.description"
-            :status="item.status"
-        />
-    </div>
+    </V2ListPage>
 </template>

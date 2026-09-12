@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Printer } from '@lucide/vue';
-import DetailGrid from '@/components/DetailGrid.vue';
-import Heading from '@/components/Heading.vue';
+import { Printer } from '@lucide/vue';
+import { MisDetailGrid } from '@/components/mis';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import { Button } from '@/components/ui/button';
+import {
+    V2AmountCard,
+    V2DetailHero,
+    V2ListPage,
+    V2Panel,
+} from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import { money } from '@/lib/utils';
@@ -33,63 +38,56 @@ defineOptions({
 
 <template>
     <Head :title="documentNo" />
-    <div class="voucher-print-page flex h-full flex-1 flex-col gap-4 print:gap-0 print:p-0">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
-            <div class="space-y-3">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link :href="`/projects/${project.id}`">
-                        <ArrowLeft class="size-4" /> {{ t('Back') }}
-                    </Link>
-                </Button>
-                <Heading
-                    :title="documentNo"
-                    :description="`${t('Shareholder contribution')} · ${project.name}`"
-                />
-            </div>
-            <Button variant="outline" @click="printPage">
-                <Printer class="size-4" /> {{ t('Print voucher') }}
-            </Button>
-        </div>
+    <V2ListPage>
+        <div class="voucher-print-page flex flex-col gap-4 print:gap-0">
+            <V2DetailHero class="print:hidden" image="/images/dashboard-v2-building.png">
+                <template #eyebrow>{{ t('Projects') }}</template>
+                <template #title>{{ documentNo }}</template>
+                <template #description>{{ t('Shareholder contribution') }} · {{ project.name }}</template>
+                <template #actions>
+                    <Button as-child variant="outline">
+                        <Link :href="`/projects/${project.id}`">{{ t('Back') }}</Link>
+                    </Button>
+                    <Button variant="outline" @click="printPage">
+                        <Printer class="size-4" /> {{ t('Print voucher') }}
+                    </Button>
+                </template>
+            </V2DetailHero>
 
-        <div class="print:hidden">
-            <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Amount') }}</div>
-                <div class="mt-1 text-3xl font-semibold tabular-nums text-emerald-700">
+            <div class="print:hidden">
+                <V2AmountCard :label="t('Amount')" tone="emerald">
                     {{ money(item.amount, item.currency) }}
-                </div>
+                </V2AmountCard>
             </div>
-        </div>
 
-        <div class="print:hidden">
-            <DetailGrid
-                :title="t('Contribution details')"
-                :items="[
-                    { label: t('Date'), value: formatDate(item.invested_at) },
-                    { label: t('Shareholder'), value: item.partner?.name },
-                    { label: t('Project'), value: project.name },
-                    {
-                        label: t('Amount'),
-                        value: money(item.amount, item.currency),
-                    },
+            <V2Panel class="print:hidden" :title="t('Contribution details')">
+                <MisDetailGrid
+                    :columns="2"
+                    :items="[
+                        { label: t('Date'), value: formatDate(item.invested_at) },
+                        { label: t('Shareholder'), value: item.partner?.name },
+                        { label: t('Project'), value: project.name },
+                        { label: t('Amount'), value: money(item.amount, item.currency) },
+                    ]"
+                />
+            </V2Panel>
+
+            <PrintableVoucher
+                kind="receipt"
+                :title="t('Shareholder Contribution Voucher')"
+                :document-no="documentNo"
+                :date="item.invested_at"
+                :party-label="t('Received from')"
+                :party-name="item.partner?.name"
+                :amount="item.amount"
+                :currency="item.currency"
+                :project-name="project.name"
+                :status="item.status"
+                :fields="[
+                    { label: t('Project code'), value: project.code },
+                    { label: t('Type'), value: t('Contribution') },
                 ]"
             />
         </div>
-
-        <PrintableVoucher
-            kind="receipt"
-            :title="t('Shareholder Contribution Voucher')"
-            :document-no="documentNo"
-            :date="item.invested_at"
-            :party-label="t('Received from')"
-            :party-name="item.partner?.name"
-            :amount="item.amount"
-            :currency="item.currency"
-            :project-name="project.name"
-            :status="item.status"
-            :fields="[
-                { label: t('Project code'), value: project.code },
-                { label: t('Type'), value: t('Contribution') },
-            ]"
-        />
-    </div>
+    </V2ListPage>
 </template>

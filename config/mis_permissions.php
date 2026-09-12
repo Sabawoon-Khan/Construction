@@ -95,6 +95,9 @@ return [
         'purchases' => [
             'extra' => [],
         ],
+        'loans' => [
+            'extra' => [],
+        ],
         'inventory' => [
             'extra' => [],
         ],

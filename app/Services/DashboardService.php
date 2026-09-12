@@ -45,11 +45,12 @@ class DashboardService
 
         $salesQuery = Sale::query()->where('sales.status', '!=', 'cancelled');
 
-        $periodSales = Sale::sumTotalPriceBase(
-            (clone $salesQuery)
-                ->whereDate('sales.contract_date', '>=', $from->toDateString())
-                ->whereDate('sales.contract_date', '<=', $to->toDateString())
-        );
+        $periodSalesQuery = (clone $salesQuery)
+            ->whereDate('sales.contract_date', '>=', $from->toDateString())
+            ->whereDate('sales.contract_date', '<=', $to->toDateString());
+
+        $periodSales = Sale::sumTotalPriceBase(clone $periodSalesQuery);
+        $salesByCurrency = Sale::sumTotalPriceByCurrency(clone $periodSalesQuery);
 
         $totalSales = Sale::sumTotalPriceBase(clone $salesQuery);
 
@@ -72,12 +73,25 @@ class DashboardService
         $periodSalaries = ShareholderProfitService::salaryTotal($from, $to);
         $totalSalaries = ShareholderProfitService::salaryTotal();
         $periodRevenue = (float) $periodSales + (float) $periodIncomes;
+        $revenueByCurrency = CurrencyAmounts::add($salesByCurrency, $incomesByCurrency);
 
-        $receipts = Payment::query()
+        // Match ShareholderProfitService: company incomes are non-project only.
+        $profitIncomeQuery = Income::query()
+            ->where('status', 'approved')
+            ->whereNull('project_id')
+            ->whereDate('income_date', '>=', $from->toDateString())
+            ->whereDate('income_date', '<=', $to->toDateString());
+        $profitByCurrency = CurrencyAmounts::net(
+            CurrencyAmounts::add($salesByCurrency, CurrencyAmounts::sum($profitIncomeQuery)),
+            $expensesByCurrency,
+        );
+
+        $receiptsQuery = Payment::query()
             ->where('type', 'receipt')
             ->where('status', 'posted')
-            ->whereBetween('paid_at', [$from, $to])
-            ->sum('amount_base');
+            ->whereBetween('paid_at', [$from, $to]);
+        $receipts = (clone $receiptsQuery)->sum('amount_base');
+        $receiptsByCurrency = CurrencyAmounts::sum($receiptsQuery);
 
         $netProfitPeriod = ShareholderProfitService::netProfit($from, $to);
         $netProfitTotal = ShareholderProfitService::netProfit();
@@ -128,6 +142,7 @@ class DashboardService
             });
 
         $alerts = $this->alerts();
+        $charts = $this->chartSeries($from, $to, $expensesByCurrency, $projects);
 
         return [
             'period' => [
@@ -151,8 +166,12 @@ class DashboardService
                 'period_receipts' => (float) $receipts,
                 'net_profit_period' => $netProfitPeriod,
                 'net_profit_total' => $netProfitTotal,
+                'sales_by_currency' => $salesByCurrency,
                 'expenses_by_currency' => $expensesByCurrency,
                 'incomes_by_currency' => $incomesByCurrency,
+                'revenue_by_currency' => $revenueByCurrency,
+                'receipts_by_currency' => $receiptsByCurrency,
+                'profit_by_currency' => $profitByCurrency,
                 'overdue_installments_count' => $alerts['overdue_installments_count'],
                 'overdue_installments_amount' => $alerts['overdue_installments_amount'],
                 'purchases_owed_count' => $alerts['purchases_owed_count'],
@@ -165,6 +184,7 @@ class DashboardService
                 'low_stock_count' => count($alerts['low_stock']),
                 'field_reports_draft' => $alerts['field_reports_draft'],
             ],
+            'charts' => $charts,
             'partners' => $partners,
             'recent_sales' => $recentSales,
             'recent_expenses' => $recentExpenses,
@@ -173,6 +193,124 @@ class DashboardService
             'overdue_installments' => $alerts['overdue_installments'],
             'unpaid_purchases' => $alerts['unpaid_purchases'],
             'recent_field_reports' => $alerts['recent_field_reports'],
+        ];
+    }
+
+    /**
+     * @param  array<string, float>  $expensesByCurrency
+     * @param  \Illuminate\Support\Collection<int, array<string, mixed>>  $projects
+     * @return array{
+     *     monthly: array{labels: list<string>, sales: list<float>, expenses: list<float>},
+     *     expenses_by_currency: array<string, float>,
+     *     projects: array{labels: list<string>, profit: list<float>, revenue: list<float>}
+     * }
+     */
+    protected function chartSeries(
+        CarbonInterface $from,
+        CarbonInterface $to,
+        array $expensesByCurrency,
+        $projects,
+    ): array {
+        $monthly = $this->monthlyMoneySeries($from, $to);
+
+        $projectRows = collect($projects)
+            ->sortByDesc(fn (array $row) => (float) ($row['profit'] ?? 0))
+            ->take(6)
+            ->values();
+
+        return [
+            'monthly' => $monthly,
+            'expenses_by_currency' => $expensesByCurrency,
+            'projects' => [
+                'labels' => $projectRows->map(fn (array $row) => (string) ($row['name'] ?? '—'))->all(),
+                'profit' => $projectRows->map(fn (array $row) => round((float) ($row['profit'] ?? 0), 2))->all(),
+                'revenue' => $projectRows->map(fn (array $row) => round((float) ($row['revenue'] ?? 0), 2))->all(),
+            ],
+        ];
+    }
+
+    /**
+     * @return array{labels: list<string>, sales: list<float>, expenses: list<float>}
+     */
+    protected function monthlyMoneySeries(CarbonInterface $from, CarbonInterface $to): array
+    {
+        $chartFrom = $from->copy()->startOfMonth();
+        $chartTo = $to->copy()->endOfMonth();
+
+        if ($chartFrom->diffInMonths($chartTo) < 1) {
+            $chartFrom = $to->copy()->subMonths(5)->startOfMonth();
+            $chartTo = $to->copy()->endOfMonth();
+        }
+
+        // Long ranges (e.g. all-time): use yearly buckets and keep the chart readable.
+        $useYearly = $chartFrom->diffInMonths($chartTo) >= 18;
+        if ($useYearly && $chartFrom->diffInYears($chartTo) > 8) {
+            $chartFrom = $to->copy()->subYears(7)->startOfYear();
+            $chartTo = $to->copy()->endOfYear();
+        }
+
+        $buckets = [];
+        $cursor = $useYearly ? $chartFrom->copy()->startOfYear() : $chartFrom->copy();
+        while ($cursor->lte($chartTo)) {
+            $key = $useYearly ? $cursor->format('Y') : $cursor->format('Y-m');
+            $buckets[$key] = [
+                'label' => $useYearly ? $cursor->format('Y') : $cursor->format('M Y'),
+                'sales' => 0.0,
+                'expenses' => 0.0,
+            ];
+            // CarbonImmutable: must reassign; add* does not mutate in place.
+            $cursor = $useYearly ? $cursor->addYear() : $cursor->addMonth();
+        }
+
+        // Build totals in PHP to stay dialect-safe (sqlite/mysql).
+        $sales = Sale::query()
+            ->with(['unit:id,list_price_base'])
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('contract_date', '>=', $chartFrom->toDateString())
+            ->whereDate('contract_date', '<=', $chartTo->toDateString())
+            ->get(['id', 'unit_id', 'contract_date', 'discount_base']);
+
+        foreach ($sales as $sale) {
+            $date = $sale->contract_date;
+            $key = $date
+                ? ($useYearly ? $date->format('Y') : $date->format('Y-m'))
+                : null;
+            if (! $key || ! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['sales'] += max(
+                0,
+                (float) ($sale->unit?->list_price_base ?? 0) - (float) ($sale->discount_base ?? 0),
+            );
+        }
+
+        $expenses = Expense::query()
+            ->where('status', 'approved')
+            ->whereDate('expense_date', '>=', $chartFrom->toDateString())
+            ->whereDate('expense_date', '<=', $chartTo->toDateString())
+            ->get(['expense_date', 'amount_base']);
+
+        foreach ($expenses as $expense) {
+            $date = $expense->expense_date;
+            $key = $date
+                ? ($useYearly ? $date->format('Y') : $date->format('Y-m'))
+                : null;
+            if (! $key || ! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['expenses'] += (float) ($expense->amount_base ?? 0);
+        }
+
+        foreach ($buckets as &$bucket) {
+            $bucket['sales'] = round($bucket['sales'], 2);
+            $bucket['expenses'] = round($bucket['expenses'], 2);
+        }
+        unset($bucket);
+
+        return [
+            'labels' => array_column(array_values($buckets), 'label'),
+            'sales' => array_column(array_values($buckets), 'sales'),
+            'expenses' => array_column(array_values($buckets), 'expenses'),
         ];
     }
 
@@ -280,7 +418,9 @@ class DashboardService
                 'customer' => $row->sale?->customer?->name,
                 'project' => $row->sale?->project?->name,
                 'due_date' => $row->due_date?->toDateString(),
+                'currency' => $row->currency,
                 'remaining' => max(0, (float) $row->amount_base - (float) $row->paid_amount_base),
+                'remaining_amount' => max(0, (float) $row->amount - (float) $row->paid_amount),
             ])
             ->values()
             ->all();
@@ -305,7 +445,9 @@ class DashboardService
                 'purchase_no' => $purchase->purchase_no,
                 'supplier' => $purchase->supplier?->name,
                 'project' => $purchase->project?->name,
+                'currency' => $purchase->currency,
                 'remaining' => max(0, (float) $purchase->total_amount_base - (float) $purchase->paid_amount_base),
+                'remaining_amount' => max(0, (float) $purchase->total_amount - (float) $purchase->paid_amount),
                 'status' => $purchase->status,
             ])
             ->values()

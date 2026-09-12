@@ -45,6 +45,23 @@ export const DEFAULT_THEME_COLORS: ThemeColorSettings = {
 
 export const THEME_PRESETS: ThemePreset[] = [
     {
+        id: 'structo',
+        labelKey: 'Structo glass',
+        descriptionKey: 'Soft frosted panels, orange accents, airy workspace',
+        settings: {
+            brand: '#111111',
+            secondary: '#f3c14e',
+            accent: '#ff8a3a',
+            accentDark: '#fb923c',
+            backgroundLight: '#eef0ee',
+            backgroundDark: '#0c0c0c',
+            radius: 'soft',
+            density: 'comfortable',
+            sidebarActive: 'pill',
+            shell: 'sidebar-floating',
+        },
+    },
+    {
         id: 'najm',
         labelKey: 'Najm classic',
         descriptionKey: 'Navy sidebar with teal and gold',
@@ -64,7 +81,7 @@ export const THEME_PRESETS: ThemePreset[] = [
             radius: 'soft',
             density: 'comfortable',
             sidebarActive: 'pill',
-        shell: 'sidebar-floating',
+            shell: 'sidebar-floating',
         },
     },
     {
@@ -153,7 +170,7 @@ export const THEME_COLOR_FIELDS: Array<{
     {
         key: 'brand',
         labelKey: 'Sidebar / brand color',
-        descriptionKey: 'Floating sidebar background and structural chrome',
+        descriptionKey: 'Active nav, brand mark accents, and structural chrome',
     },
     {
         key: 'secondary',
@@ -229,7 +246,7 @@ export const THEME_SIDEBAR_ACTIVE_OPTIONS: Array<{
     {
         value: 'pill',
         labelKey: 'White pill',
-        descriptionKey: 'Active item as a white chip on the sidebar',
+        descriptionKey: 'Active item filled with the brand color',
     },
     {
         value: 'accent',
@@ -322,6 +339,14 @@ function isDarkMode(): boolean {
     return document.documentElement.classList.contains('dark');
 }
 
+function isGlassMode(): boolean {
+    if (typeof document === 'undefined') {
+        return false;
+    }
+
+    return document.documentElement.classList.contains('glass');
+}
+
 function fromServerShape(
     input: Partial<ThemeColorSettings> & {
         sidebar_active?: ThemeSidebarActive;
@@ -410,6 +435,7 @@ export function applyThemeColors(settings: ThemeColorSettings | null): void {
         '--kit-accent',
         '--kit-panel',
         '--primary',
+        '--primary-foreground',
         '--accent-foreground',
         '--sidebar-background',
         '--sidebar',
@@ -424,6 +450,15 @@ export function applyThemeColors(settings: ThemeColorSettings | null): void {
         '--brand-accent',
         '--app-shell',
         '--radius',
+        '--app-v2-brand',
+        '--app-v2-secondary',
+        '--app-v2-accent',
+        '--app-v2-background',
+        '--card',
+        '--foreground',
+        '--card-foreground',
+        '--muted-foreground',
+        '--border',
     ];
 
     if (!settings) {
@@ -437,10 +472,10 @@ export function applyThemeColors(settings: ThemeColorSettings | null): void {
     }
 
     const dark = isDarkMode();
-    const accent = dark ? settings.accentDark : settings.accent;
-    const background = dark
-        ? settings.backgroundDark
-        : settings.backgroundLight;
+    const glass = isGlassMode();
+    const accent = dark && !glass ? settings.accentDark : settings.accent;
+    const background =
+        dark && !glass ? settings.backgroundDark : settings.backgroundLight;
 
     root.style.setProperty('--school-navy', settings.brand);
     root.style.setProperty('--school-gold', settings.secondary);
@@ -450,20 +485,71 @@ export function applyThemeColors(settings: ThemeColorSettings | null): void {
     root.style.setProperty('--kit-accent', accent);
     root.style.setProperty('--kit-panel', background);
     root.style.setProperty('--primary', accent);
+    root.style.setProperty(
+        '--primary-foreground',
+        dark ? '#042f2e' : '#ffffff',
+    );
     root.style.setProperty('--brand-accent', accent);
     root.style.setProperty('--accent-foreground', accent);
-    root.style.setProperty('--sidebar-background', settings.brand);
-    root.style.setProperty('--sidebar', settings.brand);
-    root.style.setProperty('--sidebar-primary', accent);
+    root.style.setProperty(
+        '--sidebar-background',
+        glass
+            ? dark
+                ? withAlpha(settings.brand, 0.92)
+                : withAlpha('#ffffff', 0.52)
+            : settings.brand,
+    );
+    root.style.setProperty(
+        '--sidebar',
+        glass
+            ? dark
+                ? withAlpha(settings.brand, 0.92)
+                : withAlpha('#ffffff', 0.52)
+            : settings.brand,
+    );
+    root.style.setProperty(
+        '--sidebar-primary',
+        glass && !dark ? settings.brand : accent,
+    );
     root.style.setProperty('--sidebar-ring', withAlpha(accent, 0.4));
-    root.style.setProperty('--ring', withAlpha(accent, dark ? 0.35 : 0.3));
-    root.style.setProperty('--accent', withAlpha(accent, dark ? 0.15 : 0.1));
-    root.style.setProperty('--chart-1', settings.brand);
+    root.style.setProperty('--ring', withAlpha(accent, dark ? 0.38 : 0.3));
+    root.style.setProperty(
+        '--accent',
+        withAlpha(accent, dark ? 0.16 : 0.1),
+    );
+    root.style.setProperty('--chart-1', glass && !dark ? accent : settings.brand);
     root.style.setProperty('--chart-2', settings.secondary);
     root.style.setProperty('--chart-3', accent);
     root.style.setProperty('--background', background);
     root.style.setProperty('--app-shell', background);
     root.style.setProperty('--radius', RADIUS_VALUES[settings.radius]);
+    /* v2 shell helpers */
+    root.style.setProperty('--app-v2-brand', settings.brand);
+    root.style.setProperty('--app-v2-secondary', settings.secondary);
+    root.style.setProperty('--app-v2-accent', accent);
+    root.style.setProperty('--app-v2-background', background);
+
+    if (glass && !dark) {
+        root.style.setProperty('--card', withAlpha('#ffffff', 0.46));
+        root.style.setProperty('--foreground', '#14181a');
+        root.style.setProperty('--card-foreground', '#14181a');
+        root.style.setProperty('--muted-foreground', '#6b7378');
+        root.style.setProperty('--border', withAlpha('#14181a', 0.08));
+    } else if (glass && dark) {
+        root.style.setProperty('--card', withAlpha('#121a27', 0.86));
+        root.style.setProperty('--foreground', '#e8eef7');
+        root.style.setProperty('--card-foreground', '#e8eef7');
+        root.style.setProperty('--muted-foreground', '#9aa8bc');
+        root.style.setProperty('--border', withAlpha('#94a3b8', 0.16));
+        root.style.setProperty('--sidebar-foreground', withAlpha('#e8eef7', 0.88));
+    } else {
+        root.style.removeProperty('--card');
+        root.style.removeProperty('--foreground');
+        root.style.removeProperty('--card-foreground');
+        root.style.removeProperty('--muted-foreground');
+        root.style.removeProperty('--border');
+        root.style.removeProperty('--sidebar-foreground');
+    }
 
     root.dataset.themeRadius = settings.radius;
     root.dataset.themeDensity = settings.density;

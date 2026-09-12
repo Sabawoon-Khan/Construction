@@ -32,7 +32,7 @@ const { t } = useTranslations();
                 class="-ml-2 shrink-0 text-muted-foreground hover:text-foreground"
             >
                 <Link :href="backHref">
-                    <ArrowLeft class="size-4" />
+                    <ArrowLeft class="size-4 rtl:rotate-180" />
                     {{ t('Back') }}
                 </Link>
             </Button>

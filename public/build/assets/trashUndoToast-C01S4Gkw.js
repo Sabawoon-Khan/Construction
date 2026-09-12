@@ -1,0 +1,1 @@
+import{Dr as e}from"./useTranslations-DhNR1bho.js";import{n as t}from"./lib-BX5_bMpw.js";var n=null;function r(e){n=e}function i(){let e=n;return n=null,e}function a(n){t.success(n.message??`Moved to trash.`,{action:{label:`Undo`,onClick:()=>{e.post(`/settings/trash/restore`,{type:n.type,id:n.id},{preserveScroll:!0})}}})}export{r as n,a as r,i as t};

@@ -7,7 +7,9 @@ use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Employee;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\Income;
 use App\Models\InventoryTransaction;
+use App\Models\Loan;
 use App\Models\Material;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
@@ -19,10 +21,12 @@ use App\Models\Sale;
 use App\Models\Unit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
+use App\Services\LoanService;
 use App\Services\PurchaseService;
 use App\Services\ShareholderProfitService;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,21 +61,56 @@ class ProjectController extends Controller implements HasMiddleware
             });
         }
 
+        $status = $request->string('status')->toString();
+        $allowedStatuses = [
+            'planning',
+            'under_construction',
+            'ready_for_sale',
+            'sold',
+            'completed',
+            'on_hold',
+        ];
+        if ($status !== '' && in_array($status, $allowedStatuses, true)) {
+            $query->where('status', $status);
+        } else {
+            $status = '';
+        }
+
         $ids = (clone $query)->select('id');
         $salesQuery = Sale::query()->whereIn('project_id', clone $ids);
+        $unitStatusCounts = Unit::query()
+            ->whereIn('project_id', clone $ids)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $unitsAvailable = (int) ($unitStatusCounts['available'] ?? 0);
+        $unitsReserved = (int) ($unitStatusCounts['reserved'] ?? 0);
+        $unitsSold = (int) ($unitStatusCounts['sold'] ?? 0);
+        $unitsTotal = $unitsAvailable + $unitsReserved + $unitsSold;
+
         $totals = [
             'count' => (clone $query)->count(),
             'active' => (clone $query)->whereIn('status', ['planning', 'under_construction', 'ready_for_sale'])->count(),
-            'units' => Unit::query()->whereIn('project_id', clone $ids)->count(),
+            'units' => $unitsTotal > 0
+                ? $unitsTotal
+                : Unit::query()->whereIn('project_id', clone $ids)->count(),
+            'units_available' => $unitsAvailable,
+            'units_reserved' => $unitsReserved,
+            'units_sold' => $unitsSold,
             'sales_total' => Sale::sumTotalPrice(clone $salesQuery),
             'sales_total_base' => Sale::sumTotalPriceBase(clone $salesQuery),
             'sales_by_currency' => Sale::sumTotalPriceByCurrency(clone $salesQuery),
         ];
 
         return Inertia::render('Projects/Index', [
-            'items' => $query->with('creator:id,name')->latest()->paginate(12)->withQueryString(),
-            'filters' => ['search' => $search],
+            'items' => $query->with('creator:id,name')->latest()->paginate(10)->withQueryString(),
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+            ],
             'totals' => $totals,
+            'moneyChart' => $this->salesByMonth(clone $salesQuery),
         ]);
     }
 
@@ -131,7 +170,11 @@ class ProjectController extends Controller implements HasMiddleware
         $salesTotal = Sale::sumTotalPrice($project->sales()->getQuery());
         $salesTotalBase = Sale::sumTotalPriceBase($project->sales()->getQuery());
         $salesByCurrency = Sale::sumTotalPriceByCurrency($project->sales()->getQuery());
+        $incomesQuery = $project->incomes()->getQuery()->where('status', 'approved');
+        $incomesByCurrency = CurrencyAmounts::sum(clone $incomesQuery);
+        $revenueByCurrency = CurrencyAmounts::add($salesByCurrency, $incomesByCurrency);
         $netProfit = ShareholderProfitService::netProfit(projectId: $project->id);
+        $netProfitByCurrency = CurrencyAmounts::net($revenueByCurrency, $expensesByCurrency);
         $purchasesQuery = Purchase::query()->where('project_id', $project->id);
         $purchasesTotal = (float) (clone $purchasesQuery)->sum('total_amount');
         $purchasesTotalBase = (float) (clone $purchasesQuery)->sum('total_amount_base');
@@ -147,6 +190,33 @@ class ProjectController extends Controller implements HasMiddleware
             ->with('material:id,name,material_unit_id')
             ->latest('transaction_date')
             ->get(['id', 'material_id', 'quantity', 'transaction_date']);
+
+        $unitStatusCounts = Unit::query()
+            ->where('project_id', $project->id)
+            ->selectRaw('status, COUNT(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+        $unitsAvailable = (int) ($unitStatusCounts['available'] ?? 0);
+        $unitsReserved = (int) ($unitStatusCounts['reserved'] ?? 0);
+        $unitsSold = (int) ($unitStatusCounts['sold'] ?? 0);
+
+        $loansQuery = Loan::query()->where('project_id', $project->id);
+        $loansPrincipalBase = (float) (clone $loansQuery)->sum('principal_base');
+        $loansPaidBase = (float) (clone $loansQuery)->sum('paid_amount_base');
+        $loansRemainingBase = max(0, $loansPrincipalBase - $loansPaidBase);
+        $loansPrincipalByCurrency = CurrencyAmounts::sum(clone $loansQuery, 'principal');
+        $loansPaidByCurrency = CurrencyAmounts::sum(clone $loansQuery, 'paid_amount');
+        $loansRemainingByCurrency = CurrencyAmounts::remaining($loansPrincipalByCurrency, $loansPaidByCurrency);
+
+        $incomesTotalBase = (float) (clone $incomesQuery)->sum('amount_base');
+        $revenueTotalBase = $salesTotalBase + $incomesTotalBase;
+        $estimatedBudget = (float) ($project->estimated_budget ?? 0);
+        $budgetUsedPercent = $estimatedBudget > 0
+            ? round(min(999, ($expensesTotalBase / $estimatedBudget) * 100), 1)
+            : null;
+        $marginPercent = $revenueTotalBase > 0
+            ? round(($netProfit / $revenueTotalBase) * 100, 1)
+            : null;
 
         $shareholders = ShareholderProfitService::projectPartners($project);
 
@@ -188,16 +258,23 @@ class ProjectController extends Controller implements HasMiddleware
             'item' => $project,
             'stats' => [
                 'units_count' => $project->units_count,
+                'units_available' => $unitsAvailable,
+                'units_reserved' => $unitsReserved,
+                'units_sold' => $unitsSold,
                 'sales_count' => $project->sales_count,
                 'expenses_total' => $expensesTotal,
                 'expenses_total_base' => $expensesTotalBase,
                 'expenses_by_currency' => $expensesByCurrency,
-                'incomes_total' => $project->incomes()->sum('amount'),
-                'incomes_total_base' => $project->incomes()->sum('amount_base'),
+                'incomes_total' => (float) (clone $incomesQuery)->sum('amount'),
+                'incomes_total_base' => $incomesTotalBase,
+                'incomes_by_currency' => $incomesByCurrency,
                 'sales_total' => $salesTotal,
                 'sales_total_base' => $salesTotalBase,
                 'sales_by_currency' => $salesByCurrency,
                 'net_profit' => $netProfit,
+                'net_profit_by_currency' => $netProfitByCurrency,
+                'margin_percent' => $marginPercent,
+                'budget_used_percent' => $budgetUsedPercent,
                 'contributions_total' => (float) PartnerInvestment::query()
                     ->where('project_id', $project->id)
                     ->sum('amount'),
@@ -215,6 +292,10 @@ class ProjectController extends Controller implements HasMiddleware
                 'purchases_remaining' => max(0, $purchasesTotal - $purchasesPaid),
                 'purchases_remaining_base' => max(0, $purchasesTotalBase - $purchasesPaidBase),
                 'purchases_remaining_by_currency' => $purchasesRemainingByCurrency,
+                'loans_remaining' => $loansRemainingBase,
+                'loans_remaining_base' => $loansRemainingBase,
+                'loans_remaining_by_currency' => $loansRemainingByCurrency,
+                'charts' => $this->projectChartSeries($project),
             ],
             'shareholders' => $shareholders,
             'available_shareholders' => Partner::query()
@@ -276,6 +357,26 @@ class ProjectController extends Controller implements HasMiddleware
                 ->whereIn('id', $stock->pluck('material_id')->filter()->all() ?: [0])
                 ->get(['id', 'name', 'code', 'material_unit_id']),
             'stock_issues' => $stockIssues,
+            'loans' => Loan::query()
+                ->where('project_id', $project->id)
+                ->with(['payments' => fn ($q) => $q->latest('paid_at')->limit(20)])
+                ->latest('loan_date')
+                ->get([
+                    'id',
+                    'loan_no',
+                    'lender_name',
+                    'loan_date',
+                    'due_date',
+                    'principal',
+                    'principal_base',
+                    'paid_amount',
+                    'paid_amount_base',
+                    'currency',
+                    'status',
+                    'reference_no',
+                    'notes',
+                    'created_at',
+                ]),
         ]);
     }
 
@@ -544,6 +645,49 @@ class ProjectController extends Controller implements HasMiddleware
         return redirect()->route('projects.show', $project);
     }
 
+    public function storeLoan(Request $request, Project $project): RedirectResponse
+    {
+        $data = $request->validate([
+            'lender_name' => 'required|string|max:255',
+            'loan_date' => 'required|date',
+            'due_date' => 'nullable|date|after_or_equal:loan_date',
+            'principal' => 'required|numeric|min:0.01',
+            'currency' => 'nullable|string|size:3',
+            'reference_no' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        LoanService::create($project->id, $data);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Loan recorded.']);
+
+        return redirect()->to(route('projects.show', $project).'#money');
+    }
+
+    public function payLoan(Request $request, Project $project, Loan $loan): RedirectResponse
+    {
+        abort_unless($loan->project_id === $project->id, 404);
+
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'nullable|string|max:50',
+            'reference_no' => 'nullable|string|max:100',
+            'paid_at' => 'nullable|date',
+            'notes' => 'nullable|string',
+        ]);
+
+        LoanService::recordPayment($loan, (float) $data['amount'], [
+            'payment_method' => $data['payment_method'] ?? 'cash',
+            'reference_no' => $data['reference_no'] ?? null,
+            'notes' => $data['notes'] ?? null,
+            'paid_at' => $data['paid_at'] ?? now(),
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Loan payout recorded.']);
+
+        return redirect()->to(route('projects.show', $project).'#money');
+    }
+
     public function edit(Request $request, Project $project): Response
     {
         $project->load('attachments');
@@ -652,6 +796,183 @@ class ProjectController extends Controller implements HasMiddleware
     }
 
     /**
+     * @return array{
+     *     monthly: array{labels: list<string>, sales: list<float>, expenses: list<float>, income: list<float>, purchases: list<float>},
+     *     expenses_by_category: array{labels: list<string>, amounts: list<float>}
+     * }
+     */
+    private function projectChartSeries(Project $project): array
+    {
+        $to = now()->endOfDay();
+        $from = $project->start_date
+            ? Carbon::parse($project->start_date)->startOfDay()
+            : $to->copy()->subMonths(11)->startOfMonth();
+
+        if ($from->gt($to)) {
+            $from = $to->copy()->subMonths(11)->startOfMonth();
+        }
+
+        $monthly = $this->projectMonthlySeries($project->id, $from, $to);
+        $byCategory = $this->projectExpensesByCategory($project->id);
+
+        return [
+            'monthly' => $monthly,
+            'expenses_by_category' => $byCategory,
+        ];
+    }
+
+    /**
+     * @return array{labels: list<string>, sales: list<float>, expenses: list<float>, income: list<float>, purchases: list<float>}
+     */
+    private function projectMonthlySeries(int $projectId, CarbonInterface $from, CarbonInterface $to): array
+    {
+        $chartFrom = $from->copy()->startOfMonth();
+        $chartTo = $to->copy()->endOfMonth();
+
+        if ($chartFrom->diffInMonths($chartTo) < 1) {
+            $chartFrom = $to->copy()->subMonths(5)->startOfMonth();
+            $chartTo = $to->copy()->endOfMonth();
+        }
+
+        $useYearly = $chartFrom->diffInMonths($chartTo) >= 18;
+        if ($useYearly && $chartFrom->diffInYears($chartTo) > 8) {
+            $chartFrom = $to->copy()->subYears(7)->startOfYear();
+            $chartTo = $to->copy()->endOfYear();
+        }
+
+        $buckets = [];
+        $cursor = $useYearly ? $chartFrom->copy()->startOfYear() : $chartFrom->copy();
+        while ($cursor->lte($chartTo)) {
+            $key = $useYearly ? $cursor->format('Y') : $cursor->format('Y-m');
+            $buckets[$key] = [
+                'label' => $useYearly ? $cursor->format('Y') : $cursor->format('M Y'),
+                'sales' => 0.0,
+                'expenses' => 0.0,
+                'income' => 0.0,
+                'purchases' => 0.0,
+            ];
+            $cursor = $useYearly ? $cursor->addYear() : $cursor->addMonth();
+        }
+
+        $sales = Sale::query()
+            ->with(['unit:id,list_price_base'])
+            ->where('project_id', $projectId)
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('contract_date', '>=', $chartFrom->toDateString())
+            ->whereDate('contract_date', '<=', $chartTo->toDateString())
+            ->get(['id', 'unit_id', 'contract_date', 'discount_base']);
+
+        foreach ($sales as $sale) {
+            $date = $sale->contract_date;
+            $key = $date
+                ? ($useYearly ? $date->format('Y') : $date->format('Y-m'))
+                : null;
+            if (! $key || ! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['sales'] += max(
+                0,
+                (float) ($sale->unit?->list_price_base ?? 0) - (float) ($sale->discount_base ?? 0),
+            );
+        }
+
+        $expenses = Expense::query()
+            ->where('project_id', $projectId)
+            ->where('status', 'approved')
+            ->whereDate('expense_date', '>=', $chartFrom->toDateString())
+            ->whereDate('expense_date', '<=', $chartTo->toDateString())
+            ->get(['expense_date', 'amount_base']);
+
+        foreach ($expenses as $expense) {
+            $date = $expense->expense_date;
+            $key = $date
+                ? ($useYearly ? $date->format('Y') : $date->format('Y-m'))
+                : null;
+            if (! $key || ! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['expenses'] += (float) ($expense->amount_base ?? 0);
+        }
+
+        $incomes = Income::query()
+            ->where('project_id', $projectId)
+            ->where('status', 'approved')
+            ->whereDate('income_date', '>=', $chartFrom->toDateString())
+            ->whereDate('income_date', '<=', $chartTo->toDateString())
+            ->get(['income_date', 'amount_base']);
+
+        foreach ($incomes as $income) {
+            $date = $income->income_date;
+            $key = $date
+                ? ($useYearly ? $date->format('Y') : $date->format('Y-m'))
+                : null;
+            if (! $key || ! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['income'] += (float) ($income->amount_base ?? 0);
+        }
+
+        $purchases = Purchase::query()
+            ->where('project_id', $projectId)
+            ->whereDate('purchase_date', '>=', $chartFrom->toDateString())
+            ->whereDate('purchase_date', '<=', $chartTo->toDateString())
+            ->get(['purchase_date', 'total_amount_base']);
+
+        foreach ($purchases as $purchase) {
+            $date = $purchase->purchase_date;
+            $key = $date
+                ? ($useYearly ? $date->format('Y') : $date->format('Y-m'))
+                : null;
+            if (! $key || ! isset($buckets[$key])) {
+                continue;
+            }
+            $buckets[$key]['purchases'] += (float) ($purchase->total_amount_base ?? 0);
+        }
+
+        foreach ($buckets as &$bucket) {
+            $bucket['sales'] = round($bucket['sales'], 2);
+            $bucket['expenses'] = round($bucket['expenses'], 2);
+            $bucket['income'] = round($bucket['income'], 2);
+            $bucket['purchases'] = round($bucket['purchases'], 2);
+        }
+        unset($bucket);
+
+        $rows = array_values($buckets);
+
+        return [
+            'labels' => array_column($rows, 'label'),
+            'sales' => array_column($rows, 'sales'),
+            'expenses' => array_column($rows, 'expenses'),
+            'income' => array_column($rows, 'income'),
+            'purchases' => array_column($rows, 'purchases'),
+        ];
+    }
+
+    /**
+     * @return array{labels: list<string>, amounts: list<float>}
+     */
+    private function projectExpensesByCategory(int $projectId): array
+    {
+        $rows = Expense::query()
+            ->where('expenses.project_id', $projectId)
+            ->where('expenses.status', 'approved')
+            ->leftJoin('expense_categories', 'expense_categories.id', '=', 'expenses.expense_category_id')
+            ->selectRaw(
+                'expenses.expense_category_id, COALESCE(expense_categories.name, ?) as category_name, SUM(expenses.amount_base) as total',
+                ['Other'],
+            )
+            ->groupBy('expenses.expense_category_id', 'expense_categories.name')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get();
+
+        return [
+            'labels' => $rows->map(fn ($row) => (string) $row->category_name)->all(),
+            'amounts' => $rows->map(fn ($row) => round((float) $row->total, 2))->all(),
+        ];
+    }
+
+    /**
      * @return list<array{
      *     material_id: int,
      *     name: string,
@@ -718,5 +1039,68 @@ class ProjectController extends Controller implements HasMiddleware
             ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
             ->values()
             ->all();
+    }
+
+    /**
+     * @return list<array{key: string, label: string, by_currency: array{AFN: float, USD: float}}>
+     */
+    protected function salesByMonth($salesQuery): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'by_currency' => ['AFN' => 0.0, 'USD' => 0.0],
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $sales = (clone $salesQuery)
+            ->with(['unit:id,list_price,currency'])
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('contract_date', '>=', $from->toDateString())
+            ->whereDate('contract_date', '<=', $to->toDateString())
+            ->get(['id', 'unit_id', 'contract_date', 'discount', 'currency']);
+
+        foreach ($sales as $sale) {
+            $date = $sale->contract_date;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+
+            $code = CurrencyService::normalize(
+                (string) ($sale->currency ?: $sale->unit?->currency ?: 'USD'),
+            );
+            $amount = max(
+                0,
+                (float) ($sale->unit?->list_price ?? 0) - (float) ($sale->discount ?? 0),
+            );
+            $buckets[$key]['by_currency'][$code] = round(
+                ($buckets[$key]['by_currency'][$code] ?? 0) + $amount,
+                2,
+            );
+        }
+
+        return array_values(array_map(
+            static fn (array $bucket) => [
+                'key' => $bucket['key'],
+                'label' => $bucket['label'],
+                'by_currency' => [
+                    'AFN' => round((float) ($bucket['by_currency']['AFN'] ?? 0), 2),
+                    'USD' => round((float) ($bucket['by_currency']['USD'] ?? 0), 2),
+                ],
+            ],
+            $buckets,
+        ));
     }
 }

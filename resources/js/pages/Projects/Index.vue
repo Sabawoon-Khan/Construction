@@ -1,39 +1,81 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Trash2 } from '@lucide/vue';
-import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
-import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
-import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisFilterBar, MisSearchInput, MisStatCard, MisStatGrid } from '@/components/mis';
-import Pagination from '@/components/Pagination.vue';
+import TableToolbar from '@/components/TableToolbar.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import {
+    V2FilterBar,
+    V2Hero,
+    V2IndicatorCard,
+    V2ListPage,
+    V2Pager,
+    V2SelectFilter,
+    V2StatCard,
+    V2StatGrid,
+    V2TablePanel,
+} from '@/components/v2';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { translateStatus } from '@/lib/translateStatus';
+import { useMisFilters } from '@/composables/useMisFilters';
 import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
+import { buildMoneyBars, compactMoneyByCurrency } from '@/lib/v2Money';
 import { formatNumber, moneyByCurrency } from '@/lib/utils';
+import {
+    Building2,
+    Layers3,
+    Plus,
+    Users,
+    Wallet,
+} from '@lucide/vue';
+import { computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 
 type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
-    filters: { search?: string };
+    filters: { status?: string };
     totals: {
         count: number;
         active: number;
         units: number;
+        units_available?: number;
+        units_reserved?: number;
+        units_sold?: number;
         sales_total: number;
+        sales_total_base?: number;
         sales_by_currency?: Record<string, number>;
     };
+    moneyChart?: Array<{
+        key: string;
+        label: string;
+        by_currency: { AFN: number; USD: number };
+    }>;
 }>();
 
-const search = ref(props.filters.search ?? '');
+defineOptions({
+    layout: {
+        breadcrumbs: [
+            { title: 'Dashboard', href: '/dashboard' },
+            { title: 'Projects', href: '/projects' },
+        ],
+    },
+});
+
+const onlyKeys = ['items', 'filters', 'totals', 'moneyChart'];
+
+const { filters, pending, apply } = useMisFilters(
+    '/projects',
+    { status: props.filters.status ?? '' },
+    { status: '' },
+    { only: onlyKeys },
+);
 const { sortedRows } = provideTableSort(() => props.items.data);
 const { t } = useTranslations();
 const tableColumns = computed(() => [
@@ -48,30 +90,99 @@ const tableColumns = computed(() => [
     { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
-const { viewAction, editAction, can, formatDate } = useMisPage();
 
-defineOptions({
-    layout: {
-        breadcrumbs: [
-            { title: 'Dashboard', href: '/dashboard' },
-            { title: 'Projects', href: '/projects' },
+const { viewAction, editAction, deleteAction, can, formatDate } = useMisPage();
+
+const inventory = computed(() => {
+    const available = Number(props.totals.units_available ?? 0);
+    const reserved = Number(props.totals.units_reserved ?? 0);
+    const sold = Number(props.totals.units_sold ?? 0);
+    const total = Math.max(
+        available + reserved + sold,
+        Number(props.totals.units ?? 0),
+        0,
+    );
+    const soldShare = total > 0 ? Math.round((sold / total) * 100) : 0;
+
+    return {
+        available,
+        reserved,
+        sold,
+        total,
+        soldShare,
+        segments: [
+            {
+                key: 'available',
+                label: t('Available'),
+                value: available,
+                color: 'var(--brand-accent)',
+                width:
+                    total > 0
+                        ? Math.max(available > 0 ? 6 : 0, (available / total) * 100)
+                        : 0,
+            },
+            {
+                key: 'reserved',
+                label: t('Reserved'),
+                value: reserved,
+                color: 'var(--school-gold)',
+                width:
+                    total > 0
+                        ? Math.max(reserved > 0 ? 6 : 0, (reserved / total) * 100)
+                        : 0,
+            },
+            {
+                key: 'sold',
+                label: t('Sold'),
+                value: sold,
+                color: 'var(--school-navy)',
+                width:
+                    total > 0
+                        ? Math.max(sold > 0 ? 6 : 0, (sold / total) * 100)
+                        : 0,
+            },
         ],
-    },
+    };
 });
 
-function applySearch() {
-    router.get('/projects', { search: search.value || undefined }, { preserveState: true, replace: true });
-}
+const statusTone: Record<string, string> = {
+    planning: 'var(--school-navy)',
+    under_construction: 'var(--school-gold)',
+    ready_for_sale: 'var(--brand-accent)',
+    sold: 'var(--muted-foreground)',
+    completed: 'var(--brand-accent)',
+    on_hold: 'var(--destructive, #e51f56)',
+};
 
-function clearFilters() {
-    search.value = '';
-    applySearch();
-}
+const moneyBars = computed(() => buildMoneyBars(props.moneyChart));
 
-const projectStatuses = ['planning', 'under_construction', 'ready_for_sale', 'sold', 'completed', 'on_hold'];
+const projectStatuses = [
+    'planning',
+    'under_construction',
+    'ready_for_sale',
+    'sold',
+    'completed',
+    'on_hold',
+];
 
 function statusLabel(status: string): string {
     return translateStatus(status, t);
+}
+
+function progressColor(status: string): string {
+    return statusTone[status] ?? 'var(--school-gold)';
+}
+
+function onStatusChange(value: string) {
+    apply({ status: value });
+}
+
+function creatorInitial(name?: string | null): string {
+    return String(name || '?').charAt(0).toUpperCase();
+}
+
+function openProject(item: Item) {
+    router.visit(`/projects/${item.id}`);
 }
 
 function rowActions(item: Item): RowActionItem[] {
@@ -90,20 +201,17 @@ function rowActions(item: Item): RowActionItem[] {
                   })),
               ]
             : []),
-        { separator: true, isLabel: true, label: t('Danger') },
-        {
-            label: t('Delete'),
-            icon: Trash2,
-            method: 'delete',
-            href: `/projects/${item.id}`,
-            variant: 'destructive' as const,
-            hidden: !can('projects.delete'),
-            confirm: {
+        deleteAction(
+            {
+                href: `/projects/${item.id}`,
                 title: t('Delete project'),
-                description: t('Are you sure you want to delete this project? This action cannot be undone.'),
-                confirmLabel: t('Delete'),
+                description: t(
+                    'Are you sure you want to delete this project? This action cannot be undone.',
+                ),
+                trashType: 'projects',
             },
-        },
+            'projects.delete',
+        ),
     ];
 }
 </script>
@@ -111,69 +219,326 @@ function rowActions(item: Item): RowActionItem[] {
 <template>
     <Head :title="t('Projects')" />
 
-    <div class="flex h-full flex-1 flex-col gap-4">
-        <MisFilterBar :apply-label="t('Apply')" :clear-label="t('All')" @apply="applySearch" @clear="clearFilters">
-            <MisSearchInput v-model="search" class="min-w-[220px] flex-1" :placeholder="t('Search projects...')" />
-        </MisFilterBar>
+    <V2ListPage>
+        <V2Hero image="/images/projects-v2-hero-luxury.png">
+            <template #eyebrow>{{ t('Work areas') }}</template>
+            <template #title>{{ t('Projects') }}</template>
+            <template #description>
+                {{
+                    t(
+                        'Track every site from planning to handover — progress, units, and sales in one place.',
+                    )
+                }}
+            </template>
 
-        <MisStatGrid :columns="4">
-            <MisStatCard :label="t('Projects')" :value="totals.count" />
-            <MisStatCard :label="t('Active')" :value="totals.active" />
-            <MisStatCard :label="t('Units')" :value="totals.units" />
-            <MisStatCard :label="t('Sales total')" :value="moneyByCurrency(totals.sales_by_currency, totals.sales_total)" tone="success" />
-        </MisStatGrid>
+            <template #side>
+                <Link
+                    v-if="can('projects.create')"
+                    href="/projects/create"
+                    class="create-btn"
+                >
+                    <Plus />
+                    {{ t('Create') }}
+                </Link>
 
-        <div class="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft">
-            <TableFrame table-id="projects" :columns="tableColumns">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-muted/30 text-start text-muted-foreground">
+                <div class="hero-cards">
+                    <V2IndicatorCard card-class="inventory-card">
+                        <template #head>{{ t('Inventory') }}</template>
+                        <template #meta
+                            >{{ inventory.soldShare }}% {{ t('Sold') }}</template
+                        >
+
+                        <div class="inventory-hero">
+                            <div class="inventory-hero-copy">
+                                <strong>{{ inventory.available }}</strong>
+                                <small>{{ t('Available') }}</small>
+                            </div>
+                        </div>
+
+                        <div class="inventory-bar" aria-hidden="true">
+                            <i
+                                v-for="seg in inventory.segments"
+                                :key="seg.key"
+                                :style="{
+                                    width: `${seg.width}%`,
+                                    background: seg.color,
+                                }"
+                            />
+                        </div>
+
+                        <ul class="indicator-list compact">
+                            <li
+                                v-for="seg in inventory.segments"
+                                :key="seg.key"
+                            >
+                                <i :style="{ background: seg.color }" />
+                                <span>{{ seg.label }}</span>
+                                <b>{{ seg.value }}</b>
+                            </li>
+                        </ul>
+                    </V2IndicatorCard>
+
+                    <V2IndicatorCard card-class="money-card">
+                        <template #head>{{ t('Sales by month') }}</template>
+                        <template #meta>
+                            <span
+                                :title="
+                                    moneyByCurrency(
+                                        totals.sales_by_currency,
+                                        totals.sales_total,
+                                    )
+                                "
+                                >{{
+                                    compactMoneyByCurrency(
+                                        totals.sales_by_currency,
+                                        totals.sales_total,
+                                    )
+                                }}</span
+                            >
+                        </template>
+
+                        <div class="money-legend" aria-hidden="true">
+                            <span><i class="afn" /> AFN</span>
+                            <span><i class="usd" /> USD</span>
+                        </div>
+
+                        <div class="money-chart">
+                            <div
+                                v-for="bar in moneyBars"
+                                :key="bar.key"
+                                class="money-col"
+                                :class="{ peak: bar.peak }"
+                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`"
+                            >
+                                <div class="money-pair">
+                                    <i
+                                        class="afn"
+                                        :style="{
+                                            height: `${bar.afnHeight}px`,
+                                        }"
+                                    />
+                                    <i
+                                        class="usd"
+                                        :style="{
+                                            height: `${bar.usdHeight}px`,
+                                        }"
+                                    />
+                                </div>
+                                <span>{{ bar.label }}</span>
+                            </div>
+                        </div>
+                    </V2IndicatorCard>
+                </div>
+            </template>
+
+            <template #stats>
+                <V2StatGrid>
+                    <V2StatCard
+                        :delay="0"
+                        :title="t('Projects')"
+                        :value="totals.count"
+                    >
+                        <template #icon><Building2 /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="1"
+                        icon-tone="warm"
+                        :title="t('Active')"
+                        :value="totals.active"
+                    >
+                        <template #icon><Layers3 /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="2"
+                        icon-tone="teal"
+                        :title="t('Units')"
+                        :value="totals.units"
+                    >
+                        <template #icon><Users /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="3"
+                        accent
+                        icon-tone="orange"
+                        :title="t('Sales total')"
+                    >
+                        <template #icon><Wallet /></template>
+                        <span>{{ t('Sales total') }}</span>
+                        <strong
+                            :title="
+                                moneyByCurrency(
+                                    totals.sales_by_currency,
+                                    totals.sales_total,
+                                )
+                            "
+                            >{{
+                                compactMoneyByCurrency(
+                                    totals.sales_by_currency,
+                                    totals.sales_total,
+                                )
+                            }}</strong
+                        >
+                    </V2StatCard>
+                </V2StatGrid>
+            </template>
+        </V2Hero>
+
+        <V2TablePanel
+            table-id="projects"
+            :columns="tableColumns"
+            :pending="pending && items.data.length > 0"
+        >
+            <template #filters>
+                <V2FilterBar>
+                    <V2SelectFilter
+                        :label="t('Status')"
+                        :model-value="filters.status || ''"
+                        @change="onStatusChange"
+                    >
+                        <option value="">{{ t('All') }}</option>
+                        <option
+                            v-for="status in projectStatuses"
+                            :key="status"
+                            :value="status"
+                        >
+                            {{ statusLabel(status) }}
+                        </option>
+                    </V2SelectFilter>
+                    <template #columns>
+                        <TableToolbar />
+                    </template>
+                </V2FilterBar>
+            </template>
+
+            <template #default="{ visibleColCount }">
+                <table>
+                    <thead>
                         <tr>
                             <TableIndexTh />
-                            <SortableTh column="code">{{ t('Code') }}</SortableTh>
-                            <SortableTh column="name">{{ t('Name') }}</SortableTh>
-                            <SortableTh column="location">{{ t('Location') }}</SortableTh>
-                            <SortableTh column="status">{{ t('Status') }}</SortableTh>
-                            <SortableTh column="progress_percent">{{ t('Progress') }}</SortableTh>
-                            <SortableTh column="units_count">{{ t('Units') }}</SortableTh>
-                            <SortableTh column="creator.name">{{ t('Added by') }}</SortableTh>
-                            <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
-                            <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
+                            <SortableTh column="code">{{
+                                t('Code')
+                            }}</SortableTh>
+                            <SortableTh column="name">{{
+                                t('Name')
+                            }}</SortableTh>
+                            <SortableTh column="location">{{
+                                t('Location')
+                            }}</SortableTh>
+                            <SortableTh column="status">{{
+                                t('Status')
+                            }}</SortableTh>
+                            <SortableTh column="progress_percent">{{
+                                t('Progress')
+                            }}</SortableTh>
+                            <SortableTh column="units_count">{{
+                                t('Units')
+                            }}</SortableTh>
+                            <SortableTh column="creator.name">{{
+                                t('Added by')
+                            }}</SortableTh>
+                            <SortableTh column="created_at">{{
+                                t('Created at')
+                            }}</SortableTh>
+                            <th class="end">{{ t('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr
                             v-for="(item, index) in sortedRows"
                             :key="item.id"
-                            class="border-b last:border-0 transition-colors hover:bg-muted/30"
+                            :style="{ '--i': index }"
+                            @click="openProject(item)"
                         >
-                            <TableIndexTd :index="index" :from="items.meta?.from" />
-                            <td class="px-4 py-3 font-medium">
-                                <Link :href="`/projects/${item.id}`" class="hover:text-primary hover:underline">
+                            <TableIndexTd
+                                :index="index"
+                                :from="items.meta?.from"
+                            />
+                            <td>
+                                <Link
+                                    :href="`/projects/${item.id}`"
+                                    class="code-chip"
+                                    @click.stop
+                                >
                                     {{ item.code || '—' }}
                                 </Link>
                             </td>
-                            <td class="px-4 py-3">{{ item.name || '—' }}</td>
-                            <td class="px-4 py-3">{{ item.location || '—' }}</td>
-                            <td class="px-4 py-3"><StatusBadge :status="item.status" /></td>
-                            <td class="px-4 py-3 tabular-nums">{{ formatNumber(item.progress_percent) }}%</td>
-                            <td class="px-4 py-3">{{ item.units_count }}</td>
-                            <td class="px-4 py-3 text-muted-foreground">{{ item.creator?.name || '—' }}</td>
-                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(item.created_at) }}</td>
-                            <td class="px-4 py-3">
-                                <div class="flex justify-end">
-                                    <RowActionsMenu :actions="rowActions(item)" />
+                            <td>
+                                <div class="name-cell">
+                                    <b>{{ item.name || '—' }}</b>
+                                    <small>{{ item.location || '—' }}</small>
                                 </div>
+                            </td>
+                            <td class="muted loc">
+                                {{ item.location || '—' }}
+                            </td>
+                            <td>
+                                <StatusBadge :status="item.status" />
+                            </td>
+                            <td>
+                                <div class="progress-cell">
+                                    <div class="progress-track">
+                                        <i
+                                            :style="{
+                                                width: `${Math.min(100, Number(item.progress_percent ?? 0))}%`,
+                                                background: progressColor(
+                                                    item.status,
+                                                ),
+                                            }"
+                                        />
+                                    </div>
+                                    <span class="nums">
+                                        {{
+                                            formatNumber(
+                                                item.progress_percent,
+                                                0,
+                                            )
+                                        }}%
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="pill">{{ item.units_count }}</span>
+                            </td>
+                            <td>
+                                <div class="creator-cell">
+                                    <span class="creator-avatar">{{
+                                        creatorInitial(item.creator?.name)
+                                    }}</span>
+                                    <span>{{
+                                        item.creator?.name || '—'
+                                    }}</span>
+                                </div>
+                            </td>
+                            <td class="muted nowrap">
+                                {{ formatDate(item.created_at) }}
+                            </td>
+                            <td class="end" @click.stop>
+                                <RowActionsMenu :actions="rowActions(item)" />
                             </td>
                         </tr>
                         <EmptyState
                             v-if="!items.data.length"
-                            :colspan="10"
+                            :colspan="visibleColCount"
                             :title="t('No projects yet')"
-                        />
+                        >
+                            <template #actions>
+                                <Link
+                                    v-if="can('projects.create')"
+                                    href="/projects/create"
+                                    class="create-btn"
+                                >
+                                    <Plus />
+                                    {{ t('Create') }}
+                                </Link>
+                            </template>
+                        </EmptyState>
                     </tbody>
                 </table>
-            </TableFrame>
-            <Pagination :paginator="items" />
-        </div>
-    </div>
+            </template>
+
+            <template #pager>
+                <V2Pager :items="items" :only="onlyKeys" />
+            </template>
+        </V2TablePanel>
+    </V2ListPage>
 </template>

@@ -1,38 +1,17 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
-import {
-    Building2,
-    DatabaseBackup,
-    FolderOpen,
-    Handshake,
-    History,
-    Languages,
-    Palette,
-    ScrollText,
-    Settings2,
-    Shield,
-    Trash2,
-    UserRound,
-    Users,
-} from '@lucide/vue';
+import { Settings2 } from '@lucide/vue';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import SettingsContentSkeleton from '@/components/settings/SettingsContentSkeleton.vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import { usePermissions } from '@/composables/usePermissions';
+import { useLocale } from '@/composables/useLocale';
+import { useSettingsNavigation } from '@/composables/useSettingsNavigation';
 import { useTranslations } from '@/composables/useTranslations';
 import { toUrl } from '@/lib/utils';
-import { edit as editAppearance } from '@/routes/appearance';
-import { edit as editProfile } from '@/routes/profile';
-import type { NavItem } from '@/types';
-
-type SettingsNavItem = NavItem & {
-    icon: typeof Settings2;
-    group: 'account' | 'administration';
-};
-
 const { t } = useTranslations();
-const { can } = usePermissions();
+const { dir } = useLocale();
 const { isCurrentOrParentUrl } = useCurrentUrl();
+const { navItems, navGroups } = useSettingsNavigation();
 const page = usePage();
 
 const navigating = ref(false);
@@ -44,11 +23,10 @@ let removeError: (() => void) | undefined;
 let removeCancel: (() => void) | undefined;
 
 function isSettingsManagementPath(pathname: string): boolean {
-    if (! pathname.startsWith('/settings')) {
+    if (!pathname.startsWith('/settings')) {
         return false;
     }
 
-    // Account pages keep a lighter feel — skeleton is for management surfaces.
     const account = [
         '/settings/profile',
         '/settings/security',
@@ -56,7 +34,7 @@ function isSettingsManagementPath(pathname: string): boolean {
         '/settings/password',
     ];
 
-    return ! account.some(
+    return !account.some(
         (path) => pathname === path || pathname.startsWith(`${path}/`),
     );
 }
@@ -84,7 +62,7 @@ onMounted(() => {
 
         const pathname = visit.url.pathname;
 
-        if (! isSettingsManagementPath(pathname)) {
+        if (!isSettingsManagementPath(pathname)) {
             return;
         }
 
@@ -112,126 +90,6 @@ onUnmounted(() => {
     removeCancel?.();
 });
 
-const navItems = computed<SettingsNavItem[]>(() => {
-    const items: SettingsNavItem[] = [
-        {
-            title: t('Profile'),
-            href: editProfile(),
-            icon: UserRound,
-            group: 'account',
-        },
-        {
-            title: t('Appearance'),
-            href: editAppearance(),
-            icon: Palette,
-            group: 'account',
-        },
-    ];
-
-    if (can('settings.manage')) {
-        const features = page.props.kitFeatures as
-            { translations_ui?: boolean } | undefined;
-
-        if (features?.translations_ui !== false) {
-            items.push({
-                title: t('Translations'),
-                href: '/settings/translations',
-                icon: Languages,
-                group: 'administration',
-            });
-        }
-    }
-
-    if (can('companies.view') || can('companies.edit')) {
-        items.push({
-            title: t('Company'),
-            href: '/settings/company',
-            icon: Building2,
-            group: 'administration',
-        });
-    }
-
-    if (can('users.view')) {
-        items.push({
-            title: t('Users'),
-            href: '/settings/users',
-            icon: Users,
-            group: 'administration',
-        });
-    }
-
-    if (can('roles.view')) {
-        items.push({
-            title: t('Roles'),
-            href: '/settings/roles',
-            icon: Shield,
-            group: 'administration',
-        });
-    }
-
-    if (can('partners.view')) {
-        items.push({
-            title: t('Shareholders'),
-            href: '/partners',
-            icon: Handshake,
-            group: 'administration',
-        });
-    }
-
-    if (can('backups.view')) {
-        items.push({
-            title: t('Backups'),
-            href: '/settings/backups',
-            icon: DatabaseBackup,
-            group: 'administration',
-        });
-    }
-
-    if (can('storage.view')) {
-        items.push({
-            title: t('File Manager'),
-            href: '/settings/file-manager',
-            icon: FolderOpen,
-            group: 'administration',
-        });
-    }
-
-    if (can('trash.view')) {
-        items.push({
-            title: t('Trash'),
-            href: '/settings/trash',
-            icon: Trash2,
-            group: 'administration',
-        });
-    }
-
-    if (can('audit.view') || can('settings.manage')) {
-        items.push(
-            {
-                title: t('Login logs'),
-                href: '/settings/login-logs',
-                icon: History,
-                group: 'administration',
-            },
-            {
-                title: t('System logs'),
-                href: '/settings/system-logs',
-                icon: ScrollText,
-                group: 'administration',
-            },
-        );
-    }
-
-    return items;
-});
-
-const accountItems = computed(() =>
-    navItems.value.filter((item) => item.group === 'account'),
-);
-const adminItems = computed(() =>
-    navItems.value.filter((item) => item.group === 'administration'),
-);
-
 const activeItem = computed(
     () =>
         navItems.value.find((item) => isCurrentOrParentUrl(item.href)) ?? null,
@@ -239,253 +97,540 @@ const activeItem = computed(
 
 const pageTitle = computed(() => {
     const component = String(page.component ?? '');
+    const path = String(page.url ?? '').split('?')[0] ?? '';
 
-    if (component.includes('Appearance')) {
-        return t('Appearance');
+    if (component.includes('Appearance')) return t('Appearance');
+    if (component.includes('Profile')) return t('Profile');
+    if (path.startsWith('/settings/security') || component.includes('Security')) {
+        return t('Security');
     }
-
-    if (component.includes('Profile')) {
-        return t('Profile');
+    if (component.includes('Users')) return t('Users');
+    if (component.includes('Roles')) return t('Roles');
+    if (component.includes('GoogleAuth')) return t('Google Auth');
+    if (component.includes('Lookups')) return t('Lookups');
+    if (
+        component.includes('ExpenseCategories') ||
+        path.startsWith('/expense-categories')
+    ) {
+        return t('Expense categories');
     }
-
-    if (component.includes('Users')) {
-        return t('Users');
+    if (component.includes('ExpenseUnits') || path.startsWith('/expense-units')) {
+        return t('Expense units');
     }
-
-    if (component.includes('Roles')) {
-        return t('Roles');
+    if (component.includes('Backups')) return t('Backups');
+    if (component.includes('FileManager')) return t('File Manager');
+    if (component.includes('Trash')) return t('Trash');
+    if (component.includes('Email')) return t('Email');
+    if (
+        component.includes('settings/Ai') ||
+        component.includes('settings/AiTabs') ||
+        path.startsWith('/settings/ai')
+    ) {
+        return t('AI');
     }
-
-    if (component.includes('Partners')) {
-        return t('Shareholders');
-    }
-
-    if (component.includes('Backups')) {
-        return t('Backups');
-    }
-
-    if (component.includes('FileManager')) {
-        return t('File Manager');
-    }
-
-    if (component.includes('Trash')) {
-        return t('Trash');
-    }
-
-    if (component.includes('AuthenticationLogs')) {
-        return t('Login logs');
-    }
-
-    if (component.includes('SystemLog')) {
-        return t('System logs');
-    }
-
-    if (component.includes('Translations')) {
-        return t('Translations');
-    }
+    if (component.includes('Offline')) return t('Offline');
+    if (component.includes('SystemControl')) return t('System Control');
+    if (component.includes('AuthenticationLogs')) return t('Login logs');
+    if (component.includes('SystemLog')) return t('System logs');
+    if (component.includes('Translations')) return t('Translations');
+    if (component.includes('Company')) return t('Company');
 
     return activeItem.value?.title ?? t('Settings');
+});
+
+const pageLead = computed(() => {
+    const group = navGroups.value.find((g) =>
+        g.items.some((item) => isCurrentOrParentUrl(item.href)),
+    );
+    return group?.label ?? t('Settings');
+});
+
+const pageDescription = computed(() => {
+    const title = pageTitle.value;
+    const map: Record<string, string> = {
+        [t('Profile')]: t('Update your name, email, and account preferences.'),
+        [t('Appearance')]: t('Theme, branding, and interface style.'),
+        [t('Security')]: t('Password and signed-in devices.'),
+        [t('Company')]: t('Company profile and exchange rates.'),
+        [t('Users')]: t('Manage who can access this workspace.'),
+        [t('Roles')]: t('Permissions and access levels.'),
+        [t('Email')]: t('Outgoing mail and delivery settings.'),
+        [t('AI')]: t('Models, usage, and assistant controls.'),
+        [t('Backups')]: t('Create and restore system backups.'),
+        [t('Trash')]: t('Recover or permanently remove deleted items.'),
+        [t('File Manager')]: t('Browse and manage stored files.'),
+        [t('Translations')]: t('Edit interface language strings.'),
+        [t('Google Auth')]: t('Sign-in with Google for your team.'),
+        [t('Offline')]: t('Offline sync and conflict handling.'),
+        [t('System Control')]: t('Maintenance and system switches.'),
+        [t('Login logs')]: t('Recent authentication activity.'),
+        [t('System logs')]: t('Application and error logs.'),
+        [t('Lookups')]: t('Shared lists used across modules.'),
+        [t('Expense categories')]: t('Categories for project expenses.'),
+        [t('Expense units')]: t('Units used when recording expenses.'),
+    };
+
+    return map[title] ?? t('Configure this area of your workspace.');
 });
 </script>
 
 <template>
-    <div class="px-1 py-2 md:px-0" data-tour="settings-layout">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-            <aside
-                class="w-full shrink-0 lg:sticky lg:top-[88px] lg:w-[268px]"
-                data-tour="settings-nav"
-                :aria-label="t('Settings')"
-            >
-                <!-- Mobile horizontal chips -->
-                <div class="mb-2 lg:hidden">
-                    <div
-                        class="no-scrollbar flex gap-1 overflow-x-auto rounded-2xl border border-border/80 bg-card p-2 shadow-soft"
+    <div class="settings-v2" :dir="dir" data-tour="settings-layout">
+        <aside
+            class="settings-aside"
+            data-tour="settings-nav"
+            :aria-label="t('Settings')"
+        >
+            <div class="settings-mobile-nav">
+                <div class="settings-mobile-track">
+                    <Link
+                        v-for="item in navItems"
+                        :key="toUrl(item.href)"
+                        :href="item.href"
+                        :title="item.title"
+                        class="settings-chip"
+                        :class="{ active: isCurrentOrParentUrl(item.href) }"
                     >
+                        <component
+                            :is="item.icon"
+                            class="chip-icon"
+                            :stroke-width="1.75"
+                        />
+                        <span>{{ item.title }}</span>
+                    </Link>
+                </div>
+            </div>
+
+            <div class="settings-nav-card">
+                <div class="settings-nav-head">
+                    <div class="settings-nav-badge">
+                        <Settings2 :stroke-width="1.75" />
+                    </div>
+                    <div class="settings-nav-copy">
+                        <p>{{ t('Settings') }}</p>
+                        <small>{{
+                            activeItem?.title ?? t('Pick a category')
+                        }}</small>
+                    </div>
+                </div>
+
+                <nav class="settings-nav-groups">
+                    <div
+                        v-for="group in navGroups"
+                        :key="group.key"
+                        class="settings-nav-group"
+                    >
+                        <p class="settings-nav-label">{{ group.label }}</p>
                         <Link
-                            v-for="item in navItems"
+                            v-for="item in group.items"
                             :key="toUrl(item.href)"
                             :href="item.href"
-                            :title="item.title"
-                            :class="[
-                                'flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition',
-                                isCurrentOrParentUrl(item.href)
-                                    ? 'bg-[var(--school-navy)] text-white'
-                                    : 'text-foreground/80 hover:bg-muted',
-                            ]"
+                            class="settings-nav-link"
+                            :class="{
+                                active: isCurrentOrParentUrl(item.href),
+                            }"
                         >
-                            <component
-                                :is="item.icon"
-                                class="size-4 shrink-0"
-                                :stroke-width="1.75"
-                            />
-                            <span class="max-w-[8rem] truncate">{{
+                            <span class="settings-nav-icon">
+                                <component
+                                    :is="item.icon"
+                                    :stroke-width="1.75"
+                                />
+                            </span>
+                            <span class="settings-nav-title">{{
                                 item.title
                             }}</span>
                         </Link>
                     </div>
+                </nav>
+            </div>
+        </aside>
+
+        <section class="settings-main">
+            <header class="settings-page-head">
+                <div class="settings-page-copy">
+                    <p class="settings-eyebrow">{{ pageLead }}</p>
+                    <h1>{{ pageTitle }}</h1>
+                    <p class="settings-desc">{{ pageDescription }}</p>
                 </div>
-
-                <div
-                    class="hidden rounded-2xl border border-border/80 bg-card p-2 shadow-soft lg:block"
-                >
-                    <div class="flex items-center gap-2 px-3 pt-2.5 pb-2">
-                        <div
-                            class="flex size-7 items-center justify-center rounded-lg bg-[var(--school-navy)]/10 text-[var(--school-navy)]"
-                        >
-                            <Settings2 class="size-3.5" :stroke-width="1.75" />
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <p
-                                class="text-[12.5px] font-semibold tracking-tight text-foreground"
-                            >
-                                {{ t('Settings') }}
-                            </p>
-                            <p class="text-[10.5px] text-muted-foreground">
-                                {{ activeItem?.title ?? t('Pick a category') }}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="mx-2 my-1 h-px bg-border" aria-hidden="true" />
-
-                    <nav class="space-y-3 p-1">
-                        <div class="space-y-0.5">
-                            <p
-                                class="px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-                            >
-                                {{ t('Account') }}
-                            </p>
-                            <Link
-                                v-for="item in accountItems"
-                                :key="toUrl(item.href)"
-                                :href="item.href"
-                                :class="[
-                                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium tracking-tight transition-colors duration-150',
-                                    isCurrentOrParentUrl(item.href)
-                                        ? 'bg-[var(--school-navy)] text-white shadow-[0_10px_18px_-14px_rgba(15,23,42,0.55)]'
-                                        : 'text-foreground/80 hover:bg-muted',
-                                ]"
-                            >
-                                <span
-                                    class="flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors"
-                                    :class="
-                                        isCurrentOrParentUrl(item.href)
-                                            ? 'bg-white/15 text-white'
-                                            : 'bg-muted text-muted-foreground group-hover:bg-background group-hover:text-[var(--school-navy)]'
-                                    "
-                                >
-                                    <component
-                                        :is="item.icon"
-                                        class="size-4"
-                                        :stroke-width="1.75"
-                                    />
-                                </span>
-                                <span
-                                    class="min-w-0 flex-1 truncate text-[12.5px] leading-tight font-semibold"
-                                >
-                                    {{ item.title }}
-                                </span>
-                                <span
-                                    aria-hidden="true"
-                                    class="size-1.5 shrink-0 rounded-full transition-colors"
-                                    :class="
-                                        isCurrentOrParentUrl(item.href)
-                                            ? 'bg-white'
-                                            : 'bg-transparent group-hover:bg-border'
-                                    "
-                                />
-                            </Link>
-                        </div>
-
-                        <div v-if="adminItems.length" class="space-y-0.5">
-                            <div
-                                class="mx-2 my-1 h-px bg-border"
-                                aria-hidden="true"
-                            />
-                            <p
-                                class="px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase"
-                            >
-                                {{ t('Administration') }}
-                            </p>
-                            <Link
-                                v-for="item in adminItems"
-                                :key="toUrl(item.href)"
-                                :href="item.href"
-                                :class="[
-                                    'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium tracking-tight transition-colors duration-150',
-                                    isCurrentOrParentUrl(item.href)
-                                        ? 'bg-[var(--school-navy)] text-white shadow-[0_10px_18px_-14px_rgba(15,23,42,0.55)]'
-                                        : 'text-foreground/80 hover:bg-muted',
-                                ]"
-                            >
-                                <span
-                                    class="flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors"
-                                    :class="
-                                        isCurrentOrParentUrl(item.href)
-                                            ? 'bg-white/15 text-white'
-                                            : 'bg-muted text-muted-foreground group-hover:bg-background group-hover:text-[var(--school-navy)]'
-                                    "
-                                >
-                                    <component
-                                        :is="item.icon"
-                                        class="size-4"
-                                        :stroke-width="1.75"
-                                    />
-                                </span>
-                                <span
-                                    class="min-w-0 flex-1 truncate text-[12.5px] leading-tight font-semibold"
-                                >
-                                    {{ item.title }}
-                                </span>
-                                <span
-                                    aria-hidden="true"
-                                    class="size-1.5 shrink-0 rounded-full transition-colors"
-                                    :class="
-                                        isCurrentOrParentUrl(item.href)
-                                            ? 'bg-white'
-                                            : 'bg-transparent group-hover:bg-border'
-                                    "
-                                />
-                            </Link>
-                        </div>
-                    </nav>
+                <div v-if="$slots.actions" class="settings-page-actions">
+                    <slot name="actions" />
                 </div>
-            </aside>
+            </header>
 
-            <section class="min-w-0 flex-1">
-                <div
-                    class="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-border/70 pb-4"
-                >
-                    <div class="min-w-0">
-                        <p
-                            class="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
-                        >
-                            {{ t('Settings') }}
-                        </p>
-                        <h1
-                            class="mt-1 text-[20px] font-semibold tracking-tight text-foreground sm:text-[22px]"
-                        >
-                            {{ pageTitle }}
-                        </h1>
-                    </div>
-                    <div
-                        v-if="$slots.actions"
-                        class="flex flex-wrap items-center gap-2"
-                    >
-                        <slot name="actions" />
-                    </div>
+            <div class="settings-content">
+                <SettingsContentSkeleton
+                    v-if="navigating"
+                    :variant="skeletonVariant"
+                />
+                <div v-show="!navigating" class="settings-content-body">
+                    <slot />
                 </div>
-
-                <div class="w-full space-y-6">
-                    <SettingsContentSkeleton
-                        v-if="navigating"
-                        :variant="skeletonVariant"
-                    />
-                    <div v-show="!navigating" class="w-full space-y-6">
-                        <slot />
-                    </div>
-                </div>
-            </section>
-        </div>
+            </div>
+        </section>
     </div>
 </template>
+
+<style scoped>
+.settings-v2 {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+    min-width: 0;
+    color: var(--settings-ink);
+    font-family:
+        var(--font-sans), 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif;
+}
+
+.settings-v2[dir='rtl'] {
+    font-family:
+        var(--font-rtl), 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+}
+
+.settings-aside {
+    position: sticky;
+    top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    max-height: calc(100dvh - 32px);
+}
+
+.settings-nav-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-radius: 24px;
+    background:
+        linear-gradient(
+            165deg,
+            rgba(255, 255, 255, 0.72) 0%,
+            rgba(255, 255, 255, 0.38) 100%
+        );
+    box-shadow:
+        0 14px 36px rgba(26, 26, 26, 0.07),
+        inset 0 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+.settings-nav-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 8px 10px;
+}
+
+.settings-nav-badge {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: rgba(255, 138, 58, 0.14);
+    color: #ff8a3a;
+    flex-shrink: 0;
+}
+
+.settings-nav-badge svg {
+    width: 15px;
+    height: 15px;
+}
+
+.settings-nav-copy {
+    min-width: 0;
+}
+
+.settings-nav-copy p {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 650;
+    letter-spacing: -0.2px;
+}
+
+.settings-nav-copy small {
+    display: block;
+    margin-top: 1px;
+    overflow: hidden;
+    color: var(--settings-soft);
+    font-size: 10.5px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-nav-groups {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
+    overflow: auto;
+    padding: 0 0 4px;
+    scrollbar-width: thin;
+}
+
+.settings-nav-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.settings-nav-group + .settings-nav-group {
+    padding-top: 6px;
+    border-top: 1px solid rgb(0 0 0 / 4%);
+}
+
+.settings-nav-label {
+    margin: 0;
+    padding: 2px 10px 5px;
+    color: var(--settings-soft);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+}
+
+.settings-v2[dir='rtl'] .settings-nav-label {
+    letter-spacing: 0.03em;
+    text-transform: none;
+}
+
+.settings-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 36px;
+    padding: 0 8px;
+    border-radius: 999px;
+    color: var(--settings-muted, #667085);
+    text-decoration: none;
+    transition:
+        background 0.14s ease,
+        color 0.14s ease,
+        box-shadow 0.14s ease;
+}
+
+.settings-nav-link:hover {
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--settings-ink, #1a1a1a);
+}
+
+.settings-nav-link.active {
+    background: #1a1a1a;
+    color: white;
+    box-shadow: 0 10px 22px rgba(26, 26, 26, 0.22);
+}
+
+.settings-nav-icon {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: rgba(26, 26, 26, 0.04);
+    color: var(--settings-muted, #667085);
+    flex-shrink: 0;
+    transition:
+        background 0.14s ease,
+        color 0.14s ease;
+}
+
+.settings-nav-link:hover .settings-nav-icon {
+    background: rgba(255, 138, 58, 0.14);
+    color: #ff8a3a;
+}
+
+.settings-nav-link.active .settings-nav-icon {
+    background: rgba(255, 255, 255, 0.14);
+    color: white;
+}
+
+.settings-nav-icon :deep(svg) {
+    width: 14px;
+    height: 14px;
+}
+
+.settings-nav-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.1px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-mobile-nav {
+    display: none;
+}
+
+.settings-mobile-track {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 7px;
+    border: 1px solid var(--settings-line);
+    border-radius: 16px;
+    background: var(--settings-panel-strong);
+    box-shadow: var(--settings-shadow);
+    backdrop-filter: blur(16px);
+    scrollbar-width: none;
+}
+
+.settings-mobile-track::-webkit-scrollbar {
+    display: none;
+}
+
+.settings-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 11px;
+    border-radius: 999px;
+    color: var(--settings-muted, #3e454b);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        background 0.14s ease,
+        color 0.14s ease,
+        box-shadow 0.14s ease;
+}
+
+.settings-chip:hover {
+    background: color-mix(in srgb, var(--card, #fff) 82%, transparent);
+}
+
+.settings-chip.active {
+    background: #1a1a1a;
+    color: white;
+    box-shadow: 0 8px 18px rgba(26, 26, 26, 0.2);
+}
+
+.chip-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.settings-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.settings-page-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    border-radius: 22px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.72) 0%,
+            rgba(255, 255, 255, 0.4) 100%
+        );
+    box-shadow:
+        0 14px 36px rgba(26, 26, 26, 0.07),
+        inset 0 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(22px) saturate(140%);
+    -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+.settings-page-copy {
+    min-width: 0;
+    max-width: 560px;
+}
+
+.settings-eyebrow {
+    margin: 0 0 4px;
+    color: var(--settings-soft);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.settings-v2[dir='rtl'] .settings-eyebrow {
+    letter-spacing: 0.04em;
+    text-transform: none;
+}
+
+.settings-page-copy h1 {
+    margin: 0;
+    color: #1a1a1a;
+    font-size: clamp(20px, 2.2vw, 26px);
+    font-weight: 650;
+    letter-spacing: -0.8px;
+    line-height: 1.12;
+}
+
+.settings-v2[dir='rtl'] .settings-page-copy h1 {
+    letter-spacing: -0.25px;
+    line-height: 1.28;
+}
+
+.settings-desc {
+    margin: 6px 0 0;
+    color: var(--settings-muted);
+    font-size: 12.5px;
+    font-weight: 450;
+    line-height: 1.45;
+}
+
+.settings-page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-content {
+    min-height: 240px;
+}
+
+@media (max-width: 1024px) {
+    .settings-v2 {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .settings-aside {
+        position: static;
+        max-height: none;
+    }
+
+    .settings-mobile-nav {
+        display: block;
+    }
+
+    .settings-nav-card {
+        display: none;
+    }
+
+    .settings-page-head {
+        border-radius: 16px;
+        padding: 14px 15px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .settings-nav-link,
+    .settings-chip {
+        transition: none;
+    }
+}
+</style>

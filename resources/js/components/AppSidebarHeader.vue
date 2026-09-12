@@ -45,17 +45,17 @@ const showAvatar = computed(
 
 <template>
     <header
-        class="glass-header sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-slate-200/70 px-6 md:px-8 dark:border-white/10"
+        class="glass-header sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200/70 px-3 sm:h-16 sm:gap-4 sm:px-6 md:px-8 dark:border-white/10"
         data-tour="app-header"
     >
-        <div class="flex min-w-0 items-center gap-3">
+        <div class="flex min-w-0 items-center gap-2 sm:gap-3">
             <SidebarTrigger class="shrink-0 md:hidden" />
-            <h1 class="truncate text-lg font-semibold tracking-tight text-foreground">
+            <h1 class="truncate text-base font-semibold tracking-tight text-foreground sm:text-lg">
                 {{ pageTitle }}
             </h1>
         </div>
 
-        <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div class="flex shrink-0 items-center gap-0.5 sm:gap-2">
             <GlobalSearch />
             <LanguageSwitcher />
             <AiHeaderButton />

@@ -38,6 +38,8 @@ class PaymentController extends Controller implements HasMiddleware
         $disbursements = (clone $query)->where('type', 'disbursement');
         $totals = [
             'count' => (clone $query)->count(),
+            'receipts_count' => (clone $receipts)->count(),
+            'disbursements_count' => (clone $disbursements)->count(),
             'amount' => (float) (clone $receipts)->sum('amount'),
             'amount_base' => (float) (clone $receipts)->sum('amount_base'),
             'paid_out' => (float) (clone $disbursements)->sum('amount'),
@@ -57,6 +59,7 @@ class PaymentController extends Controller implements HasMiddleware
             'items' => $query->latest('paid_at')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'moneyChart' => CurrencyAmounts::sumByMonth(clone $receipts, 'paid_at'),
         ]);
     }
 

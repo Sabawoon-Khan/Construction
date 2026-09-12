@@ -1,5 +1,9 @@
 import type { ComputedRef, Ref } from 'vue';
 import { computed, onMounted, ref } from 'vue';
+import {
+    applyThemeColors,
+    loadStoredThemeColors,
+} from '@/lib/theme-colors';
 import type { Appearance, InterfaceStyle, ResolvedAppearance } from '@/types';
 
 export type { Appearance, InterfaceStyle, ResolvedAppearance };
@@ -29,6 +33,16 @@ export function updateTheme(value: Appearance): void {
         );
     } else {
         document.documentElement.classList.toggle('dark', value === 'dark');
+    }
+
+    refreshThemeColors();
+}
+
+function refreshThemeColors(): void {
+    const stored = loadStoredThemeColors();
+
+    if (stored) {
+        applyThemeColors(stored);
     }
 }
 
@@ -106,6 +120,7 @@ export function initializeTheme(): void {
 
     updateTheme(savedAppearance || 'system');
     updateInterfaceStyleClass(savedInterfaceStyle || 'standard');
+    refreshThemeColors();
 
     // Set up system theme change listener...
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
@@ -148,6 +163,10 @@ export function useAppearance(): UseAppearanceReturn {
     });
 
     function updateAppearance(value: Appearance) {
+        if (interfaceStyle.value === 'glass' && value !== 'light') {
+            value = 'light';
+        }
+
         appearance.value = value;
 
         // Store in localStorage for client-side persistence...
@@ -168,6 +187,7 @@ export function useAppearance(): UseAppearanceReturn {
         localStorage.setItem('interface-style', value);
         setCookie('interface_style', value);
         updateInterfaceStyleClass(value);
+        refreshThemeColors();
     }
 
     return {

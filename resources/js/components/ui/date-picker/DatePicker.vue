@@ -10,7 +10,6 @@ import {
     compareParts,
     firstWeekdayColumn,
     formatCalendarParts,
-    formatDate,
     gregorianStringToCalendarParts,
     monthLength,
     monthNames,
@@ -56,6 +55,48 @@ const page = usePage();
 const open = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
 const triggerEl = ref<HTMLButtonElement | null>(null);
+const panelEl = ref<HTMLElement | null>(null);
+const panelStyle = ref<Record<string, string>>({});
+
+const PANEL_WIDTH = 312; // 19.5rem
+const PANEL_Z = 300;
+
+function placePanel(): void {
+    const trigger = triggerEl.value;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const margin = 8;
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    const panelHeight = panelEl.value?.offsetHeight ?? 360;
+
+    let left = rect.left;
+    if (rtl.value) {
+        left = rect.right - PANEL_WIDTH;
+    }
+    left = Math.min(Math.max(margin, left), viewportW - PANEL_WIDTH - margin);
+
+    const spaceBelow = viewportH - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const openUp = spaceBelow < panelHeight && spaceAbove > spaceBelow;
+
+    let top = openUp
+        ? Math.max(margin, rect.top - panelHeight - 6)
+        : rect.bottom + 6;
+
+    if (top + panelHeight > viewportH - margin) {
+        top = Math.max(margin, viewportH - panelHeight - margin);
+    }
+
+    panelStyle.value = {
+        position: 'fixed',
+        top: `${Math.round(top)}px`,
+        left: `${Math.round(left)}px`,
+        width: `${PANEL_WIDTH}px`,
+        zIndex: String(PANEL_Z),
+    };
+}
 
 const locale = computed(() => (page.props.locale as string) ?? 'en');
 const rtl = computed(() => (page.props.dir as string) === 'rtl');
@@ -222,28 +263,42 @@ function toggle(): void {
         const seed = selectedParts.value ?? today.value;
         viewYear.value = seed.year;
         viewMonth.value = seed.month;
-        nextTick(() => triggerEl.value?.focus());
+        nextTick(() => {
+            placePanel();
+            nextTick(placePanel);
+            triggerEl.value?.focus();
+        });
     }
 }
 
 function onClickAway(event: MouseEvent): void {
-    if (!rootEl.value?.contains(event.target as Node)) {
-        open.value = false;
+    const target = event.target as Node;
+    if (rootEl.value?.contains(target) || panelEl.value?.contains(target)) {
+        return;
     }
+    open.value = false;
 }
 
 function onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') open.value = false;
 }
 
+function onReposition(): void {
+    if (open.value) placePanel();
+}
+
 onMounted(() => {
     document.addEventListener('mousedown', onClickAway);
     document.addEventListener('keydown', onKeydown);
+    window.addEventListener('resize', onReposition);
+    window.addEventListener('scroll', onReposition, true);
 });
 
 onBeforeUnmount(() => {
     document.removeEventListener('mousedown', onClickAway);
     document.removeEventListener('keydown', onKeydown);
+    window.removeEventListener('resize', onReposition);
+    window.removeEventListener('scroll', onReposition, true);
 });
 </script>
 
@@ -293,21 +348,24 @@ onBeforeUnmount(() => {
             </button>
         </button>
 
-        <Transition
-            enter-active-class="transition duration-160 ease-out"
-            enter-from-class="-translate-y-1 scale-[0.98] opacity-0"
-            enter-to-class="translate-y-0 scale-100 opacity-100"
-            leave-active-class="transition duration-100 ease-in"
-            leave-from-class="translate-y-0 scale-100 opacity-100"
-            leave-to-class="-translate-y-1 scale-[0.98] opacity-0"
-        >
-            <div
-                v-if="open"
-                role="dialog"
-                aria-modal="false"
-                class="bg-popover text-popover-foreground absolute z-50 mt-1.5 w-[19.5rem] overflow-hidden rounded-xl border shadow-lg"
-                @mousedown.stop
+        <Teleport to="body">
+            <Transition
+                enter-active-class="transition duration-160 ease-out"
+                enter-from-class="-translate-y-1 scale-[0.98] opacity-0"
+                enter-to-class="translate-y-0 scale-100 opacity-100"
+                leave-active-class="transition duration-100 ease-in"
+                leave-from-class="translate-y-0 scale-100 opacity-100"
+                leave-to-class="-translate-y-1 scale-[0.98] opacity-0"
             >
+                <div
+                    v-if="open"
+                    ref="panelEl"
+                    role="dialog"
+                    aria-modal="false"
+                    class="bg-popover text-popover-foreground overflow-hidden rounded-xl border shadow-lg"
+                    :style="panelStyle"
+                    @mousedown.stop
+                >
                 <div
                     class="from-primary/12 via-primary/5 to-transparent border-b bg-gradient-to-br px-3 pt-3 pb-2.5"
                 >
@@ -435,6 +493,7 @@ onBeforeUnmount(() => {
                     </button>
                 </div>
             </div>
-        </Transition>
+            </Transition>
+        </Teleport>
     </div>
 </template>

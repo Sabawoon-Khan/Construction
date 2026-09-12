@@ -22,6 +22,7 @@ import {
     MisListPage,
     MisListRow,
     MisLoadingState,
+    MisMoneyStack,
     MisPage,
     MisPageHeader,
     MisSearchInput,
@@ -279,6 +280,18 @@ const tableRows = [
                 />
                 <MisStatCard :label="t('Failed')" :value="4" tone="danger" />
                 <MisStatCard :label="t('Pending')" :value="12" tone="warning" />
+                <MisStatCard
+                    :label="t('Sales')"
+                    :amounts="{ AFN: 0, USD: 1250 }"
+                    :fallback-amount="1250"
+                    tone="success"
+                />
+                <MisStatCard :label="t('Cash in')" :show-value="false">
+                    <MisMoneyStack
+                        class="mt-2 text-lg font-semibold sm:text-xl"
+                        :amounts="{ AFN: 4901, USD: 0 }"
+                    />
+                </MisStatCard>
             </MisStatGrid>
         </MisSection>
 

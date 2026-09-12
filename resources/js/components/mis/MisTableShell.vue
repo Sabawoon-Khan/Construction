@@ -20,9 +20,9 @@ withDefaults(
             )
         "
     >
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/30 text-start text-muted-foreground">
+                <thead class="table-chrome-head text-start text-muted-foreground">
                     <slot name="head" />
                 </thead>
                 <tbody>

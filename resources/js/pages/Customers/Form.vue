@@ -4,7 +4,7 @@ import { Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +36,12 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit customer') : t('Create customer')" />
 
-    <MisFormPage :title="isEdit ? t('Edit customer') : t('Create customer')" :back-href="isEdit ? '/customers' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit customer') : t('Create customer')"
+        :eyebrow="t('Customers')"
+        :description="isEdit ? t('Update this customer.') : t('Add a new customer.')"
+        :back-href="isEdit ? '/customers' : undefined"
+    >
         <Form
             :action="isEdit ? `/customers/${item!.id}` : '/customers'"
             :method="isEdit ? 'put' : 'post'"
@@ -133,5 +138,5 @@ defineOptions({
                 </Form>
             </div>
         </Form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

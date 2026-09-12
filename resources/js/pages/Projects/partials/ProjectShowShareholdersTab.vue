@@ -1,40 +1,51 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { Printer } from '@lucide/vue';
-import Can from '@/components/Can.vue';
 import { computed } from 'vue';
+import Can from '@/components/Can.vue';
+import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
+import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money } from '@/lib/utils';
 
-const props = defineProps<{
-    item: Record<string, any>;
-    shareholders: {
-        id: number;
-        name: string;
-        ownership_percentage: number;
-        contributed_total: number;
-        entitled_share: number;
-        paid_total: number;
-        balance_owed: number;
-    }[];
-    contributions: {
-        id: number;
-        partner_id: number;
-        amount: number;
-        currency?: string;
-        invested_at: string;
-        partner?: { id: number; name: string };
-    }[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        item: Record<string, any>;
+        shareholders: {
+            id: number;
+            name: string;
+            ownership_percentage: number;
+            contributed_total: number;
+            entitled_share: number;
+            paid_total: number;
+            balance_owed: number;
+        }[];
+        contributions: {
+            id: number;
+            partner_id: number;
+            amount: number;
+            currency?: string;
+            invested_at: string;
+            created_at?: string;
+            partner?: { id: number; name: string };
+        }[];
+        showOwnership?: boolean;
+        showContributions?: boolean;
+    }>(),
+    {
+        showOwnership: true,
+        showContributions: true,
+    },
+);
 
 const emit = defineEmits<{
     'add-shareholder': [];
@@ -70,49 +81,42 @@ const formatDate = (value: string | null | undefined) =>
 
 <template>
     <div class="space-y-4">
-        <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <div
-                class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4"
-            >
-                <div>
-                    <h3 class="text-sm font-semibold">
-                        {{ t('Shareholders') }}
-                    </h3>
-                    <p class="mt-0.5 text-sm text-muted-foreground">
-                        {{ t('Ownership, contributions and payouts') }}
-                    </p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <Can permission="partners.create">
-                        <Button
-                            v-if="shareholders.length"
-                            size="sm"
-                            variant="outline"
-                            @click="emit('record-contribution')"
-                        >
-                            {{ t('Record money in') }}
-                        </Button>
-                        <Button
-                            v-if="shareholders.length"
-                            size="sm"
-                            variant="outline"
-                            @click="emit('record-payout')"
-                        >
-                            {{ t('Record payout') }}
-                        </Button>
-                        <Button
-                            size="sm"
-                            @click="emit('add-shareholder')"
-                        >
-                            {{ t('Add shareholder') }}
-                        </Button>
-                    </Can>
-                </div>
-            </div>
+        <V2Panel
+            v-if="showOwnership"
+            :padded="false"
+            :title="t('Shareholders')"
+            :description="t('Ownership, contributions and payouts')"
+        >
+            <template #actions>
+                <Can permission="partners.create">
+                    <Button
+                        v-if="shareholders.length"
+                        size="sm"
+                        variant="outline"
+                        @click="emit('record-contribution')"
+                    >
+                        {{ t('Record money in') }}
+                    </Button>
+                    <Button
+                        v-if="shareholders.length"
+                        size="sm"
+                        variant="outline"
+                        @click="emit('record-payout')"
+                    >
+                        {{ t('Record payout') }}
+                    </Button>
+                    <Button size="sm" @click="emit('add-shareholder')">
+                        {{ t('Add shareholder') }}
+                    </Button>
+                </Can>
+            </template>
 
-            <TableFrame table-id="project-shareholders" :columns="tableColumnsShareholders">
+            <TableFrame
+                table-id="project-shareholders"
+                :columns="tableColumnsShareholders"
+            >
                 <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-start text-muted-foreground">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
                         <tr>
                             <TableIndexTh />
                             <SortableTh
@@ -180,55 +184,63 @@ const formatDate = (value: string | null | undefined) =>
                             </td>
                             <td class="px-4 py-3 tabular-nums">
                                 {{
-                                    money(
-                                        s.contributed_total,
-                                        baseCurrency,
-                                    )
+                                    money(s.contributed_total, baseCurrency)
                                 }}
                             </td>
                             <td class="px-4 py-3 tabular-nums">
-                                {{
-                                    money(s.entitled_share, baseCurrency)
-                                }}
+                                {{ money(s.entitled_share, baseCurrency) }}
                             </td>
-                            <td
-                                class="px-4 py-3 text-emerald-700 tabular-nums"
-                            >
+                            <td class="px-4 py-3 text-emerald-700 tabular-nums">
                                 {{ money(s.paid_total, baseCurrency) }}
                             </td>
-                            <td
-                                class="px-4 py-3 text-amber-700 tabular-nums"
-                            >
+                            <td class="px-4 py-3 text-amber-700 tabular-nums">
                                 {{ money(s.balance_owed, baseCurrency) }}
                             </td>
                         </tr>
-                        <tr v-if="!shareholders.length">
-                            <td
-                                colspan="7"
-                                class="px-4 py-10 text-center text-muted-foreground"
-                            >
-                                {{ t('No shareholders yet') }}
-                            </td>
-                        </tr>
+                        <EmptyState
+                            v-if="!shareholders.length"
+                            :colspan="7"
+                            :title="t('No shareholders yet')"
+                        >
+                            <template #actions>
+                                <Can permission="partners.create">
+                                    <Button
+                                        size="sm"
+                                        @click="emit('add-shareholder')"
+                                    >
+                                        {{ t('Add shareholder') }}
+                                    </Button>
+                                </Can>
+                            </template>
+                        </EmptyState>
                     </tbody>
                 </table>
             </TableFrame>
-        </div>
+        </V2Panel>
 
-        <div
-            v-if="contributions.length"
-            class="overflow-hidden rounded-xl border bg-card shadow-sm"
+        <V2Panel
+            v-if="showContributions"
+            :padded="false"
+            :title="t('Contribution history')"
         >
-            <div class="border-b px-5 py-4">
-                <h3 class="text-sm font-semibold">
-                    {{ t('Contribution history') }}
-                </h3>
-            </div>
-            <TableFrame table-id="project-contributions" :columns="tableColumnsContributions">
-                <table class="min-w-full text-sm">
-                    <thead
-                        class="bg-muted/40 text-start text-muted-foreground"
+            <template #actions>
+                <Can permission="partners.create">
+                    <Button
+                        v-if="shareholders.length"
+                        size="sm"
+                        variant="outline"
+                        @click="emit('record-contribution')"
                     >
+                        {{ t('Record money in') }}
+                    </Button>
+                </Can>
+            </template>
+            <TableFrame
+                table-id="project-contributions"
+                :columns="tableColumnsContributions"
+            >
+                <table class="min-w-full text-sm">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
                         <tr>
                             <TableIndexTh />
                             <SortableTh
@@ -289,7 +301,9 @@ const formatDate = (value: string | null | undefined) =>
                                     )
                                 }}
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                            <td
+                                class="px-4 py-3 whitespace-nowrap text-muted-foreground"
+                            >
                                 {{ formatDate(c.created_at) }}
                             </td>
                             <td class="px-4 py-3">
@@ -309,9 +323,33 @@ const formatDate = (value: string | null | undefined) =>
                                 </div>
                             </td>
                         </tr>
+                        <EmptyState
+                            v-if="!contributions.length"
+                            :colspan="6"
+                            :title="t('No contributions yet')"
+                        >
+                            <template #actions>
+                                <Can permission="partners.create">
+                                    <Button
+                                        v-if="shareholders.length"
+                                        size="sm"
+                                        @click="emit('record-contribution')"
+                                    >
+                                        {{ t('Record money in') }}
+                                    </Button>
+                                    <Button
+                                        v-else
+                                        size="sm"
+                                        @click="emit('add-shareholder')"
+                                    >
+                                        {{ t('Add shareholder') }}
+                                    </Button>
+                                </Can>
+                            </template>
+                        </EmptyState>
                     </tbody>
                 </table>
             </TableFrame>
-        </div>
+        </V2Panel>
     </div>
 </template>

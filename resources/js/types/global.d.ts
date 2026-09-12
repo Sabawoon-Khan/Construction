@@ -102,6 +102,7 @@ declare module '@inertiajs/core' {
             flash: {
                 success?: string | null;
                 error?: string | null;
+                trash?: { type: string; id: string | number; message?: string } | null;
             };
             notifications: { unread_count: number } | null;
             [key: string]: unknown;

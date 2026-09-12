@@ -37,7 +37,7 @@ withDefaults(
                     </slot>
                 </div>
                 <div class="min-w-0">
-                    <h1 class="text-2xl font-semibold tracking-tight sm:text-[1.7rem]">
+                    <h1 class="text-xl font-semibold tracking-tight sm:text-2xl sm:text-[1.7rem]">
                         {{ title }}
                     </h1>
                     <p

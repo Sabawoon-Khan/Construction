@@ -101,12 +101,12 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
             <Spinner class="size-6" />
         </div>
         <TableFrame :table-id="tableId" :columns="frameColumns">
-            <table class="w-full min-w-[32rem] text-sm">
+            <table class="w-full min-w-[28rem] text-sm sm:min-w-[32rem]">
                 <thead>
                     <tr
                         :class="
                             cn(
-                                'border-b border-border/70 bg-muted/30',
+                                'table-chrome-head border-b border-border/70',
                                 stickyHeader && 'sticky top-0 z-[1]',
                             )
                         "
@@ -161,7 +161,7 @@ function rowId(row: Record<string, unknown>, index: number, key?: string): strin
                     <tr
                         v-for="(row, rowIndex) in sortedRows"
                         :key="rowId(row, rowIndex, rowKey)"
-                        class="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/20"
+                        class="table-chrome-row border-b border-border/50 transition-colors last:border-0"
                     >
                         <TableIndexTd :index="rowIndex" />
                         <td

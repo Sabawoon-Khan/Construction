@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Pencil, Printer, Trash2 } from '@lucide/vue';
-import { computed } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Pencil, Printer, Trash2 } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
-import DetailGrid from '@/components/DetailGrid.vue';
-import Heading from '@/components/Heading.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import PrintableVoucher from '@/components/PrintableVoucher.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import { MisDetailGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
+import {
+    V2AmountCard,
+    V2DetailHero,
+    V2ListPage,
+    V2Panel,
+} from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 import type { VoucherLine } from '@/lib/voucher';
@@ -19,6 +25,9 @@ const props = defineProps<{ item: Record<string, any> }>();
 const { t } = useTranslations();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
+
+const deleteOpen = ref(false);
+const deleting = ref(false);
 
 const periodLabel = computed(() => {
     const monthIndex = Number(props.item.month) - 1;
@@ -57,6 +66,16 @@ const salaryLines = computed<VoucherLine[]>(() => {
     return lines;
 });
 
+function confirmDelete() {
+    deleting.value = true;
+    router.delete(`/salaries/${props.item.id}`, {
+        onFinish: () => {
+            deleting.value = false;
+            deleteOpen.value = false;
+        },
+    });
+}
+
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -70,93 +89,92 @@ defineOptions({
 
 <template>
     <Head :title="documentNo" />
-    <div class="voucher-print-page flex h-full flex-1 flex-col gap-4 print:gap-0 print:p-0">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between print:hidden">
-            <div class="space-y-3">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/salaries"><ArrowLeft class="size-4" /> {{ t('Back') }}</Link>
-                </Button>
-                <Heading
-                    :title="item.employee?.name || t('Salary record')"
-                    :description="periodLabel"
-                />
-            </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <StatusBadge :status="item.status" />
-                <Button variant="outline" @click="printPage">
-                    <Printer class="size-4" /> {{ t('Print salary slip') }}
-                </Button>
-                <Can permission="salaries.edit">
-                    <Button as-child>
-                        <Link :href="`/salaries/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
+    <V2ListPage>
+        <div class="voucher-print-page flex flex-col gap-4 print:gap-0">
+            <V2DetailHero class="print:hidden" image="/images/dashboard-v2-building.png">
+                <template #eyebrow>{{ t('Salaries') }}</template>
+                <template #title>{{ item.employee?.name || t('Salary record') }}</template>
+                <template #description>{{ periodLabel }}</template>
+                <template #actions>
+                    <StatusBadge :status="item.status" />
+                    <Button variant="outline" @click="printPage">
+                        <Printer class="size-4" /> {{ t('Print salary slip') }}
                     </Button>
-                </Can>
-                <Can permission="salaries.delete">
-                    <Form :action="`/salaries/${item.id}`" method="delete" v-slot="{ processing }">
-                        <Button type="submit" variant="destructive" :disabled="processing">
-                            <Trash2 class="size-4" /> {{ processing ? t('Deleting…') : t('Delete') }}
+                    <Can permission="salaries.edit">
+                        <Button as-child>
+                            <Link :href="`/salaries/${item.id}/edit`"><Pencil class="size-4" /> {{ t('Edit') }}</Link>
                         </Button>
-                    </Form>
-                </Can>
-            </div>
-        </div>
+                    </Can>
+                    <Can permission="salaries.delete">
+                        <Button type="button" variant="destructive" @click="deleteOpen = true">
+                            <Trash2 class="size-4" /> {{ t('Delete') }}
+                        </Button>
+                    </Can>
+                </template>
+            </V2DetailHero>
 
-        <div class="print:hidden">
-            <div class="rounded-xl border bg-card p-5 shadow-sm sm:max-w-sm">
-                <div class="text-sm text-muted-foreground">{{ t('Net salary') }}</div>
-                <div class="mt-1 text-3xl font-semibold tabular-nums text-indigo-700">
+            <div class="print:hidden">
+                <V2AmountCard :label="t('Net salary')" tone="warm">
                     {{ money(item.net_salary, item.currency) }}
-                </div>
+                </V2AmountCard>
             </div>
-        </div>
 
-        <div class="print:hidden">
-            <DetailGrid
-                :title="t('Salary details')"
-                :items="[
-                    { label: t('Employee'), value: item.employee?.name },
+            <V2Panel class="print:hidden" :title="t('Salary details')">
+                <MisDetailGrid
+                    :items="[
+                        { label: t('Employee'), value: item.employee?.name },
+                        { label: t('Period'), value: periodLabel },
+                        { label: t('Payment Date'), value: formatDate(item.payment_date) },
+                        { label: t('Basic Salary'), value: money(item.basic_salary, item.currency) },
+                        { label: t('Bonus'), value: Number(item.bonus) > 0 ? money(item.bonus, item.currency) : '—' },
+                        { label: t('Deduction'), value: Number(item.deduction) > 0 ? money(item.deduction, item.currency) : '—' },
+                        { label: t('Designation'), value: item.employee?.designation },
+                        { label: t('Department'), value: item.employee?.department },
+                        { label: t('Salary payment method'), value: item.employee?.salary_payment_method },
+                        { label: t('Notes'), value: item.notes, span: 3 },
+                    ]"
+                />
+            </V2Panel>
+
+            <RecordAttachments
+                attachable="salaries"
+                :attachable-id="item.id"
+                :attachments="item.attachments"
+                boxed
+            />
+
+            <PrintableVoucher
+                kind="salary"
+                :title="t('Salary Payment Voucher')"
+                :document-no="documentNo"
+                :date="item.payment_date"
+                :party-label="t('Paid to')"
+                :party-name="item.employee?.name"
+                :amount="item.net_salary"
+                :currency="item.currency"
+                :payment-method="item.employee?.salary_payment_method"
+                :description="item.notes"
+                :status="item.status"
+                :fields="[
                     { label: t('Period'), value: periodLabel },
-                    { label: t('Payment Date'), value: formatDate(item.payment_date) },
-                    { label: t('Basic Salary'), value: money(item.basic_salary, item.currency) },
-                    { label: t('Bonus'), value: Number(item.bonus) > 0 ? money(item.bonus, item.currency) : '—' },
-                    { label: t('Deduction'), value: Number(item.deduction) > 0 ? money(item.deduction, item.currency) : '—' },
+                    { label: t('Employee No'), value: item.employee?.employee_no },
                     { label: t('Designation'), value: item.employee?.designation },
                     { label: t('Department'), value: item.employee?.department },
-                    { label: t('Salary payment method'), value: item.employee?.salary_payment_method },
-                    { label: t('Notes'), value: item.notes, span: true },
+                ]"
+                :lines="salaryLines"
+                :totals="[
+                    { label: t('Net salary'), value: money(item.net_salary, item.currency) },
                 ]"
             />
+
+            <ConfirmActionDialog
+                v-model:open="deleteOpen"
+                :title="t('Delete salary?')"
+                :description="t('This cannot be undone.')"
+                :confirm-label="t('Delete')"
+                :processing="deleting"
+                @confirm="confirmDelete"
+            />
         </div>
-
-        <RecordAttachments
-            attachable="salaries"
-            :attachable-id="item.id"
-            :attachments="item.attachments"
-            boxed
-        />
-
-        <PrintableVoucher
-            kind="salary"
-            :title="t('Salary Payment Voucher')"
-            :document-no="documentNo"
-            :date="item.payment_date"
-            :party-label="t('Paid to')"
-            :party-name="item.employee?.name"
-            :amount="item.net_salary"
-            :currency="item.currency"
-            :payment-method="item.employee?.salary_payment_method"
-            :description="item.notes"
-            :status="item.status"
-            :fields="[
-                { label: t('Period'), value: periodLabel },
-                { label: t('Employee No'), value: item.employee?.employee_no },
-                { label: t('Designation'), value: item.employee?.designation },
-                { label: t('Department'), value: item.employee?.department },
-            ]"
-            :lines="salaryLines"
-            :totals="[
-                { label: t('Net salary'), value: money(item.net_salary, item.currency) },
-            ]"
-        />
-    </div>
+    </V2ListPage>
 </template>

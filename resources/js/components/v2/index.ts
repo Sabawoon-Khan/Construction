@@ -1,0 +1,13 @@
+export { default as V2ListPage } from './V2ListPage.vue';
+export { default as V2Hero } from './V2Hero.vue';
+export { default as V2DetailHero } from './V2DetailHero.vue';
+export { default as V2Panel } from './V2Panel.vue';
+export { default as V2FormPage } from './V2FormPage.vue';
+export { default as V2AmountCard } from './V2AmountCard.vue';
+export { default as V2StatGrid } from './V2StatGrid.vue';
+export { default as V2StatCard } from './V2StatCard.vue';
+export { default as V2IndicatorCard } from './V2IndicatorCard.vue';
+export { default as V2FilterBar } from './V2FilterBar.vue';
+export { default as V2SelectFilter } from './V2SelectFilter.vue';
+export { default as V2TablePanel } from './V2TablePanel.vue';
+export { default as V2Pager } from './V2Pager.vue';

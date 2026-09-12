@@ -49,6 +49,8 @@ export function useMisPage() {
             title: string;
             description: string;
             method?: 'delete' | 'post' | 'put';
+            trashType?: string;
+            trashId?: string | number;
         },
         permission?: string,
     ): RowActionItem =>
@@ -60,6 +62,10 @@ export function useMisPage() {
                 separator: true,
                 href: options.href,
                 method: options.method ?? 'delete',
+                trashType: options.trashType,
+                trashId:
+                    options.trashId ??
+                    options.href.split('/').filter(Boolean).pop(),
                 confirm: {
                     title: options.title,
                     description: options.description,

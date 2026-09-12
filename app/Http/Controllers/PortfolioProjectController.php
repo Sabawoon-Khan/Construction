@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Models\PortfolioMedia;
 use App\Models\PortfolioProject;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -47,15 +48,21 @@ class PortfolioProjectController extends Controller implements HasMiddleware
             });
         }
 
+        $count = (clone $query)->count();
+        $published = (clone $query)->where('is_published', true)->count();
         $totals = [
-            'count' => (clone $query)->count(),
-            'published' => (clone $query)->where('is_published', true)->count(),
+            'count' => $count,
+            'published' => $published,
+            'draft' => max(0, $count - $published),
+            'with_media' => (clone $query)->has('media')->count(),
         ];
 
         return Inertia::render('Portfolio/Index', [
             'items' => $query->latest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'categoryChart' => $this->categoryBreakdown(clone $query),
+            'volumeChart' => $this->projectsByMonth(clone $query),
         ]);
     }
 
@@ -271,5 +278,66 @@ class PortfolioProjectController extends Controller implements HasMiddleware
         if ($sizeKb > $maxKb) {
             abort(422, __('The uploaded file is too large.'));
         }
+    }
+
+    /**
+     * @return list<array{key: string, label: string, value: int}>
+     */
+    private function categoryBreakdown($query): array
+    {
+        return (clone $query)
+            ->get(['category'])
+            ->groupBy(function ($row) {
+                $category = trim((string) ($row->category ?? ''));
+
+                return $category !== '' ? $category : 'Uncategorized';
+            })
+            ->map(fn ($group, $label) => [
+                'key' => Str::slug((string) $label) ?: 'uncategorized',
+                'label' => Str::limit((string) $label, 8, ''),
+                'value' => $group->count(),
+            ])
+            ->sortByDesc('value')
+            ->take(6)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return list<array{key: string, label: string, value: int}>
+     */
+    private function projectsByMonth($query): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'value' => 0,
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $rows = (clone $query)
+            ->whereDate('created_at', '>=', $from->toDateString())
+            ->whereDate('created_at', '<=', $to->toDateString())
+            ->get(['created_at']);
+
+        foreach ($rows as $row) {
+            if (! $row->created_at) {
+                continue;
+            }
+            $key = $row->created_at->format('Y-m');
+            if (isset($buckets[$key])) {
+                $buckets[$key]['value']++;
+            }
+        }
+
+        return array_values($buckets);
     }
 }

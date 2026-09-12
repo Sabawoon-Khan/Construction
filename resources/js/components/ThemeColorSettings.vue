@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAppearance } from '@/composables/useAppearance';
 import { useThemeColors } from '@/composables/useThemeColors';
 import { useTranslations } from '@/composables/useTranslations';
 import {
@@ -17,16 +18,16 @@ import {
     THEME_DENSITY_OPTIONS,
     THEME_PRESETS,
     THEME_RADIUS_OPTIONS,
-    THEME_SHELL_OPTIONS,
     THEME_SIDEBAR_ACTIVE_OPTIONS,
     settingsMatchPreset,
     type ThemeDensity,
+    type ThemePreset,
     type ThemeRadius,
-    type ThemeShell,
     type ThemeSidebarActive,
 } from '@/lib/theme-colors';
 
 const { t } = useTranslations();
+const { updateInterfaceStyle } = useAppearance();
 const {
     colors,
     isCustomized,
@@ -36,7 +37,6 @@ const {
     setRadius,
     setDensity,
     setSidebarActive,
-    setShell,
     applyPreset,
     resetColors,
 } = useThemeColors();
@@ -47,6 +47,13 @@ const activePresetId = computed(
             settingsMatchPreset(colors.value, preset),
         )?.id ?? null,
 );
+
+function onApplyPreset(preset: ThemePreset): void {
+    applyPreset(preset);
+    if (preset.id === 'structo') {
+        updateInterfaceStyle('glass');
+    }
+}
 
 const previewActiveClass = computed(() => {
     if (colors.value.sidebarActive === 'accent') {
@@ -230,10 +237,12 @@ const previewRadius = computed(() => {
                             :class="
                                 activePresetId === preset.id
                                     ? 'border-primary bg-primary/5 shadow-soft'
-                                    : 'border-border/70 bg-card hover:border-primary/40 hover:bg-muted/40'
+                                    : preset.id === 'structo'
+                                      ? 'border-orange-300/50 bg-gradient-to-br from-white/80 to-[#eef0ee] hover:border-orange-400/70'
+                                      : 'border-border/70 bg-card hover:border-primary/40 hover:bg-muted/40'
                             "
                             :disabled="!canManage"
-                            @click="applyPreset(preset)"
+                            @click="onApplyPreset(preset)"
                         >
                             <div class="mb-3 flex items-center gap-1.5">
                                 <span
@@ -267,104 +276,6 @@ const previewRadius = computed(() => {
                             </p>
                         </button>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        <!-- App layout (shell) -->
-        <Card>
-            <CardHeader>
-                <CardTitle>{{ t('App layout') }}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <button
-                        v-for="option in THEME_SHELL_OPTIONS"
-                        :key="option.value"
-                        type="button"
-                        class="group rounded-2xl border p-3 text-start transition"
-                        :class="
-                            colors.shell === option.value
-                                ? 'border-primary bg-primary/[0.06] shadow-soft ring-1 ring-primary/20'
-                                : 'border-border/70 hover:border-primary/30 hover:bg-muted/30'
-                        "
-                        :disabled="!canManage"
-                        @click="setShell(option.value as ThemeShell)"
-                    >
-                        <div
-                            class="mb-3 flex h-20 overflow-hidden rounded-xl border border-border/50"
-                            :style="{
-                                background:
-                                    option.value === 'sidebar-inset'
-                                        ? colors.backgroundLight
-                                        : 'color-mix(in srgb, var(--muted) 55%, transparent)',
-                            }"
-                        >
-                            <div
-                                v-if="option.value === 'header'"
-                                class="flex w-full flex-col"
-                            >
-                                <div
-                                    class="flex h-5 items-center gap-1 px-2"
-                                    :style="{ background: colors.brand }"
-                                >
-                                    <span class="size-1.5 rounded-full bg-white/70" />
-                                    <span class="h-1 w-8 rounded-full bg-white/35" />
-                                    <span class="ms-auto h-1 w-6 rounded-full bg-white/25" />
-                                </div>
-                                <div class="flex flex-1 flex-col gap-1.5 p-2.5">
-                                    <div class="h-2 w-1/3 rounded-full bg-black/10" />
-                                    <div class="h-8 flex-1 rounded-md bg-white/80 dark:bg-white/5" />
-                                </div>
-                            </div>
-
-                            <template v-else-if="option.value === 'sidebar-floating'">
-                                <div
-                                    class="m-2 w-7 shrink-0 rounded-lg shadow-sm"
-                                    :style="{ background: colors.brand }"
-                                />
-                                <div class="my-2 me-2 flex-1 rounded-lg bg-white/85 dark:bg-white/5" />
-                            </template>
-
-                            <template v-else-if="option.value === 'sidebar-inset'">
-                                <div
-                                    class="h-full w-6 shrink-0"
-                                    :style="{ background: colors.brand }"
-                                />
-                                <div
-                                    class="m-2 flex-1 rounded-lg border border-black/5 bg-white shadow-sm dark:border-white/10 dark:bg-white/5"
-                                />
-                            </template>
-
-                            <template v-else>
-                                <div
-                                    class="h-full w-6 shrink-0 border-e border-white/10"
-                                    :style="{ background: colors.brand }"
-                                />
-                                <div class="flex flex-1 flex-col">
-                                    <div
-                                        class="h-4 border-b border-black/5 bg-white/70 dark:border-white/10 dark:bg-white/5"
-                                    />
-                                    <div class="flex-1 bg-white/40 dark:bg-transparent" />
-                                </div>
-                            </template>
-                        </div>
-
-                        <div class="flex items-start justify-between gap-2">
-                            <div class="min-w-0">
-                                <p class="text-sm font-semibold tracking-tight">
-                                    {{ t(option.labelKey) }}
-                                </p>
-                                <p class="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                                    {{ t(option.descriptionKey) }}
-                                </p>
-                            </div>
-                            <span
-                                v-if="colors.shell === option.value"
-                                class="mt-0.5 size-2 shrink-0 rounded-full bg-primary"
-                            />
-                        </div>
-                    </button>
                 </div>
             </CardContent>
         </Card>

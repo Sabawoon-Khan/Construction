@@ -37,6 +37,7 @@ withDefaults(
 
 <template>
     <MisField
+        v-if="label || error || required"
         :label="label"
         :html-for="id"
         :error="error"
@@ -68,4 +69,31 @@ withDefaults(
             </option>
         </select>
     </MisField>
+    <select
+        v-else
+        :id="id"
+        v-model="model"
+        :disabled="disabled"
+        :required="required"
+        :aria-label="placeholder || undefined"
+        :class="
+            cn(
+                'h-9 rounded-md border bg-background px-3 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50',
+                $props.class,
+                selectClass,
+            )
+        "
+    >
+        <option v-if="placeholder !== undefined" value="">
+            {{ placeholder }}
+        </option>
+        <option
+            v-for="option in options"
+            :key="option.value"
+            :value="option.value"
+            :disabled="option.disabled"
+        >
+            {{ option.label }}
+        </option>
+    </select>
 </template>

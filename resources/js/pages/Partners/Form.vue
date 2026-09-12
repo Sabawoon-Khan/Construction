@@ -5,7 +5,7 @@ import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,7 +34,12 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit shareholder') : t('Add shareholder')" />
 
-    <MisFormPage :title="isEdit ? t('Edit shareholder') : t('Add shareholder')" :back-href="isEdit ? '/partners' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit shareholder') : t('Add shareholder')"
+        :eyebrow="t('Shareholders')"
+        :description="isEdit ? t('Update this shareholder.') : t('Add a new shareholder.')"
+        :back-href="isEdit ? '/partners' : undefined"
+    >
         <Form
             :action="isEdit ? `/partners/${item!.id}` : '/partners'"
             :method="isEdit ? 'put' : 'post'"
@@ -116,5 +121,5 @@ defineOptions({
                 </Form>
             </div>
         </Form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import { Eye, Trash2 } from '@lucide/vue';
+import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
-import { computed } from 'vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
+import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
+import StatusBadge from '@/components/StatusBadge.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
-import { indexTableColumn } from '@/composables/useTableColumns';
-import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { V2Panel } from '@/components/v2';
+import { indexTableColumn } from '@/composables/useTableColumns';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
@@ -32,6 +35,7 @@ const props = defineProps<{
         role_on_project?: string | null;
         working_hours?: string | null;
         notes?: string | null;
+        created_at?: string;
     }[];
 }>();
 
@@ -63,40 +67,52 @@ const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
 
-function removeEmployee(employeeId: number) {
-    if (!window.confirm(t('Remove this employee from the project?'))) {
+const confirmRemoveOpen = ref(false);
+const removingId = ref<number | null>(null);
+const pendingRemoveId = ref<number | null>(null);
+
+function requestRemoveEmployee(employeeId: number) {
+    pendingRemoveId.value = employeeId;
+    confirmRemoveOpen.value = true;
+}
+
+function removeEmployee() {
+    const employeeId = pendingRemoveId.value;
+    if (!employeeId) {
         return;
     }
 
+    removingId.value = employeeId;
     router.delete(`/projects/${props.item.id}/employees/${employeeId}`, {
         preserveScroll: true,
+        onFinish: () => {
+            removingId.value = null;
+        },
+        onSuccess: () => {
+            confirmRemoveOpen.value = false;
+            pendingRemoveId.value = null;
+        },
     });
 }
 </script>
 
 <template>
-    <div class="overflow-hidden rounded-xl border bg-card shadow-sm">
-        <div
-            class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4"
-        >
-            <div>
-                <h3 class="text-sm font-semibold">
-                    {{ t('Employees') }}
-                </h3>
-                <p class="mt-0.5 text-sm text-muted-foreground">
-                    {{ t('Staff assigned to this project') }}
-                </p>
-            </div>
+    <V2Panel
+        :padded="false"
+        :title="t('Employees')"
+        :description="t('Staff assigned to this project')"
+    >
+        <template #actions>
             <Can permission="employees.edit">
                 <Button size="sm" @click="emit('add-employee')">
                     {{ t('Add employee') }}
                 </Button>
             </Can>
-        </div>
+        </template>
 
         <TableFrame table-id="project-employees" :columns="tableColumns">
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-start text-muted-foreground">
+                <thead class="table-chrome-head text-start text-muted-foreground">
                     <tr>
                         <TableIndexTh />
                         <SortableTh column="employee_no">
@@ -126,7 +142,9 @@ function removeEmployee(employeeId: number) {
                         <th class="px-4 py-3 font-medium">
                             {{ t('Notes') }}
                         </th>
-                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
+                        <SortableTh column="created_at">{{
+                            t('Created at')
+                        }}</SortableTh>
                         <th class="px-4 py-3 text-end font-medium">
                             {{ t('Actions') }}
                         </th>
@@ -149,18 +167,29 @@ function removeEmployee(employeeId: number) {
                             >
                                 {{ employee.name }}
                             </Link>
-                            <p v-if="employee.phone" class="mt-0.5 text-xs text-muted-foreground">
+                            <p
+                                v-if="employee.phone"
+                                class="mt-0.5 text-xs text-muted-foreground"
+                            >
                                 {{ employee.phone }}
                             </p>
                         </td>
                         <td class="px-4 py-3">
-                            {{ employee.role_on_project || employee.designation || '—' }}
+                            {{
+                                employee.role_on_project ||
+                                employee.designation ||
+                                '—'
+                            }}
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             {{ formatDate(employee.started_at) }}
                         </td>
-                        <td class="px-4 py-3">{{ employee.working_hours || '—' }}</td>
-                        <td class="px-4 py-3">{{ employee.department || '—' }}</td>
+                        <td class="px-4 py-3">
+                            {{ employee.working_hours || '—' }}
+                        </td>
+                        <td class="px-4 py-3">
+                            {{ employee.department || '—' }}
+                        </td>
                         <td class="px-4 py-3 text-end tabular-nums">
                             {{
                                 employee.basic_salary != null
@@ -174,10 +203,17 @@ function removeEmployee(employeeId: number) {
                         <td class="px-4 py-3">
                             <StatusBadge :status="employee.status" />
                         </td>
-                        <td class="px-4 py-3 max-w-[220px] truncate" :title="employee.notes || undefined">
+                        <td
+                            class="max-w-[220px] truncate px-4 py-3"
+                            :title="employee.notes || undefined"
+                        >
                             {{ employee.notes || '—' }}
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">{{ formatDate(employee.created_at) }}</td>
+                        <td
+                            class="px-4 py-3 whitespace-nowrap text-muted-foreground"
+                        >
+                            {{ formatDate(employee.created_at) }}
+                        </td>
                         <td class="px-4 py-3">
                             <div class="flex justify-end gap-2">
                                 <Button as-child size="sm" variant="outline">
@@ -191,7 +227,10 @@ function removeEmployee(employeeId: number) {
                                         size="sm"
                                         variant="outline"
                                         class="text-destructive hover:text-destructive"
-                                        @click="removeEmployee(employee.id)"
+                                        :disabled="removingId === employee.id"
+                                        @click="
+                                            requestRemoveEmployee(employee.id)
+                                        "
                                     >
                                         <Trash2 class="size-4" />
                                         {{ t('Remove') }}
@@ -200,16 +239,33 @@ function removeEmployee(employeeId: number) {
                             </div>
                         </td>
                     </tr>
-                    <tr v-if="!employees.length">
-                        <td
-                            colspan="12"
-                            class="px-4 py-10 text-center text-muted-foreground"
-                        >
-                            {{ t('No employees assigned yet') }}
-                        </td>
-                    </tr>
+                    <EmptyState
+                        v-if="!employees.length"
+                        :colspan="12"
+                        :title="t('No employees assigned yet')"
+                    >
+                        <template #actions>
+                            <Can permission="employees.edit">
+                                <Button
+                                    size="sm"
+                                    @click="emit('add-employee')"
+                                >
+                                    {{ t('Add employee') }}
+                                </Button>
+                            </Can>
+                        </template>
+                    </EmptyState>
                 </tbody>
             </table>
         </TableFrame>
-    </div>
+    </V2Panel>
+
+    <ConfirmActionDialog
+        v-model:open="confirmRemoveOpen"
+        :title="t('Remove employee from project?')"
+        :description="t('Remove this employee from the project?')"
+        :confirm-label="t('Remove')"
+        :processing="removingId !== null"
+        @confirm="removeEmployee"
+    />
 </template>

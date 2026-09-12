@@ -50,8 +50,13 @@ class SalaryController extends Controller implements HasMiddleware
             });
         }
 
+        $paidQuery = (clone $query)->where('status', 'paid');
+        $pendingQuery = (clone $query)->where('status', '!=', 'paid');
+
         $totals = [
             'count' => (clone $query)->count(),
+            'paid_count' => (clone $paidQuery)->count(),
+            'pending_count' => (clone $pendingQuery)->count(),
             'basic_total' => (float) (clone $query)->sum('basic_salary'),
             'basic_total_base' => (float) (clone $query)->sum('basic_salary_base'),
             'bonus_total' => (float) (clone $query)->sum('bonus'),
@@ -64,6 +69,10 @@ class SalaryController extends Controller implements HasMiddleware
             'bonus_by_currency' => CurrencyAmounts::sum(clone $query, 'bonus'),
             'deduction_by_currency' => CurrencyAmounts::sum(clone $query, 'deduction'),
             'net_by_currency' => CurrencyAmounts::sum(clone $query, 'net_salary'),
+            'paid_net_total' => (float) (clone $paidQuery)->sum('net_salary'),
+            'pending_net_total' => (float) (clone $pendingQuery)->sum('net_salary'),
+            'paid_net_by_currency' => CurrencyAmounts::sum(clone $paidQuery, 'net_salary'),
+            'pending_net_by_currency' => CurrencyAmounts::sum(clone $pendingQuery, 'net_salary'),
         ];
 
         return Inertia::render('Salaries/Index', [
@@ -75,8 +84,84 @@ class SalaryController extends Controller implements HasMiddleware
                 'year' => $year ?: null,
             ],
             'totals' => $totals,
+            'moneyChart' => $this->salariesByMonth(clone $query),
             'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary', 'currency']),
         ]);
+    }
+
+    /**
+     * Net salary by payroll month (AFN/USD) for the last 6 calendar months.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Salary>  $query
+     * @return list<array{key: string, label: string, by_currency: array{AFN: float, USD: float}}>
+     */
+    protected function salariesByMonth($query): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'by_currency' => ['AFN' => 0.0, 'USD' => 0.0],
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $salaries = (clone $query)
+            ->where(function ($q) use ($from, $to) {
+                $q->where(function ($inner) use ($from) {
+                    $inner->where('year', '>', $from->year)
+                        ->orWhere(function ($sameYear) use ($from) {
+                            $sameYear->where('year', $from->year)
+                                ->where('month', '>=', $from->month);
+                        });
+                })->where(function ($inner) use ($to) {
+                    $inner->where('year', '<', $to->year)
+                        ->orWhere(function ($sameYear) use ($to) {
+                            $sameYear->where('year', $to->year)
+                                ->where('month', '<=', $to->month);
+                        });
+                });
+            })
+            ->get(['year', 'month', 'net_salary', 'currency']);
+
+        foreach ($salaries as $salary) {
+            $year = (int) $salary->year;
+            $month = (int) $salary->month;
+            if ($year < 1 || $month < 1 || $month > 12) {
+                continue;
+            }
+            $key = sprintf('%04d-%02d', $year, $month);
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+
+            $code = CurrencyService::normalize((string) ($salary->currency ?: 'USD'));
+            if ($code !== 'AFN' && $code !== 'USD') {
+                $code = 'USD';
+            }
+            $buckets[$key]['by_currency'][$code] = round(
+                ($buckets[$key]['by_currency'][$code] ?? 0) + (float) $salary->net_salary,
+                2,
+            );
+        }
+
+        return array_values(array_map(
+            static fn (array $bucket) => [
+                'key' => $bucket['key'],
+                'label' => $bucket['label'],
+                'by_currency' => [
+                    'AFN' => round((float) ($bucket['by_currency']['AFN'] ?? 0), 2),
+                    'USD' => round((float) ($bucket['by_currency']['USD'] ?? 0), 2),
+                ],
+            ],
+            $buckets,
+        ));
     }
 
     public function show(Salary $salary): Response

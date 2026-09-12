@@ -77,8 +77,6 @@ defineOptions({
     <h1 class="sr-only">{{ t('Company settings') }}</h1>
 
     <div class="flex flex-col space-y-6">
-        <Heading variant="small" :title="t('Company')" />
-
         <Form
             action="/settings/company"
             method="put"

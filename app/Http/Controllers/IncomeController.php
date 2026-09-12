@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Income;
+use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Support\CurrencyAmounts;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -36,6 +38,10 @@ class IncomeController extends Controller implements HasMiddleware
         $count = (clone $query)->count();
         $totalAmount = (float) (clone $query)->sum('amount');
         $totalAmountBase = (float) (clone $query)->sum('amount_base');
+        $amountByCurrency = CurrencyAmounts::sum(clone $query);
+        $thisMonthByCurrency = CurrencyAmounts::sum(
+            (clone $query)->where('income_date', '>=', now()->startOfMonth())
+        );
         $totals = [
             'count' => $count,
             'amount' => $totalAmount,
@@ -44,16 +50,15 @@ class IncomeController extends Controller implements HasMiddleware
             'this_month_base' => (float) (clone $query)->where('income_date', '>=', now()->startOfMonth())->sum('amount_base'),
             'average' => $count > 0 ? $totalAmount / $count : 0,
             'average_base' => $count > 0 ? $totalAmountBase / $count : 0,
-            'amount_by_currency' => CurrencyAmounts::sum(clone $query),
-            'this_month_by_currency' => CurrencyAmounts::sum(
-                (clone $query)->where('income_date', '>=', now()->startOfMonth())
-            ),
+            'amount_by_currency' => $amountByCurrency,
+            'this_month_by_currency' => $thisMonthByCurrency,
         ];
 
         return Inertia::render('Incomes/Index', [
             'items' => $query->with('creator:id,name')->latest('income_date')->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'moneyChart' => $this->incomesByMonth(clone $query),
         ]);
     }
 
@@ -121,5 +126,61 @@ class IncomeController extends Controller implements HasMiddleware
             'description' => 'required|string|max:1000',
             ...$this->attachmentValidationRules(),
         ]);
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Income>  $query
+     * @return list<array{key: string, label: string, by_currency: array{AFN: float, USD: float}}>
+     */
+    protected function incomesByMonth($query): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'by_currency' => ['AFN' => 0.0, 'USD' => 0.0],
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $rows = (clone $query)
+            ->whereDate('income_date', '>=', $from->toDateString())
+            ->whereDate('income_date', '<=', $to->toDateString())
+            ->get(['income_date', 'amount', 'currency']);
+
+        foreach ($rows as $row) {
+            $date = $row->income_date;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+
+            $code = CurrencyService::normalize((string) ($row->currency ?: 'USD'));
+            $buckets[$key]['by_currency'][$code] = round(
+                ($buckets[$key]['by_currency'][$code] ?? 0) + (float) $row->amount,
+                2,
+            );
+        }
+
+        return array_values(array_map(
+            static fn (array $bucket) => [
+                'key' => $bucket['key'],
+                'label' => $bucket['label'],
+                'by_currency' => [
+                    'AFN' => round((float) ($bucket['by_currency']['AFN'] ?? 0), 2),
+                    'USD' => round((float) ($bucket['by_currency']['USD'] ?? 0), 2),
+                ],
+            ],
+            $buckets,
+        ));
     }
 }

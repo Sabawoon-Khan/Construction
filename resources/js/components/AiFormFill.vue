@@ -7,6 +7,7 @@ import {
 } from '@lucide/vue';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAiFormFill } from '@/composables/useAiFormFill';
 import { useTranslations } from '@/composables/useTranslations';
 
@@ -35,10 +36,48 @@ const {
 const promptRef = ref<HTMLTextAreaElement | null>(null);
 /** Avoid Teleport-to-body SSR hydration mismatches against #app / Inertia page JSON. */
 const mounted = ref(false);
+const selectedIds = ref<string[]>([]);
 
 const canSubmit = computed(
     () => !processing.value && Boolean(prompt.value.trim()),
 );
+
+const selectedCount = computed(() => selectedIds.value.length);
+
+const canAccept = computed(
+    () => phase.value === 'result' && selectedCount.value > 0,
+);
+
+function syncSelectionFromPreview(): void {
+    selectedIds.value = preview.value.map((row) => row.id);
+}
+
+function isSelected(id: string): boolean {
+    return selectedIds.value.includes(id);
+}
+
+function toggleSelected(id: string, checked: boolean): void {
+    if (checked) {
+        if (!selectedIds.value.includes(id)) {
+            selectedIds.value = [...selectedIds.value, id];
+        }
+        return;
+    }
+
+    selectedIds.value = selectedIds.value.filter((entry) => entry !== id);
+}
+
+function selectAll(): void {
+    selectedIds.value = preview.value.map((row) => row.id);
+}
+
+function selectNone(): void {
+    selectedIds.value = [];
+}
+
+function onAccept(): void {
+    accept(selectedIds.value);
+}
 
 function onKeydown(event: KeyboardEvent): void {
     if (!available.value) {
@@ -64,10 +103,15 @@ function onKeydown(event: KeyboardEvent): void {
 
 watch(open, async (isOpen) => {
     if (!isOpen) {
+        selectedIds.value = [];
         return;
     }
     await nextTick();
     promptRef.value?.focus();
+});
+
+watch(preview, () => {
+    syncSelectionFromPreview();
 });
 
 function onFillFormEvent(event: Event): void {
@@ -100,7 +144,7 @@ onUnmounted(() => {
     <Teleport v-if="mounted" to="body">
         <div
             v-if="open"
-            class="fixed inset-0 z-[100] flex items-end justify-center bg-black/25 p-4 sm:items-center"
+            class="print:hidden fixed inset-0 z-[100] flex items-end justify-center bg-black/25 p-4 sm:items-center"
             @click.self="close"
         >
             <div
@@ -161,7 +205,7 @@ onUnmounted(() => {
                         class="border-input bg-transparent min-h-[5.5rem] w-full resize-y rounded-md border px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                         :placeholder="
                             t(
-                                'e.g. Fatima Ahmadi, female, from Herat, phone 0700…, notes about enrolment…',
+                                'e.g. Site visit at Block B, Kabul — progress 40%, notes on materials and safety…',
                             )
                         "
                         @keydown.enter.meta.prevent="canSubmit && run()"
@@ -172,25 +216,61 @@ onUnmounted(() => {
                         v-if="phase === 'result' && preview.length"
                         class="space-y-2 rounded-xl border p-3"
                     >
-                        <p class="text-xs font-semibold tracking-tight">
-                            {{ t('Preview') }}
-                        </p>
-                        <dl class="space-y-2">
-                            <div
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-xs font-semibold tracking-tight">
+                                {{ t('Preview') }}
+                            </p>
+                            <div class="flex items-center gap-2 text-[11px]">
+                                <button
+                                    type="button"
+                                    class="font-medium text-muted-foreground hover:text-foreground"
+                                    @click="selectAll"
+                                >
+                                    {{ t('Select all') }}
+                                </button>
+                                <span class="text-muted-foreground/50">·</span>
+                                <button
+                                    type="button"
+                                    class="font-medium text-muted-foreground hover:text-foreground"
+                                    @click="selectNone"
+                                >
+                                    {{ t('Select none') }}
+                                </button>
+                            </div>
+                        </div>
+                        <ul class="space-y-2">
+                            <li
                                 v-for="row in preview"
                                 :key="row.id"
-                                class="grid gap-0.5 sm:grid-cols-[8rem_1fr]"
+                                class="flex items-start gap-2.5"
                             >
-                                <dt
-                                    class="text-[11px] font-medium text-muted-foreground"
+                                <Checkbox
+                                    :id="`ai-fill-${row.id}`"
+                                    class="mt-0.5"
+                                    :checked="isSelected(row.id)"
+                                    @update:checked="
+                                        (checked: boolean | 'indeterminate') =>
+                                            toggleSelected(
+                                                row.id,
+                                                checked === true,
+                                            )
+                                    "
+                                />
+                                <label
+                                    :for="`ai-fill-${row.id}`"
+                                    class="min-w-0 flex-1 cursor-pointer space-y-0.5"
                                 >
-                                    {{ row.label }}
-                                </dt>
-                                <dd class="text-sm break-words">
-                                    {{ row.value }}
-                                </dd>
-                            </div>
-                        </dl>
+                                    <span
+                                        class="block text-[11px] font-medium text-muted-foreground"
+                                    >
+                                        {{ row.label }}
+                                    </span>
+                                    <span class="block text-sm break-words">
+                                        {{ row.value }}
+                                    </span>
+                                </label>
+                            </li>
+                        </ul>
                         <p
                             v-if="lastUsage"
                             class="text-[11px] text-muted-foreground"
@@ -215,9 +295,17 @@ onUnmounted(() => {
                         <Button type="button" variant="outline" @click="reject">
                             {{ t('Reject') }}
                         </Button>
-                        <Button type="button" @click="accept">
+                        <Button
+                            type="button"
+                            :disabled="!canAccept"
+                            @click="onAccept"
+                        >
                             <Check class="size-4" />
-                            {{ t('Accept all') }}
+                            {{
+                                t('Accept selected (:count)', {
+                                    count: String(selectedCount),
+                                })
+                            }}
                         </Button>
                     </template>
                     <template v-else>

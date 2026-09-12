@@ -63,6 +63,8 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::redirect('dashboard-v2', '/dashboard')->name('dashboard.v2');
+    Route::redirect('projects-v2', '/projects')->name('projects.v2');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::get('reports/print', [ReportController::class, 'print'])->name('reports.print');
@@ -120,6 +122,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/purchases/{purchase}/pay-remaining', [ProjectController::class, 'payPurchaseRemaining'])
         ->middleware('permission:purchases.edit')
         ->name('projects.purchases.payRemaining');
+    Route::post('projects/{project}/loans', [ProjectController::class, 'storeLoan'])
+        ->middleware('permission:loans.create')
+        ->name('projects.loans.store');
+    Route::post('projects/{project}/loans/{loan}/pay', [ProjectController::class, 'payLoan'])
+        ->middleware('permission:loans.edit')
+        ->name('projects.loans.pay');
     Route::resource('units', UnitController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('partners', PartnerController::class);

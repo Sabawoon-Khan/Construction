@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { Form, Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Trash2 } from '@lucide/vue';
+import { Head, router } from '@inertiajs/vue3';
+import { Trash2 } from '@lucide/vue';
+import { ref } from 'vue';
 import Can from '@/components/Can.vue';
-import DetailGrid from '@/components/DetailGrid.vue';
-import Heading from '@/components/Heading.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
+import { MisDetailGrid } from '@/components/mis';
 import { Button } from '@/components/ui/button';
+import {
+    V2DetailHero,
+    V2ListPage,
+    V2Panel,
+} from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
 
-defineProps<{
+const props = defineProps<{
     item: {
         id: number;
         name: string;
@@ -24,6 +30,19 @@ defineProps<{
 const { t } = useTranslations();
 const { formatDateTime } = useCalendar();
 
+const deleteOpen = ref(false);
+const deleting = ref(false);
+
+function confirmDelete() {
+    deleting.value = true;
+    router.delete(`/contact-messages/${props.item.id}`, {
+        onFinish: () => {
+            deleting.value = false;
+            deleteOpen.value = false;
+        },
+    });
+}
+
 defineOptions({
     layout: {
         breadcrumbs: [
@@ -38,67 +57,66 @@ defineOptions({
 <template>
     <Head :title="item.name" />
 
-    <div class="flex h-full flex-1 flex-col gap-4">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div class="space-y-3">
-                <Button as-child variant="ghost" size="sm" class="-ml-2 w-fit">
-                    <Link href="/contact-messages">
-                        <ArrowLeft class="size-4" /> {{ t('Back') }}
-                    </Link>
-                </Button>
-                <Heading
-                    :title="item.name"
-                    :description="t('Website contact inquiry')"
+    <V2ListPage>
+        <div class="flex flex-col gap-4">
+            <V2DetailHero image="/images/dashboard-v2-building.png">
+                <template #eyebrow>{{ t('Contact') }}</template>
+                <template #title>{{ item.name }}</template>
+                <template #description>{{ t('Website contact inquiry') }}</template>
+                <template #actions>
+                    <Can permission="contact_messages.delete">
+                        <Button type="button" variant="destructive" @click="deleteOpen = true">
+                            <Trash2 class="size-4" />
+                            {{ t('Delete') }}
+                        </Button>
+                    </Can>
+                </template>
+            </V2DetailHero>
+
+            <V2Panel :title="t('Sender')">
+                <MisDetailGrid
+                    :items="[
+                        { label: t('Name'), value: item.name },
+                        { label: t('Email'), value: item.email },
+                        { label: t('Phone'), value: item.phone || '—' },
+                        {
+                            label: t('Received'),
+                            value: item.created_at ? formatDateTime(item.created_at) : '—',
+                        },
+                        { label: t('IP'), value: item.ip_address || '—' },
+                    ]"
                 />
-            </div>
-            <Can permission="contact_messages.delete">
-                <Form
-                    :action="`/contact-messages/${item.id}`"
-                    method="delete"
-                    v-slot="{ processing }"
-                >
-                    <Button type="submit" variant="destructive" :disabled="processing">
-                        <Trash2 class="size-4" />
-                        {{ processing ? t('Deleting…') : t('Delete') }}
+            </V2Panel>
+
+            <V2Panel :title="t('Message')">
+                <template #actions>
+                    <Button as-child variant="outline" size="sm">
+                        <a :href="`mailto:${item.email}`">{{ t('Reply by email') }}</a>
                     </Button>
-                </Form>
-            </Can>
-        </div>
+                    <Button
+                        v-if="item.phone"
+                        as-child
+                        variant="outline"
+                        size="sm"
+                    >
+                        <a :href="`tel:${item.phone.replace(/\s+/g, '')}`">
+                            {{ t('Call') }}
+                        </a>
+                    </Button>
+                </template>
+                <p class="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                    {{ item.message }}
+                </p>
+            </V2Panel>
 
-        <DetailGrid
-            :title="t('Sender')"
-            :items="[
-                { label: t('Name'), value: item.name },
-                { label: t('Email'), value: item.email },
-                { label: t('Phone'), value: item.phone || '—' },
-                {
-                    label: t('Received'),
-                    value: item.created_at ? formatDateTime(item.created_at) : '—',
-                },
-                { label: t('IP'), value: item.ip_address || '—' },
-            ]"
-        />
-
-        <div class="rounded-xl border bg-card p-5 shadow-sm">
-            <h3 class="text-sm font-semibold tracking-tight">{{ t('Message') }}</h3>
-            <p class="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                {{ item.message }}
-            </p>
-            <div class="mt-4 flex flex-wrap gap-2">
-                <Button as-child variant="outline" size="sm">
-                    <a :href="`mailto:${item.email}`">{{ t('Reply by email') }}</a>
-                </Button>
-                <Button
-                    v-if="item.phone"
-                    as-child
-                    variant="outline"
-                    size="sm"
-                >
-                    <a :href="`tel:${item.phone.replace(/\s+/g, '')}`">
-                        {{ t('Call') }}
-                    </a>
-                </Button>
-            </div>
+            <ConfirmActionDialog
+                v-model:open="deleteOpen"
+                :title="t('Delete message?')"
+                :description="t('This cannot be undone.')"
+                :confirm-label="t('Delete')"
+                :processing="deleting"
+                @confirm="confirmDelete"
+            />
         </div>
-    </div>
+    </V2ListPage>
 </template>

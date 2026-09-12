@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Attendance;
 use App\Models\Employee;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -42,6 +43,7 @@ class AttendanceController extends Controller implements HasMiddleware
             'present' => (clone $query)->where('status', 'present')->count(),
             'absent' => (clone $query)->where('status', 'absent')->count(),
             'leave' => (clone $query)->where('status', 'leave')->count(),
+            'half_day' => (clone $query)->where('status', 'half_day')->count(),
         ];
 
         return Inertia::render('Attendance/Index', [
@@ -52,6 +54,7 @@ class AttendanceController extends Controller implements HasMiddleware
                 'date' => $date?->format('Y-m-d'),
             ],
             'totals' => $totals,
+            'volumeChart' => $this->recordsByMonth(clone $query),
             'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no']),
         ]);
     }
@@ -144,5 +147,43 @@ class AttendanceController extends Controller implements HasMiddleware
             'status' => 'required|string|in:present,absent,leave,half_day',
             'notes' => 'nullable|string',
         ]);
+    }
+
+    /**
+     * @return list<array{key: string, label: string, value: int}>
+     */
+    private function recordsByMonth($query): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'value' => 0,
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $rows = (clone $query)
+            ->whereDate('date', '>=', $from->toDateString())
+            ->whereDate('date', '<=', $to->toDateString())
+            ->get(['date']);
+
+        foreach ($rows as $row) {
+            if (! $row->date) {
+                continue;
+            }
+            $key = $row->date->format('Y-m');
+            if (isset($buckets[$key])) {
+                $buckets[$key]['value']++;
+            }
+        }
+
+        return array_values($buckets);
     }
 }

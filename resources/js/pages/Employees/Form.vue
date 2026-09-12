@@ -5,7 +5,7 @@ import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,7 +36,12 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit employee') : t('Create employee')" />
 
-    <MisFormPage :title="isEdit ? t('Edit employee') : t('Create employee')" :back-href="isEdit ? '/employees' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit employee') : t('Create employee')"
+        :eyebrow="t('Employees')"
+        :description="isEdit ? t('Update this employee.') : t('Add a new employee.')"
+        :back-href="isEdit ? '/employees' : undefined"
+    >
         <Form
             :action="isEdit ? `/employees/${item?.id}` : '/employees'"
             :method="isEdit ? 'put' : 'post'"
@@ -149,5 +154,5 @@ defineOptions({
                 </Form>
             </div>
         </Form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

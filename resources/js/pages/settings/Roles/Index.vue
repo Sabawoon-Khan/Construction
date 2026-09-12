@@ -166,6 +166,8 @@ function roleActions(role: RoleRecord): RowActionItem[] {
             separator: true,
             href: `/settings/roles/${role.id}`,
             method: 'delete',
+            trashType: 'roles',
+            trashId: role.id,
             hidden: protectedRoles.includes(role.name) || !can('roles.delete'),
             confirm: {
                 title: t('Move to trash'),

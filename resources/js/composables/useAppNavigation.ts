@@ -395,14 +395,29 @@ export function useAppNavigation() {
     };
 }
 
+/** Map experimental -v2 preview URLs onto their canonical nav paths. */
+export function canonicalAppPath(currentPath: string): string {
+    if (currentPath === '/projects-v2' || currentPath.startsWith('/projects-v2/')) {
+        return currentPath.replace(/^\/projects-v2/, '/projects');
+    }
+
+    if (currentPath === '/dashboard-v2' || currentPath.startsWith('/dashboard-v2/')) {
+        return '/dashboard';
+    }
+
+    return currentPath;
+}
+
 export function isNavItemActive(item: NavItem, currentPath: string): boolean {
+    const path = canonicalAppPath(currentPath);
+
     if (item.matchPrefixes?.length) {
         return item.matchPrefixes.some(
-            (prefix) => currentPath === prefix || currentPath.startsWith(`${prefix}/`),
+            (prefix) => path === prefix || path.startsWith(`${prefix}/`),
         );
     }
 
-    const path = pathOf(item.href);
+    const hrefPath = pathOf(item.href);
 
-    return currentPath === path || (path !== '/' && currentPath.startsWith(`${path}/`));
+    return path === hrefPath || (hrefPath !== '/' && path.startsWith(`${hrefPath}/`));
 }

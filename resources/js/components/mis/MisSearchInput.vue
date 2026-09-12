@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Search, X } from '@lucide/vue';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from '@/composables/useTranslations';
 import { cn } from '@/lib/utils';
 
 const model = defineModel<string>({ default: '' });
@@ -25,6 +26,8 @@ withDefaults(
         inputClass: undefined,
     },
 );
+
+const { t } = useTranslations();
 
 const emit = defineEmits<{
     clear: [];
@@ -56,13 +59,13 @@ function clear(): void {
                     inputClass,
                 )
             "
-            @keydown.enter.prevent="emit('submit')"
+            @keydown.enter="emit('submit')"
         />
         <button
             v-if="clearable && model"
             type="button"
             class="absolute end-2.5 top-1/2 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            :aria-label="'Clear'"
+            :aria-label="t('Clear')"
             @click="clear"
         >
             <X class="size-3.5" />

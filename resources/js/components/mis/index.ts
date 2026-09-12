@@ -1,5 +1,6 @@
 export { default as MisStatCard } from './MisStatCard.vue';
 export { default as MisStatGrid } from './MisStatGrid.vue';
+export { default as MisMoneyStack } from './MisMoneyStack.vue';
 export { default as MisSearchInput } from './MisSearchInput.vue';
 export { default as MisFilterBar } from './MisFilterBar.vue';
 export { default as MisEmptyState } from './MisEmptyState.vue';

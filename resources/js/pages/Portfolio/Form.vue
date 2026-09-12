@@ -3,7 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ImagePlus, Star, Trash2, Video } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -129,8 +129,11 @@ function submit() {
 <template>
     <Head :title="isEdit ? t('Edit portfolio project') : t('Create portfolio project')" />
 
-    <MisFormPage
-        :title="isEdit ? t('Edit portfolio project') : t('Create portfolio project')" :back-href="isEdit ? '/portfolio' : undefined"
+    <V2FormPage
+        :title="isEdit ? t('Edit portfolio project') : t('Create portfolio project')"
+        :eyebrow="t('Portfolio')"
+        :description="isEdit ? t('Update this portfolio project.') : t('Add a new portfolio project.')"
+        :back-href="isEdit ? '/portfolio' : undefined"
     >
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
@@ -404,5 +407,5 @@ function submit() {
                 </Link>
             </div>
         </form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

@@ -34,7 +34,15 @@ const visible = computed(() => props.enabled && (! online.value || pending.value
         <div class="flex items-center gap-2">
             <CloudOff v-if="!online" class="size-4 shrink-0" />
             <Wifi v-else class="size-4 shrink-0" />
-            <span v-if="!online">
+            <span v-if="!online && pending > 0">
+                {{
+                    t(
+                        'You are offline with :count change(s) waiting to sync. Do not clear browser data until they sync.',
+                        { count: String(pending) },
+                    )
+                }}
+            </span>
+            <span v-else-if="!online">
                 {{ t('You are offline. Changes will sync when you reconnect.') }}
             </span>
             <span v-else>

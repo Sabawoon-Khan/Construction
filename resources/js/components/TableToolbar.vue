@@ -18,35 +18,30 @@ const toggleable = () => columns?.columns.filter((column) => !column.locked) ?? 
 </script>
 
 <template>
-    <div
-        v-if="columns && toggleable().length"
-        class="flex items-center justify-end border-b border-border/70 px-3 py-2"
-    >
-        <DropdownMenu>
-            <DropdownMenuTrigger as-child>
+    <DropdownMenu v-if="columns && toggleable().length">
+        <DropdownMenuTrigger as-child>
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="ghost"
                     size="icon"
-                    class="size-8"
+                    class="size-8 text-muted-foreground"
                     :title="t('Show or hide columns')"
                     :aria-label="t('Show or hide columns')"
                 >
                     <Columns3 class="size-4" />
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" class="w-56">
-                <DropdownMenuLabel>{{ t('Show columns') }}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                    v-for="column in toggleable()"
-                    :key="column.key"
-                    :model-value="columns.isVisible(column.key)"
-                    @update:model-value="columns.toggle(column.key)"
-                >
-                    {{ column.label }}
-                </DropdownMenuCheckboxItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-56">
+            <DropdownMenuLabel>{{ t('Show columns') }}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem
+                v-for="column in toggleable()"
+                :key="column.key"
+                :model-value="columns.isVisible(column.key)"
+                @update:model-value="(visible) => columns.setVisible(column.key, visible === true)"
+            >
+                {{ column.label }}
+            </DropdownMenuCheckboxItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
 </template>

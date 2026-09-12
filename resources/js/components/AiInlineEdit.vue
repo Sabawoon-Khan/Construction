@@ -283,7 +283,7 @@ onUnmounted(() => {
         <button
             v-if="sparkle"
             type="button"
-            class="fixed z-[80] flex size-8 items-center justify-center rounded-full border border-[var(--school-navy)]/20 bg-background text-[var(--school-navy)] shadow-md transition hover:bg-[var(--school-navy)] hover:text-white"
+            class="print:hidden fixed z-[80] flex size-8 items-center justify-center rounded-full border border-[var(--school-navy)]/20 bg-background text-[var(--school-navy)] shadow-md transition hover:bg-[var(--school-navy)] hover:text-white"
             :style="{ top: `${sparkle.top}px`, left: `${sparkle.left}px` }"
             :title="t('AI edit (:shortcut)', { shortcut: shortcutLabel })"
             @mousedown.prevent
@@ -294,7 +294,7 @@ onUnmounted(() => {
 
         <div
             v-if="open && target"
-            class="fixed inset-0 z-[90]"
+            class="print:hidden fixed inset-0 z-[90]"
             @mousedown.self="close"
         >
             <div

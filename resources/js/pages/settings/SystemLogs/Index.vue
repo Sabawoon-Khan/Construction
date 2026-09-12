@@ -10,6 +10,7 @@ import {
     Trash2,
 } from '@lucide/vue';
 import { computed, ref } from 'vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import {
     MisEmptyState,
     MisFilterBar,
@@ -106,6 +107,8 @@ const expandedId = ref<string | null>(null);
 const showAdvanced = ref(
     Boolean(props.filters?.date_from || props.filters?.date_to || (props.filters?.per_page && props.filters.per_page !== 50)),
 );
+const deleteOpen = ref(false);
+const deleting = ref(false);
 
 const hasEntries = computed(() => props.entries.data.length > 0);
 
@@ -205,13 +208,14 @@ function deleteFile(): void {
         return;
     }
 
-    if (!confirm(t('Delete this log file? This cannot be undone.'))) {
-        return;
-    }
-
+    deleting.value = true;
     router.delete('/settings/system-logs', {
         data: { file: file.value },
         preserveScroll: true,
+        onFinish: () => {
+            deleting.value = false;
+            deleteOpen.value = false;
+        },
     });
 }
 
@@ -249,7 +253,7 @@ defineOptions({
                             variant="destructive"
                             size="sm"
                             :disabled="!file"
-                            @click="deleteFile"
+                            @click="deleteOpen = true"
                         >
                             <Trash2 class="size-4" />
                             {{ t('Delete file') }}
@@ -449,7 +453,7 @@ defineOptions({
 
                 <TableFrame v-else table-id="system-logs" :columns="tableColumns">
                     <table class="w-full text-sm">
-                        <thead class="bg-muted/40 text-start">
+                        <thead class="table-chrome-head text-start">
                             <tr class="border-b">
                                 <TableIndexTh />
                                 <SortableTh column="datetime">
@@ -526,4 +530,13 @@ defineOptions({
             </CardContent>
         </Card>
     </div>
+
+    <ConfirmActionDialog
+        v-model:open="deleteOpen"
+        :title="t('Delete file')"
+        :description="t('Delete this log file? This cannot be undone.')"
+        :confirm-label="t('Delete')"
+        :processing="deleting"
+        @confirm="deleteFile"
+    />
 </template>

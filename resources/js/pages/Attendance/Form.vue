@@ -5,7 +5,7 @@ import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,7 +60,12 @@ defineOptions({
 <template>
     <Head :title="isEdit ? t('Edit attendance') : t('Record attendance')" />
 
-    <MisFormPage :title="isEdit ? t('Edit attendance') : t('Record attendance')" :back-href="isEdit ? '/attendance' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit attendance') : t('Record attendance')"
+        :eyebrow="t('Attendance')"
+        :description="isEdit ? t('Update this attendance.') : t('Record attendance to track employee presence.')"
+        :back-href="isEdit ? '/attendance' : undefined"
+    >
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
                 <div v-if="isEdit" class="grid gap-2">
@@ -152,5 +157,5 @@ defineOptions({
                 </Button>
             </div>
         </form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

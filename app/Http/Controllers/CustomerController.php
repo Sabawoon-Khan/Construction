@@ -7,7 +7,9 @@ use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Customer;
 use App\Models\Payment;
 use App\Models\Sale;
+use App\Services\CurrencyService;
 use App\Support\CurrencyAmounts;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -44,9 +46,12 @@ class CustomerController extends Controller implements HasMiddleware
         $paymentsQuery = Payment::query()
             ->whereIn('customer_id', clone $ids)
             ->where(fn ($q) => $q->whereNull('sale_id')->orWhereHas('sale'));
+        $count = (clone $query)->count();
+        $withSales = (clone $query)->whereHas('sales')->count();
         $totals = [
-            'count' => (clone $query)->count(),
-            'with_sales' => (clone $query)->whereHas('sales')->count(),
+            'count' => $count,
+            'with_sales' => $withSales,
+            'without_sales' => max(0, $count - $withSales),
             'sales_total' => Sale::sumTotalPrice(clone $salesQuery),
             'sales_by_currency' => Sale::sumTotalPriceByCurrency(clone $salesQuery),
             'payments_total' => (float) (clone $paymentsQuery)->sum('amount'),
@@ -60,6 +65,7 @@ class CustomerController extends Controller implements HasMiddleware
             'items' => $items,
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'moneyChart' => $this->salesByMonth(clone $salesQuery),
         ]);
     }
 
@@ -232,5 +238,68 @@ class CustomerController extends Controller implements HasMiddleware
             $customer->setAttribute('remaining', round($purchase - $paid, 2));
             $customer->setAttribute('last_purchase_at', $salesStats[$customer->id]->last_purchase_at ?? null);
         });
+    }
+
+    /**
+     * @return list<array{key: string, label: string, by_currency: array{AFN: float, USD: float}}>
+     */
+    protected function salesByMonth($salesQuery): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'by_currency' => ['AFN' => 0.0, 'USD' => 0.0],
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $sales = (clone $salesQuery)
+            ->with(['unit:id,list_price,currency'])
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('contract_date', '>=', $from->toDateString())
+            ->whereDate('contract_date', '<=', $to->toDateString())
+            ->get(['id', 'unit_id', 'contract_date', 'discount', 'currency']);
+
+        foreach ($sales as $sale) {
+            $date = $sale->contract_date;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+
+            $code = CurrencyService::normalize(
+                (string) ($sale->currency ?: $sale->unit?->currency ?: 'USD'),
+            );
+            $amount = max(
+                0,
+                (float) ($sale->unit?->list_price ?? 0) - (float) ($sale->discount ?? 0),
+            );
+            $buckets[$key]['by_currency'][$code] = round(
+                ($buckets[$key]['by_currency'][$code] ?? 0) + $amount,
+                2,
+            );
+        }
+
+        return array_values(array_map(
+            static fn (array $bucket) => [
+                'key' => $bucket['key'],
+                'label' => $bucket['label'],
+                'by_currency' => [
+                    'AFN' => round((float) ($bucket['by_currency']['AFN'] ?? 0), 2),
+                    'USD' => round((float) ($bucket['by_currency']['USD'] ?? 0), 2),
+                ],
+            ],
+            $buckets,
+        ));
     }
 }

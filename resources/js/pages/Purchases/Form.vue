@@ -5,7 +5,7 @@ import { computed } from 'vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,7 +114,12 @@ defineOptions({
 
 <template>
     <Head :title="isEdit ? t('Edit purchase') : t('New purchase')" />
-    <MisFormPage :title="isEdit ? t('Edit purchase') : t('New purchase')" :back-href="isEdit ? '/purchases' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit purchase') : t('New purchase')"
+        :eyebrow="t('Purchases')"
+        :description="isEdit ? t('Update this purchase.') : t('Record a purchase to add materials to a project.')"
+        :back-href="isEdit ? '/purchases' : undefined"
+    >
         <form class="mis-form-card" @submit.prevent="submit">
             <div class="mis-form-grid">
                 <div class="grid gap-2">
@@ -169,7 +174,7 @@ defineOptions({
                 <InputError :message="form.errors.items" />
                 <div class="overflow-x-auto rounded-xl border border-border/80">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/40 text-start text-muted-foreground">
+                        <thead class="table-chrome-head text-start text-muted-foreground">
                             <tr>
                                 <th class="px-3 py-2 font-medium">{{ t('Material') }}</th>
                                 <th class="px-3 py-2 font-medium">{{ t('Qty') }}</th>
@@ -251,5 +256,5 @@ defineOptions({
                 </Button>
             </div>
         </form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

@@ -7,6 +7,7 @@ use App\Models\ExpenseUnit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,18 +21,39 @@ class ExpenseUnitController extends Controller implements HasMiddleware
     {
         $search = $request->string('search')->toString();
 
-        $query = ExpenseUnit::query()->with('creator:id,name')->latest();
+        $query = ExpenseUnit::query()
+            ->with('creator:id,name')
+            ->withCount('expenses')
+            ->latest();
 
         if ($search !== '') {
             $query->where('unit_name', 'like', "%{$search}%");
         }
 
+        $items = $query->get(['id', 'unit_name', 'user_id', 'created_at']);
+        $used = $items->filter(fn ($item) => (int) ($item->expenses_count ?? 0) > 0)->count();
+        $count = $items->count();
+        $expensesLinked = (int) $items->sum('expenses_count');
+
         return Inertia::render('ExpenseUnits/Index', [
-            'items' => $query->get(['id', 'unit_name', 'user_id', 'created_at']),
+            'items' => $items,
             'filters' => ['search' => $search],
             'totals' => [
-                'count' => (clone $query)->count(),
+                'count' => $count,
+                'used' => $used,
+                'unused' => max(0, $count - $used),
+                'expenses_linked' => $expensesLinked,
             ],
+            'usageChart' => $items
+                ->sortByDesc(fn ($item) => (int) ($item->expenses_count ?? 0))
+                ->take(6)
+                ->values()
+                ->map(fn ($item) => [
+                    'key' => (string) $item->id,
+                    'label' => Str::limit((string) $item->unit_name, 8, ''),
+                    'value' => (int) ($item->expenses_count ?? 0),
+                ])
+                ->all(),
         ]);
     }
 

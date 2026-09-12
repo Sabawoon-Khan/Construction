@@ -6,7 +6,8 @@ import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
-import { MisFormPage, MisTabs } from '@/components/mis';
+import { MisTabs } from '@/components/mis';
+import { V2FormPage } from '@/components/v2';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,20 +17,43 @@ import { useTranslations } from '@/composables/useTranslations';
 import { historyBack } from '@/lib/historyBack';
 import { money } from '@/lib/utils';
 
-const props = defineProps<{ item: any; projects: any[]; customers: any[]; units: any[] }>();
+const props = defineProps<{
+    item: any;
+    projects: any[];
+    customers: any[];
+    units: any[];
+    unit_id?: number | null;
+}>();
 const isEdit = computed(() => !!props.item);
 const { t } = useTranslations();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) => calendar.format(value) || '—';
 const tab = ref('info');
 
-const projectId = ref(props.item?.project_id ? String(props.item.project_id) : '');
-const unitId = ref(props.item?.unit_id ? String(props.item.unit_id) : '');
+const initialUnitId = props.item?.unit_id
+    ? String(props.item.unit_id)
+    : props.unit_id
+      ? String(props.unit_id)
+      : '';
+const initialUnit = initialUnitId
+    ? props.units.find((u) => String(u.id) === initialUnitId)
+    : undefined;
+
+const projectId = ref(
+    props.item?.project_id
+        ? String(props.item.project_id)
+        : initialUnit?.project_id != null
+          ? String(initialUnit.project_id)
+          : '',
+);
+const unitId = ref(initialUnitId);
 const customerId = ref(props.item?.customer_id ? String(props.item.customer_id) : '');
 const status = ref(String(props.item?.status ?? 'active'));
 const notes = ref(String(props.item?.notes ?? ''));
 const discount = ref(String(props.item?.discount ?? 0));
-const currency = ref(String(props.item?.currency ?? 'USD'));
+const currency = ref(
+    String(props.item?.currency ?? initialUnit?.currency ?? 'USD'),
+);
 const contractDate = ref(
     props.item?.contract_date?.slice?.(0, 10) ??
         new Date().toISOString().slice(0, 10),
@@ -111,16 +135,29 @@ function removeRow(index: number) {
     }
     installments.value.splice(index, 1);
 }
+
+function onFormKeydown(event: KeyboardEvent) {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        (event.currentTarget as HTMLFormElement | null)?.requestSubmit?.();
+    }
+}
 </script>
 
 <template>
     <Head :title="isEdit ? t('Edit sale') : t('Create sale')" />
-    <MisFormPage :title="isEdit ? t('Edit sale') : t('Create sale')" :back-href="isEdit ? '/sales' : undefined">
+    <V2FormPage
+        :title="isEdit ? t('Edit sale') : t('Create sale')"
+        :eyebrow="t('Sales')"
+        :description="isEdit ? t('Update this sale.') : t('Create a new sale contract.')"
+        :back-href="isEdit ? '/sales' : undefined"
+    >
         <Form
             :action="isEdit ? `/sales/${item.id}` : '/sales'"
             :method="isEdit ? 'put' : 'post'"
             class="mis-form-card"
             v-slot="{ errors, processing }"
+            @keydown="onFormKeydown"
         >
             <MisTabs v-model="tab" :tabs="tabs" />
 
@@ -215,8 +252,8 @@ function removeRow(index: number) {
                     />
                 </div>
                 <div class="grid gap-2">
-                    <Label>{{ t('Discount') }}</Label>
-                    <div class="flex gap-2">
+                    <Label>{{ t('Discount') }} ({{ currency }})</Label>
+                    <div class="flex gap-2 sm:items-center">
                         <Input
                             v-model="discount"
                             name="discount"
@@ -312,7 +349,7 @@ function removeRow(index: number) {
                 </template>
                 <template v-else>
                     <table class="min-w-full text-sm">
-                        <thead class="bg-muted/40 text-start text-muted-foreground">
+                        <thead class="table-chrome-head text-start text-muted-foreground">
                             <tr>
                                 <th class="px-3 py-2 font-medium">{{ t('Due') }}</th>
                                 <th class="px-3 py-2 font-medium">{{ t('Amount') }}</th>
@@ -380,5 +417,5 @@ function removeRow(index: number) {
                 </Form>
             </div>
         </Form>
-    </MisFormPage>
+    </V2FormPage>
 </template>

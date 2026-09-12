@@ -9,8 +9,10 @@ use App\Models\PartnerDistribution;
 use App\Models\PartnerInvestment;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\CurrencyService;
 use App\Services\ShareholderProfitService;
 use App\Support\CurrencyAmounts;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -46,9 +48,12 @@ class PartnerController extends Controller implements HasMiddleware
         $ids = (clone $query)->select('id');
         $contributionsQuery = PartnerInvestment::query()->whereIn('partner_id', clone $ids);
         $payoutsQuery = PartnerDistribution::query()->whereIn('partner_id', clone $ids);
+        $count = (clone $query)->count();
+        $withProjects = (clone $query)->whereHas('projects')->count();
         $totals = [
-            'count' => (clone $query)->count(),
-            'with_projects' => (clone $query)->whereHas('projects')->count(),
+            'count' => $count,
+            'with_projects' => $withProjects,
+            'without_projects' => max(0, $count - $withProjects),
             'contributions' => (float) (clone $contributionsQuery)->sum('amount'),
             'contributions_by_currency' => CurrencyAmounts::sum(clone $contributionsQuery),
             'payouts' => (float) (clone $payoutsQuery)->sum('amount'),
@@ -59,6 +64,7 @@ class PartnerController extends Controller implements HasMiddleware
             'items' => $query->latest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
+            'moneyChart' => $this->investmentsByMonth(clone $contributionsQuery),
         ]);
     }
 
@@ -211,5 +217,61 @@ class PartnerController extends Controller implements HasMiddleware
                 }
             })
             ->get(['id', 'name', 'email']);
+    }
+
+    /**
+     * @return list<array{key: string, label: string, by_currency: array{AFN: float, USD: float}}>
+     */
+    protected function investmentsByMonth($investmentQuery): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'by_currency' => ['AFN' => 0.0, 'USD' => 0.0],
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $investments = (clone $investmentQuery)
+            ->whereDate('invested_at', '>=', $from->toDateString())
+            ->whereDate('invested_at', '<=', $to->toDateString())
+            ->get(['id', 'invested_at', 'amount', 'currency']);
+
+        foreach ($investments as $investment) {
+            $date = $investment->invested_at;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (! isset($buckets[$key])) {
+                continue;
+            }
+
+            $code = CurrencyService::normalize((string) ($investment->currency ?: 'USD'));
+            $amount = max(0, (float) ($investment->amount ?? 0));
+            $buckets[$key]['by_currency'][$code] = round(
+                ($buckets[$key]['by_currency'][$code] ?? 0) + $amount,
+                2,
+            );
+        }
+
+        return array_values(array_map(
+            static fn (array $bucket) => [
+                'key' => $bucket['key'],
+                'label' => $bucket['label'],
+                'by_currency' => [
+                    'AFN' => round((float) ($bucket['by_currency']['AFN'] ?? 0), 2),
+                    'USD' => round((float) ($bucket['by_currency']['USD'] ?? 0), 2),
+                ],
+            ],
+            $buckets,
+        ));
     }
 }

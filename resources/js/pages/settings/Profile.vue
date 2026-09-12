@@ -122,7 +122,7 @@ defineOptions({
             <CardHeader class="border-b border-border/60 bg-muted/20">
                 <div class="flex flex-wrap items-start gap-4">
                     <div
-                        class="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--school-navy)] text-lg font-semibold tracking-tight text-white"
+                        class="settings-avatar"
                         aria-hidden="true"
                     >
                         {{ initials }}
@@ -395,3 +395,21 @@ defineOptions({
         </Card>
     </div>
 </template>
+
+<style scoped>
+.settings-avatar {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: var(--school-navy, #050505);
+    color: white;
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.4px;
+    box-shadow:
+        0 12px 24px rgb(0 0 0 / 14%),
+        0 0 0 1px rgb(255 255 255 / 8%) inset;
+}
+</style>

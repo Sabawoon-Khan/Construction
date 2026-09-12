@@ -3,6 +3,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { RotateCcw, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import {
     MisEmptyState,
     MisFilterBar,
@@ -48,6 +49,8 @@ const { can } = usePermissions();
 
 const search = ref(props.filters?.search ?? '');
 const type = ref(props.filters?.type ?? '');
+const emptyTrashOpen = ref(false);
+const emptying = ref(false);
 
 const hasItems = computed(() => props.items.data.length > 0);
 
@@ -109,13 +112,12 @@ function rowActions(item: TrashItem): RowActionItem[] {
 }
 
 function emptyTrash(): void {
+    emptying.value = true;
     router.delete('/settings/trash', {
-        onBefore: () =>
-            window.confirm(
-                t(
-                    'Permanently delete everything in trash? This cannot be undone.',
-                ),
-            ),
+        onFinish: () => {
+            emptying.value = false;
+            emptyTrashOpen.value = false;
+        },
     });
 }
 </script>
@@ -133,7 +135,7 @@ function emptyTrash(): void {
                     v-if="hasItems"
                     variant="destructive"
                     size="sm"
-                    @click="emptyTrash"
+                    @click="emptyTrashOpen = true"
                 >
                     {{ t('Empty trash') }}
                 </Button>
@@ -189,4 +191,13 @@ function emptyTrash(): void {
 
         <MisPagination :paginator="items" class="mt-4" />
     </MisListPage>
+
+    <ConfirmActionDialog
+        v-model:open="emptyTrashOpen"
+        :title="t('Empty trash')"
+        :description="t('Permanently delete everything in trash? This cannot be undone.')"
+        :confirm-label="t('Empty trash')"
+        :processing="emptying"
+        @confirm="emptyTrash"
+    />
 </template>

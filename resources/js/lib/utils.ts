@@ -37,33 +37,76 @@ function pageBaseCurrency(): string {
 
 export function money(value: unknown, currency?: string | null) {
     const code = resolveCurrency(currency);
+    const amount = Number(value ?? 0);
+    const safeAmount = Number.isFinite(amount) ? amount : 0;
+    const formatted = new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(safeAmount);
 
-    try {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: code,
-            maximumFractionDigits: 2,
-        }).format(Number(value ?? 0));
-    } catch {
-        return `${code} ${Number(value ?? 0).toFixed(2)}`;
+    // Always "USD 1,234.00" / "AFN 1,234.00" so amounts stay readable
+    // in tight cards and multi-currency strings (not a lone "$").
+    return `${code} ${formatted}`;
+}
+
+/**
+ * Always returns AFN + USD (and any extras), including explicit zeros.
+ * Fallback is only used when `amounts` itself is missing/null/undefined.
+ */
+export function normalizeCurrencyAmounts(
+    amounts?: Record<string, number> | null,
+    fallbackValue?: unknown,
+): Record<string, number> {
+    const merged: Record<string, number> = { AFN: 0, USD: 0 };
+    const provided = amounts != null;
+
+    for (const [code, amount] of Object.entries(amounts ?? {})) {
+        const resolved = resolveCurrency(code);
+        const value = Number(amount ?? 0);
+        if (!Number.isFinite(value)) {
+            continue;
+        }
+        merged[resolved] = (merged[resolved] ?? 0) + value;
     }
+
+    if (!provided) {
+        const fallback = Number(fallbackValue ?? 0);
+        if (Number.isFinite(fallback) && fallback !== 0) {
+            merged[pageBaseCurrency()] = fallback;
+        }
+    }
+
+    return merged;
+}
+
+export function currencyAmountLines(
+    amounts?: Record<string, number> | null,
+    fallbackValue?: unknown,
+): Array<{ code: string; value: number; text: string }> {
+    const merged = normalizeCurrencyAmounts(amounts, fallbackValue);
+    const preferred = ['AFN', 'USD'];
+    const extras = Object.keys(merged)
+        .filter((code) => !preferred.includes(code))
+        .sort((a, b) => a.localeCompare(b));
+
+    return [...preferred, ...extras].map((code) => {
+        const value = merged[code] ?? 0;
+
+        return {
+            code,
+            value,
+            text: money(value, code),
+        };
+    });
 }
 
 export function moneyByCurrency(
     amounts?: Record<string, number> | null,
     fallbackValue?: unknown,
 ): string {
-    const parts = Object.entries(amounts ?? {})
-        .map(([code, amount]) => [resolveCurrency(code), Number(amount ?? 0)] as const)
-        .filter(([, amount]) => Number.isFinite(amount) && amount !== 0)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([code, amount]) => money(amount, code));
-
-    if (parts.length) {
-        return parts.join(' · ');
-    }
-
-    return money(fallbackValue ?? 0);
+    return currencyAmountLines(amounts, fallbackValue)
+        .map((line) => line.text)
+        .join(' · ');
 }
 
 export function formatNumber(value: unknown, digits = 2) {

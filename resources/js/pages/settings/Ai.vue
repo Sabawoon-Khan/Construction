@@ -725,6 +725,14 @@ defineOptions({
             @submit.prevent="submit"
         >
             <template v-if="tab === 'general'">
+                <p class="rounded-md border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                    {{
+                        t(
+                            'Prompts and attached files may be sent to your configured AI provider. Do not share secrets.',
+                        )
+                    }}
+                </p>
+
                 <section class="space-y-4 border-b border-border/70 pb-8">
                     <div class="flex flex-wrap items-end justify-between gap-3">
                         <div>

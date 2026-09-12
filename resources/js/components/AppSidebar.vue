@@ -34,7 +34,7 @@ const props = defineProps<{
 const page = usePage();
 const { t } = useTranslations();
 const { sidebarSide, dir } = useLocale();
-const { toggleSidebar, state } = useSidebar();
+const { toggleSidebar, state, isMobile } = useSidebar();
 const { navGroups } = useAppNavigation();
 
 const isCollapsed = computed(() => state.value === 'collapsed');
@@ -60,6 +60,7 @@ const sidebarVariant = computed(() => {
     >
         <SidebarHeader
             class="gap-0 p-4 pb-3 transition-[padding] duration-300 ease-in-out group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pt-3 group-data-[collapsible=icon]:pb-2"
+            :class="isMobile ? 'p-3 pb-2' : undefined"
         >
             <SidebarMenu class="group-data-[collapsible=icon]:items-center">
                 <SidebarMenuItem
@@ -86,6 +87,7 @@ const sidebarVariant = computed(() => {
 
         <SidebarContent
             class="px-3.5 transition-[padding] duration-300 ease-in-out group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0"
+            :class="isMobile ? 'px-2.5' : undefined"
             data-tour="sidebar-nav"
         >
             <NavMain
@@ -97,6 +99,7 @@ const sidebarVariant = computed(() => {
         </SidebarContent>
 
         <SidebarFooter
+            v-if="!isMobile"
             class="mt-auto gap-0 p-0 transition-all duration-300 ease-in-out group-data-[collapsible=icon]:items-center"
         >
             <div

@@ -12,10 +12,12 @@ const props = withDefaults(
         size?: 'default' | 'sm' | 'lg' | 'icon';
         variant?: 'default' | 'outline' | 'secondary' | 'ghost';
         class?: string;
+        tourAnchor?: boolean;
     }>(),
     {
         size: 'default',
         variant: 'default',
+        tourAnchor: false,
     },
 );
 
@@ -29,6 +31,7 @@ const { can } = usePermissions();
         :size="size"
         :variant="variant"
         :class="props.class"
+        :data-tour="tourAnchor ? 'create-primary' : undefined"
     >
         <Link :href="href">
             <Plus class="size-4" />

@@ -44,11 +44,23 @@ function alignClass(): string {
 </script>
 
 <template>
-    <th :class="cn('px-4 py-3 font-medium whitespace-nowrap', alignClass(), $props.class)">
+    <th
+        :class="cn('px-4 py-3 font-medium whitespace-nowrap', alignClass(), $props.class)"
+        :aria-sort="
+            canSort && active
+                ? sortDir === 'asc'
+                    ? 'ascending'
+                    : 'descending'
+                : canSort
+                  ? 'none'
+                  : undefined
+        "
+    >
         <button
             v-if="canSort"
             type="button"
-            class="inline-flex items-center gap-1 text-inherit hover:text-foreground"
+            class="inline-flex items-center gap-1 text-inherit hover:text-foreground data-[active=true]:text-[var(--brand-accent,var(--primary))]"
+            :data-active="canSort && active ? 'true' : undefined"
             @click="onSort"
         >
             <slot />

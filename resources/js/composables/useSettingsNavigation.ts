@@ -1,13 +1,21 @@
 import {
+    Bot,
     Building2,
+    CloudOff,
     DatabaseBackup,
     FolderOpen,
-    Handshake,
     History,
+    KeyRound,
     Languages,
+    ListTree,
+    Lock,
+    Mail,
     Palette,
+    Receipt,
+    Ruler,
     ScrollText,
     Shield,
+    SlidersHorizontal,
     Trash2,
     UserRound,
     Users,
@@ -20,14 +28,37 @@ import { edit as editAppearance } from '@/routes/appearance';
 import { edit as editProfile } from '@/routes/profile';
 import type { NavItem } from '@/types';
 
+export type SettingsNavGroup =
+    | 'account'
+    | 'company'
+    | 'access'
+    | 'data'
+    | 'system';
+
 export type SettingsNavItem = NavItem & {
-    group: 'account' | 'administration';
+    group: SettingsNavGroup;
 };
+
+export const SETTINGS_NAV_GROUP_ORDER: SettingsNavGroup[] = [
+    'account',
+    'company',
+    'access',
+    'data',
+    'system',
+];
 
 export function useSettingsNavigation() {
     const { t } = useTranslations();
     const { can } = usePermissions();
     const page = usePage();
+
+    const groupLabels = computed<Record<SettingsNavGroup, string>>(() => ({
+        account: t('Account'),
+        company: t('Company'),
+        access: t('Access'),
+        data: t('Data'),
+        system: t('System'),
+    }));
 
     const navItems = computed<SettingsNavItem[]>(() => {
         const items: SettingsNavItem[] = [
@@ -38,12 +69,27 @@ export function useSettingsNavigation() {
                 group: 'account',
             },
             {
+                title: t('Security'),
+                href: '/settings/security',
+                icon: Lock,
+                group: 'account',
+            },
+            {
                 title: t('Appearance'),
                 href: editAppearance(),
                 icon: Palette,
                 group: 'account',
             },
         ];
+
+        if (can('companies.view') || can('companies.edit')) {
+            items.push({
+                title: t('Company'),
+                href: '/settings/company',
+                icon: Building2,
+                group: 'company',
+            });
+        }
 
         if (can('settings.manage')) {
             const features = page.props.kitFeatures as
@@ -54,18 +100,9 @@ export function useSettingsNavigation() {
                     title: t('Translations'),
                     href: '/settings/translations',
                     icon: Languages,
-                    group: 'administration',
+                    group: 'company',
                 });
             }
-        }
-
-        if (can('companies.view') || can('companies.edit')) {
-            items.push({
-                title: t('Company'),
-                href: '/settings/company',
-                icon: Building2,
-                group: 'administration',
-            });
         }
 
         if (can('users.view')) {
@@ -73,7 +110,7 @@ export function useSettingsNavigation() {
                 title: t('Users'),
                 href: '/settings/users',
                 icon: Users,
-                group: 'administration',
+                group: 'access',
                 createHref: '/settings/users/create',
                 createPermission: 'users.create',
             });
@@ -84,28 +121,43 @@ export function useSettingsNavigation() {
                 title: t('Roles'),
                 href: '/settings/roles',
                 icon: Shield,
-                group: 'administration',
+                group: 'access',
             });
         }
 
-        if (can('partners.view')) {
+        if (can('settings.manage')) {
             items.push({
-                title: t('Shareholders'),
-                href: '/partners',
-                icon: Handshake,
-                group: 'administration',
-                createHref: '/partners/create',
-                createPermission: 'partners.create',
+                title: t('Google Auth'),
+                href: '/settings/google-auth',
+                icon: KeyRound,
+                group: 'access',
             });
         }
 
-        if (can('backups.view')) {
+        if (can('settings.manage')) {
             items.push({
-                title: t('Backups'),
-                href: '/settings/backups',
-                icon: DatabaseBackup,
-                group: 'administration',
+                title: t('Lookups'),
+                href: '/settings/lookups',
+                icon: ListTree,
+                group: 'data',
             });
+        }
+
+        if (can('expenses.view')) {
+            items.push(
+                {
+                    title: t('Expense categories'),
+                    href: '/expense-categories',
+                    icon: Receipt,
+                    group: 'data',
+                },
+                {
+                    title: t('Expense units'),
+                    href: '/expense-units',
+                    icon: Ruler,
+                    group: 'data',
+                },
+            );
         }
 
         if (can('storage.view')) {
@@ -113,7 +165,7 @@ export function useSettingsNavigation() {
                 title: t('File Manager'),
                 href: '/settings/file-manager',
                 icon: FolderOpen,
-                group: 'administration',
+                group: 'data',
             });
         }
 
@@ -122,8 +174,46 @@ export function useSettingsNavigation() {
                 title: t('Trash'),
                 href: '/settings/trash',
                 icon: Trash2,
-                group: 'administration',
+                group: 'data',
             });
+        }
+
+        if (can('backups.view')) {
+            items.push({
+                title: t('Backups'),
+                href: '/settings/backups',
+                icon: DatabaseBackup,
+                group: 'data',
+            });
+        }
+
+        if (can('settings.manage')) {
+            items.push(
+                {
+                    title: t('Email'),
+                    href: '/settings/email',
+                    icon: Mail,
+                    group: 'system',
+                },
+                {
+                    title: t('AI'),
+                    href: '/settings/ai',
+                    icon: Bot,
+                    group: 'system',
+                },
+                {
+                    title: t('Offline'),
+                    href: '/settings/offline',
+                    icon: CloudOff,
+                    group: 'system',
+                },
+                {
+                    title: t('System Control'),
+                    href: '/settings/system-control',
+                    icon: SlidersHorizontal,
+                    group: 'system',
+                },
+            );
         }
 
         if (can('audit.view') || can('settings.manage')) {
@@ -132,13 +222,13 @@ export function useSettingsNavigation() {
                     title: t('Login logs'),
                     href: '/settings/login-logs',
                     icon: History,
-                    group: 'administration',
+                    group: 'system',
                 },
                 {
                     title: t('System logs'),
                     href: '/settings/system-logs',
                     icon: ScrollText,
-                    group: 'administration',
+                    group: 'system',
                 },
             );
         }
@@ -146,15 +236,25 @@ export function useSettingsNavigation() {
         return items;
     });
 
+    const navGroups = computed(() =>
+        SETTINGS_NAV_GROUP_ORDER.map((group) => ({
+            key: group,
+            label: groupLabels.value[group],
+            items: navItems.value.filter((item) => item.group === group),
+        })).filter((group) => group.items.length > 0),
+    );
+
     const accountItems = computed(() =>
         navItems.value.filter((item) => item.group === 'account'),
     );
     const adminItems = computed(() =>
-        navItems.value.filter((item) => item.group === 'administration'),
+        navItems.value.filter((item) => item.group !== 'account'),
     );
 
     return {
         navItems,
+        navGroups,
+        groupLabels,
         accountItems,
         adminItems,
     };

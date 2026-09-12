@@ -1,5 +1,8 @@
 import { computed } from 'vue';
-import { useAppNavigation } from '@/composables/useAppNavigation';
+import {
+    canonicalAppPath,
+    useAppNavigation,
+} from '@/composables/useAppNavigation';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
 import { useSettingsNavigation } from '@/composables/useSettingsNavigation';
 import { toUrl } from '@/lib/utils';
@@ -21,12 +24,13 @@ export function navItemPath(href: NavItem['href']): string {
 
 function matchScore(href: NavItem['href'], currentPath: string): number {
     const path = navItemPath(href);
+    const current = canonicalAppPath(currentPath);
 
-    if (currentPath === path) {
+    if (current === path) {
         return path.length + 1000;
     }
 
-    if (path !== '/' && currentPath.startsWith(`${path}/`)) {
+    if (path !== '/' && current.startsWith(`${path}/`)) {
         return path.length;
     }
 
@@ -55,12 +59,14 @@ export function useModuleTabs() {
     const { currentUrl } = useCurrentUrl();
 
     const isSettingsArea = computed(() => {
-        const path = currentUrl.value;
+        const path = canonicalAppPath(currentUrl.value);
 
         return (
             path.startsWith('/settings')
-            || path === '/partners'
-            || path.startsWith('/partners/')
+            || path === '/expense-categories'
+            || path.startsWith('/expense-categories/')
+            || path === '/expense-units'
+            || path.startsWith('/expense-units/')
         );
     });
 

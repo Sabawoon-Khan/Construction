@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
+use App\Models\InventoryTransaction;
 use App\Models\Material;
 use App\Models\MaterialUnit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -33,9 +35,35 @@ class MaterialController extends Controller implements HasMiddleware
             });
         }
 
+        $count = (clone $query)->count();
+        $active = (clone $query)->where('is_active', true)->count();
+        $onHandByMaterial = InventoryTransaction::stockLevels()
+            ->groupBy('material_id')
+            ->map(fn ($rows) => round((float) $rows->sum('on_hand'), 3));
+
+        $lowStock = (clone $query)
+            ->get(['id', 'minimum_stock'])
+            ->filter(function (Material $material) use ($onHandByMaterial) {
+                $minimum = (float) $material->minimum_stock;
+                if ($minimum <= 0) {
+                    return false;
+                }
+
+                $onHand = (float) ($onHandByMaterial[$material->id] ?? 0);
+
+                return $onHand < $minimum;
+            })
+            ->count();
+
         $totals = [
-            'count' => (clone $query)->count(),
-            'active' => (clone $query)->where('is_active', true)->count(),
+            'count' => $count,
+            'active' => $active,
+            'inactive' => max(0, $count - $active),
+            'with_cost' => (clone $query)->where('unit_cost', '>', 0)->count(),
+            'low_stock' => $lowStock,
+            'this_month' => (clone $query)
+                ->where('created_at', '>=', now()->startOfMonth())
+                ->count(),
         ];
 
         return Inertia::render('Materials/Index', [
@@ -43,7 +71,51 @@ class MaterialController extends Controller implements HasMiddleware
             'filters' => ['search' => $search],
             'units' => MaterialUnit::options(),
             'totals' => $totals,
+            'volumeChart' => $this->materialsVolumeByMonth(clone $query),
         ]);
+    }
+
+    /**
+     * Materials created per month for the last 6 months (count volume).
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<\App\Models\Material>  $query
+     * @return list<array{key: string, label: string, count: int}>
+     */
+    protected function materialsVolumeByMonth($query): array
+    {
+        $to = Carbon::now()->endOfMonth();
+        $from = Carbon::now()->subMonths(5)->startOfMonth();
+
+        $buckets = [];
+        $cursor = $from->copy();
+        while ($cursor->lte($to)) {
+            $key = $cursor->format('Y-m');
+            $buckets[$key] = [
+                'key' => $key,
+                'label' => $cursor->format('M'),
+                'count' => 0,
+            ];
+            $cursor = $cursor->addMonth();
+        }
+
+        $rows = (clone $query)
+            ->reorder()
+            ->where('created_at', '>=', $from)
+            ->where('created_at', '<=', $to)
+            ->get(['created_at']);
+
+        foreach ($rows as $row) {
+            $date = $row->created_at;
+            if (! $date) {
+                continue;
+            }
+            $key = $date->format('Y-m');
+            if (isset($buckets[$key])) {
+                $buckets[$key]['count']++;
+            }
+        }
+
+        return array_values($buckets);
     }
 
     public function create(): Response

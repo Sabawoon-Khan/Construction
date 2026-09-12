@@ -6,6 +6,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet'
 import SheetDescription from '@/components/ui/sheet/SheetDescription.vue'
 import SheetHeader from '@/components/ui/sheet/SheetHeader.vue'
 import SheetTitle from '@/components/ui/sheet/SheetTitle.vue'
+import { useTranslations } from '@/composables/useTranslations'
 import {
     SIDEBAR_MARGIN,
     SIDEBAR_WIDTH,
@@ -24,6 +25,7 @@ const props = withDefaults(defineProps<SidebarProps>(), {
     collapsible: 'offcanvas',
 })
 
+const { t } = useTranslations()
 const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
 /** Floating island — leave this path alone; kit default. */
@@ -75,8 +77,8 @@ const spacerWidth = computed(() => {
             }"
         >
             <SheetHeader class="sr-only">
-                <SheetTitle>Sidebar</SheetTitle>
-                <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+                <SheetTitle>{{ t('Sidebar') }}</SheetTitle>
+                <SheetDescription>{{ t('Displays the mobile sidebar.') }}</SheetDescription>
             </SheetHeader>
             <div class="flex h-full w-full flex-col">
                 <slot />

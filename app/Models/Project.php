@@ -87,6 +87,11 @@ class Project extends Model
         return $this->hasMany(Purchase::class);
     }
 
+    public function loans(): HasMany
+    {
+        return $this->hasMany(Loan::class);
+    }
+
     public function inventoryTransactions(): HasMany
     {
         return $this->hasMany(InventoryTransaction::class);

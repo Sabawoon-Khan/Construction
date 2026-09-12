@@ -1,0 +1,1 @@
+import{Sr as e,an as t,bt as n,lt as r}from"./useTranslations-DhNR1bho.js";import{t as i}from"./MisStatusBadge-BZf238T5.js";var a=n({__name:`StatusBadge`,props:{status:{default:``},class:{default:void 0}},setup(n){return(a,o)=>(t(),r(i,{status:n.status,class:e(a.$props.class)},null,8,[`status`,`class`]))}});export{a as t};

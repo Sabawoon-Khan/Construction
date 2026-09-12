@@ -22,6 +22,7 @@ import {
 } from '@lucide/vue';
 import type { Component } from 'vue';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import {
     MisChartCard,
     MisDataTable,
@@ -141,6 +142,8 @@ const messages = ref<ChatMessage[]>([]);
 const conversations = ref<StoredConversation[]>([]);
 const activeConversationId = ref<string | null>(null);
 const view = ref<'chat' | 'history'>('chat');
+const deleteOpen = ref(false);
+const pendingDeleteId = ref<string | null>(null);
 const threadEl = ref<HTMLElement | null>(null);
 const promptFocused = ref(false);
 const steps = ref<ProgressStep[]>([]);
@@ -439,11 +442,18 @@ function deleteConversation(id: string): void {
     persistStore();
 }
 
-function confirmDelete(id: string): void {
-    if (!window.confirm(t('Delete this chat from history?'))) {
+function confirmDelete(): void {
+    if (!pendingDeleteId.value) {
         return;
     }
-    deleteConversation(id);
+    deleteConversation(pendingDeleteId.value);
+    deleteOpen.value = false;
+    pendingDeleteId.value = null;
+}
+
+function askDelete(id: string): void {
+    pendingDeleteId.value = id;
+    deleteOpen.value = true;
 }
 
 function conversationPreview(item: StoredConversation): string {
@@ -896,7 +906,7 @@ watch(
                         type="button"
                         class="mt-0.5 size-7 shrink-0 rounded-full text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                         :aria-label="t('Delete')"
-                        @click="confirmDelete(item.id)"
+                        @click="askDelete(item.id)"
                     >
                         <Trash2 class="mx-auto size-3.5" />
                     </button>
@@ -1292,6 +1302,14 @@ watch(
             </div>
         </section>
     </div>
+
+    <ConfirmActionDialog
+        v-model:open="deleteOpen"
+        :title="t('Delete chat')"
+        :description="t('Delete this chat from history?')"
+        :confirm-label="t('Delete')"
+        @confirm="confirmDelete"
+    />
 </template>
 
 <style scoped>
