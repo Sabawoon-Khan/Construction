@@ -60,7 +60,6 @@ const tableColumns = computed(() => [
     { key: 'payment_method', label: t('Paying type') },
     { key: 'amount', label: t('Amount') },
     { key: 'attachments', label: t('Attachments') },
-    { key: 'created_at', label: t('Created at') },
     { key: 'actions', label: t('Actions'), locked: true },
 ]);
 const { baseCurrency } = useCurrency();
@@ -71,7 +70,7 @@ const formatDate = (value: string | null | undefined) =>
 const expenseSearch = ref('');
 const categoryFilter = ref<string>('all');
 const currentPage = ref(1);
-const perPage = 15;
+const perPage = 12;
 const deletingId = ref<number | null>(null);
 const pendingDelete = ref<(typeof props.expenses)[number] | null>(null);
 const confirmDeleteOpen = ref(false);
@@ -239,7 +238,7 @@ watch(totalPages, (pages) => {
 </script>
 
 <template>
-    <V2Panel :padded="false" class="project-money-panel">
+    <V2Panel :padded="false" class="project-money-panel project-expenses-panel">
         <template #header>
             <div>
                 <h2>{{ t('Expenses') }}</h2>
@@ -247,38 +246,38 @@ watch(totalPages, (pages) => {
             </div>
         </template>
         <template #actions>
-            <Button as-child size="sm" variant="outline" class="h-9 gap-1.5">
+            <Button as-child size="sm" variant="outline" class="h-8 gap-1.5">
                 <Link :href="printHref()" target="_blank">
-                    <Printer class="size-4" />
+                    <Printer class="size-3.5" />
                     {{ t('Print') }}
                 </Link>
             </Button>
             <Can permission="purchases.create">
-                <Button as-child size="sm" variant="outline" class="h-9 gap-1.5">
+                <Button as-child size="sm" variant="outline" class="h-8 gap-1.5">
                     <Link :href="`/purchases/create?project_id=${item.id}`">
-                        <Plus class="size-4" />
+                        <Plus class="size-3.5" />
                         {{ t('Purchase') }}
                     </Link>
                 </Button>
             </Can>
             <Can permission="expenses.create">
-                <Button size="sm" class="h-9 gap-1.5" @click="emit('open-expense', null)">
-                    <Plus class="size-4" />
+                <Button size="sm" class="h-8 gap-1.5" @click="emit('open-expense', null)">
+                    <Plus class="size-3.5" />
                     {{ t('Add expense') }}
                 </Button>
             </Can>
         </template>
 
-        <div class="flex flex-col gap-2 border-b border-border/50 bg-muted/15 px-3 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:px-5">
+        <div class="project-expenses-filters">
             <MisSearchInput
                 v-model="expenseSearch"
-                class="h-9 min-w-0 w-full flex-1 sm:min-w-[12rem] sm:max-w-sm"
+                class="h-8 min-w-0 w-full flex-1 sm:min-w-[12rem] sm:max-w-sm"
                 :placeholder="t('Search expenses...')"
             />
             <select
                 v-if="categorySummaries.length"
                 v-model="categoryFilter"
-                class="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] sm:max-w-[14rem] sm:w-auto"
+                class="h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] sm:max-w-[14rem] sm:w-auto"
             >
                 <option
                     v-for="option in categoryOptions"
@@ -293,20 +292,20 @@ watch(totalPages, (pages) => {
                 as-child
                 size="sm"
                 variant="outline"
-                class="h-9 gap-1.5 shrink-0"
+                class="h-8 gap-1.5 shrink-0"
             >
                 <Link
                     :href="printHref(categoryFilter)"
                     target="_blank"
                 >
-                    <Printer class="size-4" />
+                    <Printer class="size-3.5" />
                     {{ t('Print') }}
                 </Link>
             </Button>
         </div>
 
         <TableFrame table-id="project-expenses" :columns="tableColumns">
-            <table class="min-w-full text-sm">
+            <table class="project-expenses-table min-w-full text-sm">
                 <thead class="table-chrome-head text-start text-muted-foreground">
                     <tr>
                         <TableIndexTh />
@@ -318,8 +317,7 @@ watch(totalPages, (pages) => {
                         <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
                         <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
                         <SortableTh column="attachments">{{ t('Attachments') }}</SortableTh>
-                        <SortableTh column="created_at">{{ t('Created at') }}</SortableTh>
-                        <th class="px-4 py-3 text-end font-medium">{{ t('Actions') }}</th>
+                        <th class="text-end font-medium">{{ t('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -330,37 +328,37 @@ watch(totalPages, (pages) => {
                         @click="emit('open-expense', expense)"
                     >
                         <TableIndexTd :index="index" :from="paginationFrom" />
-                        <td class="px-4 py-3 whitespace-nowrap">
+                        <td class="whitespace-nowrap">
                             {{ formatDate(expense.expense_date) }}
                         </td>
-                        <td class="px-4 py-3 font-medium tabular-nums">
+                        <td class="font-medium tabular-nums">
                             {{ expense.reference_no || '—' }}
                         </td>
-                        <td class="px-4 py-3">
+                        <td>
                             {{ expense.paid_to || '—' }}
                         </td>
-                        <td class="px-4 py-3">
+                        <td>
                             <span
-                                class="inline-flex rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                                class="inline-flex rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
                             >
                                 {{ expense.category?.name || t('General') }}
                             </span>
                         </td>
-                        <td class="max-w-[16rem] truncate px-4 py-3">
+                        <td class="max-w-[14rem] truncate">
                             {{ expense.description || '—' }}
                             <span
                                 v-if="expense.purchase_id"
                                 class="ms-1 text-xs text-muted-foreground"
                             >{{ t('(from purchase)') }}</span>
                         </td>
-                        <td class="px-4 py-3 text-muted-foreground">
+                        <td class="text-muted-foreground whitespace-nowrap">
                             {{
                                 expense.payment_method === 'bank'
                                     ? t('Bank payment')
                                     : t('Cash')
                             }}
                         </td>
-                        <td class="px-4 py-3 tabular-nums font-semibold whitespace-nowrap text-rose-700">
+                        <td class="tabular-nums font-semibold whitespace-nowrap text-rose-700">
                             {{
                                 money(
                                     expense.amount,
@@ -368,25 +366,22 @@ watch(totalPages, (pages) => {
                                 )
                             }}
                         </td>
-                        <td class="px-4 py-3" @click.stop>
+                        <td @click.stop>
                             <AttachmentLinks :files="expense.attachments" />
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                            {{ formatDate(expense.created_at) }}
-                        </td>
-                        <td class="px-4 py-3" @click.stop>
+                        <td @click.stop>
                             <div class="flex justify-end gap-1">
                                 <Button
                                     as-child
                                     size="sm"
                                     variant="outline"
-                                    class="h-8 gap-1.5"
+                                    class="h-7 gap-1 px-2"
                                 >
                                     <Link
                                         :href="`/expenses/${expense.id}`"
                                         target="_blank"
                                     >
-                                        <Printer class="size-4" />
+                                        <Printer class="size-3.5" />
                                         {{ t('Print') }}
                                     </Link>
                                 </Button>
@@ -396,7 +391,7 @@ watch(totalPages, (pages) => {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        class="h-8"
+                                        class="h-7 px-2"
                                         @click="emit('open-expense', expense, true)"
                                     >
                                         {{ t('Edit') }}
@@ -408,11 +403,11 @@ watch(totalPages, (pages) => {
                                         type="button"
                                         variant="outline"
                                         size="icon"
-                                        class="size-8 text-destructive hover:text-destructive"
+                                        class="size-7 text-destructive hover:text-destructive"
                                         :disabled="deletingId === expense.id"
                                         @click.stop="requestDeleteExpense(expense)"
                                     >
-                                        <Trash2 class="size-4" />
+                                        <Trash2 class="size-3.5" />
                                     </Button>
                                 </Can>
                                 <Can permission="purchases.delete">
@@ -421,11 +416,11 @@ watch(totalPages, (pages) => {
                                         type="button"
                                         variant="outline"
                                         size="icon"
-                                        class="size-8 text-destructive hover:text-destructive"
+                                        class="size-7 text-destructive hover:text-destructive"
                                         :disabled="deletingId === expense.id"
                                         @click.stop="requestDeleteExpense(expense)"
                                     >
-                                        <Trash2 class="size-4" />
+                                        <Trash2 class="size-3.5" />
                                     </Button>
                                 </Can>
                             </div>
@@ -433,7 +428,7 @@ watch(totalPages, (pages) => {
                     </tr>
                     <EmptyState
                         v-if="!filteredExpenses.length"
-                        :colspan="11"
+                        :colspan="10"
                         :title="
                             expenseSearch.trim() || categoryFilter !== 'all'
                                 ? t('No matching expenses')
@@ -465,7 +460,7 @@ watch(totalPages, (pages) => {
 
         <div
             v-if="filteredExpenses.length > perPage"
-            class="flex flex-wrap items-center justify-between gap-3 border-t px-5 py-3"
+            class="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2"
         >
             <p class="text-xs text-muted-foreground">
                 {{
@@ -481,24 +476,24 @@ watch(totalPages, (pages) => {
                     type="button"
                     variant="outline"
                     size="icon"
-                    class="size-9 sm:size-8"
+                    class="size-7"
                     :disabled="currentPage <= 1"
                     @click="currentPage -= 1"
                 >
-                    <ChevronLeft class="size-4 rtl:rotate-180" />
+                    <ChevronLeft class="size-3.5 rtl:rotate-180" />
                 </Button>
-                <span class="min-w-[4rem] text-center text-xs tabular-nums text-muted-foreground">
+                <span class="min-w-[3.5rem] text-center text-xs tabular-nums text-muted-foreground">
                     {{ currentPage }} / {{ totalPages }}
                 </span>
                 <Button
                     type="button"
                     variant="outline"
                     size="icon"
-                    class="size-9 sm:size-8"
+                    class="size-7"
                     :disabled="currentPage >= totalPages"
                     @click="currentPage += 1"
                 >
-                    <ChevronRight class="size-4 rtl:rotate-180" />
+                    <ChevronRight class="size-3.5 rtl:rotate-180" />
                 </Button>
             </div>
         </div>

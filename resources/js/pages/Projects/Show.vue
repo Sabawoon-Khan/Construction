@@ -399,10 +399,13 @@ defineOptions({
 <template>
     <Head :title="item.name" />
     <V2ListPage>
-        <V2DetailHero image="/images/projects-v2-hero-luxury.png">
+        <V2DetailHero
+            image="/images/projects-v2-hero-luxury.png"
+            :compact="tab !== 'overview'"
+        >
             <template #eyebrow>{{ t('Projects') }}</template>
             <template #title>{{ item.name }}</template>
-            <template #description>
+            <template v-if="tab === 'overview'" #description>
                 {{ item.code }} · {{ item.location || t('No location') }}
             </template>
             <template #actions>
@@ -430,7 +433,7 @@ defineOptions({
                     </Button>
                 </Can>
             </template>
-            <template #stats>
+            <template v-if="tab === 'overview'" #stats>
                 <V2StatGrid class="detail-stat-grid">
                     <V2StatCard
                         :delay="0"
@@ -483,7 +486,7 @@ defineOptions({
         </V2DetailHero>
 
         <MisAlert
-            v-if="attentionItems.length"
+            v-if="tab === 'overview' && attentionItems.length"
             tone="warning"
             :title="t('Attention')"
         >

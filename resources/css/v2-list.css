@@ -1300,18 +1300,24 @@
     min-height: 0;
 }
 
-.detail-hero.compact {
-    min-height: 0;
-}
-
 .detail-hero .hero-body.detail-hero-body {
     grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
     align-items: center;
     padding: 22px 22px 18px;
 }
 
+.detail-hero.compact.hero {
+    min-height: 0;
+    border-radius: 18px;
+}
+
 .detail-hero.compact .hero-body.detail-hero-body {
-    padding: 18px 20px 16px;
+    padding: 12px 16px 10px;
+}
+
+.detail-hero.compact .hero-image {
+    opacity: 0.45;
+    object-fit: cover;
 }
 
 .detail-hero .hero-copy h1 {
@@ -1321,7 +1327,55 @@
 }
 
 .detail-hero.compact .hero-copy h1 {
-    font-size: clamp(24px, 2.6vw, 34px);
+    font-size: clamp(20px, 2.2vw, 26px);
+}
+
+.detail-hero.compact .eyebrow {
+    margin-bottom: 2px;
+    font-size: 10px;
+}
+
+.detail-hero.compact .detail-actions :is(a, button) {
+    min-height: 32px;
+    padding-inline: 10px;
+    font-size: 12px;
+}
+
+.project-expenses-panel > .v2-panel-header {
+    padding: 10px 14px 0;
+}
+
+.project-expenses-panel .v2-panel-actions :is(a, button) {
+    min-height: 32px;
+}
+
+.project-expenses-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border, #e5e7eb) 80%, transparent);
+    background: color-mix(in srgb, var(--muted, #f4f4f5) 35%, transparent);
+}
+
+@media (min-width: 640px) {
+    .project-expenses-filters {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        padding-inline: 14px;
+    }
+}
+
+.project-expenses-table :is(th, td) {
+    padding: 7px 10px;
+    font-size: 12.5px;
+}
+
+.project-expenses-table thead th {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 11px;
 }
 
 .detail-hero .hero-copy > p {
