@@ -35,7 +35,6 @@ defineOptions({
     <V2FormPage
         :title="isEdit ? t('Edit income') : t('Record income')"
         :eyebrow="t('Incomes')"
-        :description="isEdit ? t('Update this income.') : t('Record a new income.')"
         :back-href="isEdit ? '/incomes' : undefined"
     >
         <Form
@@ -44,53 +43,97 @@ defineOptions({
             class="mis-form-card"
             v-slot="{ errors, processing }"
         >
-            <div class="mis-form-grid">
-                <div class="grid gap-2">
-                    <Label for="income_date">{{ t('Date') }}</Label>
-                    <Input
-                        id="income_date"
-                        name="income_date"
-                        type="date"
-                        required
-                        :default-value="item?.income_date?.slice?.(0, 10) ?? new Date().toISOString().slice(0, 10)"
-                    />
-                    <InputError :message="errors.income_date" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="amount">{{ t('Total amount') }}</Label>
-                    <div class="flex gap-2">
-                        <Input id="amount" name="amount" type="number" step="0.01" min="0" required :default-value="item?.amount ?? ''" class="min-w-0 flex-1" />
-                        <CurrencySelect id="currency" v-model="currency" name="currency" class="w-[9rem] shrink-0" />
+            <div class="v2-form-split">
+                <div class="v2-form-split-main">
+                    <div class="v2-form-group">
+                        <div class="mis-form-grid">
+                            <div class="v2-field">
+                                <Label for="income_date">{{ t('Date') }}</Label>
+                                <Input
+                                    id="income_date"
+                                    name="income_date"
+                                    type="date"
+                                    required
+                                    :default-value="item?.income_date?.slice?.(0, 10) ?? new Date().toISOString().slice(0, 10)"
+                                />
+                                <InputError :message="errors.income_date" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="amount">{{ t('Total amount') }}</Label>
+                                <div class="flex gap-2">
+                                    <Input
+                                        id="amount"
+                                        name="amount"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        required
+                                        :default-value="item?.amount ?? ''"
+                                        class="min-w-0 flex-1"
+                                    />
+                                    <CurrencySelect
+                                        id="currency"
+                                        v-model="currency"
+                                        name="currency"
+                                        class="w-[9rem] shrink-0"
+                                    />
+                                </div>
+                                <InputError :message="errors.amount" />
+                                <InputError :message="errors.currency" />
+                            </div>
+                            <div class="v2-field mis-form-span">
+                                <Label for="description">{{ t('Description') }}</Label>
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    rows="3"
+                                    required
+                                    class="mis-form-textarea"
+                                    :value="item?.description ?? ''"
+                                />
+                                <InputError :message="errors.description" />
+                            </div>
+                        </div>
                     </div>
-                    <InputError :message="errors.amount" />
-                    <InputError :message="errors.currency" />
                 </div>
-                <div class="grid gap-2 mis-form-span">
-                    <Label for="description">{{ t('Description') }}</Label>
-                    <textarea
-                        id="description"
-                        name="description"
-                        rows="3"
-                        required
-                        class="mis-form-textarea"
-                        :value="item?.description ?? ''"
-                    />
-                    <InputError :message="errors.description" />
-                </div>
+
+                <aside class="v2-form-split-aside">
+                    <div class="v2-form-split-panel">
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Attachments') }}</h2>
+                            <RecordAttachments
+                                attachable="incomes"
+                                :attachable-id="isEdit ? item!.id : null"
+                                :attachments="item?.attachments"
+                                :error="errors.documents"
+                            />
+                        </div>
+                    </div>
+                </aside>
             </div>
-            <RecordAttachments
-                attachable="incomes"
-                :attachable-id="isEdit ? item!.id : null"
-                :attachments="item?.attachments"
-                :error="errors.documents"
-            />
+
             <div class="mis-form-actions">
-                <Button type="submit" :disabled="processing">{{ processing ? t('Saving…') : t('Save income') }}</Button>
-                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button type="submit" :disabled="processing">
+                    {{ processing ? t('Saving…') : t('Save income') }}
+                </Button>
+                <Button
+                    v-if="!isEdit"
+                    type="button"
+                    variant="secondary"
+                    @click="historyBack"
+                >
+                    {{ t('Cancel') }}
+                </Button>
                 <Button v-else as-child variant="secondary">
                     <Link href="/incomes">{{ t('Cancel') }}</Link>
                 </Button>
-                <Form v-if="isEdit" :action="`/incomes/${item!.id}`" method="delete" class="ml-auto" v-slot="{ processing: deleting }">
+                <Form
+                    v-if="isEdit"
+                    :action="`/incomes/${item!.id}`"
+                    method="delete"
+                    class="ml-auto"
+                    v-slot="{ processing: deleting }"
+                >
                     <Button type="submit" variant="destructive" :disabled="deleting">
                         <Trash2 class="size-4" />
                         {{ deleting ? t('Deleting…') : t('Delete') }}

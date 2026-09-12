@@ -1583,17 +1583,29 @@
     position: static;
 }
 
-.v2-form-split-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+.v2-form-split-main {
     padding: 18px;
-    border: 1px solid rgba(26, 26, 26, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.78);
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.92);
     box-shadow:
         0 10px 28px rgba(26, 26, 26, 0.04),
         inset 0 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
+}
+
+.v2-form-split-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow:
+        0 10px 28px rgba(26, 26, 26, 0.04),
+        inset 0 1px rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
 }
 
 .v2-form-split-block + .v2-form-split-block {
@@ -1647,13 +1659,13 @@
     }
 }
 
-/* Flat forms (no sections): one clean card */
+/* Flat forms: soft white card */
 .v2-list-page .mis-form-card:not(:has(.v2-form-section)):not(:has(.v2-form-split)) {
     gap: 14px;
     padding: 16px 18px 14px;
     border: 1px solid rgba(255, 255, 255, 0.78);
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.92);
     box-shadow:
         0 10px 24px rgba(26, 26, 26, 0.04),
         inset 0 1px rgba(255, 255, 255, 0.95);

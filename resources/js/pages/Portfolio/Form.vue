@@ -132,259 +132,279 @@ function submit() {
     <V2FormPage
         :title="isEdit ? t('Edit portfolio project') : t('Create portfolio project')"
         :eyebrow="t('Portfolio')"
-        :description="isEdit ? t('Update this portfolio project.') : t('Add a new portfolio project.')"
         :back-href="isEdit ? '/portfolio' : undefined"
     >
         <form class="mis-form-card" @submit.prevent="submit">
-            <div class="mis-form-grid">
-                <div class="grid gap-2">
-                    <Label for="title">{{ t('Title') }}</Label>
-                    <Input id="title" v-model="form.title" type="text" required />
-                    <InputError :message="form.errors.title" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="slug">{{ t('Slug') }}</Label>
-                    <Input id="slug" v-model="form.slug" type="text" :placeholder="t('Slug')" />
-                    <InputError :message="form.errors.slug" />
-                </div>
-                <div class="grid gap-2 mis-form-span">
-                    <Label for="summary">{{ t('Summary') }}</Label>
-                    <textarea
-                        id="summary"
-                        v-model="form.summary"
-                        rows="3"
-                        class="mis-form-select min-h-[5.5rem] resize-y"
-                    />
-                    <InputError :message="form.errors.summary" />
-                </div>
-                <div class="grid gap-2 mis-form-span">
-                    <Label for="description">{{ t('Description') }}</Label>
-                    <textarea
-                        id="description"
-                        v-model="form.description"
-                        rows="8"
-                        class="mis-form-select min-h-[10rem] resize-y"
-                    />
-                    <InputError :message="form.errors.description" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="category">{{ t('Category') }}</Label>
-                    <Input id="category" v-model="form.category" type="text" />
-                    <InputError :message="form.errors.category" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="location">{{ t('Location') }}</Label>
-                    <Input id="location" v-model="form.location" type="text" />
-                    <InputError :message="form.errors.location" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="client_name">{{ t('Client') }}</Label>
-                    <Input id="client_name" v-model="form.client_name" type="text" />
-                    <InputError :message="form.errors.client_name" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="scope">{{ t('Scope of work') }}</Label>
-                    <Input id="scope" v-model="form.scope" type="text" />
-                    <InputError :message="form.errors.scope" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="area_size">{{ t('Built-up area') }}</Label>
-                    <Input id="area_size" v-model="form.area_size" type="text" :placeholder="t('e.g. 12,500 m²')" />
-                    <InputError :message="form.errors.area_size" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="plot_size">{{ t('Plot size') }}</Label>
-                    <Input id="plot_size" v-model="form.plot_size" type="text" :placeholder="t('e.g. 2,000 m²')" />
-                    <InputError :message="form.errors.plot_size" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="total_apartments">{{ t('Total apartments') }}</Label>
-                    <Input id="total_apartments" v-model="form.total_apartments" type="number" min="0" />
-                    <InputError :message="form.errors.total_apartments" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="floors">{{ t('Floors') }}</Label>
-                    <Input id="floors" v-model="form.floors" type="number" min="0" />
-                    <InputError :message="form.errors.floors" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="parking_spaces">{{ t('Parking spaces') }}</Label>
-                    <Input id="parking_spaces" v-model="form.parking_spaces" type="number" min="0" />
-                    <InputError :message="form.errors.parking_spaces" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="duration">{{ t('Duration') }}</Label>
-                    <Input id="duration" v-model="form.duration" type="text" :placeholder="t('e.g. 24 months')" />
-                    <InputError :message="form.errors.duration" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="project_status">{{ t('Project status') }}</Label>
-                    <select
-                        id="project_status"
-                        v-model="form.project_status"
-                        class="mis-form-select"
-                    >
-                        <option value="">{{ t('Select status') }}</option>
-                        <option value="completed">{{ t('Completed') }}</option>
-                        <option value="ongoing">{{ t('Ongoing') }}</option>
-                        <option value="planned">{{ t('Planned') }}</option>
-                    </select>
-                    <InputError :message="form.errors.project_status" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="year">{{ t('Year') }}</Label>
-                    <Input id="year" v-model="form.year" type="number" min="1950" max="2100" />
-                    <InputError :message="form.errors.year" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="completed_on">{{ t('Completed on') }}</Label>
-                    <Input id="completed_on" v-model="form.completed_on" type="date" />
-                    <InputError :message="form.errors.completed_on" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="sort_order">{{ t('Sort order') }}</Label>
-                    <Input id="sort_order" v-model.number="form.sort_order" type="number" min="0" />
-                    <InputError :message="form.errors.sort_order" />
-                </div>
-                <div class="flex items-center gap-2 mis-form-span">
-                    <input
-                        id="is_published"
-                        v-model="form.is_published"
-                        type="checkbox"
-                        class="size-4"
-                    />
-                    <Label for="is_published">{{ t('Published') }}</Label>
-                </div>
-            </div>
-
-            <div class="mt-6 grid gap-4">
-                <div class="grid gap-2">
-                    <Label for="cover">{{ t('Cover image or video') }}</Label>
-                    <Input
-                        id="cover"
-                        type="file"
-                        :accept="accept"
-                        @change="onCoverChange"
-                    />
-                    <InputError :message="form.errors.cover" />
-                    <div
-                        v-if="coverPreview"
-                        class="mt-2 overflow-hidden rounded-xl border border-border/80 bg-muted/30"
-                    >
-                        <video
-                            v-if="form.cover?.type.startsWith('video/')"
-                            :src="coverPreview"
-                            class="max-h-56 w-full object-cover"
-                            controls
-                            muted
-                        />
-                        <img
-                            v-else
-                            :src="coverPreview"
-                            alt=""
-                            class="max-h-56 w-full object-cover"
-                        />
-                    </div>
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="media">{{ t('Gallery media') }}</Label>
-                    <Input
-                        id="media"
-                        type="file"
-                        multiple
-                        :accept="accept"
-                        @change="onGalleryChange"
-                    />
-                    <InputError :message="form.errors.media" />
-                    <InputError :message="(form.errors as any)['media.0']" />
-
-                    <div
-                        v-if="existingMedia.length || galleryPreviews.length"
-                        class="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-                    >
-                        <div
-                            v-for="media in existingMedia"
-                            :key="media.id"
-                            class="relative overflow-hidden rounded-xl border border-border/80 bg-muted/20"
-                        >
-                            <video
-                                v-if="media.type === 'video'"
-                                :src="media.url"
-                                class="aspect-video w-full object-cover"
-                                muted
-                                playsinline
-                                controls
-                            />
-                            <img
-                                v-else
-                                :src="media.url"
-                                :alt="media.original_filename || ''"
-                                class="aspect-video w-full object-cover"
-                            />
-                            <div class="flex items-center justify-between gap-2 p-2">
-                                <span class="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                    <Video v-if="media.type === 'video'" class="size-3.5" />
-                                    <ImagePlus v-else class="size-3.5" />
-                                    {{ media.is_cover ? t('Cover image or video') : t('Media') }}
-                                </span>
-                                <div class="flex gap-1">
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="secondary"
-                                        :disabled="media.is_cover"
-                                        @click="setCover(media.id)"
-                                    >
-                                        <Star class="size-3.5" />
-                                        {{ t('Set as cover') }}
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="destructive"
-                                        @click="markExistingRemoved(media.id)"
-                                    >
-                                        <Trash2 class="size-3.5" />
-                                        {{ t('Remove media') }}
-                                    </Button>
+            <div class="v2-form-split">
+                <div class="v2-form-split-main">
+                    <div class="v2-form-group">
+                        <div class="mis-form-grid">
+                            <div class="v2-field">
+                                <Label for="title">{{ t('Title') }}</Label>
+                                <Input id="title" v-model="form.title" type="text" required />
+                                <InputError :message="form.errors.title" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="slug">{{ t('Slug') }}</Label>
+                                <Input id="slug" v-model="form.slug" type="text" :placeholder="t('Slug')" />
+                                <InputError :message="form.errors.slug" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="category">{{ t('Category') }}</Label>
+                                <Input id="category" v-model="form.category" type="text" />
+                                <InputError :message="form.errors.category" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="location">{{ t('Location') }}</Label>
+                                <Input id="location" v-model="form.location" type="text" />
+                                <InputError :message="form.errors.location" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="client_name">{{ t('Client') }}</Label>
+                                <Input id="client_name" v-model="form.client_name" type="text" />
+                                <InputError :message="form.errors.client_name" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="scope">{{ t('Scope of work') }}</Label>
+                                <Input id="scope" v-model="form.scope" type="text" />
+                                <InputError :message="form.errors.scope" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="area_size">{{ t('Built-up area') }}</Label>
+                                <Input id="area_size" v-model="form.area_size" type="text" :placeholder="t('e.g. 12,500 m²')" />
+                                <InputError :message="form.errors.area_size" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="plot_size">{{ t('Plot size') }}</Label>
+                                <Input id="plot_size" v-model="form.plot_size" type="text" :placeholder="t('e.g. 2,000 m²')" />
+                                <InputError :message="form.errors.plot_size" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="total_apartments">{{ t('Total apartments') }}</Label>
+                                <Input id="total_apartments" v-model="form.total_apartments" type="number" min="0" />
+                                <InputError :message="form.errors.total_apartments" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="floors">{{ t('Floors') }}</Label>
+                                <Input id="floors" v-model="form.floors" type="number" min="0" />
+                                <InputError :message="form.errors.floors" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="parking_spaces">{{ t('Parking spaces') }}</Label>
+                                <Input id="parking_spaces" v-model="form.parking_spaces" type="number" min="0" />
+                                <InputError :message="form.errors.parking_spaces" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="duration">{{ t('Duration') }}</Label>
+                                <Input id="duration" v-model="form.duration" type="text" :placeholder="t('e.g. 24 months')" />
+                                <InputError :message="form.errors.duration" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="project_status">{{ t('Project status') }}</Label>
+                                <select
+                                    id="project_status"
+                                    v-model="form.project_status"
+                                    class="mis-form-select"
+                                >
+                                    <option value="">{{ t('Select status') }}</option>
+                                    <option value="completed">{{ t('Completed') }}</option>
+                                    <option value="ongoing">{{ t('Ongoing') }}</option>
+                                    <option value="planned">{{ t('Planned') }}</option>
+                                </select>
+                                <InputError :message="form.errors.project_status" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="year">{{ t('Year') }}</Label>
+                                <Input id="year" v-model="form.year" type="number" min="1950" max="2100" />
+                                <InputError :message="form.errors.year" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="completed_on">{{ t('Completed on') }}</Label>
+                                <Input id="completed_on" v-model="form.completed_on" type="date" />
+                                <InputError :message="form.errors.completed_on" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="sort_order">{{ t('Sort order') }}</Label>
+                                <Input id="sort_order" v-model.number="form.sort_order" type="number" min="0" />
+                                <InputError :message="form.errors.sort_order" />
+                            </div>
+                            <div class="v2-field mis-form-span">
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        id="is_published"
+                                        v-model="form.is_published"
+                                        type="checkbox"
+                                        class="size-4"
+                                    />
+                                    <Label for="is_published">{{ t('Published') }}</Label>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div
-                            v-for="(preview, index) in galleryPreviews"
-                            :key="preview.url"
-                            class="relative overflow-hidden rounded-xl border border-dashed border-border bg-muted/10"
-                        >
-                            <video
-                                v-if="preview.file.type.startsWith('video/')"
-                                :src="preview.url"
-                                class="aspect-video w-full object-cover"
-                                muted
-                                playsinline
-                                controls
-                            />
-                            <img
-                                v-else
-                                :src="preview.url"
-                                alt=""
-                                class="aspect-video w-full object-cover"
-                            />
-                            <div class="flex justify-end p-2">
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="destructive"
-                                    @click="removePendingGallery(index)"
+                <aside class="v2-form-split-aside">
+                    <div class="v2-form-split-panel">
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Summary') }}</h2>
+                            <div class="v2-field">
+                                <Label for="summary" class="sr-only">{{ t('Summary') }}</Label>
+                                <textarea
+                                    id="summary"
+                                    v-model="form.summary"
+                                    rows="3"
+                                    class="mis-form-textarea"
+                                />
+                                <InputError :message="form.errors.summary" />
+                            </div>
+                        </div>
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Description') }}</h2>
+                            <div class="v2-field">
+                                <Label for="description" class="sr-only">{{ t('Description') }}</Label>
+                                <textarea
+                                    id="description"
+                                    v-model="form.description"
+                                    rows="6"
+                                    class="mis-form-textarea"
+                                />
+                                <InputError :message="form.errors.description" />
+                            </div>
+                        </div>
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Cover image or video') }}</h2>
+                            <div class="v2-field">
+                                <Label for="cover" class="sr-only">{{ t('Cover image or video') }}</Label>
+                                <Input
+                                    id="cover"
+                                    type="file"
+                                    :accept="accept"
+                                    @change="onCoverChange"
+                                />
+                                <InputError :message="form.errors.cover" />
+                                <div
+                                    v-if="coverPreview"
+                                    class="mt-2 overflow-hidden rounded-xl border border-border/80 bg-muted/30"
                                 >
-                                    <Trash2 class="size-3.5" />
-                                    {{ t('Remove media') }}
-                                </Button>
+                                    <video
+                                        v-if="form.cover?.type.startsWith('video/')"
+                                        :src="coverPreview"
+                                        class="max-h-56 w-full object-cover"
+                                        controls
+                                        muted
+                                    />
+                                    <img
+                                        v-else
+                                        :src="coverPreview"
+                                        alt=""
+                                        class="max-h-56 w-full object-cover"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Gallery media') }}</h2>
+                            <div class="v2-field">
+                                <Label for="media" class="sr-only">{{ t('Gallery media') }}</Label>
+                                <Input
+                                    id="media"
+                                    type="file"
+                                    multiple
+                                    :accept="accept"
+                                    @change="onGalleryChange"
+                                />
+                                <InputError :message="form.errors.media" />
+                                <InputError :message="(form.errors as any)['media.0']" />
+
+                                <div
+                                    v-if="existingMedia.length || galleryPreviews.length"
+                                    class="mt-2 grid gap-3"
+                                >
+                                    <div
+                                        v-for="media in existingMedia"
+                                        :key="media.id"
+                                        class="relative overflow-hidden rounded-xl border border-border/80 bg-muted/20"
+                                    >
+                                        <video
+                                            v-if="media.type === 'video'"
+                                            :src="media.url"
+                                            class="aspect-video w-full object-cover"
+                                            muted
+                                            playsinline
+                                            controls
+                                        />
+                                        <img
+                                            v-else
+                                            :src="media.url"
+                                            :alt="media.original_filename || ''"
+                                            class="aspect-video w-full object-cover"
+                                        />
+                                        <div class="flex flex-col gap-2 p-2">
+                                            <span class="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                                <Video v-if="media.type === 'video'" class="size-3.5" />
+                                                <ImagePlus v-else class="size-3.5" />
+                                                {{ media.is_cover ? t('Cover image or video') : t('Media') }}
+                                            </span>
+                                            <div class="flex flex-wrap gap-1">
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    :disabled="media.is_cover"
+                                                    @click="setCover(media.id)"
+                                                >
+                                                    <Star class="size-3.5" />
+                                                    {{ t('Set as cover') }}
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="destructive"
+                                                    @click="markExistingRemoved(media.id)"
+                                                >
+                                                    <Trash2 class="size-3.5" />
+                                                    {{ t('Remove media') }}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div
+                                        v-for="(preview, index) in galleryPreviews"
+                                        :key="preview.url"
+                                        class="relative overflow-hidden rounded-xl border border-dashed border-border bg-muted/10"
+                                    >
+                                        <video
+                                            v-if="preview.file.type.startsWith('video/')"
+                                            :src="preview.url"
+                                            class="aspect-video w-full object-cover"
+                                            muted
+                                            playsinline
+                                            controls
+                                        />
+                                        <img
+                                            v-else
+                                            :src="preview.url"
+                                            alt=""
+                                            class="aspect-video w-full object-cover"
+                                        />
+                                        <div class="flex justify-end p-2">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="destructive"
+                                                @click="removePendingGallery(index)"
+                                            >
+                                                <Trash2 class="size-3.5" />
+                                                {{ t('Remove media') }}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </aside>
             </div>
 
             <div class="mis-form-actions">

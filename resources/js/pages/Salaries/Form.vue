@@ -93,94 +93,184 @@ defineOptions({
     <V2FormPage
         :title="isEdit ? t('Edit salary') : t('Add salary')"
         :eyebrow="t('Salaries')"
-        :description="isEdit ? t('Update this salary.') : t('Add a new salary payment.')"
         :back-href="isEdit ? '/salaries' : undefined"
     >
         <form class="mis-form-card" @submit.prevent="submit">
-            <div class="mis-form-grid">
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <Label for="employee_id">{{ t('Employee') }}</Label>
-                        <RelatedCreateLink href="/employees/create" :label="t('Add employee')" />
+            <div class="v2-form-split">
+                <div class="v2-form-split-main">
+                    <div class="v2-form-group">
+                        <div class="mis-form-grid">
+                            <div class="v2-field">
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label for="employee_id">{{ t('Employee') }}</Label>
+                                    <RelatedCreateLink
+                                        href="/employees/create"
+                                        :label="t('Add employee')"
+                                    />
+                                </div>
+                                <select
+                                    id="employee_id"
+                                    v-model="form.employee_id"
+                                    required
+                                    class="mis-form-select"
+                                    :disabled="isEdit"
+                                >
+                                    <option value="" disabled>{{ t('Select employee') }}</option>
+                                    <option
+                                        v-for="employee in employees"
+                                        :key="employee.id"
+                                        :value="String(employee.id)"
+                                    >
+                                        {{ employee.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="form.errors.employee_id" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="payment_date">{{ t('Payment Date') }}</Label>
+                                <Input
+                                    id="payment_date"
+                                    v-model="form.payment_date"
+                                    type="date"
+                                />
+                                <InputError :message="form.errors.payment_date" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="month">{{ t('Month') }}</Label>
+                                <select
+                                    id="month"
+                                    v-model="form.month"
+                                    required
+                                    class="mis-form-select"
+                                >
+                                    <option v-for="m in 12" :key="m" :value="m">{{ m }}</option>
+                                </select>
+                                <InputError :message="form.errors.month" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="year">{{ t('Year') }}</Label>
+                                <Input id="year" v-model="form.year" type="number" required />
+                                <InputError :message="form.errors.year" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="basic_salary">{{ t('Basic Salary') }}</Label>
+                                <div class="flex gap-2">
+                                    <Input
+                                        id="basic_salary"
+                                        v-model="form.basic_salary"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        required
+                                        class="min-w-0 flex-1"
+                                    />
+                                    <CurrencySelect
+                                        v-model="form.currency"
+                                        class="w-[9rem] shrink-0"
+                                    />
+                                </div>
+                                <InputError :message="form.errors.basic_salary" />
+                                <InputError :message="form.errors.currency" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="bonus">{{ t('Bonus') }}</Label>
+                                <Input
+                                    id="bonus"
+                                    v-model="form.bonus"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                />
+                                <InputError :message="form.errors.bonus" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="deduction">{{ t('Deduction') }}</Label>
+                                <Input
+                                    id="deduction"
+                                    v-model="form.deduction"
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                />
+                                <InputError :message="form.errors.deduction" />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="status">{{ t('Status') }}</Label>
+                                <select
+                                    id="status"
+                                    v-model="form.status"
+                                    class="mis-form-select"
+                                >
+                                    <option value="pending">{{ t('Pending') }}</option>
+                                    <option value="paid">{{ t('Paid') }}</option>
+                                    <option value="cancelled">{{ t('Cancelled') }}</option>
+                                </select>
+                                <InputError :message="form.errors.status" />
+                            </div>
+                        </div>
                     </div>
-                    <select id="employee_id" v-model="form.employee_id" required class="mis-form-select" :disabled="isEdit">
-                        <option value="" disabled>{{ t('Select employee') }}</option>
-                        <option v-for="employee in employees" :key="employee.id" :value="String(employee.id)">{{ employee.name }}</option>
-                    </select>
-                    <InputError :message="form.errors.employee_id" />
                 </div>
-                <div class="grid gap-2">
-                    <Label for="payment_date">{{ t('Payment Date') }}</Label>
-                    <Input id="payment_date" v-model="form.payment_date" type="date" />
-                    <InputError :message="form.errors.payment_date" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="month">{{ t('Month') }}</Label>
-                    <select id="month" v-model="form.month" required class="mis-form-select">
-                        <option v-for="m in 12" :key="m" :value="m">{{ m }}</option>
-                    </select>
-                    <InputError :message="form.errors.month" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="year">{{ t('Year') }}</Label>
-                    <Input id="year" v-model="form.year" type="number" required />
-                    <InputError :message="form.errors.year" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="basic_salary">{{ t('Basic Salary') }}</Label>
-                    <div class="flex gap-2">
-                        <Input id="basic_salary" v-model="form.basic_salary" type="number" step="0.01" min="0" required class="min-w-0 flex-1" />
-                        <CurrencySelect v-model="form.currency" class="w-[9rem] shrink-0" />
+
+                <aside class="v2-form-split-aside">
+                    <div class="v2-form-split-panel">
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Notes') }}</h2>
+                            <div class="v2-field">
+                                <Label for="notes" class="sr-only">{{ t('Notes') }}</Label>
+                                <textarea
+                                    id="notes"
+                                    v-model="form.notes"
+                                    rows="4"
+                                    class="mis-form-textarea"
+                                ></textarea>
+                                <InputError :message="form.errors.notes" />
+                            </div>
+                        </div>
+                        <div class="v2-form-split-block">
+                            <div class="v2-form-total">
+                                <span class="v2-form-total-label">{{ t('Net salary') }}</span>
+                                <span class="v2-form-total-value">
+                                    {{ money(netSalary, currency) }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Attachments') }}</h2>
+                            <RecordAttachments
+                                attachable="salaries"
+                                :attachable-id="isEdit ? item!.id : null"
+                                :attachments="item?.attachments"
+                                v-model:files="form.documents"
+                                :error="form.errors.documents"
+                            />
+                        </div>
                     </div>
-                    <InputError :message="form.errors.basic_salary" />
-                    <InputError :message="form.errors.currency" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="bonus">{{ t('Bonus') }}</Label>
-                    <Input id="bonus" v-model="form.bonus" type="number" step="0.01" min="0" />
-                    <InputError :message="form.errors.bonus" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="deduction">{{ t('Deduction') }}</Label>
-                    <Input id="deduction" v-model="form.deduction" type="number" step="0.01" min="0" />
-                    <InputError :message="form.errors.deduction" />
-                </div>
-                <div class="grid gap-2">
-                    <Label for="status">{{ t('Status') }}</Label>
-                    <select id="status" v-model="form.status" class="mis-form-select">
-                        <option value="pending">{{ t('Pending') }}</option>
-                        <option value="paid">{{ t('Paid') }}</option>
-                        <option value="cancelled">{{ t('Cancelled') }}</option>
-                    </select>
-                    <InputError :message="form.errors.status" />
-                </div>
-                <div class="grid gap-2 mis-form-span">
-                    <Label for="notes">{{ t('Notes') }}</Label>
-                    <textarea id="notes" v-model="form.notes" rows="3" class="mis-form-textarea"></textarea>
-                    <InputError :message="form.errors.notes" />
-                </div>
-            </div>
-
-            <RecordAttachments
-                attachable="salaries"
-                :attachable-id="isEdit ? item!.id : null"
-                :attachments="item?.attachments"
-                v-model:files="form.documents"
-                :error="form.errors.documents"
-            />
-
-            <div class="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
-                <span class="text-sm text-muted-foreground">{{ t('Net salary') }}</span>
-                <span class="text-lg font-semibold tabular-nums">{{ money(netSalary, currency) }}</span>
+                </aside>
             </div>
 
             <div class="mis-form-actions">
-                <Button type="submit" :disabled="form.processing">{{ form.processing ? t('Saving…') : t('Save') }}</Button>
-                <Button v-if="!isEdit" type="button" variant="secondary" @click="historyBack">{{ t('Cancel') }}</Button>
+                <Button type="submit" :disabled="form.processing">
+                    {{ form.processing ? t('Saving…') : t('Save') }}
+                </Button>
+                <Button
+                    v-if="!isEdit"
+                    type="button"
+                    variant="secondary"
+                    @click="historyBack"
+                >
+                    {{ t('Cancel') }}
+                </Button>
                 <Button v-else as-child variant="secondary">
                     <Link href="/salaries">{{ t('Cancel') }}</Link>
                 </Button>
-                <Button v-if="isEdit" type="button" variant="destructive" class="ml-auto" :disabled="form.processing" @click="removeSalary">
+                <Button
+                    v-if="isEdit"
+                    type="button"
+                    variant="destructive"
+                    class="ml-auto"
+                    :disabled="form.processing"
+                    @click="removeSalary"
+                >
                     <Trash2 class="size-4" />
                     {{ form.processing ? t('Deleting…') : t('Delete') }}
                 </Button>

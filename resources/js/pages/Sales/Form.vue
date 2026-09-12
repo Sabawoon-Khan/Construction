@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
-import { CalendarClock, FileText, Info, Trash2 } from '@lucide/vue';
+import { CalendarClock, Info, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import InputError from '@/components/InputError.vue';
@@ -107,7 +107,6 @@ const installments = ref(
 const tabs = [
     { id: 'info', label: t('Sale info'), icon: Info },
     { id: 'schedule', label: t('Payment schedule'), icon: CalendarClock },
-    { id: 'documents', label: t('Contract documents'), icon: FileText },
 ];
 
 defineOptions({
@@ -149,7 +148,6 @@ function onFormKeydown(event: KeyboardEvent) {
     <V2FormPage
         :title="isEdit ? t('Edit sale') : t('Create sale')"
         :eyebrow="t('Sales')"
-        :description="isEdit ? t('Update this sale.') : t('Create a new sale contract.')"
         :back-href="isEdit ? '/sales' : undefined"
     >
         <Form
@@ -161,134 +159,159 @@ function onFormKeydown(event: KeyboardEvent) {
         >
             <MisTabs v-model="tab" :tabs="tabs" />
 
-            <div v-show="tab === 'info'" class="mis-form-grid">
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <Label>{{ t('Project') }}</Label>
-                        <RelatedCreateLink href="/projects/create" :label="t('Add project')" />
+            <div v-show="tab === 'info'" class="v2-form-split">
+                <div class="v2-form-split-main">
+                    <div class="v2-form-group">
+                        <div class="mis-form-grid">
+                            <div class="v2-field">
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label>{{ t('Project') }}</Label>
+                                    <RelatedCreateLink href="/projects/create" :label="t('Add project')" />
+                                </div>
+                                <select
+                                    v-model="projectId"
+                                    name="project_id"
+                                    required
+                                    class="mis-form-select"
+                                >
+                                    <option value="" disabled>{{ t('Select') }}</option>
+                                    <option v-for="p in projects" :key="p.id" :value="String(p.id)">
+                                        {{ p.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="errors.project_id" />
+                            </div>
+                            <div class="v2-field">
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label>{{ t('Unit') }}</Label>
+                                    <RelatedCreateLink :href="unitCreateHref" :label="t('Add unit')" />
+                                </div>
+                                <select
+                                    v-model="unitId"
+                                    name="unit_id"
+                                    required
+                                    class="mis-form-select"
+                                    :disabled="!projectId"
+                                >
+                                    <option value="" disabled>
+                                        {{ projectId ? t('Select') : t('Select project first') }}
+                                    </option>
+                                    <option
+                                        v-for="u in projectUnits"
+                                        :key="u.id"
+                                        :value="String(u.id)"
+                                    >
+                                        {{ u.unit_no }} — {{ money(u.list_price, u.currency) }}
+                                        ({{ t(u.status) }})
+                                    </option>
+                                </select>
+                                <InputError :message="errors.unit_id" />
+                            </div>
+                            <div
+                                v-if="selectedUnit"
+                                class="mis-form-span rounded-xl border bg-muted/30 px-4 py-3 text-sm"
+                            >
+                                {{ t('Sale price') }}:
+                                <span class="font-semibold tabular-nums">
+                                    {{ money(selectedUnit.list_price, selectedUnit.currency) }}
+                                </span>
+                                <span
+                                    v-if="Number(selectedUnit.list_price) <= 0"
+                                    class="ml-2 text-destructive"
+                                >
+                                    {{ t('Set list price on the unit first.') }}
+                                </span>
+                            </div>
+                            <div class="v2-field">
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label>{{ t('Customer') }}</Label>
+                                    <RelatedCreateLink href="/customers/create" :label="t('Add customer')" />
+                                </div>
+                                <select
+                                    v-model="customerId"
+                                    name="customer_id"
+                                    required
+                                    class="mis-form-select"
+                                >
+                                    <option value="" disabled>{{ t('Select') }}</option>
+                                    <option
+                                        v-for="c in customers"
+                                        :key="c.id"
+                                        :value="String(c.id)"
+                                    >
+                                        {{ c.name }}
+                                    </option>
+                                </select>
+                                <InputError :message="errors.customer_id" />
+                            </div>
+                            <div class="v2-field">
+                                <Label>{{ t('Contract date') }}</Label>
+                                <Input
+                                    v-model="contractDate"
+                                    name="contract_date"
+                                    type="date"
+                                />
+                            </div>
+                            <div class="v2-field">
+                                <Label>{{ t('Discount') }} ({{ currency }})</Label>
+                                <div class="flex gap-2 sm:items-center">
+                                    <Input
+                                        v-model="discount"
+                                        name="discount"
+                                        type="number"
+                                        step="0.01"
+                                        class="min-w-0 flex-1"
+                                    />
+                                    <CurrencySelect v-model="currency" name="currency" class="w-[9rem] shrink-0" />
+                                </div>
+                            </div>
+                            <div class="v2-field">
+                                <Label>{{ t('Status') }}</Label>
+                                <select
+                                    v-model="status"
+                                    name="status"
+                                    class="mis-form-select"
+                                >
+                                    <option value="draft">{{ t('draft') }}</option>
+                                    <option value="active">{{ t('active') }}</option>
+                                    <option value="completed">{{ t('completed') }}</option>
+                                    <option value="cancelled">{{ t('cancelled') }}</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <select
-                        v-model="projectId"
-                        name="project_id"
-                        required
-                        class="mis-form-select"
-                    >
-                        <option value="" disabled>{{ t('Select') }}</option>
-                        <option v-for="p in projects" :key="p.id" :value="String(p.id)">
-                            {{ p.name }}
-                        </option>
-                    </select>
-                    <InputError :message="errors.project_id" />
                 </div>
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <Label>{{ t('Unit') }}</Label>
-                        <RelatedCreateLink :href="unitCreateHref" :label="t('Add unit')" />
+
+                <aside class="v2-form-split-aside">
+                    <div class="v2-form-split-panel">
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Notes') }}</h2>
+                            <div class="v2-field">
+                                <Label class="sr-only">{{ t('Notes') }}</Label>
+                                <textarea
+                                    v-model="notes"
+                                    name="notes"
+                                    rows="4"
+                                    class="mis-form-textarea"
+                                />
+                            </div>
+                        </div>
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Attachments') }}</h2>
+                            <RecordAttachments
+                                attachable="sales"
+                                :attachable-id="isEdit ? item.id : null"
+                                :attachments="item?.attachments"
+                                :label="t('Contract documents')"
+                                :error="errors.documents"
+                                accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
+                            />
+                        </div>
                     </div>
-                    <select
-                        v-model="unitId"
-                        name="unit_id"
-                        required
-                        class="mis-form-select"
-                        :disabled="!projectId"
-                    >
-                        <option value="" disabled>
-                            {{ projectId ? t('Select') : t('Select project first') }}
-                        </option>
-                        <option
-                            v-for="u in projectUnits"
-                            :key="u.id"
-                            :value="String(u.id)"
-                        >
-                            {{ u.unit_no }} — {{ money(u.list_price, u.currency) }}
-                            ({{ t(u.status) }})
-                        </option>
-                    </select>
-                    <InputError :message="errors.unit_id" />
-                </div>
-                <div
-                    v-if="selectedUnit"
-                    class="mis-form-span rounded-xl border bg-muted/30 px-4 py-3 text-sm"
-                >
-                    {{ t('Sale price') }}:
-                    <span class="font-semibold tabular-nums">
-                        {{ money(selectedUnit.list_price, selectedUnit.currency) }}
-                    </span>
-                    <span
-                        v-if="Number(selectedUnit.list_price) <= 0"
-                        class="ml-2 text-destructive"
-                    >
-                        {{ t('Set list price on the unit first.') }}
-                    </span>
-                </div>
-                <div class="grid gap-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <Label>{{ t('Customer') }}</Label>
-                        <RelatedCreateLink href="/customers/create" :label="t('Add customer')" />
-                    </div>
-                    <select
-                        v-model="customerId"
-                        name="customer_id"
-                        required
-                        class="mis-form-select"
-                    >
-                        <option value="" disabled>{{ t('Select') }}</option>
-                        <option
-                            v-for="c in customers"
-                            :key="c.id"
-                            :value="String(c.id)"
-                        >
-                            {{ c.name }}
-                        </option>
-                    </select>
-                    <InputError :message="errors.customer_id" />
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Contract date') }}</Label>
-                    <Input
-                        v-model="contractDate"
-                        name="contract_date"
-                        type="date"
-                    />
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Discount') }} ({{ currency }})</Label>
-                    <div class="flex gap-2 sm:items-center">
-                        <Input
-                            v-model="discount"
-                            name="discount"
-                            type="number"
-                            step="0.01"
-                            class="min-w-0 flex-1"
-                        />
-                        <CurrencySelect v-model="currency" name="currency" class="w-[9rem] shrink-0" />
-                    </div>
-                </div>
-                <div class="grid gap-2">
-                    <Label>{{ t('Status') }}</Label>
-                    <select
-                        v-model="status"
-                        name="status"
-                        class="mis-form-select"
-                    >
-                        <option value="draft">{{ t('draft') }}</option>
-                        <option value="active">{{ t('active') }}</option>
-                        <option value="completed">{{ t('completed') }}</option>
-                        <option value="cancelled">{{ t('cancelled') }}</option>
-                    </select>
-                </div>
-                <div class="grid gap-2 mis-form-span">
-                    <Label>{{ t('Notes') }}</Label>
-                    <textarea
-                        v-model="notes"
-                        name="notes"
-                        rows="2"
-                        class="mis-form-textarea"
-                    />
-                </div>
+                </aside>
             </div>
 
-            <div v-show="tab === 'schedule'" class="space-y-3">
+            <div v-show="tab === 'schedule'" class="v2-form-split-main space-y-3">
                 <template v-if="!isEdit">
                     <div class="flex items-center justify-between">
                         <Button type="button" variant="outline" size="sm" @click="addRow">
@@ -390,17 +413,6 @@ function onFormKeydown(event: KeyboardEvent) {
                         </Link>
                     </Button>
                 </template>
-            </div>
-
-            <div v-show="tab === 'documents'" class="space-y-3">
-                <RecordAttachments
-                    attachable="sales"
-                    :attachable-id="isEdit ? item.id : null"
-                    :attachments="item?.attachments"
-                    :label="t('Contract documents')"
-                    :error="errors.documents"
-                    accept="application/pdf,image/jpeg,image/png,image/webp,.doc,.docx"
-                />
             </div>
 
             <div class="mis-form-actions">

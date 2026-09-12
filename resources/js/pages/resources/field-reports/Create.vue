@@ -77,7 +77,6 @@ defineOptions({
     <V2FormPage
         :title="t('Create field report')"
         :eyebrow="t('Field')"
-        :description="t('Capture site notes offline — they sync when you reconnect.')"
         back-href="/field-reports"
     >
         <OfflineResourceForm
@@ -93,34 +92,43 @@ defineOptions({
             @submit="onSubmit"
             @attachment-stored="onAttachmentStored"
         >
-            <div class="space-y-6">
-                <div class="mis-form-grid">
-                    <div class="grid gap-2 md:col-span-2 lg:col-span-2">
-                        <Label for="title">{{ t('Title') }}</Label>
-                        <Input id="title" v-model="local.title" required />
+            <div class="v2-form-split">
+                <div class="v2-form-split-main">
+                    <div class="v2-form-group">
+                        <div class="mis-form-grid">
+                            <div class="v2-field mis-form-span">
+                                <Label for="title">{{ t('Title') }}</Label>
+                                <Input id="title" v-model="local.title" required />
+                            </div>
+                            <div class="v2-field">
+                                <Label for="location">{{ t('Location') }}</Label>
+                                <Input id="location" v-model="local.location" />
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="grid gap-2">
-                        <Label for="location">{{ t('Location') }}</Label>
-                        <Input id="location" v-model="local.location" />
+                <aside class="v2-form-split-aside">
+                    <div class="v2-form-split-panel">
+                        <div class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Notes') }}</h2>
+                            <div class="v2-field">
+                                <Label for="body" class="sr-only">{{ t('Notes') }}</Label>
+                                <RichTextEditorLite v-model="local.body" />
+                            </div>
+                        </div>
+                        <div v-if="online" class="v2-form-split-block">
+                            <h2 class="v2-form-split-block-title">{{ t('Attachments') }}</h2>
+                            <FileUploadField
+                                mode="deferred"
+                                multiple
+                                :max-files="5"
+                                accept="image/jpeg,image/png,image/webp,application/pdf"
+                                @update:deferred="(files) => (deferredAttachments = files)"
+                            />
+                        </div>
                     </div>
-                </div>
-
-                <div class="grid gap-2">
-                    <Label for="body">{{ t('Notes') }}</Label>
-                    <RichTextEditorLite v-model="local.body" />
-                </div>
-
-                <div v-if="online" class="grid gap-2">
-                    <Label>{{ t('Attachments') }}</Label>
-                    <FileUploadField
-                        mode="deferred"
-                        multiple
-                        :max-files="5"
-                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                        @update:deferred="(files) => (deferredAttachments = files)"
-                    />
-                </div>
+                </aside>
             </div>
 
             <template #actions>
