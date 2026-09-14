@@ -50,6 +50,16 @@ class Project extends Model
             $project->estimated_revenue ??= 0;
             $project->progress_percent ??= 0;
         });
+
+        static::forceDeleting(function (self $project): void {
+            $project->sales()->withTrashed()->each(
+                fn (Sale $sale) => $sale->forceDelete()
+            );
+
+            $project->purchases()->withTrashed()->each(
+                fn (Purchase $purchase) => $purchase->forceDelete()
+            );
+        });
     }
 
     /**

@@ -6,7 +6,10 @@ use App\Jobs\PruneTrashJob;
 use App\Models\FieldReport;
 use App\Models\FileTrashEntry;
 use App\Models\OrgSetting;
+use App\Models\Project;
+use App\Models\Purchase;
 use App\Models\Role;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Services\TrashRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -221,5 +224,44 @@ class TrashTest extends TestCase
         PruneTrashJob::dispatchSync(days: 60);
 
         $this->assertTrue(true);
+    }
+
+    public function test_force_delete_project_with_purchases_succeeds(): void
+    {
+        $user = $this->owner();
+
+        $project = Project::query()->create([
+            'code' => 'P-TRASH',
+            'name' => 'Demo site',
+            'type' => 'apartment',
+            'status' => 'planning',
+            'estimated_budget' => 0,
+            'estimated_revenue' => 0,
+            'progress_percent' => 0,
+        ]);
+
+        $supplier = Supplier::query()->create([
+            'supplier_no' => 'SUP-1',
+            'name' => 'Acme',
+        ]);
+
+        $purchase = Purchase::query()->create([
+            'project_id' => $project->id,
+            'supplier_id' => $supplier->id,
+            'purchase_no' => 'PO-1',
+            'purchase_date' => now()->toDateString(),
+        ]);
+
+        $project->delete();
+
+        $this->actingAs($user)
+            ->delete(route('settings.trash.force-destroy'), [
+                'type' => 'projects',
+                'id' => $project->id,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('projects', ['id' => $project->id]);
+        $this->assertDatabaseMissing('purchases', ['id' => $purchase->id]);
     }
 }
