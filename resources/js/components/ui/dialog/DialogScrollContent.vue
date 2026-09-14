@@ -10,6 +10,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui"
+import { preventOutsideDismissForDatePicker } from "@/components/ui/date-picker"
 import { useTranslations } from "@/composables/useTranslations"
 import { cn } from "@/lib/utils"
 
@@ -40,12 +41,18 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
         "
         v-bind="{ ...$attrs, ...forwarded }"
         @pointer-down-outside="(event) => {
+          preventOutsideDismissForDatePicker(event);
+          if (event.defaultPrevented) {
+            return;
+          }
           const originalEvent = event.detail.originalEvent;
           const target = originalEvent.target as HTMLElement;
           if (originalEvent.offsetX > target.clientWidth || originalEvent.offsetY > target.clientHeight) {
             event.preventDefault();
           }
         }"
+        @focus-outside="preventOutsideDismissForDatePicker"
+        @interact-outside="preventOutsideDismissForDatePicker"
       >
         <slot />
 

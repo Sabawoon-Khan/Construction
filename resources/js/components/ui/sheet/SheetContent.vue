@@ -9,6 +9,7 @@ import {
   DialogPortal,
   useForwardPropsEmits,
 } from "reka-ui"
+import { preventOutsideDismissForDatePicker } from "@/components/ui/date-picker"
 import { cn } from "@/lib/utils"
 import SheetOverlay from "./SheetOverlay.vue"
 
@@ -48,6 +49,9 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits)
           && 'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t',
         props.class)"
       v-bind="{ ...$attrs, ...forwarded }"
+      @pointer-down-outside="preventOutsideDismissForDatePicker"
+      @focus-outside="preventOutsideDismissForDatePicker"
+      @interact-outside="preventOutsideDismissForDatePicker"
     >
       <slot />
 
