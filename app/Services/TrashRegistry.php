@@ -172,8 +172,12 @@ class TrashRegistry
                 ->orderBy('id')
                 ->chunkById(50, function ($models) use (&$purged): void {
                     foreach ($models as $model) {
-                        $model->forceDelete();
-                        $purged++;
+                        try {
+                            $model->forceDelete();
+                            $purged++;
+                        } catch (\Throwable $e) {
+                            report($e);
+                        }
                     }
                 });
         }

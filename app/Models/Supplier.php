@@ -36,4 +36,17 @@ class Supplier extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (self $supplier): void {
+            foreach ($supplier->purchases()->withTrashed()->cursor() as $purchase) {
+                $purchase->forceDelete();
+            }
+
+            foreach ($supplier->payments()->withTrashed()->cursor() as $payment) {
+                $payment->forceDelete();
+            }
+        });
+    }
 }

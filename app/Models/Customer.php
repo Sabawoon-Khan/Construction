@@ -76,4 +76,21 @@ class Customer extends Model
     {
         return $this->hasMany(Income::class);
     }
+
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (self $customer): void {
+            foreach ($customer->sales()->withTrashed()->cursor() as $sale) {
+                $sale->forceDelete();
+            }
+
+            foreach ($customer->payments()->withTrashed()->cursor() as $payment) {
+                $payment->forceDelete();
+            }
+
+            foreach ($customer->incomes()->withTrashed()->cursor() as $income) {
+                $income->forceDelete();
+            }
+        });
+    }
 }

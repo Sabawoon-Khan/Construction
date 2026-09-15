@@ -80,4 +80,13 @@ class Employee extends Model
             ->withPivot(['started_at', 'role_on_project', 'working_hours', 'notes'])
             ->withTimestamps();
     }
+
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (self $employee): void {
+            $employee->salaries()->delete();
+            $employee->attendance()->delete();
+            $employee->projects()->detach();
+        });
+    }
 }

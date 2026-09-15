@@ -52,12 +52,17 @@ class EmployeeController extends Controller implements HasMiddleware
         $count = (clone $query)->count();
 
         $byDepartment = (clone $query)
-            ->selectRaw("COALESCE(NULLIF(TRIM(department), ''), 'Unassigned') as department_name, COUNT(*) as aggregate")
-            ->groupByRaw("COALESCE(NULLIF(TRIM(department), ''), 'Unassigned')")
-            ->orderByDesc('aggregate')
-            ->limit(8)
-            ->pluck('aggregate', 'department_name')
-            ->map(fn ($value) => (int) $value)
+            ->selectRaw('department, COUNT(*) as aggregate')
+            ->groupBy('department')
+            ->get()
+            ->groupBy(function ($row) {
+                $name = trim((string) ($row->department ?? ''));
+
+                return $name !== '' ? $name : 'Unassigned';
+            })
+            ->map(fn ($rows) => (int) $rows->sum('aggregate'))
+            ->sortDesc()
+            ->take(8)
             ->all();
 
         $totals = [

@@ -50,6 +50,35 @@ class Project extends Model
             $project->estimated_revenue ??= 0;
             $project->progress_percent ??= 0;
         });
+
+        static::forceDeleting(function (self $project): void {
+            foreach ($project->sales()->withTrashed()->cursor() as $sale) {
+                $sale->forceDelete();
+            }
+
+            foreach ($project->purchases()->withTrashed()->cursor() as $purchase) {
+                $purchase->forceDelete();
+            }
+
+            foreach ($project->loans()->withTrashed()->cursor() as $loan) {
+                $loan->forceDelete();
+            }
+
+            foreach ($project->incomes()->withTrashed()->cursor() as $income) {
+                $income->forceDelete();
+            }
+
+            foreach ($project->expenses()->withTrashed()->cursor() as $expense) {
+                $expense->forceDelete();
+            }
+
+            $project->inventoryTransactions()->delete();
+            $project->partnerInvestments()->delete();
+            $project->partnerDistributions()->delete();
+            $project->units()->delete();
+            $project->partners()->detach();
+            $project->employees()->detach();
+        });
     }
 
     /**

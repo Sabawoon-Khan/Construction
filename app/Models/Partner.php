@@ -64,4 +64,13 @@ class Partner extends Model
 
         return (float) ($this->projects()->where('project_id', $projectId)->value('ownership_percentage') ?? 0);
     }
+
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (self $partner): void {
+            $partner->investments()->delete();
+            $partner->distributions()->delete();
+            $partner->projects()->detach();
+        });
+    }
 }

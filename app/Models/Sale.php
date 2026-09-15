@@ -87,6 +87,7 @@ class Sale extends Model
         static::deleting(function (Sale $sale): void {
             if (method_exists($sale, 'isForceDeleting') && $sale->isForceDeleting()) {
                 $sale->payments()->withTrashed()->forceDelete();
+                $sale->installments()->delete();
 
                 return;
             }

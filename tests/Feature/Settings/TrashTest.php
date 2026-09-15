@@ -97,13 +97,50 @@ class TrashTest extends TestCase
         $report->delete();
 
         $this->actingAs($user)
-            ->delete(route('settings.trash.force-destroy'), [
+            ->delete(route('settings.trash.force-destroy', [
                 'type' => 'field_reports',
                 'id' => $report->id,
-            ])
+            ]))
             ->assertRedirect();
 
         $this->assertDatabaseMissing('field_reports', ['id' => $report->id]);
+    }
+
+    public function test_force_delete_employee_with_salary_succeeds(): void
+    {
+        $user = $this->owner();
+
+        $employee = \App\Models\Employee::query()->create([
+            'user_id' => $user->id,
+            'employee_no' => 'E-001',
+            'name' => 'Trash Emp',
+            'status' => 'active',
+        ]);
+
+        \App\Models\Salary::query()->create([
+            'user_id' => $user->id,
+            'employee_id' => $employee->id,
+            'month' => (int) now()->month,
+            'year' => (int) now()->year,
+            'basic_salary' => 100,
+            'basic_salary_base' => 100,
+            'currency' => 'USD',
+            'exchange_rate' => 1,
+            'status' => 'paid',
+        ]);
+
+        $employee->delete();
+
+        $this->actingAs($user)
+            ->delete(route('settings.trash.force-destroy', [
+                'type' => 'employees',
+                'id' => $employee->id,
+            ]))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('employees', ['id' => $employee->id]);
+        $this->assertDatabaseMissing('salaries', ['employee_id' => $employee->id]);
     }
 
     public function test_attachment_file_survives_soft_delete_and_is_removed_on_force_delete(): void
