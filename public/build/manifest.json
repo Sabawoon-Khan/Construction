@@ -1535,7 +1535,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-CJ4F-aNb.css",
+    "file": "assets/app-CiyTEzIB.css",
     "name": "app",
     "names": [
       "app.css"
@@ -1544,7 +1544,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-TsMVyU09.js",
+    "file": "assets/app-Dcdk5ksJ.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -3632,7 +3632,7 @@
     ]
   },
   "resources/js/pages/settings/Trash/Index.vue": {
-    "file": "assets/Index-DLGYDLHn.js",
+    "file": "assets/Index-KHPgdl0D.js",
     "name": "Index",
     "src": "resources/js/pages/settings/Trash/Index.vue",
     "isDynamicEntry": true,
