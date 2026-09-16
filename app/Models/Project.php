@@ -78,6 +78,13 @@ class Project extends Model
             $project->units()->delete();
             $project->partners()->detach();
             $project->employees()->detach();
+            $project->sales()->withTrashed()->each(
+                fn (Sale $sale) => $sale->forceDelete()
+            );
+
+            $project->purchases()->withTrashed()->each(
+                fn (Purchase $purchase) => $purchase->forceDelete()
+            );
         });
     }
 

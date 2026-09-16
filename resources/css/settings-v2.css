@@ -126,3 +126,155 @@
     --app-v2-active-fg: #ffffff;
     background: #eef0ee;
 }
+
+/* Dark mode — settings forced light panels without these overrides */
+html.dark .settings-v2 {
+    --settings-ink: var(--foreground, #e8eef7);
+    --settings-muted: var(--muted-foreground, #9aa8bc);
+    --settings-soft: color-mix(
+        in srgb,
+        var(--muted-foreground, #9aa8bc) 78%,
+        transparent
+    );
+    --settings-accent: var(--brand-accent, var(--primary, #ff8a3a));
+    --settings-brand: var(--foreground, #e8eef7);
+    --settings-wash: var(--background, #0b1220);
+    --settings-panel: color-mix(in srgb, var(--card, #121a27) 72%, transparent);
+    --settings-panel-strong: color-mix(
+        in srgb,
+        var(--card, #121a27) 88%,
+        transparent
+    );
+    --settings-line: color-mix(in srgb, var(--foreground, #e8eef7) 10%, transparent);
+    --settings-shadow:
+        0 14px 36px rgba(0, 0, 0, 0.35),
+        inset 0 1px color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent);
+}
+
+html.dark .app-v2-page.settings-shell .app-v2-shell {
+    background:
+        radial-gradient(
+            ellipse 46% 40% at 88% 8%,
+            color-mix(in srgb, var(--brand-accent, #ff8a3a) 14%, transparent) 0%,
+            transparent 68%
+        ),
+        radial-gradient(
+            ellipse 42% 36% at 8% 92%,
+            color-mix(in srgb, var(--app-v2-secondary, #4c7cf3) 12%, transparent) 0%,
+            transparent 70%
+        ),
+        linear-gradient(145deg, #0a0f16 0%, #0d1219 48%, #111820 100%);
+}
+
+html.dark .app-v2-page.settings-shell {
+    --app-v2-surface: color-mix(in srgb, var(--card, #121a27) 88%, transparent);
+    --app-v2-surface-strong: color-mix(
+        in srgb,
+        var(--card, #121a27) 96%,
+        transparent
+    );
+    --app-v2-ink: var(--foreground, #e8eef7);
+    --app-v2-muted: var(--muted-foreground, #9aa8bc);
+    --app-v2-active-bg: color-mix(in srgb, var(--foreground, #e8eef7) 92%, transparent);
+    --app-v2-active-fg: var(--background, #0b1220);
+    background: var(--background, #0b1220);
+}
+
+html.dark .settings-v2 .settings-nav-card,
+html.dark .settings-v2 .settings-page-head {
+    border-color: var(--settings-line);
+    background:
+        linear-gradient(
+            165deg,
+            color-mix(in srgb, var(--card, #121a27) 88%, transparent) 0%,
+            color-mix(in srgb, var(--card, #121a27) 72%, transparent) 100%
+        );
+    box-shadow: var(--settings-shadow);
+}
+
+html.dark .settings-v2 .settings-page-copy h1 {
+    color: var(--settings-ink);
+}
+
+html.dark .settings-v2 .settings-nav-group + .settings-nav-group {
+    border-top-color: color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent);
+}
+
+html.dark .settings-v2 .settings-nav-link:hover {
+    background: color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent);
+    color: var(--settings-ink);
+}
+
+html.dark .settings-v2 .settings-nav-icon {
+    background: color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent);
+}
+
+html.dark .settings-v2 .settings-mobile-track {
+    background: var(--settings-panel-strong);
+    border-color: var(--settings-line);
+}
+
+html.dark .settings-v2 .settings-chip:hover {
+    background: color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent);
+}
+
+html.dark
+    .settings-v2
+    .settings-content-body
+    :is([data-slot='card'], .rounded-2xl.border, .shadow-soft) {
+    background:
+        linear-gradient(
+            165deg,
+            color-mix(in srgb, var(--card, #121a27) 92%, transparent) 0%,
+            color-mix(in srgb, var(--card, #121a27) 76%, transparent) 100%
+        ) !important;
+}
+
+html.dark .settings-v2 .settings-content-body [data-slot='card-header'] {
+    background: color-mix(in srgb, var(--card, #121a27) 65%, transparent) !important;
+    border-bottom: 1px solid
+        color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent) !important;
+}
+
+html.dark .settings-v2 .settings-content-body input,
+html.dark .settings-v2 .settings-content-body select,
+html.dark .settings-v2 .settings-content-body textarea {
+    border-color: color-mix(in srgb, var(--foreground, #e8eef7) 12%, transparent);
+    background: color-mix(in srgb, var(--card, #121a27) 78%, transparent);
+    color: var(--foreground, #e8eef7);
+}
+
+html.dark
+    .settings-v2
+    .settings-content-body
+    button[data-slot='button'][data-variant='outline'],
+html.dark
+    .settings-v2
+    .settings-content-body
+    button[data-slot='button'][data-variant='secondary'] {
+    border-color: color-mix(in srgb, var(--foreground, #e8eef7) 14%, transparent);
+    background: color-mix(in srgb, var(--card, #121a27) 80%, transparent) !important;
+    color: var(--foreground, #e8eef7) !important;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+
+html.dark .settings-v2 .settings-skeleton-card {
+    border-color: var(--settings-line);
+    background:
+        linear-gradient(
+            165deg,
+            color-mix(in srgb, var(--card, #121a27) 90%, transparent) 0%,
+            color-mix(in srgb, var(--card, #121a27) 72%, transparent) 100%
+        );
+    box-shadow: var(--settings-shadow);
+}
+
+html.dark .settings-v2 .settings-skeleton-head {
+    border-bottom-color: color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent);
+    background: color-mix(in srgb, var(--card, #121a27) 55%, transparent);
+}
+
+html.dark .settings-v2 .settings-skeleton-row {
+    border-color: color-mix(in srgb, var(--foreground, #e8eef7) 8%, transparent);
+    background: color-mix(in srgb, var(--card, #121a27) 65%, transparent);
+}

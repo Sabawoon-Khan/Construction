@@ -126,8 +126,10 @@ export function initializeTheme(): void {
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
-const appearance = ref<Appearance>('system');
-const interfaceStyle = ref<InterfaceStyle>('standard');
+const appearance = ref<Appearance>(getStoredAppearance() ?? 'system');
+const interfaceStyle = ref<InterfaceStyle>(
+    getStoredInterfaceStyle() ?? 'standard',
+);
 
 function updateInterfaceStyleClass(value: InterfaceStyle): void {
     if (typeof window === 'undefined') {
@@ -139,9 +141,7 @@ function updateInterfaceStyleClass(value: InterfaceStyle): void {
 
 export function useAppearance(): UseAppearanceReturn {
     onMounted(() => {
-        const savedAppearance = localStorage.getItem(
-            'appearance',
-        ) as Appearance | null;
+        const savedAppearance = getStoredAppearance();
 
         if (savedAppearance) {
             appearance.value = savedAppearance;

@@ -57,9 +57,17 @@ const rootEl = ref<HTMLElement | null>(null);
 const triggerEl = ref<HTMLButtonElement | null>(null);
 const panelEl = ref<HTMLElement | null>(null);
 const panelStyle = ref<Record<string, string>>({});
+const portalTarget = ref<string | HTMLElement>('body');
 
 const PANEL_WIDTH = 312; // 19.5rem
 const PANEL_Z = 300;
+
+function resolvePortalTarget(): string | HTMLElement {
+    const host = rootEl.value?.closest(
+        '[data-slot="dialog-content"], [data-slot="sheet-content"]',
+    );
+    return host?.parentElement ?? 'body';
+}
 
 function placePanel(): void {
     const trigger = triggerEl.value;
@@ -95,6 +103,7 @@ function placePanel(): void {
         left: `${Math.round(left)}px`,
         width: `${PANEL_WIDTH}px`,
         zIndex: String(PANEL_Z),
+        pointerEvents: 'auto',
     };
 }
 
@@ -260,6 +269,7 @@ function toggle(): void {
     if (props.disabled) return;
     open.value = !open.value;
     if (open.value) {
+        portalTarget.value = resolvePortalTarget();
         const seed = selectedParts.value ?? today.value;
         viewYear.value = seed.year;
         viewMonth.value = seed.month;
@@ -348,7 +358,7 @@ onBeforeUnmount(() => {
             </button>
         </button>
 
-        <Teleport to="body">
+        <Teleport :to="portalTarget">
             <Transition
                 enter-active-class="transition duration-160 ease-out"
                 enter-from-class="-translate-y-1 scale-[0.98] opacity-0"
@@ -360,11 +370,13 @@ onBeforeUnmount(() => {
                 <div
                     v-if="open"
                     ref="panelEl"
+                    data-date-picker-panel
                     role="dialog"
                     aria-modal="false"
                     class="bg-popover text-popover-foreground overflow-hidden rounded-xl border shadow-lg"
                     :style="panelStyle"
                     @mousedown.stop
+                    @pointerdown.stop
                 >
                 <div
                     class="from-primary/12 via-primary/5 to-transparent border-b bg-gradient-to-br px-3 pt-3 pb-2.5"
