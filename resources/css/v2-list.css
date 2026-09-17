@@ -2100,3 +2100,68 @@
     }
 }
 
+html.dark .v2-list-page {
+    --v2-hero-wash: color-mix(
+        in srgb,
+        var(--background, #0b1220) 88%,
+        var(--v2-table-accent) 12%
+    );
+    --v2-hero-ink: var(--foreground, #e8eef7);
+    --v2-hero-muted: var(--muted-foreground, #9aa8bc);
+    --v2-table-surface: color-mix(
+        in srgb,
+        var(--card, #121a27) 78%,
+        transparent
+    );
+    --v2-table-surface-solid: color-mix(
+        in srgb,
+        var(--card, #121a27) 94%,
+        #0b1220
+    );
+    --v2-table-top-bg: color-mix(in srgb, var(--card, #121a27) 88%, #0b1220);
+    --v2-table-head-bg: color-mix(in srgb, var(--card, #121a27) 82%, #0b1220);
+    --v2-table-head-fg: var(--muted-foreground, #9aa8bc);
+    --v2-table-border: rgb(255 255 255 / 10%);
+    --v2-table-row-hover: rgb(255 255 255 / 5%);
+    --v2-table-control-bg: rgb(255 255 255 / 6%);
+    --v2-table-control-border: rgb(255 255 255 / 12%);
+}
+
+html.dark .hero {
+    border-color: rgb(255 255 255 / 10%);
+    box-shadow:
+        0 18px 44px rgb(0 0 0 / 28%),
+        inset 0 1px rgb(255 255 255 / 6%);
+}
+
+html.dark .stat-card,
+html.dark .indicator-card,
+html.dark .v2-amount-card {
+    border-color: rgb(255 255 255 / 12%);
+    background: rgb(18 26 39 / 72%);
+    box-shadow:
+        0 10px 24px rgb(0 0 0 / 22%),
+        inset 0 1px rgb(255 255 255 / 6%);
+}
+
+html.dark .v2-amount-label,
+html.dark .v2-amount-meta {
+    color: #9aa8bc;
+}
+
+html.dark .v2-amount-value {
+    color: #f4f7fb;
+}
+
+html.dark .v2-amount-card.rose .v2-amount-value {
+    color: #fb7185;
+}
+
+html.dark .v2-amount-card.emerald .v2-amount-value {
+    color: #34d399;
+}
+
+html.dark .v2-amount-card.warm .v2-amount-value {
+    color: #fb923c;
+}
+

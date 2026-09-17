@@ -575,10 +575,14 @@ function openProject(id?: number | string) {
         <div class="dashboard-v2" @click="periodOpen = false">
             <main class="visual-area">
                 <section class="hero-copy">
-                    <h1>
-                        Smart<br />
-                        Construction
-                    </h1>
+                    <h1>{{ t('Smart Construction') }}</h1>
+                    <p>
+                        {{
+                            t(
+                                'Track projects, sales, and spending in one live construction overview.',
+                            )
+                        }}
+                    </p>
                 </section>
 
                 <div class="building-wrap">
@@ -1248,7 +1252,7 @@ function openProject(id?: number | string) {
 .dashboard-v2 {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 300px);
     grid-template-rows: minmax(0, 1fr);
     gap: 8px;
     width: 100%;
@@ -1290,25 +1294,27 @@ function openProject(id?: number | string) {
     position: absolute;
     z-index: 6;
     top: 22px;
-    left: 22px;
+    inset-inline-start: 22px;
+    max-width: min(42%, 22rem);
 }
 
 .hero-copy h1 {
     margin: 0;
-    max-width: 8.5ch;
+    max-width: 9ch;
     color: #0d0d0d;
-    font-size: clamp(42px, 3.8vw, 60px);
+    font-size: clamp(36px, 3.4vw, 56px);
     font-weight: 650;
-    line-height: 0.92;
-    letter-spacing: -2.8px;
+    line-height: 0.95;
+    letter-spacing: -0.06em;
+    overflow-wrap: anywhere;
 }
 
 .hero-copy p {
-    margin: 14px 0 0;
-    max-width: 240px;
-    color: #8a9090;
-    font-size: 10px;
-    font-weight: 450;
+    margin: 12px 0 0;
+    max-width: 28ch;
+    color: #5c6568;
+    font-size: 11px;
+    font-weight: 500;
     line-height: 1.45;
 }
 
@@ -1316,7 +1322,7 @@ function openProject(id?: number | string) {
     position: absolute;
     z-index: 2;
     top: 2%;
-    right: -4%;
+    inset-inline-end: -4%;
     width: 98%;
     height: 78%;
     overflow: hidden;
@@ -1351,7 +1357,7 @@ function openProject(id?: number | string) {
     position: absolute;
     z-index: 8;
     top: 148px;
-    left: 44%;
+    inset-inline-start: 44%;
     width: 228px;
     min-height: 118px;
     padding: 15px 16px;
@@ -1383,6 +1389,7 @@ function openProject(id?: number | string) {
     overflow: hidden;
     font-size: 13px;
     font-weight: 500;
+    line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -1432,7 +1439,7 @@ function openProject(id?: number | string) {
     place-items: center;
     width: 24px;
     height: 24px;
-    margin-left: -6px;
+    margin-inline-start: -6px;
     border: 0;
     border-radius: 50%;
     font-style: normal;
@@ -1495,7 +1502,7 @@ function openProject(id?: number | string) {
 
 .chart-number small,
 .chart-number .up {
-    margin-left: 6px;
+    margin-inline-start: 6px;
     color: #1f9d57;
     font-size: 10px;
     font-weight: 600;
@@ -1588,7 +1595,7 @@ function openProject(id?: number | string) {
 .bar-column small {
     position: absolute;
     bottom: -16px;
-    color: #9a9d9d;
+    color: #6d7375;
     font-size: 8px;
     white-space: nowrap;
 }
@@ -1819,7 +1826,8 @@ function openProject(id?: number | string) {
     width: 100%;
     min-width: 0;
     min-height: 0;
-    padding: 10px 10px 10px 0;
+    padding-block: 10px;
+    padding-inline: 0 10px;
     background: transparent;
 }
 
@@ -1857,6 +1865,7 @@ function openProject(id?: number | string) {
     align-items: center;
     gap: 7px;
     min-width: 34px;
+    max-width: 100%;
     height: 32px;
     padding: 0 11px;
     border: 0;
@@ -1864,7 +1873,7 @@ function openProject(id?: number | string) {
     background: rgb(255 255 255 / 48%);
     box-shadow: 0 8px 18px rgb(40 45 50 / 4%);
     backdrop-filter: blur(14px);
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 500;
 }
 
@@ -1917,9 +1926,11 @@ function openProject(id?: number | string) {
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
     color: #2d3133;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 550;
+    line-height: 1.3;
 }
 
 .metric-title span svg {
@@ -1955,7 +1966,7 @@ function openProject(id?: number | string) {
 .metric-value {
     position: relative;
     z-index: 2;
-    max-width: calc(100% - 78px);
+    max-width: calc(100% - 72px);
     margin-top: 4px;
     overflow: visible;
     color: #111;
@@ -1964,6 +1975,7 @@ function openProject(id?: number | string) {
     letter-spacing: -0.4px;
     line-height: 1.2;
     white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 .metric-money {
@@ -1990,18 +2002,21 @@ function openProject(id?: number | string) {
 .metric-hint {
     position: relative;
     z-index: 2;
-    max-width: calc(100% - 78px);
+    max-width: calc(100% - 72px);
     margin-top: 3px;
+    display: -webkit-box;
     overflow: hidden;
-    color: #8b9192;
-    font-size: 8px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    color: #667074;
+    font-size: 10px;
+    line-height: 1.35;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .metric-card > svg {
     position: absolute;
-    right: 2px;
+    inset-inline-end: 2px;
     bottom: 0;
     z-index: 1;
     width: 72px;
@@ -2043,8 +2058,10 @@ function openProject(id?: number | string) {
 
 .cut-title strong {
     display: block;
+    max-width: 12rem;
     font-size: 12px;
     font-weight: 500;
+    line-height: 1.3;
 }
 
 .cut-title small {
@@ -2092,7 +2109,7 @@ function openProject(id?: number | string) {
 
 
 .hero-copy p {
-    max-width: 320px;
+    max-width: 34ch;
 }
 
 .project-float {
@@ -2193,15 +2210,19 @@ function openProject(id?: number | string) {
     align-items: center;
     gap: 7px;
     min-width: 34px;
+    max-width: 11.5rem;
     height: 32px;
     padding: 0 11px;
+    overflow: hidden;
     border: 0;
     border-radius: 18px;
     background: rgb(255 255 255 / 48%);
     box-shadow: 0 8px 18px rgb(40 45 50 / 4%);
     backdrop-filter: blur(14px);
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .period-dropdown {
@@ -2308,7 +2329,7 @@ function openProject(id?: number | string) {
 
 .project-row em {
     position: absolute;
-    right: 8px;
+    inset-inline-end: 8px;
     bottom: 2px;
     color: #98a2b3;
     font-size: 7px;
@@ -2385,7 +2406,7 @@ function openProject(id?: number | string) {
     }
 
     .project-float {
-        left: 40%;
+        inset-inline-start: 40%;
     }
 
     .below-grid.charts,
@@ -2426,22 +2447,28 @@ function openProject(id?: number | string) {
     .hero-copy {
         position: relative;
         top: auto;
-        left: auto;
+        inset-inline-start: auto;
         z-index: 6;
+        max-width: none;
         padding: 18px 16px 0;
     }
 
     .hero-copy h1 {
         max-width: none;
-        font-size: clamp(28px, 9vw, 40px);
-        letter-spacing: -1.6px;
-        line-height: 0.95;
+        font-size: clamp(28px, 8vw, 40px);
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+    }
+
+    .hero-copy p {
+        max-width: 42ch;
+        font-size: 12px;
     }
 
     .building-wrap {
         position: relative;
         top: auto;
-        right: auto;
+        inset-inline-end: auto;
         width: 100%;
         height: 220px;
         margin: 4px 0 8px;
@@ -2468,8 +2495,7 @@ function openProject(id?: number | string) {
     .project-float {
         position: relative;
         top: auto;
-        right: auto;
-        left: auto;
+        inset-inline: auto;
         z-index: 8;
         width: calc(100% - 24px);
         max-width: 320px;
@@ -2622,7 +2648,7 @@ function openProject(id?: number | string) {
 
     .hero-copy h1 {
         font-size: 26px;
-        letter-spacing: -1.2px;
+        letter-spacing: -0.03em;
     }
 
     .building-wrap {
@@ -2677,5 +2703,207 @@ function openProject(id?: number | string) {
     .chart-sub {
         white-space: normal;
     }
+}
+
+:global(html[dir='rtl']) .hero-copy h1 {
+    max-width: 14ch;
+    letter-spacing: 0;
+    line-height: 1.15;
+    font-size: clamp(28px, 3vw, 44px);
+}
+
+:global(html[dir='rtl']) .hero-copy p {
+    max-width: 36ch;
+}
+
+:global(html[dir='rtl']) .building {
+    object-position: left center;
+}
+
+:global(html[dir='rtl']) .building-wrap {
+    -webkit-mask-image: radial-gradient(
+        ellipse 68% 62% at 42% 42%,
+        #000 40%,
+        rgb(0 0 0 / 78%) 68%,
+        transparent 100%
+    );
+    mask-image: radial-gradient(
+        ellipse 68% 62% at 42% 42%,
+        #000 40%,
+        rgb(0 0 0 / 78%) 68%,
+        transparent 100%
+    );
+}
+
+:global(html[dir='rtl']) .project-row {
+    text-align: right;
+}
+
+:global(html[dir='rtl']) .alert-chip {
+    align-items: flex-end;
+    text-align: right;
+}
+
+:global(html[dir='rtl']) .legend.dual,
+:global(html[dir='rtl']) .chart-actions {
+    align-items: flex-start;
+}
+
+:global(html.dark) .dashboard-page {
+    color: #e8eef7;
+}
+
+:global(html.dark) .dashboard-v2 {
+    color: #e8eef7;
+    border-color: rgb(255 255 255 / 10%);
+    background:
+        radial-gradient(
+            ellipse 52% 46% at 10% 6%,
+            rgb(36 48 68 / 55%) 0%,
+            transparent 72%
+        ),
+        radial-gradient(
+            ellipse 40% 36% at 94% 8%,
+            rgb(45 212 191 / 8%) 0%,
+            transparent 70%
+        ),
+        linear-gradient(145deg, #101826 0%, #0c1320 52%, #0a1018 100%);
+    box-shadow:
+        0 18px 44px rgb(0 0 0 / 28%),
+        inset 0 1px rgb(255 255 255 / 6%);
+}
+
+:global(html.dark) .hero-copy h1 {
+    color: #f4f7fb;
+}
+
+:global(html.dark) .hero-copy p {
+    color: #9aa8bc;
+}
+
+:global(html.dark) .building {
+    opacity: 0.78;
+    filter: saturate(0.92) brightness(0.88);
+}
+
+:global(html.dark) .project-float {
+    border-color: rgb(255 255 255 / 14%);
+    background: linear-gradient(
+        145deg,
+        rgb(18 26 39 / 62%),
+        rgb(32 40 52 / 48%)
+    );
+}
+
+:global(html.dark) .chart-panel,
+:global(html.dark) .structo-sales-chart,
+:global(html.dark) .right-glass,
+:global(html.dark) .metric-card,
+:global(html.dark) .cut-card,
+:global(html.dark) .glass-panel {
+    border-color: rgb(255 255 255 / 12%);
+    background: linear-gradient(
+        180deg,
+        rgb(18 26 39 / 72%),
+        rgb(16 24 36 / 52%)
+    );
+    box-shadow:
+        0 16px 40px rgb(0 0 0 / 22%),
+        inset 0 1px rgb(255 255 255 / 8%);
+}
+
+:global(html.dark) .metric-card.featured {
+    border-color: rgb(255 180 120 / 35%);
+    box-shadow:
+        0 14px 32px rgb(255 138 58 / 12%),
+        inset 0 1px rgb(255 255 255 / 8%),
+        inset 2px 0 0 rgb(255 138 58 / 55%);
+}
+
+:global(html.dark) .chart-header span,
+:global(html.dark) .metric-title span,
+:global(html.dark) .cut-title strong,
+:global(html.dark) .panel-head h2,
+:global(html.dark) .project-name {
+    color: #e8eef7;
+}
+
+:global(html.dark) .chart-number,
+:global(html.dark) .metric-value,
+:global(html.dark) .metric-money :deep(.text-base),
+:global(html.dark) .metric-money :deep(.sm\:text-lg) {
+    color: #f4f7fb;
+}
+
+:global(html.dark) .cut-title small,
+:global(html.dark) .metric-hint,
+:global(html.dark) .chart-sub,
+:global(html.dark) .chart-empty,
+:global(html.dark) .list-empty,
+:global(html.dark) .legend,
+:global(html.dark) .y-axis,
+:global(html.dark) .bar-column small,
+:global(html.dark) .bar-amount,
+:global(html.dark) .project-profit {
+    color: #9aa8bc;
+}
+
+:global(html.dark) .bar-column.active .bar-amount,
+:global(html.dark) .bar-column.hovering .bar-amount {
+    color: #f4f7fb;
+}
+
+:global(html.dark) .range-track {
+    background: rgb(255 255 255 / 10%);
+}
+
+:global(html.dark) .right-tools button,
+:global(html.dark) .period-trigger,
+:global(html.dark) .metric-title button,
+:global(html.dark) .cut-title button,
+:global(html.dark) .chart-header button {
+    color: #c5d0de;
+    background: rgb(255 255 255 / 8%);
+}
+
+:global(html.dark) .period-dropdown {
+    border-color: rgb(255 255 255 / 12%);
+    background: rgb(16 24 36 / 96%);
+    color: #e8eef7;
+}
+
+:global(html.dark) .period-dropdown > button.active {
+    background: rgb(255 255 255 / 12%);
+    color: #fff;
+}
+
+:global(html.dark) .period-custom {
+    border-top-color: rgb(255 255 255 / 10%);
+}
+
+:global(html.dark) .project-row {
+    background: rgb(255 255 255 / 6%);
+}
+
+:global(html.dark) .bar-tooltip {
+    border-color: rgb(255 255 255 / 12%);
+    background: rgb(16 24 36 / 96%);
+    color: #e8eef7;
+}
+
+:global(html.dark) .bar-tooltip span {
+    color: #9aa8bc;
+}
+
+:global(html.dark) .gauge-bg {
+    stroke: rgb(255 255 255 / 12%);
+}
+
+:global(html.dark) .dashboard-below {
+    color: #e8eef7;
+}
+
+:global(html.dark) .dashboard-below :deep(.text-muted-foreground) {
+    color: #9aa8bc;
 }
 </style>

@@ -4,6 +4,7 @@ import {
     CloudOff,
     DatabaseBackup,
     FolderOpen,
+    Globe,
     History,
     KeyRound,
     Languages,
@@ -96,12 +97,20 @@ export function useSettingsNavigation() {
                 { translations_ui?: boolean } | undefined;
 
             if (features?.translations_ui !== false) {
-                items.push({
-                    title: t('Translations'),
-                    href: '/settings/translations',
-                    icon: Languages,
-                    group: 'company',
-                });
+                items.push(
+                    {
+                        title: t('Translations'),
+                        href: '/settings/translations',
+                        icon: Languages,
+                        group: 'company',
+                    },
+                    {
+                        title: t('Website copy'),
+                        href: '/settings/translations?search=home.',
+                        icon: Globe,
+                        group: 'company',
+                    },
+                );
             }
         }
 
