@@ -118,10 +118,9 @@
             }
         </style>
 
-        <link rel="icon" href="{{ \App\Models\OrgSetting::faviconUrl() ?? '/favicon.ico' }}" sizes="any">
+        <link rel="icon" href="{{ \App\Models\OrgSetting::faviconUrl() ?? '/favicon.png' }}" type="image/png" sizes="any">
         @if (! \App\Models\OrgSetting::faviconUrl())
-            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+            <link rel="apple-touch-icon" href="/favicon.png">
         @endif
         @if (\App\Support\OfflineSettings::pwaEnabled())
             <link rel="manifest" href="/manifest.webmanifest">

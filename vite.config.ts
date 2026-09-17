@@ -47,7 +47,7 @@ export default defineConfig({
             filename: 'sw.ts',
             registerType: 'autoUpdate',
             injectRegister: false,
-            includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'],
+            includeAssets: ['favicon.ico', 'favicon.png', 'favicon.svg', 'apple-touch-icon.png'],
             manifest: {
                 name: 'Yaqeen Kit',
                 short_name: 'Yaqeen',
@@ -59,10 +59,16 @@ export default defineConfig({
                 scope: '/',
                 icons: [
                     {
-                        src: '/favicon.svg',
-                        sizes: 'any',
-                        type: 'image/svg+xml',
-                        purpose: 'any maskable',
+                        src: '/favicon.png',
+                        sizes: '512x512',
+                        type: 'image/png',
+                        purpose: 'any',
+                    },
+                    {
+                        src: '/favicon.png',
+                        sizes: '512x512',
+                        type: 'image/png',
+                        purpose: 'maskable',
                     },
                     {
                         src: '/apple-touch-icon.png',

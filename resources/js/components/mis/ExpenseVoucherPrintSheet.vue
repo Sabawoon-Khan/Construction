@@ -69,7 +69,9 @@ const brandSecondary = computed(() => {
     return publicCompany.value?.name_en?.trim() || null;
 });
 
-const logo = computed(() => (page.props.logo as string | null) ?? null);
+const logo = computed(
+    () => (page.props.logo as string | null) ?? '/favicon.png',
+);
 
 const contactParts = computed(() =>
     [

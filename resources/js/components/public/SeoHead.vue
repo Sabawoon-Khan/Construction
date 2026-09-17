@@ -46,7 +46,7 @@ const shared = computed(
             app_url: '',
             site_name: '',
             default_description: '',
-            default_image: '/favicon.svg',
+            default_image: '/favicon.png',
             locale: 'en',
             alternate_locales: [],
             keywords: '',

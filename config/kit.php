@@ -57,7 +57,7 @@ return [
 
     'seo' => [
         'default_description' => 'Yaqeen MIS starter kit — authentication, roles, multilingual RTL admin, AI, and offline for modern teams worldwide.',
-        'default_image' => '/favicon.svg',
+        'default_image' => '/favicon.png',
         'keywords' => 'MIS, ERP, Laravel, Inertia, Vue, RTL, multilingual, AI, offline, Yaqeen',
     ],
 
