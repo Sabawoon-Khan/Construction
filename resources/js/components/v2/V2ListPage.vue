@@ -12,7 +12,7 @@ const resolvedDir = computed(() => props.dir ?? localeDir.value);
 </script>
 
 <template>
-    <div class="v2-list-page" :dir="resolvedDir">
+    <div class="v2-list-page print-table-only" :dir="resolvedDir">
         <slot />
     </div>
 </template>

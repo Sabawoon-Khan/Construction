@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Customer;
 use App\Models\Payment;
@@ -10,6 +12,7 @@ use App\Models\Sale;
 use App\Services\CurrencyService;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -17,29 +20,21 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CustomerController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'customers';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Customer::query();
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->orWhere('name', 'like', "%{$search}%");
-                $q->orWhere('takhallus', 'like', "%{$search}%");
-                $q->orWhere('father_name', 'like', "%{$search}%");
-                $q->orWhere('customer_no', 'like', "%{$search}%");
-                $q->orWhere('phone', 'like', "%{$search}%");
-                $q->orWhere('national_id', 'like', "%{$search}%");
-                $q->orWhere('address', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $ids = (clone $query)->select('id');
         $salesQuery = Sale::query()->whereIn('customer_id', clone $ids);
@@ -67,6 +62,98 @@ class CustomerController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => $this->salesByMonth(clone $salesQuery),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $query = $this->indexQuery($request, $this->exportAppliesFilters($request));
+
+        return $this->streamExport('customers', [
+            'Customer No',
+            'Name',
+            'Last name',
+            'Father name',
+            'Phone',
+            'Address',
+            'Registration date',
+            'Customer type',
+            'Purchase amount',
+            'Amount paid',
+            'Remaining',
+            'Last purchase',
+            'Status',
+            'Notes',
+            'Created at',
+        ], $this->customerExportRows($query), $this->exportFormat($request));
+    }
+
+    /**
+     * @return Builder<Customer>
+     */
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Customer::query();
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('name', 'like', "%{$search}%");
+                $q->orWhere('takhallus', 'like', "%{$search}%");
+                $q->orWhere('father_name', 'like', "%{$search}%");
+                $q->orWhere('customer_no', 'like', "%{$search}%");
+                $q->orWhere('phone', 'like', "%{$search}%");
+                $q->orWhere('national_id', 'like', "%{$search}%");
+                $q->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
+    }
+
+    /**
+     * @param  Builder<Customer>  $query
+     * @return \Generator<int, list<mixed>>
+     */
+    private function customerExportRows(Builder $query): \Generator
+    {
+        $lastId = 0;
+
+        while (true) {
+            $customers = (clone $query)
+                ->where('id', '>', $lastId)
+                ->orderBy('id')
+                ->limit(500)
+                ->get();
+
+            if ($customers->isEmpty()) {
+                break;
+            }
+
+            $this->appendLedgerStats($customers);
+
+            foreach ($customers as $customer) {
+                yield [
+                    $customer->customer_no,
+                    $customer->name,
+                    $customer->takhallus,
+                    $customer->father_name,
+                    $customer->phone,
+                    $customer->address,
+                    $customer->registered_at?->toDateString(),
+                    $customer->type,
+                    (float) ($customer->purchase_amount ?? 0),
+                    (float) ($customer->paid_amount ?? 0),
+                    (float) ($customer->remaining ?? 0),
+                    $customer->last_purchase_at,
+                    $customer->status,
+                    $customer->notes,
+                    $customer->created_at?->toDateTimeString(),
+                ];
+            }
+
+            $lastId = (int) $customers->last()->id;
+        }
     }
 
     public function create(): Response

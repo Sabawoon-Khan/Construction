@@ -2,23 +2,29 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesMisPermissions;
 use App\Http\Controllers\Concerns\PaginatesInertia;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\SharesOfflineInertiaProps;
 use App\Http\Controllers\Controller;
 use App\Models\FieldReport;
 use App\Services\OfflineAttachmentService;
 use App\Support\OfflineSettings;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FieldReportController extends Controller
 {
     use AuthorizesMisPermissions;
+    use ExportsSpreadsheet;
     use PaginatesInertia;
+    use ResolvesExportScope;
     use SharesOfflineInertiaProps;
 
     public function __construct(protected OfflineAttachmentService $attachments) {}
@@ -30,20 +36,7 @@ class FieldReportController extends Controller
         $search = $request->string('search')->toString();
         $status = $request->string('status')->toString();
 
-        $query = FieldReport::query()
-            ->where('user_id', $request->user()->id);
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%")
-                    ->orWhere('status', 'like', "%{$search}%");
-            });
-        }
-
-        if (in_array($status, ['draft', 'submitted'], true)) {
-            $query->where('status', $status);
-        }
+        $query = $this->indexQuery($request);
 
         $base = FieldReport::query()->where('user_id', $request->user()->id);
 
@@ -84,6 +77,29 @@ class FieldReportController extends Controller
             'volumeChart' => $volumeChart,
             ...$this->offlineInertiaProps('field_reports'),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorizePermission($request, 'field_reports.view');
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->orderBy('id')
+            ->lazyById(500)
+            ->map(fn (FieldReport $report) => [
+                $report->title,
+                $report->location,
+                $report->status,
+                $report->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'field-reports',
+            ['title', 'location', 'status', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
     }
 
     public function create(Request $request): Response
@@ -227,5 +243,30 @@ class FieldReportController extends Controller
 
             $report->storeAttachment($file, null, $request->user()->id);
         }
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = FieldReport::query()->where('user_id', $request->user()->id);
+
+        if (! $applyFilters) {
+            return $query;
+        }
+
+        $search = $request->string('search')->toString();
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
+
+        $status = $request->string('status')->toString();
+        if (in_array($status, ['draft', 'submitted'], true)) {
+            $query->where('status', $status);
+        }
+
+        return $query;
     }
 }

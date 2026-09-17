@@ -2,41 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'attendance';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Attendance::query()->with(['employee:id,name,employee_no', 'creator:id,name']);
-
-        if ($employeeId = $request->integer('employee_id')) {
-            $query->where('employee_id', $employeeId);
-        }
-
-        if ($date = $request->date('date')) {
-            $query->whereDate('date', $date);
-        }
-
-        if ($search = $request->string('search')->toString()) {
-            $query->whereHas('employee', fn ($q) => $q
-                ->where('name', 'like', "%{$search}%")
-                ->orWhere('employee_no', 'like', "%{$search}%"));
-        }
+        $search = $request->string('search')->toString();
+        $employeeId = $request->integer('employee_id');
+        $date = $request->date('date');
+        $query = $this->indexQuery($request);
 
         $totals = [
             'count' => (clone $query)->count(),
@@ -57,6 +52,57 @@ class AttendanceController extends Controller implements HasMiddleware
             'volumeChart' => $this->recordsByMonth(clone $query),
             'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no']),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->latest('date')
+            ->lazyById(500)
+            ->map(fn (Attendance $attendance) => [
+                $attendance->date?->toDateString(),
+                $attendance->employee?->name,
+                $attendance->check_in,
+                $attendance->check_out,
+                $attendance->status,
+                $attendance->notes,
+                $attendance->creator?->name,
+                $attendance->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'attendance',
+            ['date', 'employee', 'check_in', 'check_out', 'status', 'notes', 'added_by', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Attendance::query()->with(['employee:id,name,employee_no', 'creator:id,name']);
+
+        if (! $applyFilters) {
+            return $query;
+        }
+
+        if ($employeeId = $request->integer('employee_id')) {
+            $query->where('employee_id', $employeeId);
+        }
+
+        if ($date = $request->date('date')) {
+            $query->whereDate('date', $date);
+        }
+
+        if ($search = $request->string('search')->toString()) {
+            $query->whereHas('employee', fn ($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('employee_no', 'like', "%{$search}%"));
+        }
+
+        return $query;
     }
 
     public function create(): Response

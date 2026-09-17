@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { Link, useForm } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
+import { MisTableActions } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
@@ -106,6 +108,50 @@ function confirmIssue() {
         },
     });
 }
+
+const stockExportHeaders = computed(() => [
+    t('Material'),
+    t('Unit'),
+    t('On hand'),
+]);
+
+function mapStockExportRow(
+    row: NonNullable<typeof props.stock>[number],
+): ExportCell[] {
+    return [
+        materialName(row.material_id),
+        materialUnit(row.material_id) || null,
+        row.on_hand,
+    ];
+}
+
+const stockExportRows = computed(() => (props.stock ?? []).map(mapStockExportRow));
+const stockFilteredExportRows = computed(() =>
+    stockSort.sortedRows.map(mapStockExportRow),
+);
+
+const issueExportHeaders = computed(() => [
+    t('Material'),
+    t('Issued qty'),
+    t('Issue date'),
+]);
+
+function mapIssueExportRow(
+    issue: NonNullable<typeof props.stock_issues>[number],
+): ExportCell[] {
+    return [
+        issue.material?.name || materialName(issue.material_id),
+        issue.quantity,
+        issue.transaction_date ? formatDate(issue.transaction_date) : null,
+    ];
+}
+
+const issueExportRows = computed(() =>
+    (props.stock_issues ?? []).map(mapIssueExportRow),
+);
+const issueFilteredExportRows = computed(() =>
+    issueSort.sortedRows.map(mapIssueExportRow),
+);
 </script>
 
 <template>
@@ -172,6 +218,14 @@ function confirmIssue() {
 
         <div class="grid gap-4 lg:grid-cols-2">
             <V2Panel :padded="false" :title="t('Stock on hand')">
+                <template #actions>
+                    <MisTableActions
+                        :filename="`project-${item.id}-stock`"
+                        :headers="stockExportHeaders"
+                        :rows="stockExportRows"
+                        :filtered-rows="stockFilteredExportRows"
+                    />
+                </template>
                 <TableFrame table-id="project-stock-on-hand" :columns="tableColumnsStock">
                 <table class="min-w-full text-sm">
                     <thead
@@ -228,17 +282,6 @@ function confirmIssue() {
                             :colspan="4"
                             :title="t('No stock yet')"
                         >
-                            <template #actions>
-                                <Can permission="purchases.create">
-                                    <Button as-child size="sm">
-                                        <Link
-                                            :href="`/purchases/create?project_id=${item.id}`"
-                                        >
-                                            {{ t('New purchase') }}
-                                        </Link>
-                                    </Button>
-                                </Can>
-                            </template>
                         </EmptyState>
                     </tbody>
                 </table>
@@ -246,6 +289,14 @@ function confirmIssue() {
             </V2Panel>
 
             <V2Panel :padded="false" :title="t('Stock issue dates')">
+                <template #actions>
+                    <MisTableActions
+                        :filename="`project-${item.id}-stock-issues`"
+                        :headers="issueExportHeaders"
+                        :rows="issueExportRows"
+                        :filtered-rows="issueFilteredExportRows"
+                    />
+                </template>
                 <TableFrame table-id="project-stock-issues" :columns="tableColumnsIssues">
                 <table class="min-w-full text-sm">
                     <thead

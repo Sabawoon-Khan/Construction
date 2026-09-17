@@ -17,6 +17,7 @@ class BalanceSheetController extends Controller
 {
     use ExportsSpreadsheet;
     use RendersPrintView;
+    use Concerns\ResolvesExportScope;
 
     public function index(Request $request): InertiaResponse
     {
@@ -28,6 +29,13 @@ class BalanceSheetController extends Controller
     public function export(Request $request): StreamedResponse
     {
         abort_unless($request->user()?->can('dashboard.view'), 403);
+        abort_unless(config('kit.features.exports'), 404);
+
+        if (! $this->exportAppliesFilters($request)) {
+            $request->merge([
+                'project_id' => null,
+            ]);
+        }
 
         $data = $this->payload($request);
         $rows = [];
@@ -110,7 +118,7 @@ class BalanceSheetController extends Controller
             'balance-sheet-'.$data['filters']['as_of'],
             ['Account / Party', 'Detail', 'Qty', '', 'Amount (AFN · USD)'],
             $rows,
-            $request->string('format')->toString() ?: 'xlsx',
+            $this->exportFormat($request),
         );
     }
 

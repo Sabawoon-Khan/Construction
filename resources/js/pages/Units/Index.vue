@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -7,6 +8,7 @@ import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -26,7 +28,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { buildMoneyBars, compactMoneyByCurrency } from '@/lib/v2Money';
 import { money, moneyByCurrency } from '@/lib/utils';
-import { Building2, CheckCircle2, Clock3, Home, Plus, Trash2 } from '@lucide/vue';
+import { Building2, CheckCircle2, Clock3, Home, Trash2 } from '@lucide/vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -205,15 +207,6 @@ function rowActions(item: any): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('units.create')"
-                    href="/units/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Inventory') }}</template>
@@ -260,8 +253,7 @@ function rowActions(item: any): RowActionItem[] {
                                         totals.list_price_by_currency,
                                         totals.list_price_total,
                                     )
-                                "
-                                >{{
+                                ">{{
                                     compactMoneyByCurrency(
                                         totals.list_price_by_currency,
                                         totals.list_price_total,
@@ -281,8 +273,7 @@ function rowActions(item: any): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`"
-                            >
+                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`">
                                 <div class="money-pair">
                                     <i
                                         class="afn"
@@ -380,6 +371,9 @@ function rowActions(item: any): RowActionItem[] {
                         <option value="sold">{{ t('Sold') }}</option>
                     </V2SelectFilter>
                     <template #columns>
+                        <MisTableActions export-url="/units/export" :filters="filters">
+                            <CreateButton href="/units/create" permission="units.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -477,18 +471,7 @@ function rowActions(item: any): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No units yet')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('units.create')"
-                                    href="/units/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Create unit') }}
-                                </Link>
-                            </template>
+                            :title="t('No units yet')">
                         </EmptyState>
                     </tbody>
                 </table>

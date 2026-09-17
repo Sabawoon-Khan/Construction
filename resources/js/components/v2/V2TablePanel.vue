@@ -42,13 +42,17 @@ defineExpose({
 
 <template>
     <section
-        class="table-panel reveal"
+        class="table-panel reveal print-target"
         :class="{ delay, pending }"
     >
-        <slot name="filters" :visible-col-count="visibleColCount" />
+        <div class="print:hidden">
+            <slot name="filters" :visible-col-count="visibleColCount" />
+        </div>
         <div class="table-wrap" :class="hideColumnClasses">
             <slot :visible-col-count="visibleColCount" />
         </div>
-        <slot name="pager" :visible-col-count="visibleColCount" />
+        <div class="print:hidden">
+            <slot name="pager" :visible-col-count="visibleColCount" />
+        </div>
     </section>
 </template>

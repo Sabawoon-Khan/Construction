@@ -6,6 +6,7 @@ import Can from '@/components/Can.vue';
 import InputError from '@/components/InputError.vue';
 import {
     MisEmptyState,
+    MisTableActions,
     MisListPage,
     MisListRow,
     MisPagination,
@@ -28,7 +29,6 @@ import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/composables/useTranslations';
 import type { Paginated } from '@/lib/format';
 import type { RowActionItem } from '@/lib/row-actions';
-
 type Role = { id: number; name: string };
 
 type UserRecord = {
@@ -180,32 +180,14 @@ defineOptions({
     <MisListPage
         :title="t('System Users')"
         :icon="UserCog"
+        class="print-table-only"
     >
         <template #actions>
-            <Can
-                v-if="page.props.kitFeatures?.exports !== false"
-                permission="users.view"
-            >
-                <div class="flex flex-wrap items-center gap-2">
-                    <Button variant="outline" size="sm" as-child>
-                        <a href="/settings/users/export">{{ t('Download') }} CSV</a>
-                    </Button>
-                    <Button
-                        v-if="page.props.kitFeatures?.excel_exports !== false"
-                        variant="outline"
-                        size="sm"
-                        as-child
-                    >
-                        <a href="/settings/users/export?format=xlsx">{{
-                            t('Download Excel')
-                        }}</a>
-                    </Button>
-                    <Button variant="outline" size="sm" as-child>
-                        <a href="/settings/users/print" target="_blank" rel="noopener">{{
-                            t('Print')
-                        }}</a>
-                    </Button>
-                </div>
+            <Can permission="users.view">
+                <MisTableActions
+                    export-url="/settings/users/export"
+                    :filters="{ search }"
+                />
             </Can>
             <Can permission="users.create">
                 <SettingsAddButton href="/settings/users/create">
@@ -216,7 +198,7 @@ defineOptions({
 
         <MisSearchInput
             v-model="search"
-            class="max-w-sm"
+            class="max-w-sm print:hidden"
             :aria-label="t('Search')"
             :placeholder="t('Search by name or email…')"
         />
@@ -226,7 +208,7 @@ defineOptions({
             :title="t('No users found')"
         />
 
-        <div v-else class="space-y-3">
+        <div v-else class="print-target space-y-3">
             <MisListRow v-for="user in users.data" :key="user.id">
                 <div
                     class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"

@@ -19,9 +19,9 @@ class CompanyController extends Controller
         abort_unless($request->user()?->can('companies.view') || $request->user()?->can('companies.edit'), 403);
 
         $company = Company::query()->first() ?? Company::query()->create([
-            'name' => 'شاهین صمیم بارکزی',
-            'name_en' => 'Shahin Samim Barakzai',
-            'legal_name' => 'شاهین صمیم بارکزی',
+            'name' => (string) config('app.name_fa'),
+            'name_en' => (string) config('app.name'),
+            'legal_name' => (string) config('app.name_fa'),
             'base_currency' => 'USD',
             'is_active' => true,
         ]);

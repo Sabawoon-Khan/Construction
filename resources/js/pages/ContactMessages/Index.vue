@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisSearchInput  } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -291,6 +291,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <option value="read">{{ t('Read') }}</option>
                     </V2SelectFilter>
                     <template #columns>
+                        <MisTableActions export-url="/contact-messages/export" :filters="filters" />
                         <TableToolbar />
                     </template>
                 </V2FilterBar>

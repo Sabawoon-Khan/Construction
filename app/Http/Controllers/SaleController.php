@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Customer;
 use App\Models\Project;
@@ -14,6 +16,7 @@ use App\Services\FinanceDefaults;
 use App\Services\SaleInstallmentService;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -22,27 +25,24 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SaleController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'sales';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Sale::query()
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request)
             ->with(['customer:id,name', 'project:id,name', 'unit:id,unit_no,list_price,currency', 'creator:id,name'])
             ->withSum('installments as paid_total', 'paid_amount')
             ->withSum('installments as paid_total_base', 'paid_amount_base');
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->where('sale_no', 'like', "%{$search}%")
-                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%"));
-            });
-        }
 
         $totalPrice = Sale::sumTotalPrice(clone $query);
         $totalPriceBase = Sale::sumTotalPriceBase(clone $query);
@@ -69,6 +69,73 @@ class SaleController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => $this->salesByMonth(clone $query),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $query = $this->indexQuery($request, $this->exportAppliesFilters($request));
+
+        $rows = (clone $query)
+            ->with(['customer:id,name', 'project:id,name', 'unit:id,unit_no,list_price,currency', 'creator:id,name'])
+            ->withSum('installments as paid_total', 'paid_amount')
+            ->orderBy('id')
+            ->lazyById(500)
+            ->map(function (Sale $sale) {
+                $listPrice = (float) ($sale->unit?->list_price ?? 0);
+                $total = max(0, $listPrice - (float) ($sale->discount ?? 0));
+                $paid = (float) ($sale->paid_total ?? 0);
+
+                return [
+                    $sale->sale_no,
+                    $sale->customer?->name,
+                    $sale->project?->name,
+                    $sale->unit?->unit_no,
+                    $listPrice,
+                    (float) ($sale->discount ?? 0),
+                    $total,
+                    max(0, $total - $paid),
+                    $paid,
+                    $sale->currency ?? $sale->unit?->currency,
+                    $sale->status,
+                    $sale->creator?->name,
+                    $sale->created_at?->toDateTimeString(),
+                ];
+            });
+
+        return $this->streamExport('sales', [
+            'Sale No',
+            'Customer',
+            'Project',
+            'Unit',
+            'Sale price',
+            'Discount',
+            'Total',
+            'Remaining',
+            'Paid',
+            'Currency',
+            'Status',
+            'Added by',
+            'Created at',
+        ], $rows, $this->exportFormat($request));
+    }
+
+    /**
+     * @return Builder<Sale>
+     */
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Sale::query();
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->where('sale_no', 'like', "%{$search}%")
+                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        return $query;
     }
 
     public function create(Request $request): Response

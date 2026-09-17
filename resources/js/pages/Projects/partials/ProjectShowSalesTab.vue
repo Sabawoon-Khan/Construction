@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
-import MisCreateButton from '@/components/MisCreateButton.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
-import { Button } from '@/components/ui/button';
+import { MisTableActions } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
+import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import { useMisPage } from '@/composables/useMisPage';
@@ -42,19 +42,78 @@ const salesSort = useTableSort(
 const unitsSort = useTableSort(
     () => (props.item.units ?? []) as Record<string, any>[],
 );
+
+const salesExportHeaders = computed(() => [
+    t('Sale'),
+    t('Customer'),
+    t('Amount'),
+    t('Created at'),
+]);
+
+function saleAmount(sale: Record<string, any>) {
+    return Math.max(
+        0,
+        Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0),
+    );
+}
+
+function mapSaleExportRow(sale: Record<string, any>): ExportCell[] {
+    return [
+        sale.sale_no,
+        sale.customer?.name || null,
+        saleAmount(sale),
+        formatDate(sale.created_at),
+    ];
+}
+
+const salesExportRows = computed(() =>
+    ((props.item.sales ?? []) as Record<string, any>[]).map(mapSaleExportRow),
+);
+const salesFilteredExportRows = computed(() =>
+    salesSort.sortedRows.map(mapSaleExportRow),
+);
+
+const unitsExportHeaders = computed(() => [
+    t('Unit'),
+    t('Status'),
+    t('List price'),
+]);
+
+function mapUnitExportRow(unit: Record<string, any>): ExportCell[] {
+    return [
+        unit.unit_no || unit.code || String(unit.id),
+        unit.status,
+        Number(unit.list_price ?? 0),
+    ];
+}
+
+const unitsExportRows = computed(() =>
+    ((props.item.units ?? []) as Record<string, any>[]).map(mapUnitExportRow),
+);
+const unitsFilteredExportRows = computed(() =>
+    unitsSort.sortedRows.map(mapUnitExportRow),
+);
 </script>
 
 <template>
     <div class="space-y-4">
         <V2Panel :padded="false" :title="t('Recent sales')">
             <template #actions>
-                <MisCreateButton
-                    size="sm"
+                
+            <MisTableActions
+                    :filename="`project-${item.id}-sales`"
+                    :headers="salesExportHeaders"
+                    :rows="salesExportRows"
+                    :filtered-rows="salesFilteredExportRows"
+                >
+                <CreateButton
                     permission="sales.create"
                     :href="`/sales/create?project_id=${item.id}`"
                 >
                     {{ t('Create sale') }}
-                </MisCreateButton>
+                </CreateButton>
+            </MisTableActions>
+        
             </template>
             <TableFrame table-id="project-sales" :columns="salesColumns">
                 <table class="min-w-full text-sm">
@@ -135,17 +194,6 @@ const unitsSort = useTableSort(
                             :colspan="5"
                             :title="t('No sales yet')"
                         >
-                            <template #actions>
-                                <Can permission="sales.create">
-                                    <Button as-child size="sm">
-                                        <Link
-                                            :href="`/sales/create?project_id=${item.id}`"
-                                        >
-                                            {{ t('Create sale') }}
-                                        </Link>
-                                    </Button>
-                                </Can>
-                            </template>
                         </EmptyState>
                     </tbody>
                 </table>
@@ -154,13 +202,21 @@ const unitsSort = useTableSort(
 
         <V2Panel :padded="false" :title="t('Project units')">
             <template #actions>
-                <MisCreateButton
-                    size="sm"
+                
+            <MisTableActions
+                    :filename="`project-${item.id}-units`"
+                    :headers="unitsExportHeaders"
+                    :rows="unitsExportRows"
+                    :filtered-rows="unitsFilteredExportRows"
+                >
+                <CreateButton
                     permission="units.create"
                     :href="`/units/create?project_id=${item.id}`"
                 >
                     {{ t('Add unit') }}
-                </MisCreateButton>
+                </CreateButton>
+            </MisTableActions>
+        
             </template>
             <TableFrame table-id="project-units" :columns="unitsColumns">
                 <table class="min-w-full text-sm">
@@ -225,17 +281,6 @@ const unitsSort = useTableSort(
                             :colspan="4"
                             :title="t('No units yet')"
                         >
-                            <template #actions>
-                                <Can permission="units.create">
-                                    <Button as-child size="sm">
-                                        <Link
-                                            :href="`/units/create?project_id=${item.id}`"
-                                        >
-                                            {{ t('Add unit') }}
-                                        </Link>
-                                    </Button>
-                                </Can>
-                            </template>
                         </EmptyState>
                     </tbody>
                 </table>

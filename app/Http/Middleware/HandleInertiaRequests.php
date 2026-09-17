@@ -53,14 +53,25 @@ class HandleInertiaRequests extends Middleware
         $appName = OrgSetting::appName($locale);
 
         $company = null;
-        $publicCompany = null;
+        $brandEn = (string) config('app.name');
+        $brandFa = (string) config('app.name_fa');
+        $publicCompany = [
+            'name' => $appName,
+            'name_primary' => $brandFa,
+            'name_en' => $brandEn,
+            'phone' => null,
+            'email' => null,
+            'address' => null,
+        ];
         try {
             $companyModel = CurrentCompany::get();
-            $displayName = $companyModel->displayName($locale);
+            $namePrimary = filled($companyModel->name) ? (string) $companyModel->name : $brandFa;
+            $nameEn = filled($companyModel->name_en) ? (string) $companyModel->name_en : $brandEn;
+            $displayName = $companyModel->displayName($locale) ?: $appName;
             $publicCompany = [
                 'name' => $displayName,
-                'name_primary' => (string) $companyModel->name,
-                'name_en' => filled($companyModel->name_en) ? (string) $companyModel->name_en : null,
+                'name_primary' => $namePrimary,
+                'name_en' => $nameEn,
                 'phone' => filled($companyModel->phone) ? $companyModel->phone : null,
                 'email' => filled($companyModel->email) ? $companyModel->email : null,
                 'address' => filled($companyModel->address) ? $companyModel->address : null,
@@ -81,7 +92,6 @@ class HandleInertiaRequests extends Middleware
             }
         } catch (Throwable) {
             $company = null;
-            $publicCompany = null;
         }
 
         return [

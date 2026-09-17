@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Employee;
 use App\Models\User;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -16,30 +19,21 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EmployeeController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'employees';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Employee::query();
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('takhallus', 'like', "%{$search}%")
-                    ->orWhere('father_name', 'like', "%{$search}%")
-                    ->orWhere('employee_no', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('department', 'like', "%{$search}%")
-                    ->orWhere('designation', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $statusCounts = (clone $query)
             ->selectRaw('status, COUNT(*) as aggregate')
@@ -84,6 +78,63 @@ class EmployeeController extends Controller implements HasMiddleware
             'totals' => $totals,
             'hireChart' => $this->hiresByMonth(clone $query),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->with('creator:id,name')
+            ->latest()
+            ->lazyById(500)
+            ->map(fn (Employee $employee) => [
+                $employee->employee_no,
+                $employee->name,
+                $employee->takhallus,
+                $employee->father_name,
+                $employee->department,
+                $employee->designation,
+                $employee->working_hours,
+                $employee->employment_date?->toDateString(),
+                $employee->phone,
+                $employee->basic_salary,
+                $employee->salary_payment_method,
+                $employee->status,
+                $employee->creator?->name,
+                $employee->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'employees',
+            [
+                'employee_no', 'name', 'takhallus', 'father_name', 'department', 'designation',
+                'working_hours', 'employment_date', 'phone', 'basic_salary',
+                'salary_payment_method', 'status', 'added_by', 'created_at',
+            ],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Employee::query();
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('takhallus', 'like', "%{$search}%")
+                    ->orWhere('father_name', 'like', "%{$search}%")
+                    ->orWhere('employee_no', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('department', 'like', "%{$search}%")
+                    ->orWhere('designation', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     public function create(): Response

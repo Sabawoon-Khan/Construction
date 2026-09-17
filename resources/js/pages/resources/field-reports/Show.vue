@@ -4,6 +4,7 @@ import { Pencil } from '@lucide/vue';
 import Can from '@/components/Can.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { MisDetailGrid, MisStatusBadge } from '@/components/mis';
+import { Button } from '@/components/ui/button';
 import { V2DetailHero, V2ListPage, V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
@@ -57,13 +58,12 @@ defineOptions({
                 <template #actions>
                     <MisStatusBadge :status="item.status" />
                     <Can permission="field_reports.edit">
-                        <Link
-                            :href="`/field-reports/${item.id}/edit`"
-                            class="create-btn"
-                        >
-                            <Pencil />
-                            {{ t('Edit') }}
-                        </Link>
+                        <Button as-child size="sm" class="h-8 gap-1.5">
+                            <Link :href="`/field-reports/${item.id}/edit`">
+                                <Pencil class="size-3.5" />
+                                {{ t('Edit') }}
+                            </Link>
+                        </Button>
                     </Can>
                 </template>
             </V2DetailHero>

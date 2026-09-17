@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions,MisSearchInput  } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     Dialog,
     DialogContent,
@@ -33,7 +33,7 @@ import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { Link2, Link2Off, Pencil, Plus, Ruler, Trash2 } from '@lucide/vue';
+import { Link2, Link2Off, Pencil, Ruler, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import { Form, Head } from '@inertiajs/vue3';
 
@@ -181,13 +181,6 @@ function rowActions(item: Unit): RowActionItem[] {
             </template>
 
             <template #side>
-                <Can permission="expenses.create">
-                    <button type="button" class="create-btn" @click="openCreate">
-                        <Plus />
-                        {{ t('Add') }}
-                    </button>
-                </Can>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Usage') }}</template>
@@ -237,8 +230,7 @@ function rowActions(item: Unit): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${bar.value}`"
-                            >
+                                :title="`${bar.label}: ${bar.value}`">
                                 <div class="money-pair">
                                     <i
                                         class="usd"
@@ -306,6 +298,11 @@ function rowActions(item: Unit): RowActionItem[] {
                         />
                     </div>
                     <template #columns>
+                        <MisTableActions export-url="/expense-units/export" :filters="filters">
+                            <CreateButton permission="expenses.create" @click="openCreate">
+                                {{ t('Add') }}
+                            </CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>

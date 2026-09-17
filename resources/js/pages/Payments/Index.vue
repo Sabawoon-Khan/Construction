@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
@@ -119,7 +120,10 @@ function rowActions(item: any): RowActionItem[] {
                     <div class="filter-search">
                         <MisSearchInput v-model="filters.search" :placeholder="t('Search...')" />
                     </div>
-                    <template #columns><TableToolbar /></template>
+                    <template #columns>
+                        <MisTableActions export-url="/payments/export" :filters="filters" />
+                        <TableToolbar />
+                    </template>
                 </V2FilterBar>
             </template>
             <template #default="{ visibleColCount }">

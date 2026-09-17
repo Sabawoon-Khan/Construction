@@ -24,7 +24,7 @@ const toggleable = () => columns?.columns.filter((column) => !column.locked) ?? 
                     type="button"
                     variant="ghost"
                     size="icon"
-                    class="size-8 text-muted-foreground"
+                    class="table-cols-trigger size-8 text-muted-foreground"
                     :title="t('Show or hide columns')"
                     :aria-label="t('Show or hide columns')"
                 >

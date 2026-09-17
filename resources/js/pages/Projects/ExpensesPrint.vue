@@ -111,7 +111,7 @@ defineOptions({
 <template>
     <Head :title="`${item.name} — ${title}`" />
 
-    <V2ListPage class="print:gap-0">
+    <V2ListPage class="voucher-print-page print:gap-0">
         <div class="print:hidden">
             <V2DetailHero image="/images/dashboard-v2-building.png">
                 <template #eyebrow>{{ t('Expense report') }}</template>

@@ -24,13 +24,13 @@ const brandEn = computed(
     () =>
         publicCompany.value?.name_en?.trim() ||
         (isEnglish.value ? (page.props.name as string | undefined) : null) ||
-        'Shahin Samim Barakzai',
+        '',
 );
 const brandFa = computed(
     () =>
         publicCompany.value?.name_primary?.trim() ||
         (!isEnglish.value ? (page.props.name as string | undefined) : null) ||
-        'شاهین صمیم بارکزی',
+        '',
 );
 const brandPrimary = computed(() =>
     isEnglish.value ? brandEn.value : brandFa.value,

@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
 import type { InertiaLinkProps } from '@inertiajs/vue3';
-import { Plus } from '@lucide/vue';
-import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         href?: NonNullable<InertiaLinkProps['href']>;
         disabled?: boolean;
@@ -15,29 +13,24 @@ withDefaults(
     },
 );
 
-defineEmits<{ click: [] }>();
+const emit = defineEmits<{ click: [] }>();
 </script>
 
 <template>
-    <Button
+    <CreateButton
         v-if="href"
-        :variant="variant"
-        :disabled="disabled"
-        as-child
+        :href="props.href"
+        :variant="props.variant"
+        :disabled="props.disabled"
     >
-        <Link :href="href">
-            <Plus class="size-4" />
-            <slot />
-        </Link>
-    </Button>
-    <Button
-        v-else
-        type="button"
-        :variant="variant"
-        :disabled="disabled"
-        @click="$emit('click')"
-    >
-        <Plus class="size-4" />
         <slot />
-    </Button>
+    </CreateButton>
+    <CreateButton
+        v-else
+        :variant="props.variant"
+        :disabled="props.disabled"
+        @click="emit('click')"
+    >
+        <slot />
+    </CreateButton>
 </template>

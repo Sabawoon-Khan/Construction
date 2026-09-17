@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Material;
 use App\Models\Project;
@@ -10,6 +12,7 @@ use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Services\PurchaseService;
 use App\Support\CurrencyAmounts;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -17,6 +20,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PurchaseController extends Controller implements HasMiddleware
 {
@@ -25,6 +29,8 @@ class PurchaseController extends Controller implements HasMiddleware
     use AuthorizesResourcePermissions {
         middleware as resourceMiddleware;
     }
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     /**
@@ -40,17 +46,9 @@ class PurchaseController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = Purchase::query()
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request)
             ->with(['supplier:id,name', 'project:id,name', 'creator:id,name']);
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->where('purchase_no', 'like', "%{$search}%")
-                    ->orWhere('reference_no', 'like', "%{$search}%")
-                    ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('project', fn ($p) => $p->where('name', 'like', "%{$search}%"));
-            });
-        }
 
         $totalAmount = (float) (clone $query)->sum('total_amount');
         $totalAmountBase = (float) (clone $query)->sum('total_amount_base');
@@ -82,6 +80,70 @@ class PurchaseController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => CurrencyAmounts::sumByMonth(clone $query, 'purchase_date', 'total_amount'),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $query = $this->indexQuery($request, $this->exportAppliesFilters($request));
+
+        $rows = (clone $query)
+            ->with(['supplier:id,name', 'project:id,name', 'creator:id,name'])
+            ->orderBy('id')
+            ->lazyById(500)
+            ->map(fn (Purchase $purchase) => [
+                $purchase->purchase_no,
+                $purchase->purchase_date?->toDateString(),
+                $purchase->project?->name,
+                $purchase->supplier?->name,
+                (float) ($purchase->total_amount ?? 0),
+                (float) ($purchase->paid_amount ?? 0),
+                (float) $purchase->remaining_amount,
+                $purchase->currency,
+                (float) ($purchase->total_amount_base ?? 0),
+                (float) ($purchase->paid_amount_base ?? 0),
+                (float) $purchase->remaining_amount_base,
+                $purchase->status,
+                $purchase->creator?->name,
+                $purchase->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport('purchases', [
+            'Purchase No',
+            'Date',
+            'Project',
+            'Supplier',
+            'Total',
+            'Paid',
+            'Remaining',
+            'Currency',
+            'Total (base)',
+            'Paid (base)',
+            'Remaining (base)',
+            'Status',
+            'Added by',
+            'Created at',
+        ], $rows, $this->exportFormat($request));
+    }
+
+    /**
+     * @return Builder<Purchase>
+     */
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Purchase::query();
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->where('purchase_no', 'like', "%{$search}%")
+                    ->orWhere('reference_no', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('project', fn ($p) => $p->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        return $query;
     }
 
     public function create(Request $request): Response

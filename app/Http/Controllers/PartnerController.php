@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Partner;
 use App\Models\PartnerDistribution;
@@ -13,6 +15,7 @@ use App\Services\CurrencyService;
 use App\Services\ShareholderProfitService;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -20,30 +23,21 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PartnerController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'partners';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Partner::query()->with('creator:id,name')->withCount('projects');
-
-        if ($request->user()?->isRestrictedShareholder() && $request->user()->partner) {
-            $query->whereKey($request->user()->partner->id);
-        }
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->orWhere('name', 'like', "%{$search}%");
-                $q->orWhere('partner_no', 'like', "%{$search}%");
-                $q->orWhere('phone', 'like', "%{$search}%");
-                $q->orWhere('email', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $ids = (clone $query)->select('id');
         $contributionsQuery = PartnerInvestment::query()->whereIn('partner_id', clone $ids);
@@ -66,6 +60,50 @@ class PartnerController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => $this->investmentsByMonth(clone $contributionsQuery),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->latest()
+            ->lazyById(500)
+            ->map(fn (Partner $partner) => [
+                $partner->partner_no,
+                $partner->name,
+                $partner->phone,
+                $partner->projects_count,
+                $partner->creator?->name,
+                $partner->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'partners',
+            ['partner_no', 'name', 'phone', 'projects', 'added_by', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Partner::query()->with('creator:id,name')->withCount('projects');
+
+        if ($request->user()?->isRestrictedShareholder() && $request->user()->partner) {
+            $query->whereKey($request->user()->partner->id);
+        }
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('name', 'like', "%{$search}%");
+                $q->orWhere('partner_no', 'like', "%{$search}%");
+                $q->orWhere('phone', 'like', "%{$search}%");
+                $q->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     public function create(): Response

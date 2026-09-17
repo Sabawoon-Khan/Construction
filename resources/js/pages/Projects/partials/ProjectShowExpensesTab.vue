@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Plus, Printer, Trash2 } from '@lucide/vue';
+import { ChevronLeft, ChevronRight, Printer, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import Can from '@/components/Can.vue';
@@ -11,15 +11,17 @@ import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisSearchInput } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import type { MisSelectOption } from '@/components/mis/MisSelectField.vue';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money, resolveCurrency } from '@/lib/utils';
+import { formatNumber, money, moneyByCurrency, resolveCurrency } from '@/lib/utils';
 
 const props = defineProps<{
     item: Record<string, any>;
@@ -101,15 +103,6 @@ function deleteExpense() {
             pendingDelete.value = null;
         },
     });
-}
-
-function printHref(categoryKey?: string) {
-    const base = `/projects/${props.item.id}/expenses/print`;
-    if (!categoryKey) {
-        return base;
-    }
-
-    return `${base}?category_id=${encodeURIComponent(categoryKey)}`;
 }
 
 const categorySummaries = computed(() => {
@@ -226,6 +219,18 @@ const paginationTo = computed(() =>
     Math.min(currentPage.value * perPage, filteredExpenses.value.length),
 );
 
+const printTotalsByCurrency = computed(() => {
+    const byCurrency: Record<string, number> = {};
+
+    for (const expense of sortedRows.value) {
+        const code = resolveCurrency(expense.currency || baseCurrency.value);
+        byCurrency[code] =
+            (byCurrency[code] ?? 0) + Number(expense.amount ?? 0);
+    }
+
+    return byCurrency;
+});
+
 watch([expenseSearch, categoryFilter], () => {
     currentPage.value = 1;
 });
@@ -235,40 +240,80 @@ watch(totalPages, (pages) => {
         currentPage.value = pages;
     }
 });
+
+const expenseExportHeaders = computed(() => [
+    t('Date'),
+    t('Bill number'),
+    t('Paid to'),
+    t('Category'),
+    t('Description'),
+    t('Paying type'),
+    t('Amount'),
+]);
+
+function mapExpenseExportRow(
+    expense: (typeof props.expenses)[number],
+): ExportCell[] {
+    return [
+        formatDate(expense.expense_date),
+        expense.reference_no || null,
+        expense.paid_to || null,
+        expense.category?.name || t('General'),
+        expense.description || null,
+        expense.payment_method === 'bank' ? t('Bank') : t('Cash'),
+        money(expense.amount, expense.currency || baseCurrency.value),
+    ];
+}
+
+const expenseExportRows = computed(() =>
+    props.expenses.map(mapExpenseExportRow),
+);
+const expenseFilteredExportRows = computed(() =>
+    sortedRows.value.map(mapExpenseExportRow),
+);
 </script>
 
 <template>
-    <V2Panel :padded="false" class="project-money-panel project-expenses-panel">
+    <V2Panel
+        :padded="false"
+        class="project-money-panel project-expenses-panel print-target"
+    >
         <template #header>
-            <div>
+            <div class="print:hidden">
                 <h2>{{ t('Expenses') }}</h2>
                 <p>{{ headerSummary }}</p>
             </div>
         </template>
         <template #actions>
-            <Button as-child size="sm" variant="outline" class="h-8 gap-1.5">
-                <Link :href="printHref()" target="_blank">
-                    <Printer class="size-3.5" />
-                    {{ t('Print') }}
-                </Link>
-            </Button>
-            <Can permission="purchases.create">
-                <Button as-child size="sm" variant="outline" class="h-8 gap-1.5">
-                    <Link :href="`/purchases/create?project_id=${item.id}`">
-                        <Plus class="size-3.5" />
-                        {{ t('Purchase') }}
-                    </Link>
-                </Button>
-            </Can>
-            <Can permission="expenses.create">
-                <Button size="sm" class="h-8 gap-1.5" @click="emit('open-expense', null)">
-                    <Plus class="size-3.5" />
+            <MisTableActions
+                class="print:hidden"
+                :filename="`project-${item.id}-expenses`"
+                :headers="expenseExportHeaders"
+                :rows="expenseExportRows"
+                :filtered-rows="expenseFilteredExportRows"
+                :filters="{
+                    search: expenseSearch,
+                    category:
+                        categoryFilter !== 'all' ? categoryFilter : '',
+                }"
+            >
+                <CreateButton
+                    :href="`/purchases/create?project_id=${item.id}`"
+                    permission="purchases.create"
+                    variant="outline"
+                >
+                    {{ t('Purchase') }}
+                </CreateButton>
+                <CreateButton
+                    permission="expenses.create"
+                    @click="emit('open-expense', null)"
+                >
                     {{ t('Add expense') }}
-                </Button>
-            </Can>
+                </CreateButton>
+            </MisTableActions>
         </template>
 
-        <div class="project-expenses-filters">
+        <div class="project-expenses-filters print:hidden">
             <MisSearchInput
                 v-model="expenseSearch"
                 class="h-8 min-w-0 w-full flex-1 sm:min-w-[12rem] sm:max-w-sm"
@@ -287,78 +332,241 @@ watch(totalPages, (pages) => {
                     {{ option.label }}
                 </option>
             </select>
-            <Button
-                v-if="categoryFilter !== 'all'"
-                as-child
-                size="sm"
-                variant="outline"
-                class="h-8 gap-1.5 shrink-0"
-            >
-                <Link
-                    :href="printHref(categoryFilter)"
-                    target="_blank"
-                >
-                    <Printer class="size-3.5" />
-                    {{ t('Print') }}
-                </Link>
-            </Button>
         </div>
 
-        <TableFrame table-id="project-expenses" :columns="tableColumns">
-            <table class="project-expenses-table min-w-full text-sm">
-                <thead class="table-chrome-head text-start text-muted-foreground">
-                    <tr>
-                        <TableIndexTh />
-                        <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
-                        <SortableTh column="reference_no">{{ t('Bill number') }}</SortableTh>
-                        <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
-                        <SortableTh column="category.name">{{ t('Category') }}</SortableTh>
-                        <SortableTh column="description">{{ t('Description') }}</SortableTh>
-                        <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
-                        <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
-                        <SortableTh column="attachments">{{ t('Attachments') }}</SortableTh>
-                        <th class="text-end font-medium">{{ t('Actions') }}</th>
+        <!-- Screen table (paginated) -->
+        <div class="print:hidden">
+            <TableFrame table-id="project-expenses" :columns="tableColumns">
+                <table class="project-expenses-table min-w-full text-sm">
+                    <thead class="table-chrome-head text-start text-muted-foreground">
+                        <tr>
+                            <TableIndexTh />
+                            <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
+                            <SortableTh column="reference_no">{{ t('Bill number') }}</SortableTh>
+                            <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
+                            <SortableTh column="category.name">{{ t('Category') }}</SortableTh>
+                            <SortableTh column="description">{{ t('Description') }}</SortableTh>
+                            <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
+                            <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
+                            <SortableTh column="attachments">{{ t('Attachments') }}</SortableTh>
+                            <th class="text-end font-medium">{{ t('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr
+                            v-for="(expense, index) in paginatedRows"
+                            :key="expense.id"
+                            class="cursor-pointer border-t hover:bg-muted/30"
+                            @click="emit('open-expense', expense)"
+                        >
+                            <TableIndexTd :index="index" :from="paginationFrom" />
+                            <td class="whitespace-nowrap">
+                                {{ formatDate(expense.expense_date) }}
+                            </td>
+                            <td class="font-medium tabular-nums">
+                                {{ expense.reference_no || '—' }}
+                            </td>
+                            <td>
+                                {{ expense.paid_to || '—' }}
+                            </td>
+                            <td>
+                                <span
+                                    class="inline-flex rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                                >
+                                    {{ expense.category?.name || t('General') }}
+                                </span>
+                            </td>
+                            <td class="max-w-[14rem] truncate">
+                                {{ expense.description || '—' }}
+                            </td>
+                            <td class="whitespace-nowrap capitalize">
+                                {{
+                                    expense.payment_method === 'bank'
+                                        ? t('Bank')
+                                        : t('Cash')
+                                }}
+                            </td>
+                            <td class="tabular-nums font-semibold whitespace-nowrap text-rose-700">
+                                {{
+                                    money(
+                                        expense.amount,
+                                        expense.currency || baseCurrency,
+                                    )
+                                }}
+                            </td>
+                            <td @click.stop>
+                                <AttachmentLinks :files="expense.attachments" />
+                            </td>
+                            <td @click.stop>
+                                <div class="flex justify-end gap-1">
+                                    <Button
+                                        as-child
+                                        size="sm"
+                                        variant="outline"
+                                        class="h-7 gap-1 px-2"
+                                    >
+                                        <Link
+                                            :href="`/expenses/${expense.id}`"
+                                            target="_blank"
+                                        >
+                                            <Printer class="size-3.5" />
+                                            {{ t('Print') }}
+                                        </Link>
+                                    </Button>
+                                    <Can permission="expenses.edit">
+                                        <Button
+                                            v-if="!expense.purchase_id"
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            class="h-7 px-2"
+                                            @click="emit('open-expense', expense, true)"
+                                        >
+                                            {{ t('Edit') }}
+                                        </Button>
+                                    </Can>
+                                    <Can permission="expenses.delete">
+                                        <Button
+                                            v-if="!expense.purchase_id"
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            class="size-7 text-destructive hover:text-destructive"
+                                            :disabled="deletingId === expense.id"
+                                            @click.stop="requestDeleteExpense(expense)"
+                                        >
+                                            <Trash2 class="size-3.5" />
+                                        </Button>
+                                    </Can>
+                                    <Can permission="purchases.delete">
+                                        <Button
+                                            v-if="expense.purchase_id"
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            class="size-7 text-destructive hover:text-destructive"
+                                            :disabled="deletingId === expense.id"
+                                            @click.stop="requestDeleteExpense(expense)"
+                                        >
+                                            <Trash2 class="size-3.5" />
+                                        </Button>
+                                    </Can>
+                                </div>
+                            </td>
+                        </tr>
+                        <EmptyState
+                            v-if="!filteredExpenses.length"
+                            :colspan="10"
+                            :title="
+                                expenseSearch.trim() || categoryFilter !== 'all'
+                                    ? t('No matching expenses')
+                                    : t('No expenses yet')
+                            "
+                        />
+                    </tbody>
+                </table>
+            </TableFrame>
+
+            <div
+                v-if="filteredExpenses.length > perPage"
+                class="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2"
+            >
+                <p class="text-xs text-muted-foreground">
+                    {{
+                        t('Showing :from–:to of :total', {
+                            from: formatNumber(paginationFrom, 0),
+                            to: formatNumber(paginationTo, 0),
+                            total: formatNumber(filteredExpenses.length, 0),
+                        })
+                    }}
+                </p>
+                <div class="flex items-center gap-1">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        class="size-7"
+                        :disabled="currentPage <= 1"
+                        @click="currentPage -= 1"
+                    >
+                        <ChevronLeft class="size-3.5 rtl:rotate-180" />
+                    </Button>
+                    <span class="min-w-[3.5rem] text-center text-xs tabular-nums text-muted-foreground">
+                        {{ currentPage }} / {{ totalPages }}
+                    </span>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        class="size-7"
+                        :disabled="currentPage >= totalPages"
+                        @click="currentPage += 1"
+                    >
+                        <ChevronRight class="size-3.5 rtl:rotate-180" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print sheet: all filtered rows + totals -->
+        <div class="hidden print:block space-y-4 p-0 text-neutral-900">
+            <header class="border-b border-neutral-200 pb-3 text-center">
+                <h1 class="text-lg font-semibold">{{ item.name }}</h1>
+                <p class="text-sm text-neutral-600">
+                    {{ t('Expenses') }}
+                    <span v-if="categoryFilter !== 'all'">
+                        ·
+                        {{
+                            categoryOptions.find((o) => o.value === categoryFilter)
+                                ?.label
+                        }}
+                    </span>
+                </p>
+                <p class="mt-1 text-sm font-medium">
+                    {{ t('Total') }}:
+                    {{ moneyByCurrency(printTotalsByCurrency) }}
+                    ·
+                    {{ formatNumber(sortedRows.length, 0) }}
+                    {{ t('records') }}
+                </p>
+            </header>
+            <table class="w-full border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-neutral-300 text-start">
+                        <th class="py-2 pe-2 font-medium">#</th>
+                        <th class="py-2 pe-2 font-medium">{{ t('Date') }}</th>
+                        <th class="py-2 pe-2 font-medium">{{ t('Bill number') }}</th>
+                        <th class="py-2 pe-2 font-medium">{{ t('Paid to') }}</th>
+                        <th class="py-2 pe-2 font-medium">{{ t('Category') }}</th>
+                        <th class="py-2 pe-2 font-medium">{{ t('Description') }}</th>
+                        <th class="py-2 pe-2 font-medium">{{ t('Paying type') }}</th>
+                        <th class="py-2 text-end font-medium">{{ t('Amount') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr
-                        v-for="(expense, index) in paginatedRows"
-                        :key="expense.id"
-                        class="cursor-pointer border-t hover:bg-muted/30"
-                        @click="emit('open-expense', expense)"
+                        v-for="(expense, index) in sortedRows"
+                        :key="`print-${expense.id}`"
+                        class="border-b border-neutral-200"
                     >
-                        <TableIndexTd :index="index" :from="paginationFrom" />
-                        <td class="whitespace-nowrap">
+                        <td class="py-1.5 pe-2 tabular-nums">{{ index + 1 }}</td>
+                        <td class="py-1.5 pe-2 whitespace-nowrap">
                             {{ formatDate(expense.expense_date) }}
                         </td>
-                        <td class="font-medium tabular-nums">
-                            {{ expense.reference_no || '—' }}
+                        <td class="py-1.5 pe-2">{{ expense.reference_no || '—' }}</td>
+                        <td class="py-1.5 pe-2">{{ expense.paid_to || '—' }}</td>
+                        <td class="py-1.5 pe-2">
+                            {{ expense.category?.name || t('General') }}
                         </td>
-                        <td>
-                            {{ expense.paid_to || '—' }}
-                        </td>
-                        <td>
-                            <span
-                                class="inline-flex rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
-                            >
-                                {{ expense.category?.name || t('General') }}
-                            </span>
-                        </td>
-                        <td class="max-w-[14rem] truncate">
-                            {{ expense.description || '—' }}
-                            <span
-                                v-if="expense.purchase_id"
-                                class="ms-1 text-xs text-muted-foreground"
-                            >{{ t('(from purchase)') }}</span>
-                        </td>
-                        <td class="text-muted-foreground whitespace-nowrap">
+                        <td class="py-1.5 pe-2">{{ expense.description || '—' }}</td>
+                        <td class="py-1.5 pe-2 capitalize">
                             {{
                                 expense.payment_method === 'bank'
-                                    ? t('Bank payment')
+                                    ? t('Bank')
                                     : t('Cash')
                             }}
                         </td>
-                        <td class="tabular-nums font-semibold whitespace-nowrap text-rose-700">
+                        <td class="py-1.5 text-end tabular-nums font-semibold">
                             {{
                                 money(
                                     expense.amount,
@@ -366,139 +574,11 @@ watch(totalPages, (pages) => {
                                 )
                             }}
                         </td>
-                        <td @click.stop>
-                            <AttachmentLinks :files="expense.attachments" />
-                        </td>
-                        <td @click.stop>
-                            <div class="flex justify-end gap-1">
-                                <Button
-                                    as-child
-                                    size="sm"
-                                    variant="outline"
-                                    class="h-7 gap-1 px-2"
-                                >
-                                    <Link
-                                        :href="`/expenses/${expense.id}`"
-                                        target="_blank"
-                                    >
-                                        <Printer class="size-3.5" />
-                                        {{ t('Print') }}
-                                    </Link>
-                                </Button>
-                                <Can permission="expenses.edit">
-                                    <Button
-                                        v-if="!expense.purchase_id"
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        class="h-7 px-2"
-                                        @click="emit('open-expense', expense, true)"
-                                    >
-                                        {{ t('Edit') }}
-                                    </Button>
-                                </Can>
-                                <Can permission="expenses.delete">
-                                    <Button
-                                        v-if="!expense.purchase_id"
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        class="size-7 text-destructive hover:text-destructive"
-                                        :disabled="deletingId === expense.id"
-                                        @click.stop="requestDeleteExpense(expense)"
-                                    >
-                                        <Trash2 class="size-3.5" />
-                                    </Button>
-                                </Can>
-                                <Can permission="purchases.delete">
-                                    <Button
-                                        v-if="expense.purchase_id"
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        class="size-7 text-destructive hover:text-destructive"
-                                        :disabled="deletingId === expense.id"
-                                        @click.stop="requestDeleteExpense(expense)"
-                                    >
-                                        <Trash2 class="size-3.5" />
-                                    </Button>
-                                </Can>
-                            </div>
-                        </td>
                     </tr>
-                    <EmptyState
-                        v-if="!filteredExpenses.length"
-                        :colspan="10"
-                        :title="
-                            expenseSearch.trim() || categoryFilter !== 'all'
-                                ? t('No matching expenses')
-                                : t('No expenses yet')
-                        "
-                    >
-                        <template
-                            v-if="
-                                !expenseSearch.trim() &&
-                                categoryFilter === 'all'
-                            "
-                            #actions
-                        >
-                            <Can permission="expenses.create">
-                                <Button
-                                    size="sm"
-                                    class="h-9 gap-1.5"
-                                    @click="emit('open-expense', null)"
-                                >
-                                    <Plus class="size-4" />
-                                    {{ t('Add expense') }}
-                                </Button>
-                            </Can>
-                        </template>
-                    </EmptyState>
                 </tbody>
             </table>
-        </TableFrame>
-
-        <div
-            v-if="filteredExpenses.length > perPage"
-            class="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2"
-        >
-            <p class="text-xs text-muted-foreground">
-                {{
-                    t('Showing :from–:to of :total', {
-                        from: formatNumber(paginationFrom, 0),
-                        to: formatNumber(paginationTo, 0),
-                        total: formatNumber(filteredExpenses.length, 0),
-                    })
-                }}
-            </p>
-            <div class="flex items-center gap-1">
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    class="size-7"
-                    :disabled="currentPage <= 1"
-                    @click="currentPage -= 1"
-                >
-                    <ChevronLeft class="size-3.5 rtl:rotate-180" />
-                </Button>
-                <span class="min-w-[3.5rem] text-center text-xs tabular-nums text-muted-foreground">
-                    {{ currentPage }} / {{ totalPages }}
-                </span>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    class="size-7"
-                    :disabled="currentPage >= totalPages"
-                    @click="currentPage += 1"
-                >
-                    <ChevronRight class="size-3.5 rtl:rotate-180" />
-                </Button>
-            </div>
         </div>
     </V2Panel>
-
     <ConfirmActionDialog
         v-model:open="confirmDeleteOpen"
         :title="t('Delete expense?')"

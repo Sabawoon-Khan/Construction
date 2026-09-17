@@ -71,10 +71,16 @@ const publicCompany = computed(
 const locale = computed(() => (page.props.locale as string) || 'en');
 const isEnglish = computed(() => locale.value === 'en');
 const brandEn = computed(
-    () => publicCompany.value?.name_en?.trim() || 'Shahin Samim Barakzai',
+    () =>
+        publicCompany.value?.name_en?.trim() ||
+        (page.props.name as string | undefined) ||
+        '',
 );
 const brandFa = computed(
-    () => publicCompany.value?.name_primary?.trim() || 'شاهین صمیم بارکزی',
+    () =>
+        publicCompany.value?.name_primary?.trim() ||
+        (page.props.name as string | undefined) ||
+        '',
 );
 const portfolioItems = computed(() => props.portfolio ?? []);
 const flashSuccess = computed(() => page.props.flash?.success as string | null);
@@ -471,7 +477,7 @@ onUnmounted(() => {
                             {{
                                 lt(
                                     'home.about.body',
-                                    'Shahin Samim Barakzai plans and delivers modern apartment communities with disciplined site control. From early design through final handover, quality, schedule, and living comfort stay visible to every stakeholder.',
+                                    `${brandEn} plans and delivers modern apartment communities with disciplined site control. From early design through final handover, quality, schedule, and living comfort stay visible to every stakeholder.`,
                                 )
                             }}
                         </p>

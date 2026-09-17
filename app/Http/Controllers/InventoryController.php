@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Models\InventoryTransaction;
 use App\Models\Material;
 use App\Models\Project;
@@ -11,57 +13,26 @@ use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InventoryController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'inventory';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
 
     public function index(Request $request): Response
     {
         $projectId = $request->integer('project_id') ?: null;
         $search = $request->string('search')->toString();
-        $levels = InventoryTransaction::stockLevels($projectId);
-
-        $materials = Material::query()
-            ->with('unit:id,unit_name')
-            ->get(['id', 'name', 'code', 'minimum_stock', 'material_unit_id', 'unit_cost', 'unit_cost_base'])
-            ->keyBy('id');
+        $items = $this->indexQuery($request);
 
         $projects = Project::query()->orderBy('name')->get(['id', 'name']);
-        $projectsById = $projects->keyBy('id');
-
-        $items = $levels->map(function ($row) use ($materials, $projectsById) {
-            $material = $materials->get($row->material_id);
-            $onHand = (float) $row->on_hand;
-            $unitCost = (float) ($material?->unit_cost ?? 0);
-
-            return [
-                'project_id' => (int) $row->project_id,
-                'project_name' => $projectsById->get($row->project_id)?->name,
-                'material_id' => (int) $row->material_id,
-                'material_name' => $material?->name,
-                'material_code' => $material?->code,
-                'unit_name' => $material?->unit?->unit_name,
-                'purchased' => (float) $row->purchased,
-                'issued' => (float) $row->issued,
-                'on_hand' => $onHand,
-                'minimum_stock' => (float) ($material?->minimum_stock ?? 0),
-                'stock_value' => round($onHand * $unitCost, 2),
-            ];
-        })->values();
-
-        if ($search !== '') {
-            $needle = mb_strtolower($search);
-            $items = $items->filter(function (array $row) use ($needle) {
-                return str_contains(mb_strtolower((string) ($row['project_name'] ?? '')), $needle)
-                    || str_contains(mb_strtolower((string) ($row['material_name'] ?? '')), $needle)
-                    || str_contains(mb_strtolower((string) ($row['material_code'] ?? '')), $needle);
-            })->values();
-        }
 
         $issuesQuery = InventoryTransaction::query()
             ->with([
@@ -101,27 +72,6 @@ class InventoryController extends Controller implements HasMiddleware
             'reference_no' => $issue->reference_no,
             'notes' => $issue->notes,
         ])->values();
-
-        $latestIssues = InventoryTransaction::query()
-            ->where('type', InventoryTransaction::TYPE_ISSUE)
-            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
-            ->orderByDesc('transaction_date')
-            ->orderByDesc('id')
-            ->get(['id', 'project_id', 'material_id', 'quantity', 'transaction_date'])
-            ->unique(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id)
-            ->keyBy(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id);
-
-        $items = $items->map(function (array $row) use ($latestIssues) {
-            $latest = $latestIssues->get($row['project_id'].'-'.$row['material_id']);
-
-            $row['latest_issue'] = $latest ? [
-                'id' => $latest->id,
-                'quantity' => (float) $latest->quantity,
-                'transaction_date' => $latest->transaction_date?->toDateString(),
-            ] : null;
-
-            return $row;
-        })->values();
 
         $lowStockRows = $items->filter(function (array $row) {
             $minimum = (float) ($row['minimum_stock'] ?? 0);
@@ -168,6 +118,102 @@ class InventoryController extends Controller implements HasMiddleware
             ],
             'volumeChart' => $this->issuesByMonth($projectId),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->map(fn (array $row) => [
+                $row['project_name'],
+                $row['material_name'],
+                $row['material_code'],
+                $row['unit_name'],
+                $row['purchased'],
+                $row['issued'],
+                $row['on_hand'],
+                $row['minimum_stock'],
+                $row['stock_value'],
+            ]);
+
+        return $this->streamExport(
+            'inventory',
+            [
+                'project', 'material', 'code', 'unit', 'purchased', 'issued',
+                'on_hand', 'minimum_stock', 'stock_value',
+            ],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    protected function indexQuery(Request $request, bool $applyFilters = true): Collection
+    {
+        $projectId = $applyFilters ? ($request->integer('project_id') ?: null) : null;
+        $search = $applyFilters ? $request->string('search')->toString() : '';
+
+        $levels = InventoryTransaction::stockLevels($projectId);
+
+        $materials = Material::query()
+            ->with('unit:id,unit_name')
+            ->get(['id', 'name', 'code', 'minimum_stock', 'material_unit_id', 'unit_cost', 'unit_cost_base'])
+            ->keyBy('id');
+
+        $projectsById = Project::query()->orderBy('name')->get(['id', 'name'])->keyBy('id');
+
+        $items = $levels->map(function ($row) use ($materials, $projectsById) {
+            $material = $materials->get($row->material_id);
+            $onHand = (float) $row->on_hand;
+            $unitCost = (float) ($material?->unit_cost ?? 0);
+
+            return [
+                'project_id' => (int) $row->project_id,
+                'project_name' => $projectsById->get($row->project_id)?->name,
+                'material_id' => (int) $row->material_id,
+                'material_name' => $material?->name,
+                'material_code' => $material?->code,
+                'unit_name' => $material?->unit?->unit_name,
+                'purchased' => (float) $row->purchased,
+                'issued' => (float) $row->issued,
+                'on_hand' => $onHand,
+                'minimum_stock' => (float) ($material?->minimum_stock ?? 0),
+                'stock_value' => round($onHand * $unitCost, 2),
+            ];
+        })->values();
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $items = $items->filter(function (array $row) use ($needle) {
+                return str_contains(mb_strtolower((string) ($row['project_name'] ?? '')), $needle)
+                    || str_contains(mb_strtolower((string) ($row['material_name'] ?? '')), $needle)
+                    || str_contains(mb_strtolower((string) ($row['material_code'] ?? '')), $needle);
+            })->values();
+        }
+
+        $latestIssues = InventoryTransaction::query()
+            ->where('type', InventoryTransaction::TYPE_ISSUE)
+            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->get(['id', 'project_id', 'material_id', 'quantity', 'transaction_date'])
+            ->unique(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id)
+            ->keyBy(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id);
+
+        return $items->map(function (array $row) use ($latestIssues) {
+            $latest = $latestIssues->get($row['project_id'].'-'.$row['material_id']);
+
+            $row['latest_issue'] = $latest ? [
+                'id' => $latest->id,
+                'quantity' => (float) $latest->quantity,
+                'transaction_date' => $latest->transaction_date?->toDateString(),
+            ] : null;
+
+            return $row;
+        })->values();
     }
 
     public function store(Request $request): RedirectResponse

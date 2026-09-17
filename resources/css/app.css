@@ -2801,18 +2801,69 @@ label:has(+ div.relative > button[aria-required='true'])::after {
     [data-slot='sidebar'],
     [data-sidebar='trigger'],
     header[data-tour],
-    [data-sonner-toaster] {
+    [data-sonner-toaster],
+    .app-v2-topbar,
+    .app-v2-sidebar,
+    .app-v2-mobile-scrim,
+    .app-v2-mobile-drawer {
         display: none !important;
     }
 
     .group\\/sidebar-wrapper,
-    [data-slot='sidebar-inset'] {
+    [data-slot='sidebar-inset'],
+    .app-v2-shell,
+    .app-v2-content {
         display: block !important;
         width: 100% !important;
         min-height: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
         background: #fff !important;
+        overflow: visible !important;
+    }
+
+    /* List pages: print only .print-target (may be nested) */
+    .print-table-only {
+        position: relative !important;
+        display: block !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .print-table-only * {
+        visibility: hidden !important;
+    }
+
+    .print-table-only .print-target,
+    .print-table-only .print-target * {
+        visibility: visible !important;
+    }
+
+    .print-table-only .print-target {
+        position: absolute !important;
+        inset-inline-start: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        display: block !important;
+        box-shadow: none !important;
+        border-color: #ccc !important;
+        background: #fff !important;
+    }
+
+    .print-table-only .print-target .print\:hidden,
+    .print-table-only .print-target .print\:hidden * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .print-table-only .print-target .hidden.print\:block {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .print-table-only .print-target .hidden.print\:block * {
+        visibility: visible !important;
     }
 
     /* Voucher pages: hide everything except the voucher sheet */

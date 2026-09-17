@@ -400,6 +400,7 @@ defineOptions({
     <Head :title="item.name" />
     <V2ListPage>
         <V2DetailHero
+            class="print:hidden"
             image="/images/projects-v2-hero-luxury.png"
             :compact="tab !== 'overview'"
         >
@@ -497,7 +498,7 @@ defineOptions({
             </ul>
         </MisAlert>
 
-        <MisTabs v-model="tab" nowrap :tabs="tabs" />
+        <MisTabs v-model="tab" nowrap :tabs="tabs" class="print:hidden" />
 
         <div v-show="tab === 'overview'">
             <ProjectShowInfoTab

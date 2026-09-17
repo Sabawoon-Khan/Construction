@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -24,7 +26,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { buildMoneyBars, buildShareSegments, compactMoneyByCurrency } from '@/lib/v2Money';
 import { moneyByCurrency } from '@/lib/utils';
-import { Briefcase, Handshake, Plus, Wallet } from '@lucide/vue';
+import { Briefcase, Handshake, Wallet } from '@lucide/vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -110,7 +112,6 @@ function rowActions(item: Item): RowActionItem[] {
             <template #title>{{ t('Shareholders') }}</template>
             <template #description>{{ t('Partners, project coverage, contributions and payouts.') }}</template>
             <template #side>
-                <Link v-if="can('partners.create')" href="/partners/create" class="create-btn"><Plus />{{ t('Create') }}</Link>
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Coverage') }}</template>
@@ -147,7 +148,12 @@ function rowActions(item: Item): RowActionItem[] {
                     <div class="filter-search">
                         <MisSearchInput v-model="filters.search" :placeholder="t('Search...')" />
                     </div>
-                    <template #columns><TableToolbar /></template>
+                    <template #columns>
+                        <MisTableActions export-url="/partners/export" :filters="filters">
+                            <CreateButton href="/partners/create" permission="partners.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
+                        <TableToolbar />
+                    </template>
                 </V2FilterBar>
             </template>
             <template #default="{ visibleColCount }">
@@ -167,7 +173,6 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="end"><RowActionsMenu :actions="rowActions(item)" /></td>
                         </tr>
                         <EmptyState v-if="!items.data.length" :colspan="visibleColCount" :title="t('No shareholders yet')">
-                            <template #actions><Link v-if="can('partners.create')" href="/partners/create" class="create-btn"><Plus />{{ t('Create') }}</Link></template>
                         </EmptyState>
                     </tbody>
                 </table>
