@@ -60,12 +60,15 @@ class CompanyController extends Controller
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
+            'address_en' => 'nullable|string',
             'base_currency' => 'required|string|size:3',
         ]);
 
         $data['base_currency'] = CurrencyService::normalize($data['base_currency']);
 
-        CurrentCompany::get()->update($data);
+        $company = CurrentCompany::get();
+        $company->update($data);
+        $company->refresh()->syncBrandSettings();
 
         ExchangeRate::clearCache();
 

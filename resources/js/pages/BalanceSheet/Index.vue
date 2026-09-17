@@ -4,6 +4,8 @@ import { AlertCircle, Scale } from '@lucide/vue';
 import { computed, watch } from 'vue';
 import {
     MisAlert,
+    MisPrintFooter,
+    MisPrintLetterhead,
     MisTableActions,
     MisFilterBar,
     MisLoadingState,
@@ -17,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useCalendar } from '@/composables/useCalendar';
 import { useMisFilters } from '@/composables/useMisFilters';
 import { useTranslations } from '@/composables/useTranslations';
 import { moneyByCurrency } from '@/lib/utils';
@@ -133,6 +136,16 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const calendar = useCalendar();
+
+const asOfLabel = computed(() => {
+    const raw = props.filters.as_of || props.balance_sheet.as_of;
+    if (!raw) {
+        return '';
+    }
+
+    return calendar.format(String(raw)) || String(raw);
+});
 
 const { filters, pending, apply } = useMisFilters(
     '/balance-sheet',
@@ -175,6 +188,7 @@ defineOptions({
     <Head :title="t('Balance Sheet')" />
 
     <div class="print-document mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 print:gap-4 print:p-0">
+        <MisPrintLetterhead class="hidden print:block" :title="t('Balance Sheet')" :subtitle="asOfLabel" />
         <MisPageHeader :title="t('Balance Sheet')" class="print:hidden">
             <template #actions>
                 <MisTableActions export-url="/balance-sheet/export" :filters="filters" />
@@ -538,5 +552,6 @@ defineOptions({
                 </div>
             </div>
         </template>
+        <MisPrintFooter class="hidden print:flex" />
     </div>
 </template>

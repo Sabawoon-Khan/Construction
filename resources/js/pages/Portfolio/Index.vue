@@ -257,6 +257,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="portfolio"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Portfolio')"
         >
             <template #filters>
                 <V2FilterBar>

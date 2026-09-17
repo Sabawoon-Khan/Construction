@@ -20,6 +20,7 @@ import { computed, onMounted, onUnmounted, watch } from 'vue';
 import PublicSiteFooter from '@/components/public/PublicSiteFooter.vue';
 import PublicSiteHeader from '@/components/public/PublicSiteHeader.vue';
 import SeoHead from '@/components/public/SeoHead.vue';
+import { usePublicCompany } from '@/composables/usePublicCompany';
 import { useTranslations } from '@/composables/useTranslations';
 import { publicStockImages } from '@/lib/publicStockImages';
 import './welcome/welcome-premium.css';
@@ -44,64 +45,28 @@ type PortfolioItem = {
     media: PortfolioMedia[];
 };
 
-type PublicCompany = {
-    name?: string | null;
-    name_primary?: string | null;
-    name_en?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    address?: string | null;
-};
-
 const props = defineProps<{
     portfolio?: PortfolioItem[];
 }>();
 
 const page = usePage();
 const { t } = useTranslations();
+const {
+    isEnglish,
+    brandEn,
+    brandFa,
+    contactEmail,
+    contactPhone,
+    contactAddress,
+} = usePublicCompany();
 
 function lt(key: string, fallback: string): string {
     const value = t(key);
     return value === key ? fallback : value;
 }
 
-const publicCompany = computed(
-    () => (page.props.publicCompany as PublicCompany | null) ?? null,
-);
-const locale = computed(() => (page.props.locale as string) || 'en');
-const isEnglish = computed(() => locale.value === 'en');
-const brandEn = computed(
-    () =>
-        publicCompany.value?.name_en?.trim() ||
-        (page.props.name as string | undefined) ||
-        '',
-);
-const brandFa = computed(
-    () =>
-        publicCompany.value?.name_primary?.trim() ||
-        (page.props.name as string | undefined) ||
-        '',
-);
 const portfolioItems = computed(() => props.portfolio ?? []);
 const flashSuccess = computed(() => page.props.flash?.success as string | null);
-
-const hasRealEmail = computed(() => !!publicCompany.value?.email?.trim());
-const hasRealPhone = computed(() => !!publicCompany.value?.phone?.trim());
-const contactEmail = computed(
-    () =>
-        publicCompany.value?.email?.trim() ||
-        lt('home.contact.emailPlaceholder', 'info@shahinsamimbarakzai.com'),
-);
-const contactPhone = computed(
-    () =>
-        publicCompany.value?.phone?.trim() ||
-        lt('home.contact.phonePlaceholder', '+93 70 000 0000'),
-);
-const contactAddress = computed(
-    () =>
-        publicCompany.value?.address?.trim() ||
-        lt('home.contact.addressPlaceholder', 'Kabul, Afghanistan'),
-);
 
 const contactForm = useForm({
     name: '',
@@ -861,7 +826,7 @@ onUnmounted(() => {
                     <div class="lx-contact">
                         <aside class="lx-contact-aside">
                             <a
-                                v-if="hasRealEmail"
+                                v-if="contactEmail"
                                 class="lx-contact-row"
                                 :href="`mailto:${contactEmail}`"
                             >
@@ -873,17 +838,8 @@ onUnmounted(() => {
                                     <strong>{{ contactEmail }}</strong>
                                 </div>
                             </a>
-                            <div v-else class="lx-contact-row">
-                                <span><Mail :size="18" /></span>
-                                <div>
-                                    <em>{{
-                                        lt('home.contact.emailLabel', 'Email')
-                                    }}</em>
-                                    <strong>{{ contactEmail }}</strong>
-                                </div>
-                            </div>
                             <a
-                                v-if="hasRealPhone"
+                                v-if="contactPhone"
                                 class="lx-contact-row"
                                 :href="`tel:${contactPhone.replace(/\s+/g, '')}`"
                             >
@@ -895,16 +851,7 @@ onUnmounted(() => {
                                     <strong>{{ contactPhone }}</strong>
                                 </div>
                             </a>
-                            <div v-else class="lx-contact-row">
-                                <span><Phone :size="18" /></span>
-                                <div>
-                                    <em>{{
-                                        lt('home.contact.phoneLabel', 'Phone')
-                                    }}</em>
-                                    <strong>{{ contactPhone }}</strong>
-                                </div>
-                            </div>
-                            <div class="lx-contact-row">
+                            <div v-if="contactAddress" class="lx-contact-row">
                                 <span><MapPin :size="18" /></span>
                                 <div>
                                     <em>{{

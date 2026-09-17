@@ -180,7 +180,13 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function show(Expense $expense): Response
     {
-        $expense->load(['project:id,name', 'expenseUnit:id,unit_name', 'attachments', 'purchase:id,purchase_no']);
+        $expense->load([
+            'project:id,name,code',
+            'category:id,name',
+            'expenseUnit:id,unit_name',
+            'attachments',
+            'purchase:id,purchase_no',
+        ]);
 
         return Inertia::render('Expenses/Show', [
             'item' => $expense,

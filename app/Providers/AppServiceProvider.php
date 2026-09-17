@@ -15,6 +15,7 @@ use App\Listeners\LogAuthenticationActivity;
 use App\Listeners\LogOutboundMail;
 use App\Services\Sms\Contracts\SmsGateway;
 use App\Services\Sms\Gateways\FakeSmsGateway;
+use App\Models\OrgSetting;
 use App\Support\AiSettings;
 use App\Support\GoogleAuth;
 use App\Support\OfflineSettings;
@@ -51,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureGates();
         SystemControl::applyToConfig();
+        OrgSetting::applyBrandToConfig();
         OfflineSettings::applyToConfig();
         MailSettings::applyToConfig();
         MailTemplates::applyToConfig();

@@ -26,6 +26,7 @@ const props = defineProps<{
         phone?: string | null;
         email?: string | null;
         address?: string | null;
+        address_en?: string | null;
         base_currency: string;
     };
     exchange_rates: {
@@ -153,6 +154,18 @@ defineOptions({
                     :value="company.address ?? ''"
                 />
                 <InputError :message="errors.address" />
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="address_en">{{ t('Address (English)') }}</Label>
+                <textarea
+                    id="address_en"
+                    name="address_en"
+                    rows="3"
+                    class="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs"
+                    :value="company.address_en ?? ''"
+                />
+                <InputError :message="errors.address_en" />
             </div>
 
             <Button type="submit" :disabled="processing">

@@ -117,7 +117,7 @@ const companyName = computed(
     () =>
         (page.props.company as { name?: string } | null)?.name ??
         (page.props.name as string | undefined) ??
-        'Structo',
+        '',
 );
 
 const user = computed(() => page.props.auth.user);

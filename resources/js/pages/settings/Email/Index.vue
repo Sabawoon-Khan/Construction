@@ -150,7 +150,7 @@ const status = ref(props.filters?.status ?? '');
 const mailerFilter = ref(props.filters?.mailer ?? '');
 const expandedLogId = ref<number | null>(null);
 const appName = computed(
-    () => (page.props.name as string | undefined) ?? 'Yaqeen',
+    () => (page.props.name as string | undefined) ?? '',
 );
 const logoUrl = computed(() => (page.props.logo as string | null | undefined) ?? null);
 

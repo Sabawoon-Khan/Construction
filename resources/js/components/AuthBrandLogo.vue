@@ -20,7 +20,7 @@ const props = withDefaults(
 );
 
 const page = usePage();
-const name = computed(() => page.props.name || 'Yaqeen Kit');
+const name = computed(() => page.props.name || '');
 const logo = computed(() => {
     const value = page.props.logo;
 

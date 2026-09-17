@@ -295,6 +295,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="field-reports"
             :columns="tableColumns"
             :pending="pending && displayItems.length > 0"
+            :print-title="t('Field reports')"
         >
             <template #filters>
                 <V2FilterBar>

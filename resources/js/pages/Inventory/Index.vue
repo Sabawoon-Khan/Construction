@@ -469,6 +469,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
             table-id="inventory"
             :columns="tableColumns"
             :pending="pending && items.length > 0"
+            :print-title="t('Stock')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -609,6 +610,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
             table-id="inventory-issues"
             :columns="issueTableColumns"
             :pending="pending && issues.length > 0"
+            :print-title="t('Stock')"
         >
             <template #filters>
                 <div class="filter-panel">

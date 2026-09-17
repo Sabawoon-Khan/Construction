@@ -12,16 +12,27 @@ const props = withDefaults(
         variant?: 'default' | 'outline' | 'secondary' | 'ghost';
         label?: string;
         class?: string;
+        /** When set, called instead of window.print(). */
+        onPrint?: () => void;
     }>(),
     {
         size: 'sm',
         variant: 'outline',
         label: undefined,
         class: undefined,
+        onPrint: undefined,
     },
 );
 
 const { t } = useTranslations();
+
+function handleClick() {
+    if (props.onPrint) {
+        props.onPrint();
+        return;
+    }
+    printPage();
+}
 </script>
 
 <template>
@@ -35,7 +46,7 @@ const { t } = useTranslations();
                 props.class,
             )
         "
-        @click="printPage"
+        @click="handleClick"
     >
         <Printer class="size-3.5 text-slate-600 dark:text-slate-300" />
         <span>{{ label ?? t('Print') }}</span>

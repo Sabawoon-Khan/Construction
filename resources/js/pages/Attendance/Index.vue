@@ -273,6 +273,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="attendance"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Attendance')"
         >
             <template #filters>
                 <V2FilterBar>

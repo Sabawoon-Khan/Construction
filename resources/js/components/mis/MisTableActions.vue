@@ -8,10 +8,8 @@ type FilterValue = string | number | boolean | null | undefined;
 
 const props = withDefaults(
     defineProps<{
-        /** Server export URL. */
         exportUrl?: string;
         filters?: Record<string, FilterValue>;
-        /** Client-side export. */
         filename?: string;
         headers?: string[];
         rows?: ExportCell[][];
@@ -19,6 +17,7 @@ const props = withDefaults(
         showExport?: boolean;
         showPrint?: boolean;
         class?: string;
+        onPrint?: () => void;
     }>(),
     {
         exportUrl: undefined,
@@ -30,6 +29,7 @@ const props = withDefaults(
         showExport: true,
         showPrint: true,
         class: undefined,
+        onPrint: undefined,
     },
 );
 </script>
@@ -48,6 +48,6 @@ const props = withDefaults(
             :rows="rows"
             :filtered-rows="filteredRows"
         />
-        <MisPrintButton v-if="showPrint" />
+        <MisPrintButton v-if="showPrint" :on-print="onPrint" />
     </div>
 </template>

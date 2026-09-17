@@ -286,6 +286,7 @@ function rowActions(item: Unit): RowActionItem[] {
             table-id="expense-units"
             :columns="tableColumns"
             :pending="pending && items.length > 0"
+            :print-title="t('Expense units')"
         >
             <template #filters>
                 <V2FilterBar>

@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     MisChartCard,
+    MisPrintFooter,
+    MisPrintLetterhead,
     MisTableActions,
     MisFilterBar,
     MisLoadingState,
@@ -340,6 +342,7 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
     <Head :title="t('Reports')" />
 
     <div class="print-document mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col gap-5 p-4 md:p-6 print:gap-4 print:p-0">
+        <MisPrintLetterhead class="hidden print:block" :title="t('Reports')" :subtitle="periodLabel" />
         <MisPageHeader
             :title="t('Reports')"
             :description="periodLabel ? `${t('Period summary')} · ${periodLabel}` : t('Period summary')"
@@ -1095,6 +1098,7 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                 </div>
             </div>
         </template>
+        <MisPrintFooter class="hidden print:flex" />
     </div>
 </template>
 

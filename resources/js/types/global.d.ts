@@ -26,8 +26,17 @@ declare module '@inertiajs/core' {
                 phone: string | null;
                 email: string | null;
                 address: string | null;
+                address_en: string | null;
                 base_currency: string;
                 logo_path: string | null;
+            } | null;
+            publicCompany: {
+                name: string;
+                name_primary: string;
+                name_en: string;
+                phone: string | null;
+                email: string | null;
+                address: string | null;
             } | null;
             logo: string | null;
             favicon: string | null;

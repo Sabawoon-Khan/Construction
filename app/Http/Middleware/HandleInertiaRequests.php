@@ -3,13 +3,13 @@
 namespace App\Http\Middleware;
 
 use App\Http\Middleware\Concerns\ResolvesRequestLocale;
+use App\Models\Company;
 use App\Models\OrgSetting;
 use App\Services\CurrencyService;
 use App\Services\LocaleRegistry;
 use App\Services\NotificationService;
 use App\Support\AiSettings;
 use App\Support\CalendarSystem;
-use App\Support\CurrentCompany;
 use App\Support\OfflineSettings;
 use App\Support\Seo;
 use App\Support\SystemControl;
@@ -53,42 +53,33 @@ class HandleInertiaRequests extends Middleware
         $appName = OrgSetting::appName($locale);
 
         $company = null;
-        $brandEn = (string) config('app.name');
-        $brandFa = (string) config('app.name_fa');
         $publicCompany = [
             'name' => $appName,
-            'name_primary' => $brandFa,
-            'name_en' => $brandEn,
+            'name_primary' => (string) OrgSetting::getValue('app_name', config('app.name_fa')),
+            'name_en' => (string) OrgSetting::getValue('app_name_en', config('app.name')),
             'phone' => null,
             'email' => null,
             'address' => null,
         ];
         try {
-            $companyModel = CurrentCompany::get();
-            $namePrimary = filled($companyModel->name) ? (string) $companyModel->name : $brandFa;
-            $nameEn = filled($companyModel->name_en) ? (string) $companyModel->name_en : $brandEn;
-            $displayName = $companyModel->displayName($locale) ?: $appName;
-            $publicCompany = [
-                'name' => $displayName,
-                'name_primary' => $namePrimary,
-                'name_en' => $nameEn,
-                'phone' => filled($companyModel->phone) ? $companyModel->phone : null,
-                'email' => filled($companyModel->email) ? $companyModel->email : null,
-                'address' => filled($companyModel->address) ? $companyModel->address : null,
-            ];
-            if ($request->user()) {
-                $company = [
-                    'id' => $companyModel->id,
-                    'name' => $displayName,
-                    'name_en' => $companyModel->name_en,
-                    'legal_name' => $companyModel->legal_name,
-                    'registration_no' => $companyModel->registration_no,
-                    'phone' => $companyModel->phone,
-                    'email' => $companyModel->email,
-                    'address' => $companyModel->address,
-                    'base_currency' => CurrencyService::normalize($companyModel->base_currency),
-                    'logo_path' => $companyModel->logo_path,
-                ];
+            $companyModel = Company::query()->first();
+            if ($companyModel) {
+                $publicCompany = $companyModel->toPublicArray($locale);
+                if ($request->user()) {
+                    $company = [
+                        'id' => $companyModel->id,
+                        'name' => $publicCompany['name'],
+                        'name_en' => $companyModel->name_en,
+                        'legal_name' => $companyModel->legal_name,
+                        'registration_no' => $companyModel->registration_no,
+                        'phone' => $companyModel->phone,
+                        'email' => $companyModel->email,
+                        'address' => $companyModel->address,
+                        'address_en' => $companyModel->address_en,
+                        'base_currency' => CurrencyService::normalize($companyModel->base_currency),
+                        'logo_path' => $companyModel->logo_path,
+                    ];
+                }
             }
         } catch (Throwable) {
             $company = null;

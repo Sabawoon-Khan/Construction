@@ -296,6 +296,7 @@ function rowActions(item: Category): RowActionItem[] {
             table-id="expense-categories"
             :columns="tableColumns"
             :pending="pending && items.length > 0"
+            :print-title="t('Expense categories')"
         >
             <template #filters>
                 <V2FilterBar>

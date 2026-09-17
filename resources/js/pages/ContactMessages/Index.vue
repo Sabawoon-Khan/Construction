@@ -270,6 +270,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="contact-messages"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Contact')"
         >
             <template #filters>
                 <V2FilterBar>

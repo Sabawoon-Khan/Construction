@@ -117,7 +117,7 @@ function rowActions(item: any): RowActionItem[] {
                 </V2StatGrid>
             </template>
         </V2Hero>
-        <V2TablePanel table-id="purchases" :columns="tableColumns" :pending="pending && items.data.length > 0">
+        <V2TablePanel table-id="purchases" :columns="tableColumns" :pending="pending && items.data.length > 0" :print-title="t('Purchases')">
             <template #filters>
                 <V2FilterBar>
                     <div class="filter-search">
