@@ -337,6 +337,7 @@ class ProjectController extends Controller implements HasMiddleware
                     'created_at',
                 ]),
             'expense_categories' => $this->expenseCategories(),
+            'expense_units' => \App\Models\ExpenseUnit::options(),
             'purchases' => $purchasesQuery
                 ->with('supplier:id,name')
                 ->latest('purchase_date')
@@ -384,12 +385,15 @@ class ProjectController extends Controller implements HasMiddleware
     {
         $request->merge([
             'expense_category_id' => $request->filled('expense_category_id') ? $request->input('expense_category_id') : null,
+            'expense_unit_id' => $request->filled('expense_unit_id') ? $request->input('expense_unit_id') : null,
         ]);
 
         $data = $request->validate([
             'expense_date' => 'required|date',
             'paid_to' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0.01',
+            'item_amount' => 'nullable|numeric|min:0',
+            'per_price' => 'nullable|numeric|min:0',
+            'amount' => 'nullable|numeric|min:0',
             'currency' => 'nullable|string|size:3',
             'description' => 'required|string|max:1000',
             'expense_category_id' => [
@@ -397,6 +401,7 @@ class ProjectController extends Controller implements HasMiddleware
                 'exists:expense_categories,id',
                 Rule::notIn(ExpenseCategory::materialIds()),
             ],
+            'expense_unit_id' => 'nullable|exists:expense_units,id',
             'payment_method' => 'nullable|in:cash,bank',
             'reference_no' => 'nullable|string|max:100',
             'documents' => 'nullable|array',
@@ -405,6 +410,10 @@ class ProjectController extends Controller implements HasMiddleware
             'expense_category_id.not_in' => 'Materials must be recorded as a purchase so stock and remaining balance are tracked.',
         ]);
         unset($data['documents']);
+
+        if (! empty($data['item_amount']) && isset($data['per_price'])) {
+            $data['amount'] = FinanceDefaults::totalCost($data);
+        }
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
         $this->storeRecordAttachments($request, $expense);

@@ -134,6 +134,7 @@ const props = defineProps<{
         }>;
     }[];
     expense_categories?: { id: number; name: string; code: string }[];
+    expense_units?: { id: number; unit_name: string }[];
     purchases?: {
         id: number;
         purchase_no: string;
@@ -706,6 +707,7 @@ defineOptions({
         :project-id="item.id"
         :start-editing="expenseStartEditing"
         :categories="expense_categories"
+        :units="expense_units"
     />
 
     <ShareholderAddDialog

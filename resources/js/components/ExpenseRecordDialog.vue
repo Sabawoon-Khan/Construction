@@ -562,91 +562,62 @@ async function addCategory() {
                             </select>
                             <InputError :id="errorId('payment_method')" :message="errors.payment_method" />
                         </div>
-                        <template v-if="isProjectExpense">
-                            <input type="hidden" name="item_amount" value="1" />
-                            <input type="hidden" name="per_price" :value="perPrice || item?.amount || ''" />
-                            <div class="grid gap-2">
-                                <Label for="expense-amount">{{ t('Amount') }} ({{ currency }})</Label>
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                    <Input
-                                        id="expense-amount"
-                                        v-model="perPrice"
-                                        name="amount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0.01"
-                                        required
-                                        class="min-w-0 flex-1"
-                                        :aria-invalid="errors.amount ? 'true' : undefined"
-                                        :aria-describedby="describedBy(errors, 'amount')"
-                                    />
-                                    <CurrencySelect
-                                        v-model="currency"
-                                        name="currency"
-                                        class="w-full sm:w-[9rem] sm:shrink-0"
-                                    />
-                                </div>
-                                <InputError :id="errorId('amount')" :message="errors.amount" />
+                        <div class="grid gap-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <Label for="expense_unit_id">{{ t('Unit') }}</Label>
+                                <RelatedCreateLink href="/expense-units" :label="t('Add unit')" />
                             </div>
-                        </template>
-                        <template v-else>
-                            <div class="grid gap-2">
-                                <div class="flex items-center justify-between gap-2">
-                                    <Label for="expense_unit_id">{{ t('Unit') }}</Label>
-                                    <RelatedCreateLink href="/expense-units" :label="t('Add unit')" />
-                                </div>
-                                <select
-                                    id="expense_unit_id"
-                                    name="expense_unit_id"
-                                    class="h-10 rounded-md border border-input bg-transparent px-3 text-sm"
-                                    :value="item?.expense_unit_id ?? ''"
-                                >
-                                    <option value="">{{ t('Select unit') }}</option>
-                                    <option v-for="u in units || []" :key="u.id" :value="u.id">{{ u.unit_name }}</option>
-                                </select>
-                            </div>
-                            <div class="grid gap-2">
-                                <Label for="item_amount">{{ t('Item amount') }}</Label>
-                                <Input
-                                    id="item_amount"
-                                    v-model="itemAmount"
-                                    name="item_amount"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    required
-                                    :aria-invalid="errors.item_amount ? 'true' : undefined"
-                                    :aria-describedby="describedBy(errors, 'item_amount')"
+                            <select
+                                id="expense_unit_id"
+                                name="expense_unit_id"
+                                class="h-10 rounded-md border border-input bg-transparent px-3 text-sm"
+                                :value="item?.expense_unit_id ?? ''"
+                            >
+                                <option value="">{{ t('Select unit') }}</option>
+                                <option v-for="u in units || []" :key="u.id" :value="u.id">{{ u.unit_name }}</option>
+                            </select>
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="item_amount">{{ t('Item amount') }}</Label>
+                            <Input
+                                id="item_amount"
+                                v-model="itemAmount"
+                                name="item_amount"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                required
+                                :aria-invalid="errors.item_amount ? 'true' : undefined"
+                                :aria-describedby="describedBy(errors, 'item_amount')"
+                            />
+                            <InputError :id="errorId('item_amount')" :message="errors.item_amount" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="per_price">{{ t('Per price') }} ({{ currency }})</Label>
+                            <Input
+                                id="per_price"
+                                v-model="perPrice"
+                                name="per_price"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                required
+                                :aria-invalid="errors.per_price ? 'true' : undefined"
+                                :aria-describedby="describedBy(errors, 'per_price')"
+                            />
+                            <InputError :id="errorId('per_price')" :message="errors.per_price" />
+                        </div>
+                        <div class="grid gap-2 sm:col-span-2">
+                            <Label>{{ t('Total cost') }} ({{ currency }})</Label>
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <Input type="number" readonly :model-value="totalCost" class="min-w-0 flex-1 bg-muted/40" />
+                                <CurrencySelect
+                                    v-model="currency"
+                                    name="currency"
+                                    class="w-full sm:w-[9rem] sm:shrink-0"
                                 />
-                                <InputError :id="errorId('item_amount')" :message="errors.item_amount" />
                             </div>
-                            <div class="grid gap-2">
-                                <Label for="per_price">{{ t('Per price') }} ({{ currency }})</Label>
-                                <Input
-                                    id="per_price"
-                                    v-model="perPrice"
-                                    name="per_price"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    required
-                                    :aria-invalid="errors.per_price ? 'true' : undefined"
-                                    :aria-describedby="describedBy(errors, 'per_price')"
-                                />
-                                <InputError :id="errorId('per_price')" :message="errors.per_price" />
-                            </div>
-                            <div class="grid gap-2 sm:col-span-2">
-                                <Label>{{ t('Total cost') }} ({{ currency }})</Label>
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                                    <Input type="number" readonly :model-value="totalCost" class="min-w-0 flex-1 bg-muted/40" />
-                                    <CurrencySelect
-                                        v-model="currency"
-                                        name="currency"
-                                        class="w-full sm:w-[9rem] sm:shrink-0"
-                                    />
-                                </div>
-                            </div>
-                        </template>
+                        </div>
                     </div>
                 </section>
 
