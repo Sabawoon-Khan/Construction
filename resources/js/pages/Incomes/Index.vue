@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
 import IncomeRecordDialog from '@/components/IncomeRecordDialog.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -26,9 +28,9 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { buildMoneyBars, compactMoneyByCurrency } from '@/lib/v2Money';
 import { money, moneyByCurrency } from '@/lib/utils';
-import { CalendarDays, CircleDollarSign, Eye, Pencil, Plus, Printer, TrendingUp, Wallet } from '@lucide/vue';
+import { CalendarDays, CircleDollarSign, Eye, Pencil, Printer, TrendingUp, Wallet } from '@lucide/vue';
 import { computed, ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 
 const props = defineProps<{
     items: { data: any[]; links: any[]; meta?: any };
@@ -175,15 +177,6 @@ function rowActions(item: any): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('incomes.create')"
-                    href="/incomes/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('This month') }}</template>
@@ -230,8 +223,7 @@ function rowActions(item: any): RowActionItem[] {
                                         totals.amount_by_currency,
                                         totals.amount,
                                     )
-                                "
-                                >{{
+                                ">{{
                                     compactMoneyByCurrency(
                                         totals.amount_by_currency,
                                         totals.amount,
@@ -251,8 +243,7 @@ function rowActions(item: any): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`"
-                            >
+                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`">
                                 <div class="money-pair">
                                     <i
                                         class="afn"
@@ -286,8 +277,7 @@ function rowActions(item: any): RowActionItem[] {
                     <V2StatCard
                         :delay="1"
                         icon-tone="teal"
-                        :title="t('Total income')"
-                    >
+                        :title="t('Total income')">
                         <template #icon><Wallet /></template>
                         <span>{{ t('Total income') }}</span>
                         <strong
@@ -296,8 +286,7 @@ function rowActions(item: any): RowActionItem[] {
                                     totals.amount_by_currency,
                                     totals.amount,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.amount_by_currency,
                                     totals.amount,
@@ -308,8 +297,7 @@ function rowActions(item: any): RowActionItem[] {
                     <V2StatCard
                         :delay="2"
                         icon-tone="warm"
-                        :title="t('This month')"
-                    >
+                        :title="t('This month')">
                         <template #icon><CalendarDays /></template>
                         <span>{{ t('This month') }}</span>
                         <strong
@@ -318,8 +306,7 @@ function rowActions(item: any): RowActionItem[] {
                                     totals.this_month_by_currency,
                                     totals.this_month,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.this_month_by_currency,
                                     totals.this_month,
@@ -331,8 +318,7 @@ function rowActions(item: any): RowActionItem[] {
                         :delay="3"
                         accent
                         icon-tone="orange"
-                        :title="t('Average')"
-                    >
+                        :title="t('Average')">
                         <template #icon><TrendingUp /></template>
                         <span>{{ t('Average') }}</span>
                         <strong
@@ -341,8 +327,7 @@ function rowActions(item: any): RowActionItem[] {
                                     totals.amount_by_currency,
                                     totals.average,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.amount_by_currency,
                                     totals.average,
@@ -358,6 +343,7 @@ function rowActions(item: any): RowActionItem[] {
             table-id="incomes"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Incomes')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -370,6 +356,9 @@ function rowActions(item: any): RowActionItem[] {
                         />
                     </div>
                     <template #columns>
+                        <MisTableActions export-url="/incomes/export" :filters="filters">
+                            <CreateButton href="/incomes/create" permission="incomes.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -434,18 +423,7 @@ function rowActions(item: any): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No income records yet')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('incomes.create')"
-                                    href="/incomes/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Create') }}
-                                </Link>
-                            </template>
+                            :title="t('No income records yet')">
                         </EmptyState>
                     </tbody>
                 </table>

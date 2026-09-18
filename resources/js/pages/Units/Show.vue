@@ -15,8 +15,10 @@ import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import {
     MisDetailGrid,
+    MisTableActions,
     MisTabs,
 } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
@@ -53,6 +55,27 @@ const { formatDate, can } = useMisPage();
 const { sortedRows } = provideTableSort(() => props.item.sales ?? []);
 const canCreateSale = computed(
     () => can('sales.create') && props.item.status === 'available',
+);
+
+const saleExportHeaders = computed(() => [
+    t('Sale'),
+    t('Customer'),
+    t('Amount'),
+    t('Status'),
+    t('Date'),
+]);
+
+const saleExportRows = computed((): ExportCell[][] =>
+    sortedRows.value.map((sale) => [
+        sale.sale_no,
+        sale.customer?.name ?? '',
+        Math.max(
+            0,
+            Number(sale.unit?.list_price ?? 0) - Number(sale.discount ?? 0),
+        ),
+        sale.status,
+        formatDate(sale.created_at),
+    ]),
 );
 
 const areaLabel = computed(() => {
@@ -200,13 +223,19 @@ defineOptions({
             :description="t('Contracts linked to this unit')"
         >
             <template #actions>
-                <Can v-if="canCreateSale" permission="sales.create">
-                    <Button as-child size="sm">
-                        <Link :href="`/sales/create?unit_id=${item.id}`">
-                            {{ t('Create sale') }}
-                        </Link>
-                    </Button>
-                </Can>
+                <MisTableActions
+                    :filename="`unit-${item.id}-sales`"
+                    :headers="saleExportHeaders"
+                    :rows="saleExportRows"
+                >
+                    <Can v-if="canCreateSale" permission="sales.create">
+                        <Button as-child size="sm">
+                            <Link :href="`/sales/create?unit_id=${item.id}`">
+                                {{ t('Create sale') }}
+                            </Link>
+                        </Button>
+                    </Can>
+                </MisTableActions>
             </template>
             <TableFrame table-id="unit-sales" :columns="tableColumns">
                 <table class="min-w-full text-sm">
@@ -258,19 +287,8 @@ defineOptions({
                         <EmptyState
                             v-if="!item.sales?.length"
                             :colspan="6"
-                            :title="t('No sales yet')"
-                        >
-                            <template v-if="canCreateSale" #actions>
-                                <Can permission="sales.create">
-                                    <Button as-child size="sm">
-                                        <Link :href="`/sales/create?unit_id=${item.id}`">
-                                            {{ t('Create sale') }}
-                                        </Link>
-                                    </Button>
-                                </Can>
-                            </template>
-                        </EmptyState>
-                    </tbody>
+                            :title="t('No sales yet')">
+                        </EmptyState>                    </tbody>
                 </table>
             </TableFrame>
         </V2Panel>

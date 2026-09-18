@@ -67,4 +67,18 @@ class Material extends Model
     {
         return $this->hasMany(InventoryTransaction::class);
     }
+
+    protected static function booted(): void
+    {
+        static::forceDeleting(function (self $material): void {
+            $purchaseIds = $material->purchaseItems()->pluck('purchase_id')->unique()->filter();
+
+            foreach (Purchase::withTrashed()->whereIn('id', $purchaseIds)->cursor() as $purchase) {
+                $purchase->forceDelete();
+            }
+
+            $material->purchaseItems()->delete();
+            $material->inventoryTransactions()->delete();
+        });
+    }
 }

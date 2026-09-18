@@ -117,7 +117,7 @@ const companyName = computed(
     () =>
         (page.props.company as { name?: string } | null)?.name ??
         (page.props.name as string | undefined) ??
-        'Structo',
+        '',
 );
 
 const user = computed(() => page.props.auth.user);
@@ -1437,22 +1437,31 @@ onBeforeUnmount(() => {
 }
 
 @media print {
+    .app-v2-topbar,
+    .app-v2-sidebar,
+    .app-v2-mobile-scrim,
+    .app-v2-mobile-drawer {
+        display: none !important;
+    }
+
     .app-v2-page {
-        height: auto;
-        min-height: 0;
-        overflow: visible;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
     }
 
     .app-v2-shell {
-        display: block;
-        height: auto;
-        overflow: visible;
-        background: white;
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
     }
 
     .app-v2-content {
-        overflow: visible;
-        padding: 0;
+        display: block !important;
+        overflow: visible !important;
+        padding: 0 !important;
     }
 }
 

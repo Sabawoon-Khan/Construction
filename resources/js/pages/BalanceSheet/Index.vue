@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import { AlertCircle, FileSpreadsheet, Printer, Scale } from '@lucide/vue';
+import { AlertCircle, Scale } from '@lucide/vue';
 import { computed, watch } from 'vue';
 import {
     MisAlert,
+    MisPrintFooter,
+    MisPrintLetterhead,
+    MisTableActions,
     MisFilterBar,
     MisLoadingState,
     MisMoneyStack,
@@ -16,10 +19,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { useCalendar } from '@/composables/useCalendar';
 import { useMisFilters } from '@/composables/useMisFilters';
 import { useTranslations } from '@/composables/useTranslations';
 import { moneyByCurrency } from '@/lib/utils';
-
 type CurrencyMap = Record<string, number>;
 
 const props = defineProps<{
@@ -133,6 +136,16 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const calendar = useCalendar();
+
+const asOfLabel = computed(() => {
+    const raw = props.filters.as_of || props.balance_sheet.as_of;
+    if (!raw) {
+        return '';
+    }
+
+    return calendar.format(String(raw)) || String(raw);
+});
 
 const { filters, pending, apply } = useMisFilters(
     '/balance-sheet',
@@ -169,42 +182,16 @@ defineOptions({
     },
 });
 
-function exportUrl(format: string) {
-    const params = new URLSearchParams({
-        format,
-        as_of: String(filters.as_of || ''),
-    });
-
-    if (filters.project_id) {
-        params.set('project_id', String(filters.project_id));
-    }
-
-    return `/balance-sheet/export?${params.toString()}`;
-}
 </script>
 
 <template>
     <Head :title="t('Balance Sheet')" />
 
     <div class="print-document mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col gap-6 p-4 md:p-6 print:gap-4 print:p-0">
+        <MisPrintLetterhead class="hidden print:block" :title="t('Balance Sheet')" :subtitle="asOfLabel" />
         <MisPageHeader :title="t('Balance Sheet')" class="print:hidden">
             <template #actions>
-                <Button as-child variant="outline" size="sm">
-                    <a :href="exportUrl('xlsx')" class="inline-flex items-center gap-2">
-                        <FileSpreadsheet class="size-4" />
-                        {{ t('Excel') }}
-                    </a>
-                </Button>
-                <Button as-child size="sm">
-                    <a
-                        :href="exportUrl('print').replace('/balance-sheet/export', '/balance-sheet/print')"
-                        target="_blank"
-                        class="inline-flex items-center gap-2"
-                    >
-                        <Printer class="size-4" />
-                        {{ t('Print / PDF') }}
-                    </a>
-                </Button>
+                <MisTableActions export-url="/balance-sheet/export" :filters="filters" />
             </template>
         </MisPageHeader>
 
@@ -565,5 +552,6 @@ function exportUrl(format: string) {
                 </div>
             </div>
         </template>
+        <MisPrintFooter class="hidden print:flex" />
     </div>
 </template>

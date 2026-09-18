@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Plus, Printer, Trash2 } from '@lucide/vue';
+import { router } from '@inertiajs/vue3';
+import { ChevronLeft, ChevronRight, Printer, Trash2 } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import Can from '@/components/Can.vue';
@@ -11,10 +11,18 @@ import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisSearchInput } from '@/components/mis';
+import {
+    ExpenseListPrintSheet,
+    ExpenseVoucherPrintSheet,
+    MisSearchInput,
+    MisTableActions,
+} from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import type { MisSelectOption } from '@/components/mis/MisSelectField.vue';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
+import { useA4Print } from '@/composables/useA4Print';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
@@ -74,6 +82,20 @@ const perPage = 12;
 const deletingId = ref<number | null>(null);
 const pendingDelete = ref<(typeof props.expenses)[number] | null>(null);
 const confirmDeleteOpen = ref(false);
+const printSingle = ref<(typeof props.expenses)[number] | null>(null);
+const { printA4 } = useA4Print();
+
+function printExpenseList() {
+    void printA4(() => {
+        printSingle.value = null;
+    });
+}
+
+function printExpenseOne(expense: (typeof props.expenses)[number]) {
+    void printA4(() => {
+        printSingle.value = expense;
+    });
+}
 
 function requestDeleteExpense(expense: (typeof props.expenses)[number]) {
     pendingDelete.value = expense;
@@ -101,15 +123,6 @@ function deleteExpense() {
             pendingDelete.value = null;
         },
     });
-}
-
-function printHref(categoryKey?: string) {
-    const base = `/projects/${props.item.id}/expenses/print`;
-    if (!categoryKey) {
-        return base;
-    }
-
-    return `${base}?category_id=${encodeURIComponent(categoryKey)}`;
 }
 
 const categorySummaries = computed(() => {
@@ -235,6 +248,48 @@ watch(totalPages, (pages) => {
         currentPage.value = pages;
     }
 });
+
+const expenseExportHeaders = computed(() => [
+    t('Date'),
+    t('Bill number'),
+    t('Paid to'),
+    t('Category'),
+    t('Description'),
+    t('Paying type'),
+    t('Amount'),
+]);
+
+function mapExpenseExportRow(
+    expense: (typeof props.expenses)[number],
+): ExportCell[] {
+    return [
+        formatDate(expense.expense_date),
+        expense.reference_no || null,
+        expense.paid_to || null,
+        expense.category?.name || t('General'),
+        expense.description || null,
+        expense.payment_method === 'bank' ? t('Bank') : t('Cash'),
+        money(expense.amount, expense.currency || baseCurrency.value),
+    ];
+}
+
+const expenseExportRows = computed(() =>
+    props.expenses.map(mapExpenseExportRow),
+);
+const expenseFilteredExportRows = computed(() =>
+    sortedRows.value.map(mapExpenseExportRow),
+);
+
+const printCategoryLabel = computed(() => {
+    if (categoryFilter.value === 'all') {
+        return null;
+    }
+
+    return (
+        categoryOptions.value.find((o) => o.value === categoryFilter.value)
+            ?.label ?? null
+    );
+});
 </script>
 
 <template>
@@ -246,26 +301,32 @@ watch(totalPages, (pages) => {
             </div>
         </template>
         <template #actions>
-            <Button as-child size="sm" variant="outline" class="h-8 gap-1.5">
-                <Link :href="printHref()" target="_blank">
-                    <Printer class="size-3.5" />
-                    {{ t('Print') }}
-                </Link>
-            </Button>
-            <Can permission="purchases.create">
-                <Button as-child size="sm" variant="outline" class="h-8 gap-1.5">
-                    <Link :href="`/purchases/create?project_id=${item.id}`">
-                        <Plus class="size-3.5" />
-                        {{ t('Purchase') }}
-                    </Link>
-                </Button>
-            </Can>
-            <Can permission="expenses.create">
-                <Button size="sm" class="h-8 gap-1.5" @click="emit('open-expense', null)">
-                    <Plus class="size-3.5" />
+            <MisTableActions
+                :filename="`project-${item.id}-expenses`"
+                :headers="expenseExportHeaders"
+                :rows="expenseExportRows"
+                :filtered-rows="expenseFilteredExportRows"
+                :filters="{
+                    search: expenseSearch,
+                    category:
+                        categoryFilter !== 'all' ? categoryFilter : '',
+                }"
+                :on-print="printExpenseList"
+            >
+                <CreateButton
+                    :href="`/purchases/create?project_id=${item.id}`"
+                    permission="purchases.create"
+                    variant="outline"
+                >
+                    {{ t('Purchase') }}
+                </CreateButton>
+                <CreateButton
+                    permission="expenses.create"
+                    @click="emit('open-expense', null)"
+                >
                     {{ t('Add expense') }}
-                </Button>
-            </Can>
+                </CreateButton>
+            </MisTableActions>
         </template>
 
         <div class="project-expenses-filters">
@@ -287,21 +348,6 @@ watch(totalPages, (pages) => {
                     {{ option.label }}
                 </option>
             </select>
-            <Button
-                v-if="categoryFilter !== 'all'"
-                as-child
-                size="sm"
-                variant="outline"
-                class="h-8 gap-1.5 shrink-0"
-            >
-                <Link
-                    :href="printHref(categoryFilter)"
-                    target="_blank"
-                >
-                    <Printer class="size-3.5" />
-                    {{ t('Print') }}
-                </Link>
-            </Button>
         </div>
 
         <TableFrame table-id="project-expenses" :columns="tableColumns">
@@ -334,9 +380,7 @@ watch(totalPages, (pages) => {
                         <td class="font-medium tabular-nums">
                             {{ expense.reference_no || '—' }}
                         </td>
-                        <td>
-                            {{ expense.paid_to || '—' }}
-                        </td>
+                        <td>{{ expense.paid_to || '—' }}</td>
                         <td>
                             <span
                                 class="inline-flex rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
@@ -346,15 +390,11 @@ watch(totalPages, (pages) => {
                         </td>
                         <td class="max-w-[14rem] truncate">
                             {{ expense.description || '—' }}
-                            <span
-                                v-if="expense.purchase_id"
-                                class="ms-1 text-xs text-muted-foreground"
-                            >{{ t('(from purchase)') }}</span>
                         </td>
-                        <td class="text-muted-foreground whitespace-nowrap">
+                        <td class="whitespace-nowrap capitalize">
                             {{
                                 expense.payment_method === 'bank'
-                                    ? t('Bank payment')
+                                    ? t('Bank')
                                     : t('Cash')
                             }}
                         </td>
@@ -372,18 +412,14 @@ watch(totalPages, (pages) => {
                         <td @click.stop>
                             <div class="flex justify-end gap-1">
                                 <Button
-                                    as-child
+                                    type="button"
                                     size="sm"
                                     variant="outline"
                                     class="h-7 gap-1 px-2"
+                                    @click="printExpenseOne(expense)"
                                 >
-                                    <Link
-                                        :href="`/expenses/${expense.id}`"
-                                        target="_blank"
-                                    >
-                                        <Printer class="size-3.5" />
-                                        {{ t('Print') }}
-                                    </Link>
+                                    <Printer class="size-3.5" />
+                                    {{ t('Print') }}
                                 </Button>
                                 <Can permission="expenses.edit">
                                     <Button
@@ -434,26 +470,7 @@ watch(totalPages, (pages) => {
                                 ? t('No matching expenses')
                                 : t('No expenses yet')
                         "
-                    >
-                        <template
-                            v-if="
-                                !expenseSearch.trim() &&
-                                categoryFilter === 'all'
-                            "
-                            #actions
-                        >
-                            <Can permission="expenses.create">
-                                <Button
-                                    size="sm"
-                                    class="h-9 gap-1.5"
-                                    @click="emit('open-expense', null)"
-                                >
-                                    <Plus class="size-4" />
-                                    {{ t('Add expense') }}
-                                </Button>
-                            </Can>
-                        </template>
-                    </EmptyState>
+                    />
                 </tbody>
             </table>
         </TableFrame>
@@ -496,6 +513,24 @@ watch(totalPages, (pages) => {
                     <ChevronRight class="size-3.5 rtl:rotate-180" />
                 </Button>
             </div>
+        </div>
+
+        <!-- A4 print sheets (screen-hidden; isolated while printing) -->
+        <div class="a4-print-host">
+            <ExpenseVoucherPrintSheet
+                v-if="printSingle"
+                :expense="printSingle"
+                :project-name="item.name"
+                :project-code="item.code"
+            />
+            <ExpenseListPrintSheet
+                v-else
+                :project-name="item.name"
+                :project-code="item.code"
+                :category-label="printCategoryLabel"
+                :rows="sortedRows"
+                :base-currency="baseCurrency"
+            />
         </div>
     </V2Panel>
 

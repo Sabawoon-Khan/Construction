@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisSearchInput  } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -270,6 +270,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="contact-messages"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Contact')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -291,6 +292,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <option value="read">{{ t('Read') }}</option>
                     </V2SelectFilter>
                     <template #columns>
+                        <MisTableActions export-url="/contact-messages/export" :filters="filters" />
                         <TableToolbar />
                     </template>
                 </V2FilterBar>

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Models\PortfolioMedia;
 use App\Models\PortfolioProject;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -15,12 +18,15 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PortfolioProjectController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'portfolio';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
 
     private const ACCEPTED_MIMES = [
         'image/jpeg',
@@ -36,17 +42,8 @@ class PortfolioProjectController extends Controller implements HasMiddleware
 
     public function index(Request $request): Response
     {
-        $query = PortfolioProject::query()->withCount('media')->with([
-            'media' => fn ($q) => $q->where('is_cover', true)->limit(1),
-        ]);
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->orWhere('title', 'like', "%{$search}%")
-                    ->orWhere('category', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $count = (clone $query)->count();
         $published = (clone $query)->where('is_published', true)->count();
@@ -64,6 +61,47 @@ class PortfolioProjectController extends Controller implements HasMiddleware
             'categoryChart' => $this->categoryBreakdown(clone $query),
             'volumeChart' => $this->projectsByMonth(clone $query),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->latest()
+            ->lazyById(500)
+            ->map(fn (PortfolioProject $project) => [
+                $project->title,
+                $project->category,
+                $project->location,
+                $project->media_count,
+                $project->is_published ? 'yes' : 'no',
+                $project->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'portfolio',
+            ['title', 'category', 'location', 'media', 'published', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = PortfolioProject::query()->withCount('media')->with([
+            'media' => fn ($q) => $q->where('is_cover', true)->limit(1),
+        ]);
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('title', 'like', "%{$search}%")
+                    ->orWhere('category', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     public function create(): Response

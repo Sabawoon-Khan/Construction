@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\InventoryTransaction;
 use App\Models\Material;
@@ -10,30 +12,28 @@ use App\Models\MaterialUnit;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MaterialController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'materials';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Material::query()->with(['unit:id,unit_name', 'creator:id,name']);
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $count = (clone $query)->count();
         $active = (clone $query)->where('is_active', true)->count();
@@ -73,6 +73,45 @@ class MaterialController extends Controller implements HasMiddleware
             'totals' => $totals,
             'volumeChart' => $this->materialsVolumeByMonth(clone $query),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->latest()
+            ->lazyById(500)
+            ->map(fn (Material $material) => [
+                $material->code,
+                $material->name,
+                $material->unit?->unit_name,
+                $material->unit_cost,
+                $material->minimum_stock,
+                $material->creator?->name,
+                $material->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'materials',
+            ['code', 'name', 'unit', 'unit_cost', 'minimum_stock', 'added_by', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Material::query()->with(['unit:id,unit_name', 'creator:id,name']);
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     /**

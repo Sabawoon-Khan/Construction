@@ -40,6 +40,7 @@ import SettingsAddButton from '@/components/SettingsAddButton.vue';
 import StatusChangeHistory from '@/components/StatusChangeHistory.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     Card,
     CardContent,
@@ -145,6 +146,9 @@ const tableRows = [
                     <MisCreateButton href="#" permission="users.create">{{
                         t('Create')
                     }}</MisCreateButton>
+                    <CreateButton href="#" permission="users.create">{{
+                        t('Create')
+                    }}</CreateButton>
                 </CardContent>
             </Card>
 

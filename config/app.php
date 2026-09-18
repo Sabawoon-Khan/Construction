@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Name (primary / non-English)
+    |--------------------------------------------------------------------------
+    |
+    | Used as the Dari/Persian brand fallback on public pages when the company
+    | profile has no primary name. Defaults to APP_NAME when unset.
+    |
+    */
+
+    'name_fa' => env('APP_NAME_FA', env('APP_NAME', 'Laravel')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

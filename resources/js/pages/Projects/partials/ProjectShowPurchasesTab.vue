@@ -4,7 +4,8 @@ import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
-import { MisMoneyStack, MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisMoneyStack, MisSearchInput } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -12,6 +13,7 @@ import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import StatusBadge from '@/components/StatusBadge.vue';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import { Input } from '@/components/ui/input';
 import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
@@ -187,6 +189,60 @@ function confirmPay() {
         },
     );
 }
+
+const materialExportHeaders = computed(() => [
+    t('Material'),
+    t('Purchases'),
+    t('Total qty'),
+    t('Total cost'),
+]);
+
+function mapMaterialExportRow(row: PurchaseMaterial): ExportCell[] {
+    return [
+        row.name,
+        row.purchase_count,
+        row.quantity,
+        row.total_cost_base,
+    ];
+}
+
+const materialExportRows = computed(() =>
+    (props.purchase_materials ?? []).map(mapMaterialExportRow),
+);
+const materialFilteredExportRows = computed(() =>
+    materialSort.sortedRows.map(mapMaterialExportRow),
+);
+
+const purchaseExportHeaders = computed(() => [
+    t('Purchase'),
+    t('Date'),
+    t('Supplier'),
+    t('Total'),
+    t('Remaining'),
+    t('Status'),
+    t('Created at'),
+]);
+
+function mapPurchaseExportRow(
+    purchase: NonNullable<typeof props.purchases>[number],
+): ExportCell[] {
+    return [
+        purchase.purchase_no,
+        formatDate(purchase.purchase_date),
+        purchase.supplier?.name || null,
+        Number(purchase.total_amount),
+        remainingOf(purchase),
+        purchase.status,
+        formatDate(purchase.created_at),
+    ];
+}
+
+const purchaseExportRows = computed(() =>
+    (props.purchases ?? []).map(mapPurchaseExportRow),
+);
+const purchaseFilteredExportRows = computed(() =>
+    purchaseSort.sortedRows.map(mapPurchaseExportRow),
+);
 </script>
 
 <template>
@@ -197,14 +253,22 @@ function confirmPay() {
             :description="t('Qty and cost by material for this project')"
         >
             <template #actions>
-                <Can permission="purchases.create">
-                    <Button as-child size="sm">
-                        <Link
-                            :href="`/purchases/create?project_id=${item.id}`"
-                            >{{ t('New purchase') }}</Link
-                        >
-                    </Button>
-                </Can>
+                
+            <MisTableActions
+                    :filename="`project-${item.id}-purchase-materials`"
+                    :headers="materialExportHeaders"
+                    :rows="materialExportRows"
+                    :filtered-rows="materialFilteredExportRows"
+                    :filters="{ search: materialQuery }"
+                >
+                <CreateButton
+                    :href="`/purchases/create?project_id=${item.id}`"
+                    permission="purchases.create"
+                >
+                    {{ t('New purchase') }}
+                </CreateButton>
+            </MisTableActions>
+        
             </template>
             <div class="border-b px-5 py-3">
                 <MisSearchInput
@@ -307,17 +371,6 @@ function confirmPay() {
                                     : t('No materials purchased yet')
                             "
                         >
-                            <template v-if="!materialQuery.trim()" #actions>
-                                <Can permission="purchases.create">
-                                    <Button as-child size="sm">
-                                        <Link
-                                            :href="`/purchases/create?project_id=${item.id}`"
-                                        >
-                                            {{ t('New purchase') }}
-                                        </Link>
-                                    </Button>
-                                </Can>
-                            </template>
                         </EmptyState>
                     </tbody>
                 </table>
@@ -325,6 +378,14 @@ function confirmPay() {
         </V2Panel>
 
         <V2Panel :padded="false" :title="t('Project purchases')">
+            <template #actions>
+                <MisTableActions
+                    :filename="`project-${item.id}-purchases`"
+                    :headers="purchaseExportHeaders"
+                    :rows="purchaseExportRows"
+                    :filtered-rows="purchaseFilteredExportRows"
+                />
+            </template>
             <TableFrame table-id="project-purchases" :columns="tableColumnsPurchases">
                 <table class="min-w-full text-sm">
                     <thead class="table-chrome-head text-start text-muted-foreground">
@@ -458,17 +519,6 @@ function confirmPay() {
                             :colspan="9"
                             :title="t('No purchases yet')"
                         >
-                            <template #actions>
-                                <Can permission="purchases.create">
-                                    <Button as-child size="sm">
-                                        <Link
-                                            :href="`/purchases/create?project_id=${item.id}`"
-                                        >
-                                            {{ t('New purchase') }}
-                                        </Link>
-                                    </Button>
-                                </Can>
-                            </template>
                         </EmptyState>
                     </tbody>
                 </table>

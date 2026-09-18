@@ -2,6 +2,8 @@
 import { Link } from '@inertiajs/vue3';
 import { Printer } from '@lucide/vue';
 import { computed } from 'vue';
+import { MisTableActions } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
@@ -10,6 +12,7 @@ import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
@@ -77,6 +80,60 @@ const { baseCurrency } = useCurrency();
 const calendar = useCalendar();
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
+
+const shareholderExportHeaders = computed(() => [
+    t('Name'),
+    t('Share'),
+    t('Money in'),
+    t('Profit share'),
+    t('Paid out'),
+    t('Still owed'),
+]);
+
+function mapShareholderExportRow(
+    s: (typeof props.shareholders)[number],
+): ExportCell[] {
+    return [
+        s.name,
+        s.ownership_percentage,
+        s.contributed_total,
+        s.entitled_share,
+        s.paid_total,
+        s.balance_owed,
+    ];
+}
+
+const shareholderExportRows = computed(() =>
+    props.shareholders.map(mapShareholderExportRow),
+);
+const shareholderFilteredExportRows = computed(() =>
+    shareholderSort.sortedRows.map(mapShareholderExportRow),
+);
+
+const contributionExportHeaders = computed(() => [
+    t('Date'),
+    t('Shareholder'),
+    t('Amount'),
+    t('Created at'),
+]);
+
+function mapContributionExportRow(
+    c: (typeof props.contributions)[number],
+): ExportCell[] {
+    return [
+        formatDate(c.invested_at),
+        c.partner?.name || null,
+        Number(c.amount),
+        formatDate(c.created_at),
+    ];
+}
+
+const contributionExportRows = computed(() =>
+    props.contributions.map(mapContributionExportRow),
+);
+const contributionFilteredExportRows = computed(() =>
+    contributionSort.sortedRows.map(mapContributionExportRow),
+);
 </script>
 
 <template>
@@ -88,6 +145,13 @@ const formatDate = (value: string | null | undefined) =>
             :description="t('Ownership, contributions and payouts')"
         >
             <template #actions>
+                
+            <MisTableActions
+                    :filename="`project-${item.id}-shareholders`"
+                    :headers="shareholderExportHeaders"
+                    :rows="shareholderExportRows"
+                    :filtered-rows="shareholderFilteredExportRows"
+                >
                 <Can permission="partners.create">
                     <Button
                         v-if="shareholders.length"
@@ -105,10 +169,15 @@ const formatDate = (value: string | null | undefined) =>
                     >
                         {{ t('Record payout') }}
                     </Button>
-                    <Button size="sm" @click="emit('add-shareholder')">
+                    <CreateButton
+                        permission="partners.create"
+                        @click="emit('add-shareholder')"
+                    >
                         {{ t('Add shareholder') }}
-                    </Button>
+                    </CreateButton>
                 </Can>
+            </MisTableActions>
+        
             </template>
 
             <TableFrame
@@ -202,16 +271,6 @@ const formatDate = (value: string | null | undefined) =>
                             :colspan="7"
                             :title="t('No shareholders yet')"
                         >
-                            <template #actions>
-                                <Can permission="partners.create">
-                                    <Button
-                                        size="sm"
-                                        @click="emit('add-shareholder')"
-                                    >
-                                        {{ t('Add shareholder') }}
-                                    </Button>
-                                </Can>
-                            </template>
                         </EmptyState>
                     </tbody>
                 </table>
@@ -224,6 +283,13 @@ const formatDate = (value: string | null | undefined) =>
             :title="t('Contribution history')"
         >
             <template #actions>
+                
+            <MisTableActions
+                    :filename="`project-${item.id}-contributions`"
+                    :headers="contributionExportHeaders"
+                    :rows="contributionExportRows"
+                    :filtered-rows="contributionFilteredExportRows"
+                >
                 <Can permission="partners.create">
                     <Button
                         v-if="shareholders.length"
@@ -234,6 +300,8 @@ const formatDate = (value: string | null | undefined) =>
                         {{ t('Record money in') }}
                     </Button>
                 </Can>
+            </MisTableActions>
+        
             </template>
             <TableFrame
                 table-id="project-contributions"
@@ -328,24 +396,6 @@ const formatDate = (value: string | null | undefined) =>
                             :colspan="6"
                             :title="t('No contributions yet')"
                         >
-                            <template #actions>
-                                <Can permission="partners.create">
-                                    <Button
-                                        v-if="shareholders.length"
-                                        size="sm"
-                                        @click="emit('record-contribution')"
-                                    >
-                                        {{ t('Record money in') }}
-                                    </Button>
-                                    <Button
-                                        v-else
-                                        size="sm"
-                                        @click="emit('add-shareholder')"
-                                    >
-                                        {{ t('Add shareholder') }}
-                                    </Button>
-                                </Can>
-                            </template>
                         </EmptyState>
                     </tbody>
                 </table>

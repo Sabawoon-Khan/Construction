@@ -5,7 +5,8 @@ import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisSearchInput  } from '@/components/mis';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -24,7 +25,7 @@ import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { translateStatus } from '@/lib/translateStatus';
-import { CalendarCheck, Plus, Trash2, UserCheck, UserX, Users } from '@lucide/vue';
+import { CalendarCheck, Trash2, UserCheck, UserX, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -169,15 +170,6 @@ function rowActions(item: Item): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('attendance.create')"
-                    href="/attendance/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Record attendance') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Status mix') }}</template>
@@ -225,8 +217,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${bar.value}`"
-                            >
+                                :title="`${bar.label}: ${bar.value}`">
                                 <div class="money-pair">
                                     <i
                                         class="usd"
@@ -282,6 +273,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="attendance"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Attendance')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -316,6 +308,9 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </label>
                     <template #columns>
+                        <MisTableActions export-url="/attendance/export" :filters="filters">
+                            <CreateButton href="/attendance/create" permission="attendance.create">{{ t('Record attendance') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -371,18 +366,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No attendance records')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('attendance.create')"
-                                    href="/attendance/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Record attendance') }}
-                                </Link>
-                            </template>
+                            :title="t('No attendance records')">
                         </EmptyState>
                     </tbody>
                 </table>

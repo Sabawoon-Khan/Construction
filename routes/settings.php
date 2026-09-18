@@ -140,7 +140,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('settings/trash', [TrashController::class, 'index'])->name('settings.trash.index');
     Route::post('settings/trash/restore', [TrashController::class, 'restore'])->name('settings.trash.restore');
-    Route::delete('settings/trash/item', [TrashController::class, 'forceDestroy'])->name('settings.trash.force-destroy');
+    Route::delete('settings/trash/item/{type}/{id}', [TrashController::class, 'forceDestroy'])->name('settings.trash.force-destroy');
     Route::delete('settings/trash', [TrashController::class, 'empty'])->name('settings.trash.empty');
 
     Route::get('settings/translations', [TranslationController::class, 'index'])->name('settings.translations.index');

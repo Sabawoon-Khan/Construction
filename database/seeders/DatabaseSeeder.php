@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
         $this->call(RolesAndPermissionsSeeder::class);
 
         $admin = User::query()->updateOrCreate(
-            ['email' => 'admin@example.com'],
+            ['email' => 'admin@yaqeen.tech'],
             [
-                'name' => 'Admin',
+                'name' => 'Yaqeen',
                 'password' => 'password',
                 'email_verified_at' => now(),
                 'is_active' => true,
@@ -26,18 +26,27 @@ class DatabaseSeeder extends Seeder
 
         $admin->syncRoles(['Owner']);
 
-        Company::query()->firstOrCreate(
-            ['name' => 'شاهین صمیم بارکزی'],
-            [
-                'name_en' => 'Shahin Samim Barakzai',
-                'legal_name' => 'شاهین صمیم بارکزی',
-                'base_currency' => 'USD',
-                'is_active' => true,
-            ],
-        );
+        $company = Company::query()->first();
+        $profile = [
+            'name' => 'یقین',
+            'name_en' => 'Yaqeen',
+            'legal_name' => 'یقین',
+            'registration_no' => 'YQN-CONST-1398-0412',
+            'phone' => '078 200 1010',
+            'email' => 'info@yaqeen.tech',
+            'address' => 'شهر نو، کابل، افغانستان',
+            'address_en' => 'Shahr-e-Naw, Kabul, Afghanistan',
+            'base_currency' => 'USD',
+            'is_active' => true,
+        ];
 
-        OrgSetting::setValue('app_name', 'شاهین صمیم بارکزی');
-        OrgSetting::setValue('app_name_en', 'Shahin Samim Barakzai');
+        if ($company) {
+            $company->update($profile);
+        } else {
+            $company = Company::query()->create($profile);
+        }
+
+        $company->syncBrandSettings();
         OrgSetting::setValue('default_locale', config('app.locale', 'fa'));
         OrgSetting::setValue('calendar_system', 'jalali');
 
@@ -45,10 +54,10 @@ class DatabaseSeeder extends Seeder
 
         app(NotificationService::class)->notifyUser(
             $admin,
-            'Welcome to the starter kit',
-            'You are signed in as Owner. Configure users, roles, and settings from the sidebar.',
+            'Welcome to Yaqeen',
+            'The demo is loaded with Kabul projects, buyers, staff, and money in/out. Sign in as Owner and walk the sidebar.',
             'success',
-            '/settings/general',
+            '/dashboard',
         );
     }
 }

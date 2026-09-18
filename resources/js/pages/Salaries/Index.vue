@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
@@ -7,6 +8,7 @@ import StatusBadge from '@/components/StatusBadge.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -28,7 +30,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { buildMoneyBars, compactMoneyByCurrency } from '@/lib/v2Money';
 import { money, moneyByCurrency } from '@/lib/utils';
-import { Banknote, CircleDollarSign, Plus, Printer, Trash2, Wallet } from '@lucide/vue';
+import { Banknote, CircleDollarSign, Printer, Trash2, Wallet } from '@lucide/vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -250,15 +252,6 @@ function rowActions(item: Item): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('salaries.create')"
-                    href="/salaries/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Payroll status') }}</template>
@@ -306,8 +299,7 @@ function rowActions(item: Item): RowActionItem[] {
                                         totals.net_by_currency,
                                         totals.net_total,
                                     )
-                                "
-                                >{{
+                                ">{{
                                     compactMoneyByCurrency(
                                         totals.net_by_currency,
                                         totals.net_total,
@@ -327,8 +319,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`"
-                            >
+                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`">
                                 <div class="money-pair">
                                     <i
                                         class="afn"
@@ -362,8 +353,7 @@ function rowActions(item: Item): RowActionItem[] {
                     <V2StatCard
                         :delay="1"
                         icon-tone="teal"
-                        :title="t('Basic total')"
-                    >
+                        :title="t('Basic total')">
                         <template #icon><Wallet /></template>
                         <span>{{ t('Basic total') }}</span>
                         <strong
@@ -372,8 +362,7 @@ function rowActions(item: Item): RowActionItem[] {
                                     totals.basic_by_currency,
                                     totals.basic_total,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.basic_by_currency,
                                     totals.basic_total,
@@ -385,8 +374,7 @@ function rowActions(item: Item): RowActionItem[] {
                         :delay="2"
                         accent
                         icon-tone="orange"
-                        :title="t('Net total')"
-                    >
+                        :title="t('Net total')">
                         <template #icon><Banknote /></template>
                         <span>{{ t('Net total') }}</span>
                         <strong
@@ -395,8 +383,7 @@ function rowActions(item: Item): RowActionItem[] {
                                     totals.net_by_currency,
                                     totals.net_total,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.net_by_currency,
                                     totals.net_total,
@@ -420,6 +407,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="salaries"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Salaries')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -473,6 +461,9 @@ function rowActions(item: Item): RowActionItem[] {
                         </option>
                     </V2SelectFilter>
                     <template #columns>
+                        <MisTableActions export-url="/salaries/export" :filters="filters">
+                            <CreateButton href="/salaries/create" permission="salaries.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -580,18 +571,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No salary records')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('salaries.create')"
-                                    href="/salaries/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Create') }}
-                                </Link>
-                            </template>
+                            :title="t('No salary records')">
                         </EmptyState>
                     </tbody>
                 </table>

@@ -1,67 +1,23 @@
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { Building2, Mail, MapPin, Phone } from '@lucide/vue';
-import { computed } from 'vue';
+import { usePublicCompany } from '@/composables/usePublicCompany';
 import { useTranslations } from '@/composables/useTranslations';
 
-type PublicCompany = {
-    name?: string | null;
-    name_primary?: string | null;
-    name_en?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    address?: string | null;
-};
-
-const page = usePage();
 const { t } = useTranslations();
-const publicCompany = computed(
-    () => (page.props.publicCompany as PublicCompany | null) ?? null,
-);
-const locale = computed(() => (page.props.locale as string) || 'en');
-const isEnglish = computed(() => locale.value === 'en');
-const brandEn = computed(
-    () =>
-        publicCompany.value?.name_en?.trim() ||
-        (isEnglish.value ? (page.props.name as string | undefined) : null) ||
-        'Shahin Samim Barakzai',
-);
-const brandFa = computed(
-    () =>
-        publicCompany.value?.name_primary?.trim() ||
-        (!isEnglish.value ? (page.props.name as string | undefined) : null) ||
-        'شاهین صمیم بارکزی',
-);
-const brandPrimary = computed(() =>
-    isEnglish.value ? brandEn.value : brandFa.value,
-);
-const brandSecondary = computed(() =>
-    isEnglish.value ? null : brandEn.value,
-);
+const {
+    brandPrimary,
+    brandSecondary,
+    contactEmail,
+    contactPhone,
+    contactAddress,
+} = usePublicCompany();
 const year = new Date().getFullYear();
 
 function lt(key: string, fallback: string): string {
     const value = t(key);
     return value === key ? fallback : value;
 }
-
-const contactEmail = computed(
-    () =>
-        publicCompany.value?.email?.trim() ||
-        lt('home.contact.emailPlaceholder', 'info@shahinsamimbarakzai.com'),
-);
-const contactPhone = computed(
-    () =>
-        publicCompany.value?.phone?.trim() ||
-        lt('home.contact.phonePlaceholder', '+93 70 000 0000'),
-);
-const contactAddress = computed(
-    () =>
-        publicCompany.value?.address?.trim() ||
-        lt('home.contact.addressPlaceholder', 'Kabul, Afghanistan'),
-);
-const hasRealEmail = computed(() => !!publicCompany.value?.email?.trim());
-const hasRealPhone = computed(() => !!publicCompany.value?.phone?.trim());
 </script>
 
 <template>
@@ -95,34 +51,26 @@ const hasRealPhone = computed(() => !!publicCompany.value?.phone?.trim());
 
             <div>
                 <h3>{{ lt('home.footer.contact', 'Contact') }}</h3>
-                <p class="construct-footer-line">
+                <p v-if="contactAddress" class="construct-footer-line">
                     <MapPin :size="14" />
                     <span>{{ contactAddress }}</span>
                 </p>
                 <a
-                    v-if="hasRealEmail"
+                    v-if="contactEmail"
                     class="construct-footer-line"
                     :href="`mailto:${contactEmail}`"
                 >
                     <Mail :size="14" />
                     <span>{{ contactEmail }}</span>
                 </a>
-                <p v-else class="construct-footer-line">
-                    <Mail :size="14" />
-                    <span>{{ contactEmail }}</span>
-                </p>
                 <a
-                    v-if="hasRealPhone"
+                    v-if="contactPhone"
                     class="construct-footer-line"
                     :href="`tel:${contactPhone.replace(/\s+/g, '')}`"
                 >
                     <Phone :size="14" />
                     <span>{{ contactPhone }}</span>
                 </a>
-                <p v-else class="construct-footer-line">
-                    <Phone :size="14" />
-                    <span>{{ contactPhone }}</span>
-                </p>
             </div>
         </div>
         <div class="construct-container construct-footer-copy">

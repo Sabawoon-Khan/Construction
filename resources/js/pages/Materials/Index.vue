@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisSearchInput  } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -23,9 +24,9 @@ import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
-import { Boxes, CheckCircle2, Package, Plus, TriangleAlert } from '@lucide/vue';
+import { Boxes, CheckCircle2, Package, TriangleAlert } from '@lucide/vue';
 import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
 
 type Item = Record<string, any>;
 
@@ -166,15 +167,6 @@ function rowActions(item: Item): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('materials.create')"
-                    href="/materials/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Status') }}</template>
@@ -225,8 +217,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 v-for="bar in volumeBars"
                                 :key="bar.key"
                                 class="pipeline-col"
-                                :title="`${bar.label}: ${bar.count}`"
-                            >
+                                :title="`${bar.label}: ${bar.count}`">
                                 <b>{{ bar.count }}</b>
                                 <i
                                     :style="{
@@ -285,6 +276,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="materials"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Materials')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -296,6 +288,9 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </div>
                     <template #columns>
+                        <MisTableActions export-url="/materials/export" :filters="filters">
+                            <CreateButton href="/materials/create" permission="materials.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -373,18 +368,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No materials yet')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('materials.create')"
-                                    href="/materials/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Create') }}
-                                </Link>
-                            </template>
+                            :title="t('No materials yet')">
                         </EmptyState>
                     </tbody>
                 </table>

@@ -203,6 +203,42 @@ class OrgSetting extends Model
     }
 
     /**
+     * Overlay database brand names onto runtime config so mail, print, and titles follow the UI.
+     */
+    public static function applyBrandToConfig(): void
+    {
+        $primary = static::getValue('app_name');
+        $english = static::getValue('app_name_en');
+
+        if (is_string($primary) && $primary !== '') {
+            config(['app.name_fa' => $primary]);
+        }
+
+        if (is_string($english) && $english !== '') {
+            config(['app.name' => $english]);
+        } elseif (is_string($primary) && $primary !== '') {
+            config(['app.name' => $primary]);
+        }
+    }
+
+    /**
+     * Keep the company profile in lockstep with branding names from Appearance.
+     */
+    public static function syncCompanyNames(string $name, ?string $nameEn = null): void
+    {
+        $company = Company::query()->first();
+
+        if ($company === null) {
+            return;
+        }
+
+        $company->update([
+            'name' => $name,
+            'name_en' => filled($nameEn) ? $nameEn : null,
+        ]);
+    }
+
+    /**
      * @return array{app_name: string, app_name_en: string, default_locale: string, calendar_system: string, logo_url: string|null, favicon_url: string|null}
      */
     public static function general(): array

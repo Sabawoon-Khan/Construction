@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Models\ExpenseCategory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,33 +15,21 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseCategoryController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'expenses';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
 
     public function index(Request $request): Response
     {
         $search = $request->string('search')->toString();
 
-        ExpenseCategory::ensureDefaults();
-
-        $query = ExpenseCategory::query()
-            ->with('creator:id,name')
-            ->withCount('expenses')
-            ->whereNotIn('id', ExpenseCategory::materialIds())
-            ->orderBy('name');
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('code', 'like', "%{$search}%");
-            });
-        }
-
-        $items = $query->get(['id', 'name', 'code', 'description', 'is_active', 'user_id', 'created_at']);
+        $items = $this->indexQuery($request)->get(['id', 'name', 'code', 'description', 'is_active', 'user_id', 'created_at']);
         $used = $items->filter(fn ($item) => (int) ($item->expenses_count ?? 0) > 0)->count();
         $active = $items->filter(fn ($item) => (bool) ($item->is_active ?? true))->count();
         $count = $items->count();
@@ -65,6 +56,49 @@ class ExpenseCategoryController extends Controller implements HasMiddleware
                 ])
                 ->all(),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->lazyById(500)
+            ->map(fn (ExpenseCategory $category) => [
+                $category->name,
+                $category->code,
+                $category->expenses_count,
+                $category->is_active ? 'yes' : 'no',
+                $category->creator?->name,
+                $category->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'expense-categories',
+            ['name', 'code', 'expenses_count', 'active', 'added_by', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        ExpenseCategory::ensureDefaults();
+
+        $query = ExpenseCategory::query()
+            ->with('creator:id,name')
+            ->withCount('expenses')
+            ->whereNotIn('id', ExpenseCategory::materialIds())
+            ->orderBy('name');
+
+        if ($applyFilters && ($search = $request->string('search')->toString()) !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse

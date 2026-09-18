@@ -3,6 +3,8 @@ import { Link, router } from '@inertiajs/vue3';
 import { Eye, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
+import { MisTableActions } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
@@ -11,6 +13,7 @@ import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import { useCalendar } from '@/composables/useCalendar';
@@ -94,6 +97,43 @@ function removeEmployee() {
         },
     });
 }
+
+const employeeExportHeaders = computed(() => [
+    t('Employee No'),
+    t('Name'),
+    t('Role on project'),
+    t('Started on project'),
+    t('Working hours'),
+    t('Department'),
+    t('Basic Salary'),
+    t('Status'),
+    t('Notes'),
+    t('Created at'),
+]);
+
+function mapEmployeeExportRow(
+    employee: (typeof props.employees)[number],
+): ExportCell[] {
+    return [
+        employee.employee_no || null,
+        employee.name,
+        employee.role_on_project || null,
+        formatDate(employee.started_at),
+        employee.working_hours || null,
+        employee.department || null,
+        employee.basic_salary ?? null,
+        employee.status || null,
+        employee.notes || null,
+        formatDate(employee.created_at),
+    ];
+}
+
+const employeeExportRows = computed(() =>
+    props.employees.map(mapEmployeeExportRow),
+);
+const employeeFilteredExportRows = computed(() =>
+    sortedRows.value.map(mapEmployeeExportRow),
+);
 </script>
 
 <template>
@@ -103,11 +143,21 @@ function removeEmployee() {
         :description="t('Staff assigned to this project')"
     >
         <template #actions>
-            <Can permission="employees.edit">
-                <Button size="sm" @click="emit('add-employee')">
-                    {{ t('Add employee') }}
-                </Button>
-            </Can>
+            
+            <MisTableActions
+                :filename="`project-${item.id}-employees`"
+                :headers="employeeExportHeaders"
+                :rows="employeeExportRows"
+                :filtered-rows="employeeFilteredExportRows"
+            >
+                <CreateButton
+                permission="employees.edit"
+                @click="emit('add-employee')"
+            >
+                {{ t('Add employee') }}
+            </CreateButton>
+            </MisTableActions>
+        
         </template>
 
         <TableFrame table-id="project-employees" :columns="tableColumns">
@@ -244,17 +294,7 @@ function removeEmployee() {
                         :colspan="12"
                         :title="t('No employees assigned yet')"
                     >
-                        <template #actions>
-                            <Can permission="employees.edit">
-                                <Button
-                                    size="sm"
-                                    @click="emit('add-employee')"
-                                >
-                                    {{ t('Add employee') }}
-                                </Button>
-                            </Can>
-                        </template>
-                    </EmptyState>
+                        </EmptyState>
                 </tbody>
             </table>
         </TableFrame>

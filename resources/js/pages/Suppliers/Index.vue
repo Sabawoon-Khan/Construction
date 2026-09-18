@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -24,7 +26,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { buildMoneyBars, buildShareSegments, compactMoneyByCurrency } from '@/lib/v2Money';
 import { moneyByCurrency } from '@/lib/utils';
-import { Banknote, Plus, Truck, Wallet } from '@lucide/vue';
+import { Banknote, Truck, Wallet } from '@lucide/vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -87,7 +89,6 @@ function rowActions(item: Item): RowActionItem[] {
             <template #title>{{ t('Suppliers') }}</template>
             <template #description>{{ t('Vendor roster with purchase totals, paid balance, and monthly volume.') }}</template>
             <template #side>
-                <Link v-if="can('suppliers.create')" href="/suppliers/create" class="create-btn"><Plus />{{ t('Create') }}</Link>
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Payables') }}</template>
@@ -113,13 +114,18 @@ function rowActions(item: Item): RowActionItem[] {
                 </V2StatGrid>
             </template>
         </V2Hero>
-        <V2TablePanel table-id="suppliers" :columns="tableColumns" :pending="pending && items.data.length > 0">
+        <V2TablePanel table-id="suppliers" :columns="tableColumns" :pending="pending && items.data.length > 0" :print-title="t('Suppliers')">
             <template #filters>
                 <V2FilterBar>
                     <div class="filter-search">
                         <MisSearchInput v-model="filters.search" :placeholder="t('Search suppliers...')" />
                     </div>
-                    <template #columns><TableToolbar /></template>
+                    <template #columns>
+                        <MisTableActions export-url="/suppliers/export" :filters="filters">
+                            <CreateButton href="/suppliers/create" permission="suppliers.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
+                        <TableToolbar />
+                    </template>
                 </V2FilterBar>
             </template>
             <template #default="{ visibleColCount }">
@@ -134,7 +140,8 @@ function rowActions(item: Item): RowActionItem[] {
                             <td class="muted">{{ item.creator?.name || '—' }}</td><td class="muted nowrap">{{ formatDate(item.created_at) }}</td>
                             <td class="end"><RowActionsMenu :actions="rowActions(item)" /></td>
                         </tr>
-                        <EmptyState v-if="!items.data.length" :colspan="visibleColCount" :title="t('No suppliers yet')"><template #actions><Link v-if="can('suppliers.create')" href="/suppliers/create" class="create-btn"><Plus />{{ t('Create') }}</Link></template></EmptyState>
+                        <EmptyState v-if="!items.data.length" :colspan="visibleColCount" :title="t('No suppliers yet')">
+                        </EmptyState>
                     </tbody>
                 </table>
             </template>

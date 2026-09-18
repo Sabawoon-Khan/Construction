@@ -4,9 +4,7 @@ import {
     ChevronLeft,
     ChevronRight,
     CircleDollarSign,
-    FileSpreadsheet,
     PieChart,
-    Printer,
     Receipt,
     TrendingDown,
     TrendingUp,
@@ -21,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     MisChartCard,
+    MisPrintFooter,
+    MisPrintLetterhead,
+    MisTableActions,
     MisFilterBar,
     MisLoadingState,
     MisPageHeader,
@@ -35,7 +36,6 @@ import { useMisFilters } from '@/composables/useMisFilters';
 import { useTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { formatNumber, money } from '@/lib/utils';
-
 const props = defineProps<{
     filters: { from: string; to: string; project_id?: number | null; preset?: string; currency?: string };
     restricted?: boolean;
@@ -335,21 +335,6 @@ function applyPreset(preset?: string) {
     });
 }
 
-function exportUrl(format: string) {
-    const params = new URLSearchParams({
-        format,
-        preset: String(filters.preset || props.filters.preset || 'custom'),
-        from: String(filters.from || ''),
-        to: String(filters.to || ''),
-    });
-
-    if (filters.project_id) {
-        params.set('project_id', String(filters.project_id));
-    }
-
-    return `/reports/export?${params.toString()}`;
-}
-
 const activePreset = computed(() => filters.preset || props.filters.preset || 'custom');
 </script>
 
@@ -357,28 +342,14 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
     <Head :title="t('Reports')" />
 
     <div class="print-document mx-auto flex h-full w-full max-w-[1600px] flex-1 flex-col gap-5 p-4 md:p-6 print:gap-4 print:p-0">
+        <MisPrintLetterhead class="hidden print:block" :title="t('Reports')" :subtitle="periodLabel" />
         <MisPageHeader
             :title="t('Reports')"
             :description="periodLabel ? `${t('Period summary')} · ${periodLabel}` : t('Period summary')"
             class="print:hidden"
         >
             <template #actions>
-                <Button as-child variant="outline" size="sm">
-                    <a :href="exportUrl('xlsx')" class="inline-flex items-center gap-2">
-                        <FileSpreadsheet class="size-4" />
-                        {{ t('Excel') }}
-                    </a>
-                </Button>
-                <Button as-child size="sm">
-                    <a
-                        :href="exportUrl('print').replace('/reports/export', '/reports/print')"
-                        target="_blank"
-                        class="inline-flex items-center gap-2"
-                    >
-                        <Printer class="size-4" />
-                        {{ t('Print / PDF') }}
-                    </a>
-                </Button>
+                <MisTableActions export-url="/reports/export" :filters="filters" />
             </template>
         </MisPageHeader>
 
@@ -1127,6 +1098,7 @@ const activePreset = computed(() => filters.preset || props.filters.preset || 'c
                 </div>
             </div>
         </template>
+        <MisPrintFooter class="hidden print:flex" />
     </div>
 </template>
 

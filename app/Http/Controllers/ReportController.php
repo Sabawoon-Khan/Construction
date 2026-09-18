@@ -23,6 +23,7 @@ class ReportController extends Controller
 {
     use ExportsSpreadsheet;
     use RendersPrintView;
+    use Concerns\ResolvesExportScope;
 
     public function index(Request $request): InertiaResponse
     {
@@ -34,6 +35,16 @@ class ReportController extends Controller
     public function export(Request $request): StreamedResponse
     {
         abort_unless($request->user()?->can('dashboard.view'), 403);
+        abort_unless(config('kit.features.exports'), 404);
+
+        if (! $this->exportAppliesFilters($request)) {
+            $request->merge([
+                'preset' => 'all',
+                'project_id' => null,
+                'from' => null,
+                'to' => null,
+            ]);
+        }
 
         $data = $this->payload($request);
         $restricted = $request->user()?->isRestrictedShareholder() ?? false;
@@ -89,7 +100,7 @@ class ReportController extends Controller
             'mis-report-'.$data['filters']['from'].'-to-'.$data['filters']['to'],
             ['Col A', 'Col B', 'Col C', 'Col D', 'Col E'],
             $rows,
-            $request->string('format')->toString() ?: 'xlsx',
+            $this->exportFormat($request),
         );
     }
 

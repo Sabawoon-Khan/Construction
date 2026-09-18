@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -7,6 +8,7 @@ import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -25,7 +27,7 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { buildMoneyBars, compactMoneyByCurrency } from '@/lib/v2Money';
 import { money, moneyByCurrency } from '@/lib/utils';
-import { Banknote, Plus, ShoppingBag, Users, Wallet } from '@lucide/vue';
+import { Banknote, ShoppingBag, Users, Wallet } from '@lucide/vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -173,15 +175,6 @@ function rowActions(item: Item): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('customers.create')"
-                    href="/customers/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Coverage') }}</template>
@@ -228,8 +221,7 @@ function rowActions(item: Item): RowActionItem[] {
                                         totals.sales_by_currency,
                                         totals.sales_total,
                                     )
-                                "
-                                >{{
+                                ">{{
                                     compactMoneyByCurrency(
                                         totals.sales_by_currency,
                                         totals.sales_total,
@@ -249,8 +241,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`"
-                            >
+                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`">
                                 <div class="money-pair">
                                     <i
                                         class="afn"
@@ -292,8 +283,7 @@ function rowActions(item: Item): RowActionItem[] {
                     <V2StatCard
                         :delay="2"
                         icon-tone="warm"
-                        :title="t('Sales total')"
-                    >
+                        :title="t('Sales total')">
                         <template #icon><Wallet /></template>
                         <span>{{ t('Sales total') }}</span>
                         <strong
@@ -302,8 +292,7 @@ function rowActions(item: Item): RowActionItem[] {
                                     totals.sales_by_currency,
                                     totals.sales_total,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.sales_by_currency,
                                     totals.sales_total,
@@ -315,8 +304,7 @@ function rowActions(item: Item): RowActionItem[] {
                         :delay="3"
                         accent
                         icon-tone="orange"
-                        :title="t('Payments received')"
-                    >
+                        :title="t('Payments received')">
                         <template #icon><Banknote /></template>
                         <span>{{ t('Payments received') }}</span>
                         <strong
@@ -325,8 +313,7 @@ function rowActions(item: Item): RowActionItem[] {
                                     totals.payments_by_currency,
                                     totals.payments_total,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.payments_by_currency,
                                     totals.payments_total,
@@ -342,6 +329,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="customers"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Customers')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -352,6 +340,9 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </div>
                     <template #columns>
+                        <MisTableActions export-url="/customers/export" :filters="filters">
+                            <CreateButton href="/customers/create" permission="customers.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -467,18 +458,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No customers yet')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('customers.create')"
-                                    href="/customers/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Create') }}
-                                </Link>
-                            </template>
+                            :title="t('No customers yet')">
                         </EmptyState>
                     </tbody>
                 </table>

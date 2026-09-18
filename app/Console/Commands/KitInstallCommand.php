@@ -60,7 +60,7 @@ class KitInstallCommand extends Command
 
         $this->newLine();
         $this->info('Done. Next: npm install && npm run build && php artisan serve');
-        $this->line('Login: admin@example.com / password');
+        $this->line('Login: admin@yaqeen.tech / password');
 
         return self::SUCCESS;
     }

@@ -73,16 +73,25 @@ class TrashController extends Controller
         return back()->with('success', __('Item restored from trash.'));
     }
 
-    public function forceDestroy(Request $request, TrashRegistry $trash): RedirectResponse
+    public function forceDestroy(Request $request, TrashRegistry $trash, string $type, string $id): RedirectResponse
     {
         $this->authorizePermission($request, 'trash.delete');
 
-        $validated = $request->validate([
-            'type' => ['required', 'string', Rule::in(array_column($trash->types(), 'key'))],
-            'id' => ['required'],
-        ]);
+        $validated = validator(
+            ['type' => $type, 'id' => $id],
+            [
+                'type' => ['required', 'string', Rule::in(array_column($trash->types(), 'key'))],
+                'id' => ['required'],
+            ],
+        )->validate();
 
-        $trash->forceDestroy($validated['type'], $validated['id']);
+        try {
+            $trash->forceDestroy($validated['type'], $validated['id']);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', __('Could not permanently delete this item. It may still be linked to other records.'));
+        }
 
         return back()->with('success', __('Item permanently deleted.'));
     }

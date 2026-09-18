@@ -121,10 +121,7 @@
         }
     </style>
 
-    <link rel="icon" href="{{ \App\Models\OrgSetting::faviconUrl() ?? '/favicon.ico' }}" sizes="any">
-    @if (! \App\Models\OrgSetting::faviconUrl())
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    @endif
+    <link rel="icon" href="{{ \App\Models\OrgSetting::faviconUrl() ?? '/favicon.png' }}" type="image/png" sizes="any">
 
     <title>@yield('title', config('app.name', 'Laravel'))</title>
 </head>

@@ -2,35 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Models\ExpenseUnit;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseUnitController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'expenses';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
 
     public function index(Request $request): Response
     {
         $search = $request->string('search')->toString();
 
-        $query = ExpenseUnit::query()
-            ->with('creator:id,name')
-            ->withCount('expenses')
-            ->latest();
-
-        if ($search !== '') {
-            $query->where('unit_name', 'like', "%{$search}%");
-        }
-
-        $items = $query->get(['id', 'unit_name', 'user_id', 'created_at']);
+        $items = $this->indexQuery($request)->get(['id', 'unit_name', 'user_id', 'created_at']);
         $used = $items->filter(fn ($item) => (int) ($item->expenses_count ?? 0) > 0)->count();
         $count = $items->count();
         $expensesLinked = (int) $items->sum('expenses_count');
@@ -55,6 +52,41 @@ class ExpenseUnitController extends Controller implements HasMiddleware
                 ])
                 ->all(),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->lazyById(500)
+            ->map(fn (ExpenseUnit $unit) => [
+                $unit->unit_name,
+                $unit->expenses_count,
+                $unit->creator?->name,
+                $unit->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'expense-units',
+            ['unit_name', 'expenses_count', 'added_by', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = ExpenseUnit::query()
+            ->with('creator:id,name')
+            ->withCount('expenses')
+            ->latest();
+
+        if ($applyFilters && ($search = $request->string('search')->toString()) !== '') {
+            $query->where('unit_name', 'like', "%{$search}%");
+        }
+
+        return $query;
     }
 
     public function store(Request $request): RedirectResponse

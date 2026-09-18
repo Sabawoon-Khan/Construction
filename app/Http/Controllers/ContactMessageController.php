@@ -2,40 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Models\ContactMessage;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContactMessageController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'contact_messages';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
 
     public function index(Request $request): Response
     {
-        $query = ContactMessage::query()->latest();
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('message', 'like', "%{$search}%");
-            });
-        }
-
+        $search = $request->string('search')->toString();
         $status = $request->string('status')->toString();
-        if ($status === 'unread') {
-            $query->unread();
-        } elseif ($status === 'read') {
-            $query->whereNotNull('read_at');
-        }
+        $query = $this->indexQuery($request);
 
         $count = ContactMessage::query()->count();
         $unread = ContactMessage::query()->unread()->count();
@@ -54,6 +46,56 @@ class ContactMessageController extends Controller implements HasMiddleware
             'totals' => $totals,
             'volumeChart' => $this->messagesByMonth(),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->lazyById(500)
+            ->map(fn (ContactMessage $message) => [
+                $message->name,
+                $message->email,
+                $message->phone,
+                $message->message,
+                $message->read_at ? 'read' : 'unread',
+                $message->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'contact-messages',
+            ['name', 'email', 'phone', 'message', 'status', 'created_at'],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = ContactMessage::query()->latest();
+
+        if (! $applyFilters) {
+            return $query;
+        }
+
+        if ($search = $request->string('search')->toString()) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
+
+        $status = $request->string('status')->toString();
+        if ($status === 'unread') {
+            $query->unread();
+        } elseif ($status === 'read') {
+            $query->whereNotNull('read_at');
+        }
+
+        return $query;
     }
 
     public function show(ContactMessage $contactMessage): Response

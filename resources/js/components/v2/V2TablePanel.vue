@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, toRef } from 'vue';
+import MisPrintFooter from '@/components/mis/MisPrintFooter.vue';
+import MisPrintLetterhead from '@/components/mis/MisPrintLetterhead.vue';
 import {
     provideTableColumns,
     type TableColumnDef,
@@ -11,10 +13,15 @@ const props = withDefaults(
         tableId: string;
         columns: TableColumnDef[];
         delay?: boolean;
+        /** Title shown on the A4 print letterhead. */
+        printTitle?: string;
+        printSubtitle?: string;
     }>(),
     {
         pending: false,
         delay: true,
+        printTitle: undefined,
+        printSubtitle: undefined,
     },
 );
 
@@ -42,13 +49,23 @@ defineExpose({
 
 <template>
     <section
-        class="table-panel reveal"
+        class="table-panel reveal print-target print-sheet"
         :class="{ delay, pending }"
     >
-        <slot name="filters" :visible-col-count="visibleColCount" />
-        <div class="table-wrap" :class="hideColumnClasses">
+        <MisPrintLetterhead
+            class="hidden print:block"
+            :title="printTitle"
+            :subtitle="printSubtitle"
+        />
+        <div class="print:hidden">
+            <slot name="filters" :visible-col-count="visibleColCount" />
+        </div>
+        <div class="table-wrap print-sheet-body" :class="hideColumnClasses">
             <slot :visible-col-count="visibleColCount" />
         </div>
-        <slot name="pager" :visible-col-count="visibleColCount" />
+        <div class="print:hidden">
+            <slot name="pager" :visible-col-count="visibleColCount" />
+        </div>
+        <MisPrintFooter class="hidden print:flex" />
     </section>
 </template>

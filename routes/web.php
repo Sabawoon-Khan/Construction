@@ -90,10 +90,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/attachments/{attachment}/download', [AttachmentController::class, 'download'])->name('attachments.download');
     Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
+    Route::get('field-reports/export', [FieldReportController::class, 'export'])->name('field-reports.export');
     Route::resource('field-reports', FieldReportController::class)
         ->parameters(['field-reports' => 'fieldReport'])
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show']);
 
+    Route::get('projects/export', [ProjectController::class, 'export'])->name('projects.export');
     Route::resource('projects', ProjectController::class);
     Route::post('projects/{project}/expenses', [ProjectController::class, 'storeExpense'])
         ->middleware('permission:expenses.create')
@@ -128,33 +130,51 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('projects/{project}/loans/{loan}/pay', [ProjectController::class, 'payLoan'])
         ->middleware('permission:loans.edit')
         ->name('projects.loans.pay');
+    Route::get('units/export', [UnitController::class, 'export'])->name('units.export');
     Route::resource('units', UnitController::class);
+    Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
     Route::resource('customers', CustomerController::class);
+    Route::get('partners/export', [PartnerController::class, 'export'])->name('partners.export');
     Route::resource('partners', PartnerController::class);
+    Route::get('suppliers/export', [SupplierController::class, 'export'])->name('suppliers.export');
     Route::resource('suppliers', SupplierController::class);
+    Route::get('materials/export', [MaterialController::class, 'export'])->name('materials.export');
     Route::resource('materials', MaterialController::class)->except(['show']);
+    Route::get('portfolio/export', [PortfolioProjectController::class, 'export'])->name('portfolio.export');
     Route::resource('portfolio', PortfolioProjectController::class)
         ->parameters(['portfolio' => 'portfolio'])
         ->except(['show']);
+    Route::get('contact-messages/export', [ContactMessageController::class, 'export'])->name('contact-messages.export');
     Route::resource('contact-messages', ContactMessageController::class)
         ->only(['index', 'show', 'destroy']);
+    Route::get('purchases/export', [PurchaseController::class, 'export'])->name('purchases.export');
     Route::resource('purchases', PurchaseController::class);
     Route::post('purchases/{purchase}/pay', [PurchaseController::class, 'pay'])
         ->name('purchases.pay');
+    Route::get('inventory/export', [InventoryController::class, 'export'])->name('inventory.export');
     Route::resource('inventory', InventoryController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['inventory' => 'inventoryTransaction']);
+    Route::get('expenses/export', [ExpenseController::class, 'export'])->name('expenses.export');
     Route::resource('expenses', ExpenseController::class);
+    Route::get('expense-categories/export', [ExpenseCategoryController::class, 'export'])->name('expense-categories.export');
     Route::resource('expense-categories', ExpenseCategoryController::class)->except(['create', 'edit', 'show']);
+    Route::get('expense-units/export', [ExpenseUnitController::class, 'export'])->name('expense-units.export');
     Route::resource('expense-units', ExpenseUnitController::class)->except(['create', 'edit', 'show']);
+    Route::get('incomes/export', [IncomeController::class, 'export'])->name('incomes.export');
     Route::resource('incomes', IncomeController::class);
+    Route::get('sales/export', [SaleController::class, 'export'])->name('sales.export');
     Route::resource('sales', SaleController::class);
     Route::post('sales/{sale}/installments/{installment}/pay', [SaleController::class, 'payInstallment'])
         ->middleware('permission:sales.edit')
         ->name('sales.installments.pay');
+    Route::get('payments/export', [PaymentController::class, 'export'])->name('payments.export');
     Route::resource('payments', PaymentController::class)->only(['index', 'show']);
+    Route::get('employees/export', [EmployeeController::class, 'export'])->name('employees.export');
     Route::resource('employees', EmployeeController::class);
+    Route::get('attendance/export', [AttendanceController::class, 'export'])->name('attendance.export');
     Route::resource('attendance', AttendanceController::class);
+    Route::get('salaries/export', [SalaryController::class, 'export'])->name('salaries.export');
     Route::resource('salaries', SalaryController::class);
 
     Route::post('/ai/assist', AiAssistController::class)

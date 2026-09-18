@@ -36,13 +36,14 @@ class TranslationController extends Controller
         }
 
         $search = $request->string('search')->trim()->toString() ?: null;
+        $perPage = str_starts_with((string) $search, 'home.') ? 100 : 50;
 
         return Inertia::render('settings/Translations/Index', [
             'entries' => $this->translations->paginate(
                 $locale,
                 $search,
                 max(1, $request->integer('page', 1)),
-                50,
+                $perPage,
             ),
             'editingLocale' => $locale,
             'filters' => [

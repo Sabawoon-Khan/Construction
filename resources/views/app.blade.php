@@ -118,10 +118,9 @@
             }
         </style>
 
-        <link rel="icon" href="{{ \App\Models\OrgSetting::faviconUrl() ?? '/favicon.ico' }}" sizes="any">
+        <link rel="icon" href="{{ \App\Models\OrgSetting::faviconUrl() ?? '/favicon.png' }}" type="image/png" sizes="any">
         @if (! \App\Models\OrgSetting::faviconUrl())
-            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+            <link rel="apple-touch-icon" href="/favicon.png">
         @endif
         @if (\App\Support\OfflineSettings::pwaEnabled())
             <link rel="manifest" href="/manifest.webmanifest">
@@ -139,7 +138,7 @@
 
         @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ \App\Models\OrgSetting::appName() }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

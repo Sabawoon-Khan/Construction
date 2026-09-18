@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Employee;
 use App\Models\Salary;
@@ -10,45 +12,30 @@ use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SalaryController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'salaries';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Salary::query()->with(['employee:id,name,employee_no', 'creator:id,name']);
         $search = $request->string('search')->toString();
-
-        if ($employeeId = $request->integer('employee_id')) {
-            $query->where('employee_id', $employeeId);
-        }
-
-        if ($month = $request->integer('month')) {
-            $query->where('month', $month);
-        }
-
-        if ($year = $request->integer('year')) {
-            $query->where('year', $year);
-        }
-
-        if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('status', 'like', "%{$search}%")
-                    ->orWhereHas('employee', function ($employee) use ($search) {
-                        $employee->where('name', 'like', "%{$search}%")
-                            ->orWhere('employee_no', 'like', "%{$search}%");
-                    });
-            });
-        }
+        $employeeId = $request->integer('employee_id');
+        $month = $request->integer('month');
+        $year = $request->integer('year');
+        $query = $this->indexQuery($request);
 
         $paidQuery = (clone $query)->where('status', 'paid');
         $pendingQuery = (clone $query)->where('status', '!=', 'paid');
@@ -87,6 +74,70 @@ class SalaryController extends Controller implements HasMiddleware
             'moneyChart' => $this->salariesByMonth(clone $query),
             'employees' => Employee::query()->where('status', 'active')->orderBy('name')->get(['id', 'name', 'employee_no', 'basic_salary', 'currency']),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->latest('year')
+            ->latest('month')
+            ->lazyById(500)
+            ->map(fn (Salary $salary) => [
+                $salary->employee?->name,
+                $salary->year.'-'.str_pad((string) $salary->month, 2, '0', STR_PAD_LEFT),
+                $salary->basic_salary,
+                $salary->bonus,
+                $salary->deduction,
+                $salary->net_salary,
+                $salary->status,
+                $salary->creator?->name,
+                $salary->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'salaries',
+            [
+                'employee', 'period', 'basic_salary', 'bonus', 'deduction',
+                'net_salary', 'status', 'added_by', 'created_at',
+            ],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Salary::query()->with(['employee:id,name,employee_no', 'creator:id,name']);
+
+        if (! $applyFilters) {
+            return $query;
+        }
+
+        if ($employeeId = $request->integer('employee_id')) {
+            $query->where('employee_id', $employeeId);
+        }
+
+        if ($month = $request->integer('month')) {
+            $query->where('month', $month);
+        }
+
+        if ($year = $request->integer('year')) {
+            $query->where('year', $year);
+        }
+
+        if ($search = $request->string('search')->toString()) {
+            $query->where(function ($q) use ($search) {
+                $q->where('status', 'like', "%{$search}%")
+                    ->orWhereHas('employee', function ($employee) use ($search) {
+                        $employee->where('name', 'like', "%{$search}%")
+                            ->orWhere('employee_no', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return $query;
     }
 
     /**

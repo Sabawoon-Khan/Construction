@@ -95,18 +95,40 @@ const saveTranslations = (): void => {
 const hasSearch = computed(
     () => (props.filters.search?.trim().length ?? 0) > 0,
 );
+
+const isWebsiteCopy = computed(
+    () => (props.filters.search ?? '').startsWith('home.'),
+);
+
+function websiteCopyHref(locale = props.editingLocale): string {
+    const params = new URLSearchParams();
+    params.set('search', 'home.');
+    params.set('locale', locale);
+    return `/settings/translations?${params.toString()}`;
+}
+
+function usesWideEditor(key: string): boolean {
+    return key.startsWith('home.');
+}
 </script>
 
 <template>
-    <Head :title="t('Translations')" />
+    <Head :title="isWebsiteCopy ? t('Website copy') : t('Translations')" />
 
     <Card>
         <CardHeader class="space-y-4 border-b pb-4">
             <div class="flex flex-col gap-1">
                 <CardTitle class="flex items-center gap-2 text-base">
                     <Languages class="size-4" />
-                    {{ t('Translations') }}
+                    {{ isWebsiteCopy ? t('Website copy') : t('Translations') }}
                 </CardTitle>
+                <p class="text-sm text-muted-foreground">
+                    {{
+                        isWebsiteCopy
+                            ? t('Edit public homepage text for English and Dari.')
+                            : t('Search home. to edit public website copy.')
+                    }}
+                </p>
             </div>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -129,6 +151,17 @@ const hasSearch = computed(
                 </div>
 
                 <div class="flex flex-1 items-center gap-2 sm:max-w-md sm:justify-end">
+                    <a
+                        :href="websiteCopyHref()"
+                        :class="[
+                            'shrink-0 rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                            isWebsiteCopy
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:text-foreground',
+                        ]"
+                    >
+                        {{ t('Website copy') }}
+                    </a>
                     <form
                         method="get"
                         action="/settings/translations"
@@ -216,7 +249,15 @@ const hasSearch = computed(
                                     </div>
                                 </td>
                                 <td class="px-3 py-0.5 align-middle">
+                                    <textarea
+                                        v-if="usesWideEditor(entry.key)"
+                                        :id="`translation-${index}`"
+                                        v-model="formValues[entry.key]"
+                                        rows="2"
+                                        class="min-h-14 w-full resize-y rounded-md border border-transparent bg-transparent px-2 py-1.5 text-xs leading-relaxed shadow-none outline-none focus-visible:border-input focus-visible:bg-background sm:text-sm"
+                                    />
                                     <Input
+                                        v-else
                                         :id="`translation-${index}`"
                                         v-model="formValues[entry.key]"
                                         class="h-7 border-transparent bg-transparent px-2 text-xs shadow-none focus-visible:border-input focus-visible:bg-background sm:text-sm"

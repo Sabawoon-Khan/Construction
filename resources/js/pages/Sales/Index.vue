@@ -6,7 +6,9 @@ import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -29,7 +31,6 @@ import { money, moneyByCurrency } from '@/lib/utils';
 import {
     Banknote,
     FileText,
-    Plus,
     Printer,
     Wallet,
 } from '@lucide/vue';
@@ -205,15 +206,6 @@ function rowActions(item: Item): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('sales.create')"
-                    href="/sales/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Collection') }}</template>
@@ -265,8 +257,7 @@ function rowActions(item: Item): RowActionItem[] {
                                         totals.total_by_currency,
                                         totals.total_price,
                                     )
-                                "
-                                >{{
+                                ">{{
                                     compactMoneyByCurrency(
                                         totals.total_by_currency,
                                         totals.total_price,
@@ -286,8 +277,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`"
-                            >
+                                :title="`${bar.label}: ${compactMoneyByCurrency(bar.by_currency)}`">
                                 <div class="money-pair">
                                     <i
                                         class="afn"
@@ -321,8 +311,7 @@ function rowActions(item: Item): RowActionItem[] {
                     <V2StatCard
                         :delay="1"
                         icon-tone="warm"
-                        :title="t('Sales total')"
-                    >
+                        :title="t('Sales total')">
                         <template #icon><Wallet /></template>
                         <span>{{ t('Sales total') }}</span>
                         <strong
@@ -331,8 +320,7 @@ function rowActions(item: Item): RowActionItem[] {
                                     totals.total_by_currency,
                                     totals.total_price,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.total_by_currency,
                                     totals.total_price,
@@ -343,8 +331,7 @@ function rowActions(item: Item): RowActionItem[] {
                     <V2StatCard
                         :delay="2"
                         icon-tone="orange"
-                        :title="t('Remaining')"
-                    >
+                        :title="t('Remaining')">
                         <template #icon><Banknote /></template>
                         <span>{{ t('Remaining') }}</span>
                         <strong
@@ -353,8 +340,7 @@ function rowActions(item: Item): RowActionItem[] {
                                     totals.remaining_by_currency,
                                     totals.remaining,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.remaining_by_currency,
                                     totals.remaining,
@@ -367,8 +353,7 @@ function rowActions(item: Item): RowActionItem[] {
                         :delay="3"
                         accent
                         icon-tone="teal"
-                        :title="t('Paid')"
-                    >
+                        :title="t('Paid')">
                         <template #icon><Banknote /></template>
                         <span>{{ t('Paid') }}</span>
                         <strong
@@ -377,8 +362,7 @@ function rowActions(item: Item): RowActionItem[] {
                                     totals.paid_by_currency,
                                     totals.paid,
                                 )
-                            "
-                            >{{
+                            ">{{
                                 compactMoneyByCurrency(
                                     totals.paid_by_currency,
                                     totals.paid,
@@ -394,6 +378,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="sales"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Sales')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -404,6 +389,9 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </div>
                     <template #columns>
+                        <MisTableActions export-url="/sales/export" :filters="filters">
+                            <CreateButton href="/sales/create" permission="sales.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -521,18 +509,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No sales yet')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('sales.create')"
-                                    href="/sales/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Create') }}
-                                </Link>
-                            </template>
+                            :title="t('No sales yet')">
                         </EmptyState>
                     </tbody>
                 </table>

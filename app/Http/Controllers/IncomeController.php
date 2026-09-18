@@ -2,38 +2,36 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Income;
 use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class IncomeController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'incomes';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Income::query()
-            ->whereNull('project_id')
-            ->where('status', 'approved');
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->where('income_no', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $count = (clone $query)->count();
         $totalAmount = (float) (clone $query)->sum('amount');
@@ -60,6 +58,56 @@ class IncomeController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => $this->incomesByMonth(clone $query),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $query = $this->indexQuery($request, $this->exportAppliesFilters($request));
+
+        $rows = (clone $query)
+            ->with('creator:id,name')
+            ->orderBy('id')
+            ->lazyById(500)
+            ->map(fn (Income $income) => [
+                $income->income_date?->toDateString(),
+                $income->description,
+                (float) ($income->amount ?? 0),
+                $income->currency,
+                (float) ($income->amount_base ?? 0),
+                $income->creator?->name,
+                $income->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport('incomes', [
+            'Date',
+            'Description',
+            'Total amount',
+            'Currency',
+            'Total amount (base)',
+            'Added by',
+            'Created at',
+        ], $rows, $this->exportFormat($request));
+    }
+
+    /**
+     * @return Builder<Income>
+     */
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Income::query()
+            ->whereNull('project_id')
+            ->where('status', 'approved');
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->where('income_no', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     public function create(Request $request): Response

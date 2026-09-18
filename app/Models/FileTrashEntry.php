@@ -63,14 +63,14 @@ class FileTrashEntry extends Model
 
         if (is_dir($absolute)) {
             if (! File::deleteDirectory($absolute)) {
-                throw new RuntimeException(__('Could not permanently delete the trashed folder.'));
+                report(new RuntimeException(__('Could not permanently delete the trashed folder.')));
             }
 
             return;
         }
 
         if (! File::delete($absolute)) {
-            throw new RuntimeException(__('Could not permanently delete the trashed file.'));
+            report(new RuntimeException(__('Could not permanently delete the trashed file.')));
         }
     }
 }

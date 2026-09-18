@@ -2,39 +2,37 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Purchase;
 use App\Models\Supplier;
 use App\Services\CurrencyService;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SupplierController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'suppliers';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Supplier::query();
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('supplier_no', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%")
-                    ->orWhere('contact_person', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $ids = (clone $query)->select('id');
         $purchasesQuery = Purchase::query()->whereIn('supplier_id', clone $ids);
@@ -60,6 +58,52 @@ class SupplierController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => $this->purchasesByMonth(clone $purchasesQuery),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->with('creator:id,name')
+            ->withCount('purchases')
+            ->latest()
+            ->lazyById(500)
+            ->map(fn (Supplier $supplier) => [
+                $supplier->supplier_no,
+                $supplier->name,
+                $supplier->contact_person,
+                $supplier->phone,
+                $supplier->purchases_count,
+                $supplier->creator?->name,
+                $supplier->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'suppliers',
+            [
+                'supplier_no', 'name', 'contact_person', 'phone',
+                'purchases', 'added_by', 'created_at',
+            ],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Supplier::query();
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('supplier_no', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('contact_person', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     public function create(): Response

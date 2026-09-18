@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
+import { MisTableActions } from '@/components/mis';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -23,7 +25,7 @@ import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
 import { money } from '@/lib/utils';
-import { Plus, UserCheck, UserMinus, UserRound, Users } from '@lucide/vue';
+import { UserCheck, UserMinus, UserRound, Users } from '@lucide/vue';
 import { computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 
@@ -229,15 +231,6 @@ function rowActions(item: Item): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('employees.create')"
-                    href="/employees/create"
-                    class="create-btn"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Workforce') }}</template>
@@ -308,8 +301,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${bar.value}`"
-                            >
+                                :title="`${bar.label}: ${bar.value}`">
                                 <div class="money-pair">
                                     <i
                                         class="usd"
@@ -365,6 +357,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="employees"
             :columns="tableColumns"
             :pending="pending && items.data.length > 0"
+            :print-title="t('Employees')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -377,6 +370,9 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </div>
                     <template #columns>
+                        <MisTableActions export-url="/employees/export" :filters="filters">
+                            <CreateButton href="/employees/create" permission="employees.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -456,18 +452,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <EmptyState
                             v-if="!items.data.length"
                             :colspan="visibleColCount"
-                            :title="t('No employees yet')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('employees.create')"
-                                    href="/employees/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('Create') }}
-                                </Link>
-                            </template>
+                            :title="t('No employees yet')">
                         </EmptyState>
                     </tbody>
                 </table>

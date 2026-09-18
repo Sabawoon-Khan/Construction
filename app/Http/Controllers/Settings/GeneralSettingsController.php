@@ -37,6 +37,7 @@ class GeneralSettingsController extends Controller
 
         OrgSetting::setValue('app_name', $validated['app_name']);
         OrgSetting::setValue('app_name_en', $validated['app_name_en'] ?? '');
+        OrgSetting::syncCompanyNames($validated['app_name'], $validated['app_name_en'] ?? null);
         OrgSetting::setValue('default_locale', $validated['default_locale']);
 
         if (array_key_exists('calendar_system', $validated)) {
@@ -63,11 +64,7 @@ class GeneralSettingsController extends Controller
             OrgSetting::setValue('favicon_path', $path);
         }
 
-        config([
-            'app.name' => filled($validated['app_name_en'] ?? null)
-                ? $validated['app_name_en']
-                : $validated['app_name'],
-        ]);
+        OrgSetting::applyBrandToConfig();
 
         return back()->with('success', __('Settings saved.'));
     }

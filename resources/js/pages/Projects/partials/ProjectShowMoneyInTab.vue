@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Plus, Printer } from '@lucide/vue';
+import { ChevronLeft, ChevronRight, Printer } from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
-import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisSearchInput } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
@@ -117,6 +118,31 @@ function onRecordClick() {
     }
     emit('add-shareholder');
 }
+
+const moneyInExportHeaders = computed(() => [
+    t('Date'),
+    t('Shareholder'),
+    t('Amount'),
+    t('Created at'),
+]);
+
+function mapMoneyInExportRow(
+    row: (typeof props.contributions)[number],
+): ExportCell[] {
+    return [
+        formatDate(row.invested_at),
+        row.partner?.name || null,
+        Number(row.amount),
+        formatDate(row.created_at),
+    ];
+}
+
+const moneyInExportRows = computed(() =>
+    props.contributions.map(mapMoneyInExportRow),
+);
+const moneyInFilteredExportRows = computed(() =>
+    sortedRows.value.map(mapMoneyInExportRow),
+);
 </script>
 
 <template>
@@ -128,16 +154,26 @@ function onRecordClick() {
             </div>
         </template>
         <template #actions>
-            <Can permission="partners.create">
-                <Button size="sm" class="h-9 gap-1.5" @click="onRecordClick">
-                    <Plus class="size-4" />
-                    {{
-                        hasShareholders
-                            ? t('Record money in')
-                            : t('Add shareholder')
-                    }}
-                </Button>
-            </Can>
+            
+            <MisTableActions
+                :filename="`project-${item.id}-money-in`"
+                :headers="moneyInExportHeaders"
+                :rows="moneyInExportRows"
+                :filtered-rows="moneyInFilteredExportRows"
+                :filters="{ search: search }"
+            >
+                <CreateButton
+                permission="partners.create"
+                @click="onRecordClick"
+            >
+                {{
+                    hasShareholders
+                        ? t('Record money in')
+                        : t('Add shareholder')
+                }}
+            </CreateButton>
+            </MisTableActions>
+        
         </template>
 
         <div class="flex flex-col gap-2 border-b border-border/50 bg-muted/15 px-3 py-2.5 sm:flex-row sm:items-center sm:px-5">
@@ -206,23 +242,7 @@ function onRecordClick() {
                                 : t('No money in yet')
                         "
                     >
-                        <template v-if="!search.trim()" #actions>
-                            <Can permission="partners.create">
-                                <Button
-                                    size="sm"
-                                    class="h-9 gap-1.5"
-                                    @click="onRecordClick"
-                                >
-                                    <Plus class="size-4" />
-                                    {{
-                                        hasShareholders
-                                            ? t('Record money in')
-                                            : t('Add shareholder')
-                                    }}
-                                </Button>
-                            </Can>
-                        </template>
-                    </EmptyState>
+                        </EmptyState>
                 </tbody>
             </table>
         </TableFrame>

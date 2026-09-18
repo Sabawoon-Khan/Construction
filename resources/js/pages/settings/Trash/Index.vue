@@ -96,8 +96,7 @@ function rowActions(item: TrashItem): RowActionItem[] {
             variant: 'destructive',
             separator: true,
             method: 'delete',
-            href: '/settings/trash/item',
-            data: { type: item.type, id: item.id },
+            href: `/settings/trash/item/${encodeURIComponent(item.type)}/${encodeURIComponent(String(item.id))}`,
             confirm: {
                 title: t('Delete forever?'),
                 description: t(

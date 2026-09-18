@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Project;
 use App\Models\Sale;
@@ -11,47 +13,27 @@ use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class UnitController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'units';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Unit::query()
-            ->with([
-                'project:id,name',
-                'creator:id,name',
-                'sales' => fn ($q) => $q
-                    ->where('status', '!=', 'cancelled')
-                    ->with('customer:id,name')
-                    ->latest('contract_date'),
-            ]);
-
-        if ($request->user()?->isRestrictedShareholder()) {
-            $query->whereIn('project_id', $request->user()->assignedProjectIds() ?: [0]);
-        }
-
-        if ($request->filled('project_id')) {
-            $query->where('project_id', $request->integer('project_id'));
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->string('status'));
-        }
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where('unit_no', 'like', "%{$search}%");
-        }
+        $query = $this->indexQuery($request);
 
         $ids = (clone $query)->select('id');
         $available = (clone $query)->where('status', 'available')->count();
@@ -81,6 +63,78 @@ class UnitController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => $this->soldByMonth(clone $salesQuery),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->latest()
+            ->lazyById(500)
+            ->map(function (Unit $unit) {
+                $sale = $unit->sales->first();
+
+                return [
+                    $unit->unit_no,
+                    $unit->project?->name,
+                    $unit->floor_number,
+                    $unit->type,
+                    $unit->area,
+                    $unit->bedrooms,
+                    $unit->cost_price,
+                    $unit->list_price,
+                    $sale?->customer?->name,
+                    $unit->status,
+                    $unit->creator?->name,
+                    $unit->created_at?->toDateTimeString(),
+                ];
+            });
+
+        return $this->streamExport(
+            'units',
+            [
+                'unit_no', 'project', 'floor', 'type', 'area', 'bedrooms',
+                'cost_price', 'list_price', 'buyer', 'status', 'added_by', 'created_at',
+            ],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Unit::query()
+            ->with([
+                'project:id,name',
+                'creator:id,name',
+                'sales' => fn ($q) => $q
+                    ->where('status', '!=', 'cancelled')
+                    ->with('customer:id,name')
+                    ->latest('contract_date'),
+            ]);
+
+        if ($request->user()?->isRestrictedShareholder()) {
+            $query->whereIn('project_id', $request->user()->assignedProjectIds() ?: [0]);
+        }
+
+        if (! $applyFilters) {
+            return $query;
+        }
+
+        if ($request->filled('project_id')) {
+            $query->where('project_id', $request->integer('project_id'));
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->string('status'));
+        }
+
+        if ($search = $request->string('search')->toString()) {
+            $query->where('unit_no', 'like', "%{$search}%");
+        }
+
+        return $query;
     }
 
     public function create(Request $request): Response

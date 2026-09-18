@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Concerns\ExportsSpreadsheet;
 use App\Concerns\RendersPrintView;
 use App\Http\Controllers\Concerns\AuthorizesMisPermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\StoreUserManagementRequest;
 use App\Http\Requests\Settings\UpdateUserManagementRequest;
@@ -13,7 +14,6 @@ use App\Support\EfficientQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
@@ -25,6 +25,7 @@ class UserManagementController extends Controller
     use AuthorizesMisPermissions;
     use ExportsSpreadsheet;
     use RendersPrintView;
+    use ResolvesExportScope;
 
     public function index(Request $request): InertiaResponse
     {
@@ -149,14 +150,19 @@ class UserManagementController extends Controller
         abort_unless(config('kit.features.exports'), 404);
         $this->authorizePermission($request, 'users.view');
 
-        $validated = $request->validate([
-            'format' => ['nullable', 'string', Rule::in(['csv', 'xlsx', 'xls', 'excel'])],
-        ]);
-
-        $format = $validated['format'] ?? 'csv';
+        $applyFilters = $this->exportAppliesFilters($request);
+        $search = $applyFilters ? $request->string('search')->trim()->toString() : '';
 
         $rows = User::query()
             ->with('roles:id,name')
+            ->when($search !== '', function ($q) use ($search) {
+                EfficientQuery::applySearch(
+                    $q,
+                    $search,
+                    prefixColumns: ['name', 'email'],
+                    exactColumns: ['email'],
+                );
+            })
             ->orderBy('id')
             ->lazyById(500)
             ->map(fn (User $user) => [
@@ -167,7 +173,12 @@ class UserManagementController extends Controller
                 $user->roles->pluck('name')->implode('|'),
             ]);
 
-        return $this->streamExport('users', ['id', 'name', 'email', 'status', 'roles'], $rows, $format);
+        return $this->streamExport(
+            'users',
+            ['id', 'name', 'email', 'status', 'roles'],
+            $rows,
+            $this->exportFormat($request, 'csv'),
+        );
     }
 
     public function print(Request $request): Response

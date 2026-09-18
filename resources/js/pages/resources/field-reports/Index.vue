@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
-import { MisSearchInput, MisStatusBadge } from '@/components/mis';
+import { MisTableActions, MisSearchInput, MisStatusBadge  } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -23,7 +24,7 @@ import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import type { RowActionItem } from '@/lib/row-actions';
-import { ClipboardList, FilePenLine, MapPin, Plus, Send } from '@lucide/vue';
+import { ClipboardList, FilePenLine, MapPin, Send } from '@lucide/vue';
 import { computed, toRef } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { useOfflineResourceList } from '@/offline/useOfflineResourceList';
@@ -181,16 +182,6 @@ function rowActions(item: Item): RowActionItem[] {
             </template>
 
             <template #side>
-                <Link
-                    v-if="can('field_reports.create')"
-                    href="/field-reports/create"
-                    class="create-btn"
-                    data-tour="create"
-                >
-                    <Plus />
-                    {{ t('Create') }}
-                </Link>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Status mix') }}</template>
@@ -241,8 +232,7 @@ function rowActions(item: Item): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${bar.value}`"
-                            >
+                                :title="`${bar.label}: ${bar.value}`">
                                 <div class="money-pair">
                                     <i
                                         class="usd"
@@ -305,6 +295,7 @@ function rowActions(item: Item): RowActionItem[] {
             table-id="field-reports"
             :columns="tableColumns"
             :pending="pending && displayItems.length > 0"
+            :print-title="t('Field reports')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -326,6 +317,9 @@ function rowActions(item: Item): RowActionItem[] {
                         <option value="submitted">{{ t('Submitted') }}</option>
                     </V2SelectFilter>
                     <template #columns>
+                        <MisTableActions export-url="/field-reports/export" :filters="filters">
+                            <CreateButton href="/field-reports/create" permission="field_reports.create">{{ t('Create') }}</CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -395,17 +389,7 @@ function rowActions(item: Item): RowActionItem[] {
                             )
                         "
                     >
-                        <template #actions>
-                            <Link
-                                v-if="can('field_reports.create')"
-                                href="/field-reports/create"
-                                class="create-btn"
-                            >
-                                <Plus />
-                                {{ t('Create field report') }}
-                            </Link>
-                        </template>
-                    </EmptyState>
+                        </EmptyState>
                 </tbody>
             </table>
         </V2TablePanel>

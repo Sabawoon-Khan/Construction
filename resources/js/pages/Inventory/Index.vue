@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import IssueStockDialog from '@/components/IssueStockDialog.vue';
-import { MisSearchInput } from '@/components/mis';
+import { MisTableActions, MisSearchInput  } from '@/components/mis';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
-import SettingsAddButton from '@/components/SettingsAddButton.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import TableToolbar from '@/components/TableToolbar.vue';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     V2FilterBar,
     V2Hero,
@@ -33,7 +32,6 @@ import {
     PackageCheck,
     PackageMinus,
     Pencil,
-    Plus,
     Trash2,
     Wallet,
 } from '@lucide/vue';
@@ -366,18 +364,6 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
             </template>
 
             <template #side>
-                <Can permission="inventory.create">
-                    <button
-                        type="button"
-                        class="create-btn"
-                        :disabled="!hasIssueableStock"
-                        @click="openIssueDialog()"
-                    >
-                        <Plus />
-                        {{ t('Issue from stock') }}
-                    </button>
-                </Can>
-
                 <div class="hero-cards">
                     <V2IndicatorCard card-class="inventory-card">
                         <template #head>{{ t('Stock health') }}</template>
@@ -427,8 +413,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
                                 :key="bar.key"
                                 class="money-col"
                                 :class="{ peak: bar.peak }"
-                                :title="`${bar.label}: ${bar.value}`"
-                            >
+                                :title="`${bar.label}: ${bar.value}`">
                                 <div class="money-pair">
                                     <i
                                         class="usd"
@@ -471,8 +456,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
                         :delay="3"
                         accent
                         icon-tone="warm"
-                        :title="t('Stock value')"
-                    >
+                        :title="t('Stock value')">
                         <template #icon><Wallet /></template>
                         <span>{{ t('Stock value') }}</span>
                         <strong>{{ compactMoney(totals.stock_value) }}</strong>
@@ -485,6 +469,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
             table-id="inventory"
             :columns="tableColumns"
             :pending="pending && items.length > 0"
+            :print-title="t('Stock')"
         >
             <template #filters>
                 <V2FilterBar>
@@ -511,6 +496,15 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
                         </option>
                     </V2SelectFilter>
                     <template #columns>
+                        <MisTableActions export-url="/inventory/export" :filters="filters">
+                            <CreateButton
+                                permission="inventory.create"
+                                :disabled="!hasIssueableStock"
+                                @click="openIssueDialog()"
+                            >
+                                {{ t('Issue from stock') }}
+                            </CreateButton>
+                        </MisTableActions>
                         <TableToolbar />
                     </template>
                 </V2FilterBar>
@@ -605,18 +599,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
                         <EmptyState
                             v-if="!items.length"
                             :colspan="visibleColCount"
-                            :title="t('No stock yet')"
-                        >
-                            <template #actions>
-                                <Link
-                                    v-if="can('purchases.create')"
-                                    href="/purchases/create"
-                                    class="create-btn"
-                                >
-                                    <Plus />
-                                    {{ t('New purchase') }}
-                                </Link>
-                            </template>
+                            :title="t('No stock yet')">
                         </EmptyState>
                     </tbody>
                 </table>
@@ -627,6 +610,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
             table-id="inventory-issues"
             :columns="issueTableColumns"
             :pending="pending && issues.length > 0"
+            :print-title="t('Stock')"
         >
             <template #filters>
                 <div class="filter-panel">
@@ -707,17 +691,7 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
                             v-if="!issues.length"
                             :colspan="visibleColCount"
                             :title="t('No issue dates yet')"
-                        >
-                            <template v-if="hasIssueableStock" #actions>
-                                <Can permission="inventory.create">
-                                    <SettingsAddButton
-                                        @click="openIssueDialog()"
-                                    >
-                                        {{ t('Issue from stock') }}
-                                    </SettingsAddButton>
-                                </Can>
-                            </template>
-                        </EmptyState>
+                        />
                     </tbody>
                 </table>
             </template>

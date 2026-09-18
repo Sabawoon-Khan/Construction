@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Employee;
 use App\Models\Expense;
@@ -27,6 +29,7 @@ use App\Services\ShareholderProfitService;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,31 +39,20 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProjectController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'projects';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Project::query();
-        $query->withCount(['units', 'sales', 'expenses']);
-
-        if ($request->user()?->isRestrictedShareholder()) {
-            $query->whereIn('id', $request->user()->assignedProjectIds() ?: [0]);
-        }
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->orWhere('name', 'like', "%{$search}%");
-                $q->orWhere('code', 'like', "%{$search}%");
-                $q->orWhere('location', 'like', "%{$search}%");
-            });
-        }
-
+        $search = $request->string('search')->toString();
         $status = $request->string('status')->toString();
         $allowedStatuses = [
             'planning',
@@ -70,11 +62,11 @@ class ProjectController extends Controller implements HasMiddleware
             'completed',
             'on_hold',
         ];
-        if ($status !== '' && in_array($status, $allowedStatuses, true)) {
-            $query->where('status', $status);
-        } else {
+        if ($status !== '' && ! in_array($status, $allowedStatuses, true)) {
             $status = '';
         }
+
+        $query = $this->indexQuery($request);
 
         $ids = (clone $query)->select('id');
         $salesQuery = Sale::query()->whereIn('project_id', clone $ids);
@@ -112,6 +104,72 @@ class ProjectController extends Controller implements HasMiddleware
             'totals' => $totals,
             'moneyChart' => $this->salesByMonth(clone $salesQuery),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
+            ->with('creator:id,name')
+            ->latest()
+            ->lazyById(500)
+            ->map(fn (Project $project) => [
+                $project->code,
+                $project->name,
+                $project->location,
+                $project->status,
+                $project->progress_percent,
+                $project->units_count,
+                $project->creator?->name,
+                $project->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport(
+            'projects',
+            [
+                'code', 'name', 'location', 'status', 'progress_percent',
+                'units', 'added_by', 'created_at',
+            ],
+            $rows,
+            $this->exportFormat($request),
+        );
+    }
+
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Project::query()->withCount(['units', 'sales', 'expenses']);
+
+        if ($request->user()?->isRestrictedShareholder()) {
+            $query->whereIn('id', $request->user()->assignedProjectIds() ?: [0]);
+        }
+
+        if (! $applyFilters) {
+            return $query;
+        }
+
+        if ($search = $request->string('search')->toString()) {
+            $query->where(function ($q) use ($search) {
+                $q->orWhere('name', 'like', "%{$search}%");
+                $q->orWhere('code', 'like', "%{$search}%");
+                $q->orWhere('location', 'like', "%{$search}%");
+            });
+        }
+
+        $status = $request->string('status')->toString();
+        $allowedStatuses = [
+            'planning',
+            'under_construction',
+            'ready_for_sale',
+            'sold',
+            'completed',
+            'on_hold',
+        ];
+        if ($status !== '' && in_array($status, $allowedStatuses, true)) {
+            $query->where('status', $status);
+        }
+
+        return $query;
     }
 
     public function create(): Response

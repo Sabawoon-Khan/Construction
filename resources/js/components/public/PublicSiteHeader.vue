@@ -3,6 +3,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { Building2, Menu, X } from '@lucide/vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import { usePublicCompany } from '@/composables/usePublicCompany';
 import { useTranslations } from '@/composables/useTranslations';
 import { dashboard, login } from '@/routes';
 
@@ -14,38 +15,9 @@ const props = withDefaults(
     { onHome: false },
 );
 
-type PublicCompany = {
-    name?: string | null;
-    name_primary?: string | null;
-    name_en?: string | null;
-};
-
 const page = usePage();
 const { t } = useTranslations();
-const publicCompany = computed(
-    () => (page.props.publicCompany as PublicCompany | null) ?? null,
-);
-const locale = computed(() => (page.props.locale as string) || 'en');
-const isEnglish = computed(() => locale.value === 'en');
-const brandEn = computed(
-    () =>
-        publicCompany.value?.name_en?.trim() ||
-        (isEnglish.value ? (page.props.name as string | undefined) : null) ||
-        'Shahin Samim Barakzai',
-);
-const brandFa = computed(
-    () =>
-        publicCompany.value?.name_primary?.trim() ||
-        (!isEnglish.value ? (page.props.name as string | undefined) : null) ||
-        'شاهین صمیم بارکزی',
-);
-/** English-only on `en`; Dari primary (+ English secondary) otherwise. */
-const brandPrimary = computed(() =>
-    isEnglish.value ? brandEn.value : brandFa.value,
-);
-const brandSecondary = computed(() =>
-    isEnglish.value ? null : brandEn.value,
-);
+const { brandPrimary, brandSecondary } = usePublicCompany();
 const isAuthenticated = computed(() => !!page.props.auth.user);
 const mobileOpen = ref(false);
 

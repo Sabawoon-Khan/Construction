@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ExportsSpreadsheet;
 use App\Http\Controllers\Concerns\AuthorizesResourcePermissions;
+use App\Http\Controllers\Concerns\ResolvesExportScope;
 use App\Http\Controllers\Concerns\StoresRecordAttachments;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -11,33 +13,28 @@ use App\Services\CurrencyService;
 use App\Services\FinanceDefaults;
 use App\Support\CurrencyAmounts;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseController extends Controller implements HasMiddleware
 {
     protected static string $permissionModule = 'expenses';
 
     use AuthorizesResourcePermissions;
+    use ExportsSpreadsheet;
+    use ResolvesExportScope;
     use StoresRecordAttachments;
 
     public function index(Request $request): Response
     {
-        $query = Expense::query()
-            ->whereNull('project_id')
-            ->where('status', 'approved');
-
-        if ($search = $request->string('search')->toString()) {
-            $query->where(function ($q) use ($search) {
-                $q->where('expense_no', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhere('paid_to', 'like', "%{$search}%");
-            });
-        }
+        $search = $request->string('search')->toString();
+        $query = $this->indexQuery($request);
 
         $count = (clone $query)->count();
         $totalAmount = (float) (clone $query)->sum('amount');
@@ -64,6 +61,65 @@ class ExpenseController extends Controller implements HasMiddleware
             'categories' => $this->categories(),
             'units' => ExpenseUnit::options(),
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        abort_unless(config('kit.features.exports'), 404);
+
+        $query = $this->indexQuery($request, $this->exportAppliesFilters($request));
+
+        $rows = (clone $query)
+            ->with(['expenseUnit:id,unit_name', 'creator:id,name'])
+            ->orderBy('id')
+            ->lazyById(500)
+            ->map(fn (Expense $expense) => [
+                $expense->expense_date?->toDateString(),
+                $expense->paid_to,
+                $expense->description,
+                $expense->expenseUnit?->unit_name,
+                (float) ($expense->item_amount ?? 0),
+                (float) ($expense->per_price ?? 0),
+                (float) ($expense->amount ?? 0),
+                $expense->currency,
+                (float) ($expense->amount_base ?? 0),
+                $expense->creator?->name,
+                $expense->created_at?->toDateTimeString(),
+            ]);
+
+        return $this->streamExport('expenses', [
+            'Date',
+            'Paid to',
+            'Description',
+            'Unit',
+            'Item amount',
+            'Per price',
+            'Total cost',
+            'Currency',
+            'Total cost (base)',
+            'Added by',
+            'Created at',
+        ], $rows, $this->exportFormat($request));
+    }
+
+    /**
+     * @return Builder<Expense>
+     */
+    protected function indexQuery(Request $request, bool $applyFilters = true): Builder
+    {
+        $query = Expense::query()
+            ->whereNull('project_id')
+            ->where('status', 'approved');
+
+        if ($applyFilters && ($search = $request->string('search')->toString())) {
+            $query->where(function ($q) use ($search) {
+                $q->where('expense_no', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('paid_to', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
     }
 
     public function create(Request $request): Response
@@ -124,7 +180,13 @@ class ExpenseController extends Controller implements HasMiddleware
 
     public function show(Expense $expense): Response
     {
-        $expense->load(['project:id,name', 'expenseUnit:id,unit_name', 'attachments', 'purchase:id,purchase_no']);
+        $expense->load([
+            'project:id,name,code',
+            'category:id,name',
+            'expenseUnit:id,unit_name',
+            'attachments',
+            'purchase:id,purchase_no',
+        ]);
 
         return Inertia::render('Expenses/Show', [
             'item' => $expense,

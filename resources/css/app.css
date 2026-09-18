@@ -2780,42 +2780,252 @@ label:has(+ div.relative > button[aria-required='true'])::after {
     color: hsl(var(--destructive));
 }
 
-/* Print — vouchers, reports, and list exports */
+/* Print — branded A4 sheets for tables, vouchers, and reports */
 @media print {
     @page {
         size: A4 portrait;
-        margin: 10mm 12mm;
+        margin: 12mm 14mm 14mm;
     }
 
     html,
     body {
         background: #fff !important;
-        color: #111 !important;
+        color: #111827 !important;
         height: auto !important;
         overflow: visible !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        font-family:
+            'Plus Jakarta Sans',
+            'Noto Sans Arabic',
+            system-ui,
+            sans-serif !important;
     }
 
     [data-sidebar='sidebar'],
     [data-slot='sidebar'],
     [data-sidebar='trigger'],
     header[data-tour],
-    [data-sonner-toaster] {
+    [data-sonner-toaster],
+    .app-v2-topbar,
+    .app-v2-sidebar,
+    .app-v2-mobile-scrim,
+    .app-v2-mobile-drawer {
         display: none !important;
     }
 
     .group\\/sidebar-wrapper,
-    [data-slot='sidebar-inset'] {
+    [data-slot='sidebar-inset'],
+    .app-v2-shell,
+    .app-v2-content {
         display: block !important;
         width: 100% !important;
         min-height: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
         background: #fff !important;
+        overflow: visible !important;
     }
 
-    /* Voucher pages: hide everything except the voucher sheet */
+    /* List pages: print only .print-target (may be nested) */
+    .print-table-only {
+        position: relative !important;
+        display: block !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .print-table-only * {
+        visibility: hidden !important;
+    }
+
+    .print-table-only .print-target,
+    .print-table-only .print-target * {
+        visibility: visible !important;
+    }
+
+    .print-table-only .print-target {
+        position: absolute !important;
+        inset-inline-start: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        padding: 0 !important;
+    }
+
+    .print-table-only .print-target .print\:hidden,
+    .print-table-only .print-target .print\:hidden * {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .print-table-only .print-target .hidden.print\:block,
+    .print-table-only .print-target .hidden.print\:flex {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    .print-table-only .print-target .hidden.print\:flex {
+        display: flex !important;
+    }
+
+    .print-table-only .print-target .hidden.print\:block *,
+    .print-table-only .print-target .hidden.print\:flex * {
+        visibility: visible !important;
+    }
+
+    /* Branded letterhead */
+    .print-letterhead {
+        display: flex !important;
+        flex-direction: column;
+        gap: 0.65rem;
+        margin: 0 0 1rem;
+        padding: 0 0 0.85rem;
+        border-bottom: 2.5px solid #162238;
+        color: #111827;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    .print-letterhead-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .print-letterhead-logo {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+
+    .print-letterhead-primary {
+        margin: 0;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        color: #162238;
+    }
+
+    .print-letterhead-secondary {
+        margin: 0.15rem 0 0;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .print-letterhead-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .print-letterhead-doc {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 650;
+        color: #0f172a;
+    }
+
+    .print-letterhead-sub,
+    .print-letterhead-contact,
+    .print-letterhead-date {
+        margin: 0;
+        font-size: 0.72rem;
+        color: #64748b;
+    }
+
+    .print-sheet-footer {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 1.25rem;
+        padding-top: 0.65rem;
+        border-top: 1px solid #cbd5e1;
+        font-size: 0.68rem;
+        color: #64748b;
+        page-break-before: avoid;
+        break-before: avoid;
+    }
+
+    /* Table body on A4 */
+    .print-sheet .print-sheet-body,
+    .print-sheet .table-wrap {
+        overflow: visible !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+
+    .print-sheet table,
+    .print-document table,
+    .voucher-sheet table {
+        width: 100% !important;
+        min-width: 0 !important;
+        border-collapse: collapse !important;
+        font-size: 9.5pt !important;
+        color: #0f172a !important;
+    }
+
+    .print-sheet thead,
+    .print-document thead,
+    .voucher-sheet thead {
+        display: table-header-group;
+    }
+
+    .print-sheet th,
+    .print-document th,
+    .voucher-sheet th {
+        background: #f1f5f9 !important;
+        color: #334155 !important;
+        font-size: 8pt !important;
+        font-weight: 650 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1.5px solid #162238 !important;
+        border-top: none !important;
+        padding: 0.4rem 0.35rem !important;
+        text-align: start;
+    }
+
+    .print-sheet td,
+    .print-document td,
+    .voucher-sheet td {
+        border-bottom: 1px solid #e2e8f0 !important;
+        padding: 0.32rem 0.35rem !important;
+        vertical-align: top;
+    }
+
+    .print-sheet tr,
+    .print-document tr,
+    .voucher-sheet tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+
+    .print-sheet a,
+    .print-document a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    /* Hide interactive table chrome when printing */
+    .print-sheet th:last-child:has(+ *),
+    .print-sheet td:has([data-slot='dropdown-menu-trigger']),
+    .print-sheet td:has(button),
+    .print-sheet .end {
+        /* keep content; actions cells often last — hide common action menus */
+    }
+
+    /* Voucher pages */
     .voucher-print-page > *:not(.voucher-sheet) {
         display: none !important;
     }
@@ -2836,39 +3046,480 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         box-shadow: none !important;
         background: #fff !important;
         color: #171717 !important;
-        break-inside: avoid;
-    }
-
-    .voucher-sheet table {
-        break-inside: auto;
-    }
-
-    .voucher-sheet tr {
-        break-inside: avoid;
     }
 
     /* Report pages */
     .print-document {
         padding: 0 !important;
-        gap: 1rem !important;
+        gap: 0.85rem !important;
+        max-width: none !important;
     }
 
     .print-document .rounded-xl {
         break-inside: avoid;
-        border-color: #ccc !important;
+        border-color: #e2e8f0 !important;
         background: #fff !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Isolated A4 expense sheets (list + voucher) */
+    body.printing-a4 * {
+        visibility: hidden !important;
+    }
+
+    body.printing-a4 .a4-print-host,
+    body.printing-a4 .a4-print-host *,
+    body.printing-a4 .a4-print-sheet,
+    body.printing-a4 .a4-print-sheet * {
+        visibility: visible !important;
+    }
+
+    body.printing-a4 .a4-print-host {
+        display: block !important;
+        position: absolute !important;
+        inset-inline-start: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+
+    body.printing-a4 .a4-print-sheet {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        color: #111827 !important;
+        box-shadow: none !important;
+        border: none !important;
+        border-radius: 0 !important;
+    }
+
+    body.printing-a4 .expense-voucher-preview.expense-voucher-sheet,
+    body.printing-a4 .ev-sheet {
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
     }
 
-    .print-document table {
-        width: 100%;
-        border-collapse: collapse;
+    .a4-summary {
+        display: flex !important;
+        gap: 1.25rem;
+        margin: 0 0 0.85rem;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid #e2e8f0;
+        background: #f8fafc !important;
     }
 
-    .print-document th,
-    .print-document td {
-        border-bottom: 1px solid #ddd;
-        padding: 0.35rem 0.5rem;
+    .a4-summary > div {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        min-width: 0;
+    }
+
+    .a4-summary span {
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .a4-summary strong {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #0f172a;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .a4-table {
+        width: 100% !important;
+        border-collapse: collapse;
+        font-size: 0.72rem;
+        line-height: 1.35;
+    }
+
+    .a4-table th,
+    .a4-table td {
+        padding: 0.35rem 0.4rem;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: start;
+        vertical-align: top;
+    }
+
+    .a4-table thead th {
+        border-bottom: 1.5px solid #162238;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: #334155;
+        background: transparent !important;
+    }
+
+    .a4-table .col-num {
+        width: 1.75rem;
+        text-align: center;
+        color: #64748b;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .a4-table .col-amt {
+        text-align: end;
+        white-space: nowrap;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .a4-table .nowrap {
+        white-space: nowrap;
+    }
+
+    .a4-table .empty {
+        text-align: center;
+        color: #94a3b8;
+        padding: 1.25rem 0.5rem;
+    }
+
+    .ev-sheet {
+        color: #1f2937 !important;
+    }
+
+    .ev-meta-card {
+        background: #162238 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .ev-total-row {
+        border-color: #162238 !important;
+    }
+}
+
+/* Screen: keep A4 print sheets out of the UI */
+.a4-print-host {
+    display: none;
+}
+
+/* Expense voucher — clean invoice layout */
+.ev-sheet {
+    --ev-ink: #1f2937;
+    --ev-muted: #6b7280;
+    --ev-line: #e5e7eb;
+    --ev-navy: #162238;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 1.75rem 1.75rem 1.35rem;
+    color: var(--ev-ink);
+    background: #fff;
+    border: 1px solid #d1d5db;
+    font-family:
+        'Plus Jakarta Sans',
+        'Noto Sans Arabic',
+        system-ui,
+        sans-serif;
+}
+
+.ev-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.ev-doc-label {
+    margin: 0 0 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #9ca3af;
+}
+
+.ev-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.ev-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.ev-brand-name {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--ev-navy);
+}
+
+.ev-brand-sub {
+    margin: 0.15rem 0 0;
+    font-size: 0.75rem;
+    color: var(--ev-muted);
+}
+
+.ev-company-contact {
+    margin: 0.55rem 0 0;
+    max-width: 22rem;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--ev-muted);
+}
+
+.ev-meta-card {
+    flex-shrink: 0;
+    min-width: 10.5rem;
+    padding: 0.85rem 1rem;
+    background: var(--ev-navy);
+    color: #fff;
+}
+
+.ev-meta-card > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.ev-meta-card > div + div {
+    margin-top: 0.7rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.ev-meta-card span {
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.72;
+}
+
+.ev-meta-card strong {
+    font-size: 0.92rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+}
+
+.ev-parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.35rem;
+    padding-bottom: 1.15rem;
+    border-bottom: 1px solid var(--ev-line);
+}
+
+.ev-kicker {
+    margin: 0 0 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ev-muted);
+}
+
+.ev-party-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ev-ink);
+    line-height: 1.3;
+}
+
+.ev-party-sub {
+    margin: 0.3rem 0 0;
+    font-size: 0.78rem;
+    color: var(--ev-muted);
+    line-height: 1.4;
+}
+
+.ev-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1.25rem;
+}
+
+.ev-table th,
+.ev-table td {
+    padding: 0.65rem 0.55rem;
+    text-align: start;
+    vertical-align: middle;
+    font-size: 0.84rem;
+    border-bottom: 1px solid var(--ev-line);
+}
+
+.ev-table thead th {
+    padding-top: 0.45rem;
+    padding-bottom: 0.55rem;
+    border-bottom: 1.5px solid var(--ev-navy);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ev-navy);
+    background: transparent;
+}
+
+.ev-table tbody td {
+    color: var(--ev-ink);
+}
+
+.ev-col-num {
+    width: 2.25rem;
+    text-align: center !important;
+    color: var(--ev-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.ev-col-cat {
+    width: 7.5rem;
+}
+
+.ev-col-numish {
+    width: 5.5rem;
+    text-align: end !important;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.ev-col-amt {
+    width: 6.5rem;
+    text-align: end !important;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.ev-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.ev-words-block {
+    flex: 1;
+    min-width: 0;
+}
+
+.ev-words {
+    margin: 0;
+    font-size: 0.86rem;
+    line-height: 1.45;
+    color: #4b5563;
+}
+
+.ev-totals {
+    margin: 0;
+    min-width: 11rem;
+}
+
+.ev-total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding: 0.55rem 0 0.15rem;
+    border-top: 2px solid var(--ev-navy);
+}
+
+.ev-total-row dt {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ev-navy);
+}
+
+.ev-total-row dd {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--ev-navy);
+}
+
+.ev-signs {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1.5rem;
+    margin: 2.25rem 0 1.15rem;
+}
+
+.ev-sign-line {
+    height: 0;
+    margin-bottom: 0.45rem;
+    border-bottom: 1px solid #9ca3af;
+}
+
+.ev-signs p {
+    margin: 0;
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--ev-muted);
+}
+
+.ev-footer {
+    margin-top: 0.25rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--ev-line);
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--ev-muted);
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .ev-sheet {
+        padding: 1.2rem 1rem 1rem;
+    }
+
+    .ev-header,
+    .ev-summary {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ev-parties {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .ev-meta-card {
+        width: 100%;
+    }
+
+    .ev-signs {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .ev-table {
+        display: block;
+        overflow-x: auto;
     }
 }
 

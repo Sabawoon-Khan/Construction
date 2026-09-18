@@ -6,6 +6,8 @@ import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
+import { MisTableActions } from '@/components/mis';
+import type { ExportCell } from '@/composables/useTableExport';
 import SortableTh from '@/components/SortableTh.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import TableFrame from '@/components/TableFrame.vue';
@@ -13,6 +15,7 @@ import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
 import { Button } from '@/components/ui/button';
+import { CreateButton } from '@/components/ui/create-button';
 import {
     Dialog,
     DialogContent,
@@ -181,6 +184,33 @@ function confirmPay() {
         },
     );
 }
+
+const loanExportHeaders = computed(() => [
+    t('Loan'),
+    t('Lender'),
+    t('Date'),
+    t('Principal'),
+    t('Paid'),
+    t('Remaining'),
+    t('Status'),
+]);
+
+function mapLoanExportRow(loan: LoanRow): ExportCell[] {
+    return [
+        loan.loan_no,
+        loan.lender_name,
+        formatDate(loan.loan_date),
+        Number(loan.principal),
+        Number(loan.paid_amount),
+        remainingOf(loan),
+        loan.status,
+    ];
+}
+
+const loanExportRows = computed(() => (props.loans ?? []).map(mapLoanExportRow));
+const loanFilteredExportRows = computed(() =>
+    loanSort.sortedRows.map(mapLoanExportRow),
+);
 </script>
 
 <template>
@@ -190,11 +220,18 @@ function confirmPay() {
         :description="t('Project loans and payouts')"
     >
         <template #actions>
-            <Can permission="loans.create">
-                <Button size="sm" type="button" @click="openCreate">
-                    {{ t('Add loan') }}
-                </Button>
-            </Can>
+            
+            <MisTableActions
+                :filename="`project-${item.id}-loans`"
+                :headers="loanExportHeaders"
+                :rows="loanExportRows"
+                :filtered-rows="loanFilteredExportRows"
+            >
+                <CreateButton permission="loans.create" @click="openCreate">
+                {{ t('Add loan') }}
+            </CreateButton>
+            </MisTableActions>
+        
         </template>
 
         <TableFrame table-id="project-loans" :columns="tableColumns">
@@ -426,14 +463,7 @@ function confirmPay() {
                         :colspan="9"
                         :title="t('No loans yet')"
                     >
-                        <template #actions>
-                            <Can permission="loans.create">
-                                <Button size="sm" type="button" @click="openCreate">
-                                    {{ t('Add loan') }}
-                                </Button>
-                            </Can>
-                        </template>
-                    </EmptyState>
+                        </EmptyState>
                 </tbody>
             </table>
         </TableFrame>
