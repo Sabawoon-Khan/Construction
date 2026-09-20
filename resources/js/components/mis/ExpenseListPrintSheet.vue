@@ -16,6 +16,7 @@ export type ExpensePrintRow = {
     currency?: string | null;
     payment_method?: string | null;
     category?: { id?: number; name?: string } | null;
+    expense_unit?: { id?: number; unit_name?: string } | null;
 };
 
 const props = defineProps<{
@@ -78,6 +79,7 @@ const subtitle = computed(() =>
                     <th>{{ t('Paid to') }}</th>
                     <th>{{ t('Category') }}</th>
                     <th>{{ t('Description') }}</th>
+                    <th>{{ t('Unit') }}</th>
                     <th>{{ t('Paying type') }}</th>
                     <th class="col-amt">{{ t('Amount') }}</th>
                 </tr>
@@ -90,6 +92,7 @@ const subtitle = computed(() =>
                     <td>{{ row.paid_to || '—' }}</td>
                     <td>{{ row.category?.name || t('General') }}</td>
                     <td>{{ row.description || '—' }}</td>
+                    <td>{{ row.expense_unit?.unit_name || '—' }}</td>
                     <td>
                         {{
                             row.payment_method === 'bank' ? t('Bank') : t('Cash')
@@ -100,7 +103,7 @@ const subtitle = computed(() =>
                     </td>
                 </tr>
                 <tr v-if="!rows.length">
-                    <td colspan="8" class="empty">{{ t('No expenses yet') }}</td>
+                    <td colspan="9" class="empty">{{ t('No expenses yet') }}</td>
                 </tr>
             </tbody>
         </table>

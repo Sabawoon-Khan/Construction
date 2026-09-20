@@ -41,6 +41,7 @@ const props = defineProps<{
         currency?: string;
         expense_category_id?: number | null;
         category?: { id: number; name: string } | null;
+        expense_unit?: { id: number; unit_name: string } | null;
         purchase_id?: number | null;
         reference_no?: string | null;
         payment_method?: string | null;
@@ -65,6 +66,7 @@ const tableColumns = computed(() => [
     { key: 'paid_to', label: t('Paid to') },
     { key: 'category.name', label: t('Category') },
     { key: 'description', label: t('Description') },
+    { key: 'expense_unit.unit_name', label: t('Unit') },
     { key: 'payment_method', label: t('Paying type') },
     { key: 'amount', label: t('Amount') },
     { key: 'attachments', label: t('Attachments') },
@@ -198,6 +200,7 @@ const filteredExpenses = computed(() => {
             expense.paid_to,
             expense.category?.name,
             expense.description,
+            expense.expense_unit?.unit_name,
             expense.payment_method,
             method,
             expense.amount,
@@ -255,6 +258,7 @@ const expenseExportHeaders = computed(() => [
     t('Paid to'),
     t('Category'),
     t('Description'),
+    t('Unit'),
     t('Paying type'),
     t('Amount'),
 ]);
@@ -268,6 +272,7 @@ function mapExpenseExportRow(
         expense.paid_to || null,
         expense.category?.name || t('General'),
         expense.description || null,
+        expense.expense_unit?.unit_name || null,
         expense.payment_method === 'bank' ? t('Bank') : t('Cash'),
         money(expense.amount, expense.currency || baseCurrency.value),
     ];
@@ -360,6 +365,7 @@ const printCategoryLabel = computed(() => {
                         <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
                         <SortableTh column="category.name">{{ t('Category') }}</SortableTh>
                         <SortableTh column="description">{{ t('Description') }}</SortableTh>
+                        <SortableTh column="expense_unit.unit_name">{{ t('Unit') }}</SortableTh>
                         <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
                         <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
                         <SortableTh column="attachments">{{ t('Attachments') }}</SortableTh>
@@ -390,6 +396,9 @@ const printCategoryLabel = computed(() => {
                         </td>
                         <td class="max-w-[14rem] truncate">
                             {{ expense.description || '—' }}
+                        </td>
+                        <td class="whitespace-nowrap">
+                            {{ expense.expense_unit?.unit_name || '—' }}
                         </td>
                         <td class="whitespace-nowrap capitalize">
                             {{
@@ -464,7 +473,7 @@ const printCategoryLabel = computed(() => {
                     </tr>
                     <EmptyState
                         v-if="!filteredExpenses.length"
-                        :colspan="10"
+                        :colspan="11"
                         :title="
                             expenseSearch.trim() || categoryFilter !== 'all'
                                 ? t('No matching expenses')
