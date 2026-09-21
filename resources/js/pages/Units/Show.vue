@@ -21,7 +21,6 @@ import {
 import type { ExportCell } from '@/composables/useTableExport';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import SortableTh from '@/components/SortableTh.vue';
-import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
@@ -33,6 +32,7 @@ import {
     V2Panel,
     V2StatCard,
     V2StatGrid,
+    V2TablePanel,
 } from '@/components/v2';
 import { useMisPage } from '@/composables/useMisPage';
 import { provideTableSort } from '@/composables/useTableSort';
@@ -216,28 +216,39 @@ defineOptions({
             </V2Panel>
         </div>
 
-        <V2Panel
+        <V2TablePanel
             v-show="tab === 'sales'"
-            :padded="false"
-            :title="t('Sales')"
-            :description="t('Contracts linked to this unit')"
+            table-id="unit-sales"
+            :columns="tableColumns"
+            :print-title="`${t('Unit')} ${item.unit_no}`"
+            :print-subtitle="`${item.project?.name || ''} · ${t('Sales')}`"
         >
-            <template #actions>
-                <MisTableActions
-                    :filename="`unit-${item.id}-sales`"
-                    :headers="saleExportHeaders"
-                    :rows="saleExportRows"
+            <template #filters>
+                <div
+                    class="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 px-5 py-4"
                 >
-                    <Can v-if="canCreateSale" permission="sales.create">
-                        <Button as-child size="sm">
-                            <Link :href="`/sales/create?unit_id=${item.id}`">
-                                {{ t('Create sale') }}
-                            </Link>
-                        </Button>
-                    </Can>
-                </MisTableActions>
+                    <div>
+                        <h2 class="text-base font-semibold">{{ t('Sales') }}</h2>
+                        <p class="text-sm text-muted-foreground">
+                            {{ t('Contracts linked to this unit') }}
+                        </p>
+                    </div>
+                    <MisTableActions
+                        :filename="`unit-${item.id}-sales`"
+                        :headers="saleExportHeaders"
+                        :rows="saleExportRows"
+                    >
+                        <Can v-if="canCreateSale" permission="sales.create">
+                            <Button as-child size="sm">
+                                <Link :href="`/sales/create?unit_id=${item.id}`">
+                                    {{ t('Create sale') }}
+                                </Link>
+                            </Button>
+                        </Can>
+                    </MisTableActions>
+                </div>
             </template>
-            <TableFrame table-id="unit-sales" :columns="tableColumns">
+            <template #default>
                 <table class="min-w-full text-sm">
                     <thead class="table-chrome-head text-start text-muted-foreground">
                         <tr>
@@ -287,11 +298,12 @@ defineOptions({
                         <EmptyState
                             v-if="!item.sales?.length"
                             :colspan="6"
-                            :title="t('No sales yet')">
-                        </EmptyState>                    </tbody>
+                            :title="t('No sales yet')"
+                        />
+                    </tbody>
                 </table>
-            </TableFrame>
-        </V2Panel>
+            </template>
+        </V2TablePanel>
 
         <div v-show="tab === 'attachments'">
             <RecordAttachments

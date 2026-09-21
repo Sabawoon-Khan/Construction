@@ -134,7 +134,7 @@ defineOptions({
         </div>
 
         <article
-            class="voucher-sheet mx-auto w-full max-w-4xl overflow-hidden rounded-xl border bg-white text-neutral-900 shadow-sm print:rounded-none print:border-0 print:shadow-none"
+            class="voucher-sheet print-target mx-auto w-full max-w-4xl overflow-hidden rounded-xl border bg-white text-neutral-900 shadow-sm print:rounded-none print:border-0 print:shadow-none"
         >
             <header class="border-b border-neutral-200 px-8 py-7 text-center print:px-0 print:py-5">
                 <p class="text-[11px] font-medium tracking-[0.15em] text-neutral-400 uppercase">

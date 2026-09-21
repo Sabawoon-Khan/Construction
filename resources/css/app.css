@@ -2814,68 +2814,107 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         display: none !important;
     }
 
+    #app,
     .group\\/sidebar-wrapper,
     [data-slot='sidebar-inset'],
+    .app-v2-page,
     .app-v2-shell,
-    .app-v2-content {
+    .app-v2-content,
+    .v2-list-page {
         display: block !important;
         width: 100% !important;
+        height: auto !important;
         min-height: 0 !important;
+        max-height: none !important;
         padding: 0 !important;
         margin: 0 !important;
         background: #fff !important;
         overflow: visible !important;
     }
 
-    /* List pages: print only .print-target (may be nested) */
+    /* List / voucher pages: print the sheet, hide the rest of the app chrome */
     .print-table-only {
         position: relative !important;
         display: block !important;
         gap: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
     }
 
-    .print-table-only * {
+    .print-table-only
+        > *:not(.print-target):not(.voucher-sheet):not(.a4-print-sheet):not(
+            :has(.print-target, .voucher-sheet, .a4-print-sheet)
+        ) {
+        display: none !important;
+    }
+
+    .print-table-only:has(.print-target) *,
+    .print-table-only:has(.voucher-sheet) *,
+    .print-table-only:has(.a4-print-sheet) * {
         visibility: hidden !important;
     }
 
     .print-table-only .print-target,
-    .print-table-only .print-target * {
+    .print-table-only .print-target *,
+    .print-table-only .voucher-sheet,
+    .print-table-only .voucher-sheet *,
+    .print-table-only .a4-print-sheet,
+    .print-table-only .a4-print-sheet * {
         visibility: visible !important;
     }
 
-    .print-table-only .print-target {
-        position: absolute !important;
-        inset-inline-start: 0 !important;
-        top: 0 !important;
+    .print-table-only .print-target,
+    .print-table-only .voucher-sheet,
+    .print-table-only .a4-print-sheet {
+        position: relative !important;
+        inset: auto !important;
+        top: auto !important;
         width: 100% !important;
+        max-width: none !important;
         display: block !important;
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;
         background: #fff !important;
         padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
     }
 
     .print-table-only .print-target .print\:hidden,
-    .print-table-only .print-target .print\:hidden * {
+    .print-table-only .print-target .print\:hidden *,
+    .print-table-only .voucher-sheet .print\:hidden,
+    .print-table-only .voucher-sheet .print\:hidden *,
+    .print-table-only .a4-print-sheet .print\:hidden,
+    .print-table-only .a4-print-sheet .print\:hidden * {
         display: none !important;
         visibility: hidden !important;
     }
 
     .print-table-only .print-target .hidden.print\:block,
-    .print-table-only .print-target .hidden.print\:flex {
+    .print-table-only .print-target .hidden.print\:flex,
+    .print-table-only .voucher-sheet .hidden.print\:block,
+    .print-table-only .voucher-sheet .hidden.print\:flex,
+    .print-table-only .a4-print-sheet .hidden.print\:block,
+    .print-table-only .a4-print-sheet .hidden.print\:flex {
         display: block !important;
         visibility: visible !important;
     }
 
-    .print-table-only .print-target .hidden.print\:flex {
+    .print-table-only .print-target .hidden.print\:flex,
+    .print-table-only .voucher-sheet .hidden.print\:flex,
+    .print-table-only .a4-print-sheet .hidden.print\:flex {
         display: flex !important;
     }
 
     .print-table-only .print-target .hidden.print\:block *,
-    .print-table-only .print-target .hidden.print\:flex * {
+    .print-table-only .print-target .hidden.print\:flex *,
+    .print-table-only .voucher-sheet .hidden.print\:block *,
+    .print-table-only .voucher-sheet .hidden.print\:flex *,
+    .print-table-only .a4-print-sheet .hidden.print\:block *,
+    .print-table-only .a4-print-sheet .hidden.print\:flex * {
         visibility: visible !important;
     }
 
@@ -3202,6 +3241,18 @@ label:has(+ div.relative > button[aria-required='true'])::after {
 
     .ev-total-row {
         border-color: #162238 !important;
+    }
+}
+
+@media print {
+    .a4-print-host {
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        overflow: visible !important;
     }
 }
 

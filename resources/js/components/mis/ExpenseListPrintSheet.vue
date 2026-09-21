@@ -53,7 +53,7 @@ const subtitle = computed(() =>
 </script>
 
 <template>
-    <article class="expense-a4-sheet a4-print-sheet">
+    <article class="expense-a4-sheet a4-print-sheet print-target">
         <MisPrintLetterhead
             :title="t('Project expenses')"
             :subtitle="subtitle"
