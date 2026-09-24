@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
 import { Printer } from '@lucide/vue';
-import { computed } from 'vue';
-import { MisTableActions } from '@/components/mis';
+import { computed, toValue } from 'vue';
+import { MisTableActions, TabPrintHost } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
+import { useTabPrint } from '@/composables/useTabPrint';
 import Can from '@/components/Can.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
@@ -134,6 +135,58 @@ const contributionExportRows = computed(() =>
 const contributionFilteredExportRows = computed(() =>
     contributionSort.sortedRows.map(mapContributionExportRow),
 );
+
+const projectSubtitle = () =>
+    [props.item.name, props.item.code].filter(Boolean).join(' · ');
+
+const shareholdersPrint = useTabPrint({
+    title: () => t('Shareholders'),
+    subtitle: projectSubtitle,
+    columns: () => [
+        t('Name'),
+        t('Share'),
+        t('Money in'),
+        t('Profit share'),
+        t('Paid out'),
+        t('Still owed'),
+    ],
+    source: () => toValue(shareholderSort.sortedRows),
+    emptyLabel: () => t('No shareholders yet'),
+    option: (row) => ({
+        key: String(row.id),
+        title: row.name,
+        subtitle: `${formatNumber(row.ownership_percentage, 2)}%`,
+        amount: money(row.contributed_total, baseCurrency.value),
+    }),
+    cells: (row) => [
+        row.name,
+        `${formatNumber(row.ownership_percentage, 2)}%`,
+        money(row.contributed_total, baseCurrency.value),
+        money(row.entitled_share, baseCurrency.value),
+        money(row.paid_total, baseCurrency.value),
+        money(row.balance_owed, baseCurrency.value),
+    ],
+});
+
+const contributionsPrint = useTabPrint({
+    title: () => t('Money in'),
+    subtitle: projectSubtitle,
+    columns: () => [t('Date'), t('Shareholder'), t('Amount'), t('Created at')],
+    source: () => toValue(contributionSort.sortedRows),
+    emptyLabel: () => t('No contributions yet'),
+    option: (row) => ({
+        key: String(row.id),
+        title: row.partner?.name || t('Money in'),
+        subtitle: formatDate(row.invested_at),
+        amount: money(row.amount, row.currency || baseCurrency.value),
+    }),
+    cells: (row) => [
+        formatDate(row.invested_at),
+        row.partner?.name || '—',
+        money(row.amount, row.currency || baseCurrency.value),
+        formatDate(row.created_at),
+    ],
+});
 </script>
 
 <template>
@@ -151,6 +204,7 @@ const contributionFilteredExportRows = computed(() =>
                     :headers="shareholderExportHeaders"
                     :rows="shareholderExportRows"
                     :filtered-rows="shareholderFilteredExportRows"
+                    :on-print="shareholdersPrint.openPicker"
                 >
                 <Can permission="partners.create">
                     <Button
@@ -289,6 +343,7 @@ const contributionFilteredExportRows = computed(() =>
                     :headers="contributionExportHeaders"
                     :rows="contributionExportRows"
                     :filtered-rows="contributionFilteredExportRows"
+                    :on-print="contributionsPrint.openPicker"
                 >
                 <Can permission="partners.create">
                     <Button
@@ -401,5 +456,8 @@ const contributionFilteredExportRows = computed(() =>
                 </table>
             </TableFrame>
         </V2Panel>
+
+        <TabPrintHost :state="shareholdersPrint" />
+        <TabPrintHost :state="contributionsPrint" />
     </div>
 </template>

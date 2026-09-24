@@ -138,7 +138,7 @@ const showDetailsColumn = computed(() => props.lines?.some((line) => line.meta))
                         <tr class="border-b border-neutral-200 text-neutral-400">
                             <th class="pb-2 text-start font-normal">{{ t('Description') }}</th>
                             <th v-if="showDetailsColumn" class="pb-2 text-start font-normal">{{ t('Details') }}</th>
-                            <th class="pb-2 text-end font-normal">{{ t('Amount') }}</th>
+                            <th class="pb-2 text-start font-normal">{{ t('Amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -149,7 +149,7 @@ const showDetailsColumn = computed(() => props.lines?.some((line) => line.meta))
                         >
                             <td class="py-2.5">{{ line.description }}</td>
                             <td v-if="showDetailsColumn" class="py-2.5 text-neutral-500">{{ line.meta || '—' }}</td>
-                            <td class="py-2.5 text-end tabular-nums">
+                            <td class="py-2.5 text-start tabular-nums">
                                 {{ line.amount == null ? '—' : money(line.amount, currency) }}
                             </td>
                         </tr>

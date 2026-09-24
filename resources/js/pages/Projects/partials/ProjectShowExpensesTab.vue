@@ -16,6 +16,7 @@ import {
     ExpenseVoucherPrintSheet,
     MisSearchInput,
     MisTableActions,
+    PrintRecordsDialog,
 } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
 import type { MisSelectOption } from '@/components/mis/MisSelectField.vue';
@@ -27,6 +28,7 @@ import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
+import type { PrintRecordOption } from '@/lib/printRecords';
 import { formatNumber, money, resolveCurrency } from '@/lib/utils';
 
 const props = defineProps<{
@@ -85,17 +87,43 @@ const deletingId = ref<number | null>(null);
 const pendingDelete = ref<(typeof props.expenses)[number] | null>(null);
 const confirmDeleteOpen = ref(false);
 const printSingle = ref<(typeof props.expenses)[number] | null>(null);
+const printListRows = ref<(typeof props.expenses)[number][]>([]);
+const printPickerOpen = ref(false);
+const selectedPrintKeys = ref<string[]>([]);
 const { printA4 } = useA4Print();
 
-function printExpenseList() {
+function openPrintPicker() {
+    selectedPrintKeys.value = printRecordOptions.value.map((record) => record.key);
+    printPickerOpen.value = true;
+}
+
+function confirmPrintSelection(keys: string[]) {
+    const selected = new Set(keys);
+    const rows = sortedRows.value.filter((expense) =>
+        selected.has(String(expense.id)),
+    );
+
+    if (!rows.length) {
+        return;
+    }
+
+    printPickerOpen.value = false;
     void printA4(() => {
+        if (rows.length === 1) {
+            printSingle.value = rows[0];
+            printListRows.value = [];
+            return;
+        }
+
         printSingle.value = null;
+        printListRows.value = rows;
     });
 }
 
 function printExpenseOne(expense: (typeof props.expenses)[number]) {
     void printA4(() => {
         printSingle.value = expense;
+        printListRows.value = [];
     });
 }
 
@@ -216,6 +244,19 @@ const filteredExpenses = computed(() => {
 
 const { sortedRows } = provideTableSort(filteredExpenses);
 
+const printRecordOptions = computed<PrintRecordOption[]>(() =>
+    sortedRows.value.map((expense) => ({
+        key: String(expense.id),
+        title: expense.paid_to || t('Expense'),
+        subtitle: [
+            formatDate(expense.expense_date),
+            expense.reference_no || expense.expense_no || '—',
+            expense.category?.name || t('General'),
+        ].join(' · '),
+        amount: money(expense.amount, expense.currency || baseCurrency.value),
+    })),
+);
+
 const categoryOptions = computed<MisSelectOption[]>(() => [
     { value: 'all', label: t('All categories') },
     ...categorySummaries.value.map((group) => ({
@@ -316,7 +357,7 @@ const printCategoryLabel = computed(() => {
                     category:
                         categoryFilter !== 'all' ? categoryFilter : '',
                 }"
-                :on-print="printExpenseList"
+                :on-print="openPrintPicker"
             >
                 <CreateButton
                     :href="`/purchases/create?project_id=${item.id}`"
@@ -524,23 +565,24 @@ const printCategoryLabel = computed(() => {
             </div>
         </div>
 
-        <!-- A4 print sheets (screen-hidden; isolated while printing) -->
-        <div class="a4-print-host">
-            <ExpenseVoucherPrintSheet
-                v-if="printSingle"
-                :expense="printSingle"
-                :project-name="item.name"
-                :project-code="item.code"
-            />
-            <ExpenseListPrintSheet
-                v-else
-                :project-name="item.name"
-                :project-code="item.code"
-                :category-label="printCategoryLabel"
-                :rows="sortedRows"
-                :base-currency="baseCurrency"
-            />
-        </div>
+        <Teleport to="body">
+            <div class="a4-print-host">
+                <ExpenseVoucherPrintSheet
+                    v-if="printSingle"
+                    :expense="printSingle"
+                    :project-name="item.name"
+                    :project-code="item.code"
+                />
+                <ExpenseListPrintSheet
+                    v-else-if="printListRows.length"
+                    :project-name="item.name"
+                    :project-code="item.code"
+                    :category-label="printCategoryLabel"
+                    :rows="printListRows"
+                    :base-currency="baseCurrency"
+                />
+            </div>
+        </Teleport>
     </V2Panel>
 
     <ConfirmActionDialog
@@ -550,5 +592,14 @@ const printCategoryLabel = computed(() => {
         :confirm-label="t('Delete')"
         :processing="deletingId !== null"
         @confirm="deleteExpense"
+    />
+
+    <PrintRecordsDialog
+        v-model:open="printPickerOpen"
+        v-model:selected-keys="selectedPrintKeys"
+        :records="printRecordOptions"
+        :title="t('Print expenses')"
+        :empty-label="t('No expenses yet')"
+        @confirm="confirmPrintSelection"
     />
 </template>

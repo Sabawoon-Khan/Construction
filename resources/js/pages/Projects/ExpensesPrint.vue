@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ArrowLeft, Printer } from '@lucide/vue';
-import { computed } from 'vue';
+import { computed, nextTick, ref } from 'vue';
+import { PrintRecordsDialog } from '@/components/mis';
 import { Button } from '@/components/ui/button';
 import { V2DetailHero, V2ListPage } from '@/components/v2';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
+import type { PrintRecordOption } from '@/lib/printRecords';
 import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
 import { printPage } from '@/lib/voucher';
 
@@ -54,13 +56,59 @@ const title = computed(() =>
         : t('Project expenses'),
 );
 
+const printPickerOpen = ref(false);
+const selectedPrintKeys = ref<string[]>([]);
+const printSource = ref<typeof props.expenses | null>(null);
+const sourceExpenses = computed(() => printSource.value ?? props.expenses);
+
+const printRecordOptions = computed<PrintRecordOption[]>(() =>
+    props.expenses.map((expense) => ({
+        key: String(expense.id),
+        title: expense.paid_to || t('Expense'),
+        subtitle: [
+            formatDate(expense.expense_date),
+            expense.reference_no || expense.expense_no || '—',
+            expense.category?.name || t('General'),
+        ].join(' · '),
+        amount: money(expense.amount, expense.currency),
+    })),
+);
+
+const printSummary = computed(() => {
+    const byCurrency: Record<string, number> = {};
+    let total = 0;
+
+    for (const expense of sourceExpenses.value) {
+        const amount = Number(expense.amount ?? 0);
+        const code = expense.currency || 'USD';
+        byCurrency[code] = (byCurrency[code] ?? 0) + amount;
+        total += amount;
+    }
+
+    return {
+        count: sourceExpenses.value.length,
+        total,
+        by_currency: byCurrency,
+    };
+});
+
+async function confirmPrintSelection(keys: string[]) {
+    const selected = new Set(keys);
+    printSource.value = props.expenses.filter((expense) =>
+        selected.has(String(expense.id)),
+    );
+    printPickerOpen.value = false;
+    await nextTick();
+    printPage();
+}
+
 const groupedExpenses = computed(() => {
     if (props.category) {
         return [
             {
                 key: String(props.category.id ?? 'uncategorized'),
                 name: props.category.name,
-                rows: props.expenses,
+                rows: sourceExpenses.value,
             },
         ];
     }
@@ -70,7 +118,7 @@ const groupedExpenses = computed(() => {
         { key: string; name: string; rows: typeof props.expenses }
     >();
 
-    for (const expense of props.expenses) {
+    for (const expense of sourceExpenses.value) {
         const key = expense.category?.id
             ? String(expense.category.id)
             : 'uncategorized';
@@ -126,7 +174,11 @@ defineOptions({
                             {{ t('Back') }}
                         </Link>
                     </Button>
-                    <Button variant="outline" size="sm" @click="printPage">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        @click="printPickerOpen = true"
+                    >
                         <Printer class="size-4" /> {{ t('Print') }}
                     </Button>
                 </template>
@@ -169,11 +221,11 @@ defineOptions({
                 >
                     <span>
                         <span class="text-neutral-400">{{ t('Records') }}</span>
-                        {{ formatNumber(summary.count, 0) }}
+                        {{ formatNumber(printSummary.count, 0) }}
                     </span>
                     <span class="h-3 w-px bg-neutral-200" />
                     <span class="font-semibold tabular-nums">
-                        {{ moneyByCurrency(summary.by_currency, summary.total) }}
+                        {{ moneyByCurrency(printSummary.by_currency, printSummary.total) }}
                     </span>
                 </div>
             </header>
@@ -217,7 +269,7 @@ defineOptions({
                                 <th class="pb-2 text-start text-xs font-medium">
                                     {{ t('Description') }}
                                 </th>
-                                <th class="pb-2 text-end text-xs font-medium">
+                                <th class="pb-2 text-start text-xs font-medium">
                                     {{ t('Amount') }}
                                 </th>
                             </tr>
@@ -244,7 +296,7 @@ defineOptions({
                                 <td class="max-w-[12rem] py-2.5 text-neutral-700">
                                     {{ expense.description || '—' }}
                                 </td>
-                                <td class="py-2.5 text-end tabular-nums font-medium">
+                                <td class="py-2.5 text-start tabular-nums font-medium">
                                     {{ money(expense.amount, expense.currency) }}
                                 </td>
                             </tr>
@@ -266,7 +318,7 @@ defineOptions({
                 </section>
 
                 <p
-                    v-if="!expenses.length"
+                    v-if="!sourceExpenses.length"
                     class="py-10 text-center text-sm text-neutral-500"
                 >
                     {{ t('No expenses yet') }}
@@ -274,13 +326,13 @@ defineOptions({
             </div>
 
             <footer
-                v-if="expenses.length"
+                v-if="sourceExpenses.length"
                 class="border-t border-neutral-200 px-8 py-4 print:px-0"
             >
                 <div class="flex items-center justify-between gap-4 text-sm">
                     <span class="text-neutral-500">{{ t('Grand total') }}</span>
                     <span class="text-lg font-semibold tabular-nums">
-                        {{ moneyByCurrency(summary.by_currency, summary.total) }}
+                        {{ moneyByCurrency(printSummary.by_currency, printSummary.total) }}
                     </span>
                 </div>
             </footer>
@@ -291,5 +343,14 @@ defineOptions({
                 {{ companyName }} · {{ t('Printed') }} {{ printedAt }}
             </div>
         </article>
+
+        <PrintRecordsDialog
+            v-model:open="printPickerOpen"
+            v-model:selected-keys="selectedPrintKeys"
+            :records="printRecordOptions"
+            :title="t('Print expenses')"
+            :empty-label="t('No expenses yet')"
+            @confirm="confirmPrintSelection"
+        />
     </V2ListPage>
 </template>

@@ -104,14 +104,14 @@ const printedAt = computed(
                 <p v-if="brandSecondary" class="print-letterhead-secondary">
                     {{ brandSecondary }}
                 </p>
+                <p v-if="contactLine" class="print-letterhead-contact">
+                    {{ contactLine }}
+                </p>
             </div>
         </div>
         <div class="print-letterhead-meta">
             <p class="print-letterhead-doc">{{ documentTitle }}</p>
             <p v-if="subtitle" class="print-letterhead-sub">{{ subtitle }}</p>
-            <p v-if="contactLine" class="print-letterhead-contact">
-                {{ contactLine }}
-            </p>
             <p class="print-letterhead-date">
                 {{ t('Printed') }} {{ printedAt }}
             </p>

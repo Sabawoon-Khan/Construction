@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, toValue } from 'vue';
 import Can from '@/components/Can.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
-import { MisTableActions, MisMoneyStack, MisSearchInput } from '@/components/mis';
+import { MisMoneyStack, MisSearchInput, MisTableActions, TabPrintHost } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
+import { useTabPrint } from '@/composables/useTabPrint';
+import { translateStatus } from '@/lib/translateStatus';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
@@ -243,6 +245,60 @@ const purchaseExportRows = computed(() =>
 const purchaseFilteredExportRows = computed(() =>
     purchaseSort.sortedRows.map(mapPurchaseExportRow),
 );
+
+const projectSubtitle = () =>
+    [props.item.name, props.item.code].filter(Boolean).join(' · ');
+
+const materialsPrint = useTabPrint({
+    title: () => t('Materials purchased'),
+    subtitle: projectSubtitle,
+    columns: () => [t('Material'), t('Purchases'), t('Total qty'), t('Total cost')],
+    source: () => toValue(materialSort.sortedRows),
+    emptyLabel: () => t('No materials yet'),
+    option: (row) => ({
+        key: String(row.material_id),
+        title: row.name,
+        subtitle: row.code || row.unit || '—',
+        amount: money(row.total_cost_base, baseCurrency.value),
+    }),
+    cells: (row) => [
+        row.name,
+        formatNumber(row.purchase_count, 0),
+        formatNumber(row.quantity, 3),
+        money(row.total_cost_base, baseCurrency.value),
+    ],
+});
+
+const purchasesPrint = useTabPrint({
+    title: () => t('Purchases'),
+    subtitle: projectSubtitle,
+    columns: () => [
+        t('Purchase'),
+        t('Date'),
+        t('Supplier'),
+        t('Total'),
+        t('Remaining'),
+        t('Status'),
+        t('Created at'),
+    ],
+    source: () => toValue(purchaseSort.sortedRows),
+    emptyLabel: () => t('No purchases yet'),
+    option: (row) => ({
+        key: String(row.id),
+        title: row.purchase_no,
+        subtitle: row.supplier?.name || formatDate(row.purchase_date),
+        amount: money(row.total_amount, row.currency || baseCurrency.value),
+    }),
+    cells: (row) => [
+        row.purchase_no,
+        formatDate(row.purchase_date),
+        row.supplier?.name || '—',
+        money(row.total_amount, row.currency || baseCurrency.value),
+        money(remainingOf(row), row.currency || baseCurrency.value),
+        translateStatus(row.status, t),
+        formatDate(row.created_at),
+    ],
+});
 </script>
 
 <template>
@@ -260,6 +316,7 @@ const purchaseFilteredExportRows = computed(() =>
                     :rows="materialExportRows"
                     :filtered-rows="materialFilteredExportRows"
                     :filters="{ search: materialQuery }"
+                    :on-print="materialsPrint.openPicker"
                 >
                 <CreateButton
                     :href="`/purchases/create?project_id=${item.id}`"
@@ -384,6 +441,7 @@ const purchaseFilteredExportRows = computed(() =>
                     :headers="purchaseExportHeaders"
                     :rows="purchaseExportRows"
                     :filtered-rows="purchaseFilteredExportRows"
+                    :on-print="purchasesPrint.openPicker"
                 />
             </template>
             <TableFrame table-id="project-purchases" :columns="tableColumnsPurchases">
@@ -538,5 +596,8 @@ const purchaseFilteredExportRows = computed(() =>
             :processing="payProcessing"
             @confirm="confirmPay"
         />
+
+        <TabPrintHost :state="materialsPrint" />
+        <TabPrintHost :state="purchasesPrint" />
     </div>
 </template>
