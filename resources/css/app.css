@@ -3233,8 +3233,10 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         display: none !important;
     }
 
-    tr.print-row-skip {
+    tr.print-row-skip,
+    tr.print-row-skip * {
         display: none !important;
+        visibility: hidden !important;
     }
 
     table:not(:has(tbody tr:not(.print-row-skip))) {
@@ -3313,6 +3315,15 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         box-shadow: none !important;
         border: none !important;
         border-radius: 0 !important;
+    }
+
+    /* List tables also use .print-target and win on specificity — hide them */
+    body.printing-a4 .print-table-only .print-target:not(.a4-print-sheet),
+    body.printing-a4 .print-table-only .print-target:not(.a4-print-sheet) *,
+    body.printing-a4 .print-table-only .print-sheet:not(.a4-print-sheet),
+    body.printing-a4 .print-table-only .print-sheet:not(.a4-print-sheet) * {
+        display: none !important;
+        visibility: hidden !important;
     }
 
     body.printing-a4 .expense-voucher-preview.expense-voucher-sheet,
@@ -3650,6 +3661,31 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         padding: 0 !important;
         background: #fff !important;
         overflow: visible !important;
+    }
+
+    body.printing-a4 .table-panel,
+    body.printing-a4 .v2-list-page .print-target:not(.a4-print-sheet),
+    body:has(.a4-print-host .a4-print-sheet) .table-panel {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    body.printing-a4 .a4-print-host,
+    body.printing-a4 .a4-print-host *,
+    body:has(.a4-print-host .a4-print-sheet) .a4-print-host,
+    body:has(.a4-print-host .a4-print-sheet) .a4-print-host * {
+        visibility: visible !important;
+    }
+
+    body.printing-a4 .a4-print-host,
+    body:has(.a4-print-host .a4-print-sheet) .a4-print-host {
+        display: block !important;
+    }
+
+    .print-table-only .print-target tr.print-row-skip,
+    .print-table-only .print-target tr.print-row-skip * {
+        display: none !important;
+        visibility: hidden !important;
     }
 }
 

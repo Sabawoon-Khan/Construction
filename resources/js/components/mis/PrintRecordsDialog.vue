@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -63,27 +63,24 @@ function toggleAll(checked: boolean | 'indeterminate') {
         checked === true ? props.records.map((record) => record.key) : [];
 }
 
-watch(
-    () => [open.value, props.records] as const,
-    ([isOpen]) => {
-        if (isOpen) {
-            selectedKeys.value = props.records.map((record) => record.key);
-        }
-    },
-);
+function selectOnly(key: string) {
+    selectedKeys.value = [key];
+}
 
 function confirm() {
     if (!selectedKeys.value.length) {
         return;
     }
 
-    emit('confirm', [...selectedKeys.value]);
+    const keys = [...selectedKeys.value];
+    emit('confirm', keys);
+    open.value = false;
 }
 </script>
 
 <template>
     <Dialog v-model:open="open">
-        <DialogContent class="print:hidden sm:max-w-xl">
+        <DialogContent class="print:hidden sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{{ title ?? t('Print records') }}</DialogTitle>
                 <DialogDescription>
@@ -122,7 +119,7 @@ function confirm() {
                     v-for="record in records"
                     :key="record.key"
                     class="flex cursor-pointer items-start gap-3 rounded-lg px-1.5 py-2 hover:bg-muted/50"
-                    @click="toggleKey(record.key, !isSelected(record.key))"
+                    @click="selectOnly(record.key)"
                 >
                     <Checkbox
                         class="mt-0.5"
@@ -136,7 +133,7 @@ function confirm() {
                         <span
                             class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5"
                         >
-                            <span class="font-medium">{{ record.title }}</span>
+                            <span class="font-medium break-words">{{ record.title }}</span>
                             <span
                                 v-if="record.amount"
                                 class="tabular-nums text-sm"

@@ -22,9 +22,15 @@ export function useA4Print() {
         await nextTick();
         await nextTick();
         document.body.classList.add('printing-a4');
-        onAfterPrint = () => cleanup();
+        const startedAt = Date.now();
+        onAfterPrint = () => {
+            // Chrome can fire afterprint when the dialog opens — keep the class.
+            if (Date.now() - startedAt < 800) {
+                return;
+            }
+            cleanup();
+        };
         window.addEventListener('afterprint', onAfterPrint);
-        // Fallback only if afterprint never fires (some browsers)
         window.setTimeout(cleanup, 60_000);
         printPage();
     }

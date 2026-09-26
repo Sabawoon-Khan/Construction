@@ -93,7 +93,7 @@ const printSummary = computed(() => {
 });
 
 async function confirmPrintSelection(keys: string[]) {
-    const selected = new Set(keys);
+    const selected = new Set(keys.map(String));
     printSource.value = props.expenses.filter((expense) =>
         selected.has(String(expense.id)),
     );

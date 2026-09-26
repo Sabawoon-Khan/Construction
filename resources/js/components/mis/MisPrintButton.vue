@@ -73,6 +73,7 @@ async function confirmPrint(keys: string[]) {
     window.addEventListener('afterprint', cleanup);
     window.setTimeout(cleanup, 60_000);
     await nextTick();
+    await new Promise((resolve) => window.setTimeout(resolve, 280));
     printPage();
 }
 

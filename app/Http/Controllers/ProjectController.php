@@ -97,6 +97,21 @@ class ProjectController extends Controller implements HasMiddleware
 
         return Inertia::render('Projects/Index', [
             'items' => $query->with('creator:id,name')->latest()->paginate(10)->withQueryString(),
+            'printItems' => (clone $query)
+                ->with('creator:id,name')
+                ->latest()
+                ->get()
+                ->map(fn (Project $project) => [
+                    'id' => $project->id,
+                    'code' => $project->code,
+                    'name' => $project->name,
+                    'location' => $project->location,
+                    'status' => $project->status,
+                    'progress_percent' => $project->progress_percent,
+                    'units_count' => $project->units_count,
+                    'creator_name' => $project->creator?->name,
+                    'created_at' => $project->created_at?->toDateTimeString(),
+                ]),
             'filters' => [
                 'search' => $search,
                 'status' => $status,

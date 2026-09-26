@@ -64,16 +64,36 @@ export function collectPrintableRows(host: HTMLElement): CollectedPrintRow[] {
     });
 }
 
+export function applyPrintKeySelection(selectedKeys: string[]): () => void {
+    const selected = new Set(selectedKeys.map(String));
+    const rows = [
+        ...document.querySelectorAll<HTMLElement>('[data-print-key]'),
+    ];
+
+    for (const row of rows) {
+        row.classList.toggle(
+            'print-row-skip',
+            !selected.has(row.getAttribute('data-print-key') || ''),
+        );
+    }
+
+    return () => {
+        for (const row of rows) {
+            row.classList.remove('print-row-skip');
+        }
+    };
+}
+
 export function applyPrintRowSelection(
     rows: CollectedPrintRow[],
     selectedKeys: string[],
 ): () => void {
-    const selected = new Set(selectedKeys);
+    const selected = new Set(selectedKeys.map(String));
 
     for (const row of rows) {
         row.element.classList.toggle(
             'print-row-skip',
-            !selected.has(row.key),
+            !selected.has(String(row.key)),
         );
     }
 

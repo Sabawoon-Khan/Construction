@@ -74,6 +74,28 @@ class EmployeeController extends Controller implements HasMiddleware
 
         return Inertia::render('Employees/Index', [
             'items' => $query->with('creator:id,name')->latest()->paginate(15)->withQueryString(),
+            'printItems' => (clone $query)
+                ->with('creator:id,name')
+                ->latest()
+                ->get()
+                ->map(fn (Employee $employee) => [
+                    'id' => $employee->id,
+                    'employee_no' => $employee->employee_no,
+                    'name' => $employee->name,
+                    'takhallus' => $employee->takhallus,
+                    'father_name' => $employee->father_name,
+                    'department' => $employee->department,
+                    'designation' => $employee->designation,
+                    'working_hours' => $employee->working_hours,
+                    'joining_date' => $employee->joining_date?->toDateString(),
+                    'phone' => $employee->phone,
+                    'basic_salary' => $employee->basic_salary,
+                    'currency' => $employee->currency,
+                    'salary_payment_method' => $employee->salary_payment_method,
+                    'status' => $employee->status,
+                    'creator_name' => $employee->creator?->name,
+                    'created_at' => $employee->created_at?->toDateTimeString(),
+                ]),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'hireChart' => $this->hiresByMonth(clone $query),

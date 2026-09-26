@@ -98,7 +98,7 @@ function openPrintPicker() {
 }
 
 function confirmPrintSelection(keys: string[]) {
-    const selected = new Set(keys);
+    const selected = new Set(keys.map(String));
     const rows = sortedRows.value.filter((expense) =>
         selected.has(String(expense.id)),
     );

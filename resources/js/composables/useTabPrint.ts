@@ -1,6 +1,9 @@
 import { computed, reactive, ref, toValue, type MaybeRefOrGetter } from 'vue';
 import { useA4Print } from '@/composables/useA4Print';
-import type { PrintRecordOption } from '@/lib/printRecords';
+import {
+    applyPrintKeySelection,
+    type PrintRecordOption,
+} from '@/lib/printRecords';
 
 export function useTabPrint<T>(config: {
     title: MaybeRefOrGetter<string>;
@@ -37,10 +40,11 @@ export function useTabPrint<T>(config: {
         pickerOpen.value = true;
     }
 
-    function confirm(keys: string[]) {
-        const selected = new Set(keys);
+    async function confirm(keys: string[]) {
+        const selectedKeys = keys.map(String);
+        const selected = new Set(selectedKeys);
         const rows = (toValue(config.source) ?? []).filter((row) =>
-            selected.has(config.option(row).key),
+            selected.has(String(config.option(row).key)),
         );
 
         if (!rows.length) {
@@ -53,14 +57,26 @@ export function useTabPrint<T>(config: {
             ),
         );
         pickerOpen.value = false;
-        void printA4();
-        window.addEventListener(
-            'afterprint',
-            () => {
-                printRows.value = [];
-            },
-            { once: true },
-        );
+        const restoreRows = applyPrintKeySelection(selectedKeys);
+        const startedAt = Date.now();
+        let finished = false;
+        const finish = () => {
+            if (finished) {
+                return;
+            }
+            finished = true;
+            restoreRows();
+            printRows.value = [];
+        };
+        await new Promise((resolve) => window.setTimeout(resolve, 280));
+        await printA4();
+        window.addEventListener('afterprint', () => {
+            if (Date.now() - startedAt < 800) {
+                return;
+            }
+            finish();
+        });
+        window.setTimeout(finish, 60_000);
     }
 
     return reactive({

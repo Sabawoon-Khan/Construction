@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
-import { MisTableActions } from '@/components/mis';
+import { MisTableActions, TabPrintHost } from '@/components/mis';
+import { useTabPrint } from '@/composables/useTabPrint';
+import { translateStatus } from '@/lib/translateStatus';
 import MisSearchInput from '@/components/mis/MisSearchInput.vue';
 import RowActionsMenu from '@/components/RowActionsMenu.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
@@ -33,6 +35,7 @@ type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
+    printItems?: Item[];
     filters: { search?: string };
     totals: {
         count: number;
@@ -195,6 +198,66 @@ function paymentMethodLabel(method: string | null | undefined): string {
 
     return '—';
 }
+
+const printSource = computed(() =>
+    (props.printItems?.length ? props.printItems : sortedRows.value) as Item[],
+);
+
+const employeesPrint = useTabPrint({
+    title: () => t('Employees'),
+    columns: () => [
+        t('Employee No'),
+        t('Name'),
+        t('Takhallus'),
+        t('Father name'),
+        t('Department'),
+        t('Designation'),
+        t('Working hours'),
+        t('Employment Date'),
+        t('Phone'),
+        t('Basic Salary'),
+        t('Salary payment method'),
+        t('Status'),
+        t('Added by'),
+        t('Created at'),
+    ],
+    source: printSource,
+    emptyLabel: () => t('No employees yet'),
+    option: (item) => ({
+        key: String(item.id),
+        title: item.name || t('Employee'),
+        subtitle: [
+            item.employee_no,
+            item.takhallus,
+            item.father_name,
+            item.department,
+            item.designation,
+            item.phone,
+            translateStatus(item.status, t),
+        ]
+            .filter((value) => value != null && String(value).trim() !== '')
+            .join(' · '),
+        amount: item.basic_salary
+            ? money(item.basic_salary, item.currency)
+            : undefined,
+    }),
+    cells: (item) => [
+        item.employee_no || '—',
+        item.name || '—',
+        item.takhallus || '—',
+        item.father_name || '—',
+        item.department || '—',
+        item.designation || '—',
+        item.working_hours || '—',
+        formatDate(item.joining_date || item.employment_date),
+        item.phone || '—',
+        item.basic_salary ? money(item.basic_salary, item.currency) : '—',
+        paymentMethodLabel(item.salary_payment_method),
+        translateStatus(item.status, t),
+        item.creator_name || item.creator?.name || '—',
+        formatDate(item.created_at),
+    ],
+});
 
 function rowActions(item: Item): RowActionItem[] {
     return [
@@ -370,7 +433,11 @@ function rowActions(item: Item): RowActionItem[] {
                         />
                     </div>
                     <template #columns>
-                        <MisTableActions export-url="/employees/export" :filters="filters">
+                        <MisTableActions
+                            export-url="/employees/export"
+                            :filters="filters"
+                            :on-print="employeesPrint.openPicker"
+                        >
                             <CreateButton href="/employees/create" permission="employees.create">{{ t('Create') }}</CreateButton>
                         </MisTableActions>
                         <TableToolbar />
@@ -404,6 +471,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <tr
                             v-for="(item, index) in sortedRows"
                             :key="item.id"
+                            :data-print-key="String(item.id)"
                             :style="{ '--i': index }"
                         >
                             <TableIndexTd
@@ -462,5 +530,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <V2Pager :items="items" :only="onlyKeys" />
             </template>
         </V2TablePanel>
+
+        <TabPrintHost :state="employeesPrint" />
     </V2ListPage>
 </template>
