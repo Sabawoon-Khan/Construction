@@ -219,7 +219,7 @@ class SalaryController extends Controller implements HasMiddleware
     {
         $salary->load([
             'attachments',
-            'employee:id,name,employee_no,department,designation,salary_payment_method',
+            'employee:id,name,father_name,takhallus,employee_no,department,designation,salary_payment_method',
             'creator:id,name',
         ]);
 

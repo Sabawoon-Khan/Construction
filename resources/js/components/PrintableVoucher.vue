@@ -35,13 +35,47 @@ const props = withDefaults(
     },
 );
 
+type PublicCompany = {
+    name?: string | null;
+    name_primary?: string | null;
+    name_en?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
+};
+
 const page = usePage();
 const { t } = useTranslations();
 const calendar = useCalendar();
-const company = computed(() => page.props.company);
-const companyName = computed(
-    () => company.value?.legal_name || company.value?.name || page.props.name || t('Company'),
+const company = computed(() => page.props.company as PublicCompany | null);
+const publicCompany = computed(
+    () => (page.props.publicCompany as PublicCompany | null) ?? null,
 );
+const isEnglish = computed(() => ((page.props.locale as string) || 'en') === 'en');
+const companyName = computed(() => {
+    if (isEnglish.value) {
+        return (
+            publicCompany.value?.name_en?.trim() ||
+            (page.props.name as string | undefined) ||
+            t('Company')
+        );
+    }
+
+    return (
+        publicCompany.value?.name_primary?.trim() ||
+        (page.props.name as string | undefined) ||
+        t('Company')
+    );
+});
+const companyNameEn = computed(() => {
+    if (isEnglish.value) {
+        return null;
+    }
+
+    const english = publicCompany.value?.name_en?.trim();
+
+    return english && english !== companyName.value ? english : null;
+});
 const printedAt = computed(() => calendar.formatDateTime(new Date()) || '—');
 const displayDate = computed(() => calendar.format(props.date) || '—');
 
@@ -85,6 +119,7 @@ const showDetailsColumn = computed(() => props.lines?.some((line) => line.meta))
                 {{ kindLabel }}
             </p>
             <h1 class="mt-2 text-xl font-semibold tracking-tight">{{ companyName }}</h1>
+            <p v-if="companyNameEn" class="mt-1 text-sm text-neutral-500">{{ companyNameEn }}</p>
             <p v-if="company?.address || company?.phone || company?.email" class="mt-1.5 text-sm text-neutral-500">
                 <span v-if="company?.address">{{ company.address }}</span>
                 <template v-if="company?.address && (company?.phone || company?.email)"> · </template>
