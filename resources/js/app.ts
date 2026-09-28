@@ -1,6 +1,10 @@
 import { createInertiaApp, router } from '@inertiajs/vue3';
 import { initializeTheme } from '@/composables/useAppearance';
-import { initializeLocale } from '@/composables/useLocale';
+import {
+    applyDocumentLocale,
+    initializeLocale,
+} from '@/composables/useLocale';
+import type { LocaleCode, TextDirection } from '@/types/locale';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
@@ -105,5 +109,14 @@ if (initialProps) {
 }
 
 router.on('navigate', (event) => {
-    syncOfflineFromPage(event.detail.page.props as OfflinePageProps);
+    const props = event.detail.page.props as OfflinePageProps & {
+        locale?: LocaleCode;
+        dir?: TextDirection;
+    };
+
+    if (props.locale && props.dir) {
+        applyDocumentLocale(props.locale, props.dir);
+    }
+
+    syncOfflineFromPage(props);
 });

@@ -1,7 +1,13 @@
 import { router, usePage } from '@inertiajs/vue3';
 import type { ComputedRef } from 'vue';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { LocaleCode, LocaleOption, TextDirection } from '@/types/locale';
+
+/** Keeps document `dir` and Vue layout (e.g. sidebar side) in sync during locale POST. */
+const pendingLocale = ref<{
+    code: LocaleCode;
+    dir: TextDirection;
+} | null>(null);
 
 const setCookie = (name: string, value: string, days = 365): void => {
     if (typeof document === 'undefined') {
@@ -47,8 +53,12 @@ export type UseLocaleReturn = {
 export function useLocale(): UseLocaleReturn {
     const page = usePage();
 
-    const locale = computed(() => page.props.locale as LocaleCode);
-    const dir = computed(() => page.props.dir as TextDirection);
+    const locale = computed(
+        () => pendingLocale.value?.code ?? (page.props.locale as LocaleCode),
+    );
+    const dir = computed(
+        () => pendingLocale.value?.dir ?? (page.props.dir as TextDirection),
+    );
     const locales = computed(() => page.props.locales as LocaleOption[]);
     const sidebarSide = computed(() =>
         dir.value === 'rtl' ? 'right' : 'left',
@@ -58,12 +68,18 @@ export function useLocale(): UseLocaleReturn {
         const nextLocale = locales.value.find((item) => item.code === value);
 
         if (nextLocale) {
+            pendingLocale.value = { code: value, dir: nextLocale.dir };
             applyDocumentLocale(value, nextLocale.dir);
         }
 
         setCookie('locale', value);
 
-        router.post(`/locale/${value}`, {}, { preserveScroll: true });
+        router.post(`/locale/${value}`, {}, {
+            preserveScroll: true,
+            onFinish: () => {
+                pendingLocale.value = null;
+            },
+        });
     }
 
     return {
