@@ -239,6 +239,20 @@
     unicode-bidi: isolate;
 }
 
+.v2-list-page[dir='rtl'] .stat-card-body {
+    text-align: start;
+}
+
+.v2-list-page[dir='rtl'] .stat-card strong {
+    text-align: end;
+    font-size: clamp(12px, 1.5vw, 17px);
+    letter-spacing: -0.35px;
+    line-height: 1.35;
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+}
+
 .hero-body {
     position: relative;
     z-index: 1;
@@ -741,6 +755,11 @@
 .stat-icon svg {
     width: 16px;
     height: 16px;
+}
+
+.stat-card-body {
+    min-width: 0;
+    flex: 1;
 }
 
 .stat-card span {
@@ -2053,8 +2072,10 @@
 }
 
 .v2-list-page .detail-stat-grid {
-    padding-inline: 0;
-    padding-bottom: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding-inline: 22px;
+    padding-bottom: 14px;
 }
 
 .v2-list-page[dir='rtl'] .detail-hero-side,
