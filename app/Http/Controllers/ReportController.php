@@ -152,7 +152,7 @@ class ReportController extends Controller
             ->whereDate('expense_date', '<=', $to->toDateString())
             ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
             ->when($allowedProjectIds !== null, fn ($q) => $q->whereIn('project_id', $allowedProjectIds))
-            ->latest('expense_date')
+            ->oldest()
             ->limit(100)
             ->get();
 
@@ -167,7 +167,7 @@ class ReportController extends Controller
 
         $sales = (clone $salesQuery)
             ->with(['customer:id,name', 'unit:id,unit_no,list_price,currency', 'project:id,name'])
-            ->latest('contract_date')
+            ->oldest()
             ->limit(100)
             ->get();
 
@@ -214,7 +214,7 @@ class ReportController extends Controller
             ->whereBetween('created_at', [$from, $to])
             ->when($projectId, fn ($q) => $q->where('subject_id', $projectId))
             ->when($allowedProjectIds !== null, fn ($q) => $q->whereIn('subject_id', $allowedProjectIds))
-            ->latest()
+            ->oldest()
             ->limit(30)
             ->get();
 

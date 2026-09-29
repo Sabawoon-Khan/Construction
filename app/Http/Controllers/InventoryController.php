@@ -41,8 +41,8 @@ class InventoryController extends Controller implements HasMiddleware
                 'material.unit:id,unit_name',
             ])
             ->where('type', InventoryTransaction::TYPE_ISSUE)
-            ->latest('transaction_date')
-            ->latest('id');
+            ->oldest()
+            ->oldest();
 
         if ($projectId) {
             $issuesQuery->where('project_id', $projectId);

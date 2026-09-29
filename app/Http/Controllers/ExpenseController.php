@@ -54,7 +54,7 @@ class ExpenseController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Expenses/Index', [
-            'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name', 'attachments'])->latest('expense_date')->paginate(15)->withQueryString(),
+            'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name', 'attachments'])->oldest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'moneyChart' => $this->expensesByMonth(clone $query),

@@ -50,7 +50,7 @@ class PaymentController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Payments/Index', [
-            'items' => $query->latest('paid_at')->paginate(15)->withQueryString(),
+            'items' => $query->oldest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'moneyChart' => CurrencyAmounts::sumByMonth(clone $receipts, 'paid_at'),

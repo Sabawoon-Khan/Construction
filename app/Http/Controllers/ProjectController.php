@@ -96,10 +96,10 @@ class ProjectController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Projects/Index', [
-            'items' => $query->with('creator:id,name')->latest()->paginate(10)->withQueryString(),
+            'items' => $query->with('creator:id,name')->oldest()->paginate(10)->withQueryString(),
             'printItems' => (clone $query)
                 ->with('creator:id,name')
-                ->latest()
+                ->oldest()
                 ->get()
                 ->map(fn (Project $project) => [
                     'id' => $project->id,
@@ -127,7 +127,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
             ->with('creator:id,name')
-            ->latest()
+            ->oldest()
             ->lazyById(500)
             ->map(fn (Project $project) => [
                 $project->code,
@@ -229,8 +229,8 @@ class ProjectController extends Controller implements HasMiddleware
         $project->loadCount(['units', 'sales', 'expenses', 'incomes']);
         $project->load([
             'attachments',
-            'units' => fn ($q) => $q->latest()->limit(8),
-            'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest()->limit(8),
+            'units' => fn ($q) => $q->oldest()->limit(8),
+            'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->oldest()->limit(8),
         ]);
 
         $expensesQuery = Expense::query()
@@ -261,7 +261,7 @@ class ProjectController extends Controller implements HasMiddleware
             ->where('project_id', $project->id)
             ->where('type', InventoryTransaction::TYPE_ISSUE)
             ->with('material:id,name,material_unit_id')
-            ->latest('transaction_date')
+            ->oldest()
             ->get(['id', 'material_id', 'quantity', 'transaction_date']);
 
         $unitStatusCounts = Unit::query()
@@ -384,12 +384,12 @@ class ProjectController extends Controller implements HasMiddleware
             'contributions' => PartnerInvestment::query()
                 ->where('project_id', $project->id)
                 ->with('partner:id,name')
-                ->latest('invested_at')
+                ->oldest()
                 ->limit(50)
                 ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at', 'created_at']),
             'expenses' => $expensesQuery
                 ->with(['expenseUnit:id,unit_name', 'category:id,name', 'attachments'])
-                ->latest('expense_date')
+                ->oldest()
                 ->get([
                     'id',
                     'expense_no',
@@ -413,7 +413,7 @@ class ProjectController extends Controller implements HasMiddleware
             'expense_units' => \App\Models\ExpenseUnit::options(),
             'purchases' => $purchasesQuery
                 ->with('supplier:id,name')
-                ->latest('purchase_date')
+                ->oldest()
                 ->limit(50)
                 ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'total_amount_base', 'paid_amount', 'paid_amount_base', 'currency', 'status', 'created_at']),
             'purchase_materials' => $this->purchaseMaterialsForProject($project),
@@ -433,8 +433,8 @@ class ProjectController extends Controller implements HasMiddleware
             'stock_issues' => $stockIssues,
             'loans' => Loan::query()
                 ->where('project_id', $project->id)
-                ->with(['payments' => fn ($q) => $q->latest('paid_at')->limit(20)])
-                ->latest('loan_date')
+                ->with(['payments' => fn ($q) => $q->oldest()->limit(20)])
+                ->oldest()
                 ->get([
                     'id',
                     'loan_no',

@@ -78,7 +78,7 @@ function createTableSortState<T extends Record<string, unknown>>(
     options: { defaultKey?: string; defaultDir?: SortDir } = {},
 ): TableSortState<T> {
     const sortKey = ref(options.defaultKey ?? 'id');
-    const sortDir = ref<SortDir>(options.defaultDir ?? 'desc');
+    const sortDir = ref<SortDir>(options.defaultDir ?? 'asc');
 
     const sortedRows = computed(() => {
         const list = [...toValue(rows)];

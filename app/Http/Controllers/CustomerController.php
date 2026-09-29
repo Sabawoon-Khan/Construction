@@ -53,7 +53,7 @@ class CustomerController extends Controller implements HasMiddleware
             'payments_by_currency' => CurrencyAmounts::sum(clone $paymentsQuery),
         ];
 
-        $items = $query->with('creator:id,name')->latest()->paginate(12)->withQueryString();
+        $items = $query->with('creator:id,name')->oldest()->paginate(12)->withQueryString();
         $this->appendLedgerStats($items->getCollection());
 
         return Inertia::render('Customers/Index', [
@@ -187,7 +187,7 @@ class CustomerController extends Controller implements HasMiddleware
             'sales:id,customer_id,sale_no,project_id,unit_id,status,contract_date,discount,currency',
             'sales.project:id,name',
             'sales.unit:id,unit_no,list_price,currency',
-            'payments' => fn ($q) => $q->latest('paid_at')->limit(10),
+            'payments' => fn ($q) => $q->oldest()->limit(10),
         ]);
 
         $salesQuery = $customer->sales()->getQuery();

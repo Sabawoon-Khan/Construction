@@ -73,10 +73,10 @@ class EmployeeController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Employees/Index', [
-            'items' => $query->with('creator:id,name')->latest()->paginate(15)->withQueryString(),
+            'items' => $query->with('creator:id,name')->oldest()->paginate(15)->withQueryString(),
             'printItems' => (clone $query)
                 ->with('creator:id,name')
-                ->latest()
+                ->oldest()
                 ->get()
                 ->map(fn (Employee $employee) => [
                     'id' => $employee->id,
@@ -108,7 +108,7 @@ class EmployeeController extends Controller implements HasMiddleware
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
             ->with('creator:id,name')
-            ->latest()
+            ->oldest()
             ->lazyById(500)
             ->map(fn (Employee $employee) => [
                 $employee->employee_no,
@@ -186,8 +186,8 @@ class EmployeeController extends Controller implements HasMiddleware
             'attachments',
             'loginUser:id,name,email,is_active',
             'projects' => fn ($q) => $q->orderBy('name'),
-            'attendance' => fn ($q) => $q->with('creator:id,name')->latest('date')->limit(20),
-            'salaries' => fn ($q) => $q->with('creator:id,name')->latest('year')->latest('month')->limit(20),
+            'attendance' => fn ($q) => $q->with('creator:id,name')->oldest()->limit(20),
+            'salaries' => fn ($q) => $q->with('creator:id,name')->oldest()->limit(20),
         ]);
 
         return Inertia::render('Employees/Show', [

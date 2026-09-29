@@ -55,7 +55,7 @@ class PartnerController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Partners/Index', [
-            'items' => $query->latest()->paginate(12)->withQueryString(),
+            'items' => $query->oldest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'moneyChart' => $this->investmentsByMonth(clone $contributionsQuery),
@@ -67,7 +67,7 @@ class PartnerController extends Controller implements HasMiddleware
         abort_unless(config('kit.features.exports'), 404);
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
-            ->latest()
+            ->oldest()
             ->lazyById(500)
             ->map(fn (Partner $partner) => [
                 $partner->partner_no,
@@ -155,8 +155,8 @@ class PartnerController extends Controller implements HasMiddleware
         $partner->load([
             'attachments',
             'projects:id,name',
-            'distributions' => fn ($q) => $q->latest('distributed_at')->limit(20),
-            'investments' => fn ($q) => $q->latest('invested_at')->limit(20),
+            'distributions' => fn ($q) => $q->oldest()->limit(20),
+            'investments' => fn ($q) => $q->oldest()->limit(20),
         ]);
 
         $projectRows = $partner->projects->map(function (Project $project) use ($partner) {

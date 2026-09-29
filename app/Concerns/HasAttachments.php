@@ -13,7 +13,7 @@ trait HasAttachments
 {
     public function attachments(): MorphMany
     {
-        return $this->morphMany(Attachment::class, 'attachable')->latest();
+        return $this->morphMany(Attachment::class, 'attachable')->oldest();
     }
 
     public function storeAttachment(

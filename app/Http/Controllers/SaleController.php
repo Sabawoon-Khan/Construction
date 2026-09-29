@@ -64,7 +64,7 @@ class SaleController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Sales/Index', [
-            'items' => $query->latest('contract_date')->paginate(15)->withQueryString(),
+            'items' => $query->oldest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'moneyChart' => $this->salesByMonth(clone $query),
@@ -192,7 +192,7 @@ class SaleController extends Controller implements HasMiddleware
             'unit',
             'installments',
             'attachments',
-            'payments' => fn ($q) => $q->latest('paid_at'),
+            'payments' => fn ($q) => $q->oldest(),
         ]);
 
         return Inertia::render('Sales/Show', [

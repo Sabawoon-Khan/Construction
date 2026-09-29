@@ -75,7 +75,7 @@ class PurchaseController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Purchases/Index', [
-            'items' => $query->latest('purchase_date')->paginate(15)->withQueryString(),
+            'items' => $query->oldest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'moneyChart' => CurrencyAmounts::sumByMonth(clone $query, 'purchase_date', 'total_amount'),
@@ -175,7 +175,7 @@ class PurchaseController extends Controller implements HasMiddleware
             'project',
             'items.material.unit:id,unit_name',
             'expense:id,purchase_id,expense_no,amount,amount_base,currency',
-            'payments' => fn ($q) => $q->latest('paid_at'),
+            'payments' => fn ($q) => $q->oldest(),
         ]);
 
         return Inertia::render('Purchases/Show', [

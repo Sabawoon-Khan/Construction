@@ -73,7 +73,7 @@ class ContactMessageController extends Controller implements HasMiddleware
 
     protected function indexQuery(Request $request, bool $applyFilters = true): Builder
     {
-        $query = ContactMessage::query()->latest();
+        $query = ContactMessage::query()->oldest();
 
         if (! $applyFilters) {
             return $query;
