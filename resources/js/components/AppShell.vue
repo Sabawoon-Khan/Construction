@@ -19,7 +19,7 @@ const isOpen = usePage().props.sidebarOpen;
     <LocaleSync>
         <div
             v-if="variant === 'header'"
-            class="app-shell-header flex h-dvh min-h-0 w-full flex-col overflow-hidden"
+            class="app-shell-header flex h-dvh min-h-0 w-full max-w-full min-w-0 flex-col overflow-hidden"
         >
             <slot />
         </div>

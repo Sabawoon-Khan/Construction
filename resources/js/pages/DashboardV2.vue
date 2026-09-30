@@ -15,11 +15,13 @@ import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
+import { useAppNavigation } from '@/composables/useAppNavigation';
 import { useCalendar } from '@/composables/useCalendar';
+import { useLocale } from '@/composables/useLocale';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
 import { translateStatus } from '@/lib/translateStatus';
-import { money, moneyByCurrency } from '@/lib/utils';
+import { money, moneyByCurrency, toUrl } from '@/lib/utils';
 
 type Stats = Record<string, any>;
 type PeriodPreset = 'today' | 'month' | 'year' | 'all' | 'custom';
@@ -31,7 +33,68 @@ const props = defineProps<{
 }>();
 
 const { t } = useTranslations();
+const { dir } = useLocale();
+const { allNavItems } = useAppNavigation();
 const calendar = useCalendar();
+
+const TILE_COLORS: Record<string, string> = {
+    '/projects': '#4c7cf3',
+    '/sales': '#ff8a3a',
+    '/expenses': '#e51f56',
+    '/purchases': '#f07146',
+    '/inventory': '#42bfa7',
+    '/employees': '#8b5cf6',
+    '/reports': '#06b6d4',
+    '/customers': '#e6b83f',
+    '/units': '#22c55e',
+    '/payments': '#0ea5e9',
+};
+
+const IMPORTANT_APP_PATHS = [
+    '/projects',
+    '/sales',
+    '/expenses',
+    '/purchases',
+    '/inventory',
+    '/employees',
+    '/reports',
+    '/customers',
+    '/units',
+    '/payments',
+];
+
+const appTiles = computed(() => {
+    const overdue = (props.stats.overdue_installments || []).length;
+    const unpaid = (props.stats.unpaid_purchases || []).length;
+    const lowStock = (props.stats.low_stock || []).length;
+
+    const byPath = new Map(
+        allNavItems.value.map((item) => {
+            const path = toUrl(item.href).split('?')[0] ?? '';
+            return [path, item] as const;
+        }),
+    );
+
+    return IMPORTANT_APP_PATHS.flatMap((path) => {
+        const item = byPath.get(path);
+        if (!item) return [];
+
+        let badge = 0;
+        if (path === '/sales') badge = overdue;
+        else if (path === '/purchases') badge = unpaid;
+        else if (path === '/inventory') badge = lowStock;
+
+        return [
+            {
+                title: item.title,
+                href: toUrl(item.href),
+                icon: item.icon,
+                color: TILE_COLORS[path] ?? '#4c7cf3',
+                badge,
+            },
+        ];
+    }).slice(0, 10);
+});
 const formatDate = (value: string | null | undefined) =>
     calendar.format(value) || '—';
 const periodOpen = ref(false);
@@ -574,7 +637,7 @@ function openProject(id?: number | string) {
     <div class="dashboard-page">
         <div class="dashboard-v2" @click="periodOpen = false">
             <main class="visual-area">
-                <section class="hero-copy">
+                <section class="hero-copy" :dir="dir">
                     <h1>{{ t('Smart Construction') }}</h1>
                     <p>
                         {{
@@ -628,139 +691,34 @@ function openProject(id?: number | string) {
                     </div>
                 </article>
 
-                <section class="chart-panel">
-                    <div class="chart-header">
-                        <div>
-                            <span>{{ t('Sales vs expenses') }}</span>
-                            <div class="chart-number">
-                                {{ rangeTotals.share }}%
-                                <small
-                                    class="up"
-                                    :class="{ down: salesTrend.negative }"
-                                >
-                                    {{ salesTrend.text }}
-                                    <b>{{ salesTrend.negative ? '▼' : '▲' }}</b>
-                                </small>
-                            </div>
-                        </div>
-                        <div class="chart-actions">
-                            <button type="button" @click="router.visit('/sales')">
-                                <ExternalLink />
-                            </button>
-                            <div class="legend top dual">
-                                <span><i class="sales" /> {{ t('Sales') }}</span>
-                                <span><i class="expense" /> {{ t('Expenses') }}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-if="visibleBars.length" class="chart-plot">
-                        <div class="y-axis" aria-hidden="true">
-                            <span
-                                v-for="tick in yTicks"
-                                :key="tick.label"
-                                >{{ tick.label }}</span
-                            >
-                        </div>
-                        <div
-                            class="bar-chart structo"
-                            :style="{ '--bar-count': visibleBars.length }"
+                <section class="apps-panel" aria-label="Apps">
+                    <div class="apps-grid">
+                        <Link
+                            v-for="app in appTiles"
+                            :key="app.href"
+                            :href="app.href"
+                            class="app-tile"
                         >
-                            <div
-                                v-for="(bar, index) in visibleBars"
-                                :key="`${bar.fullLabel}-${index}`"
-                                class="bar-column"
-                                :class="{
-                                    active: bar.active,
-                                    hovering: hoverBarIndex === index,
-                                }"
-                                tabindex="0"
-                                @mouseenter="hoverBarIndex = index"
-                                @mouseleave="hoverBarIndex = null"
-                                @focusin="hoverBarIndex = index"
-                                @focusout="hoverBarIndex = null"
-                                @click.stop="
-                                    hoverBarIndex =
-                                        hoverBarIndex === index ? null : index
-                                "
+                            <span
+                                class="app-icon"
+                                :style="{ '--tile-accent': app.color }"
                             >
-                                <div
-                                    v-if="hoverBarIndex === index"
-                                    class="bar-tooltip"
-                                >
-                                    <strong>{{ bar.fullLabel }}</strong>
-                                    <span
-                                        >{{ t('Sales') }}:
-                                        {{ bar.salesLabel }}</span
-                                    >
-                                    <span
-                                        >{{ t('Expenses') }}:
-                                        {{ bar.expensesLabel }}</span
-                                    >
-                                </div>
-                                <div class="bar-pair">
-                                    <i
-                                        class="sales"
-                                        :class="{ active: bar.active }"
-                                        :style="{
-                                            height: `${bar.salesHeight}%`,
-                                        }"
-                                    />
-                                    <i
-                                        class="expense"
-                                        :class="{ active: bar.active }"
-                                        :style="{
-                                            height: `${bar.expenseHeight}%`,
-                                        }"
-                                    />
-                                </div>
-                                <em class="bar-amount">{{
-                                    bar.salesCompact
-                                }}</em>
-                                <small>{{ bar.label }}</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="chart-empty">
-                        {{ t('No chart data for this period.') }}
-                    </div>
-
-                    <div
-                        class="range-track"
-                        @pointerdown="onTrackJump"
-                    >
-                        <span
-                            class="range-fill"
-                            :style="rangeStyle"
-                            @pointerdown="onFillDrag"
-                        />
-                        <button
-                            type="button"
-                            class="range-handle start"
-                            :style="{ left: `${Math.min(rangeStart, rangeEnd)}%` }"
-                            aria-label="Range start"
-                            @pointerdown="onHandleStart"
-                        />
-                        <button
-                            type="button"
-                            class="range-handle end"
-                            :style="{ left: `${Math.max(rangeStart, rangeEnd)}%` }"
-                            aria-label="Range end"
-                            @pointerdown="onHandleEnd"
-                        />
-                        <i
-                            class="range-mark first"
-                            :style="{ left: `${Math.min(rangeStart, rangeEnd)}%` }"
-                        />
-                        <i
-                            class="range-mark second"
-                            :style="{ left: `${Math.max(rangeStart, rangeEnd)}%` }"
-                        />
+                                <component
+                                    :is="app.icon"
+                                    v-if="app.icon"
+                                    class="app-icon-svg"
+                                />
+                                <i v-if="app.badge" class="app-badge">{{
+                                    app.badge > 99 ? '99+' : app.badge
+                                }}</i>
+                            </span>
+                            <em>{{ app.title }}</em>
+                        </Link>
                     </div>
                 </section>
             </main>
 
-            <aside class="right-panel" @click.stop>
+            <aside class="right-panel" :dir="dir" @click.stop>
                 <div class="right-glass">
                     <div class="right-tools">
                         <div class="period-menu">
@@ -867,151 +825,8 @@ function openProject(id?: number | string) {
             </aside>
         </div>
 
-        <section v-if="isAdmin" class="dashboard-below">
+        <section v-if="isAdmin" class="dashboard-below" :dir="dir">
             <div class="below-grid charts">
-                <section class="structo-sales-chart span-3">
-                    <div class="chart-header">
-                        <div>
-                            <span>{{ t('Sales vs expenses') }}</span>
-                            <div class="chart-number">
-                                {{ rangeTotals.share }}%
-                                <small
-                                    class="up"
-                                    :class="{ down: salesTrend.negative }"
-                                >
-                                    {{ salesTrend.text }}
-                                    <b>{{ salesTrend.negative ? '▼' : '▲' }}</b>
-                                </small>
-                            </div>
-                            <p class="chart-sub">
-                                {{ t('Sales') }}: {{ rangeTotals.salesLabel }}
-                                · {{ t('Expenses') }}:
-                                {{ rangeTotals.expensesLabel }}
-                            </p>
-                        </div>
-                        <div class="chart-actions">
-                            <button type="button" @click="router.visit('/sales')">
-                                <ExternalLink />
-                            </button>
-                            <div class="legend top dual">
-                                <span><i class="sales" /> {{ t('Sales') }}</span>
-                                <span
-                                    ><i class="expense" />
-                                    {{ t('Expenses') }}</span
-                                >
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-if="visibleBars.length" class="chart-plot">
-                        <div class="y-axis" aria-hidden="true">
-                            <span
-                                v-for="tick in yTicks"
-                                :key="`below-${tick.label}`"
-                                >{{ tick.label }}</span
-                            >
-                        </div>
-                        <div
-                            class="bar-chart structo"
-                            :style="{ '--bar-count': visibleBars.length }"
-                        >
-                            <div
-                                v-for="(bar, index) in visibleBars"
-                                :key="`below-${bar.fullLabel}-${index}`"
-                                class="bar-column"
-                                :class="{
-                                    active: bar.active,
-                                    hovering: hoverBarIndex === index,
-                                }"
-                                tabindex="0"
-                                @mouseenter="hoverBarIndex = index"
-                                @mouseleave="hoverBarIndex = null"
-                                @focusin="hoverBarIndex = index"
-                                @focusout="hoverBarIndex = null"
-                                @click.stop="
-                                    hoverBarIndex =
-                                        hoverBarIndex === index ? null : index
-                                "
-                            >
-                                <div
-                                    v-if="hoverBarIndex === index"
-                                    class="bar-tooltip"
-                                >
-                                    <strong>{{ bar.fullLabel }}</strong>
-                                    <span
-                                        >{{ t('Sales') }}:
-                                        {{ bar.salesLabel }}</span
-                                    >
-                                    <span
-                                        >{{ t('Expenses') }}:
-                                        {{ bar.expensesLabel }}</span
-                                    >
-                                </div>
-                                <div class="bar-pair">
-                                    <i
-                                        class="sales"
-                                        :class="{ active: bar.active }"
-                                        :style="{
-                                            height: `${bar.salesHeight}%`,
-                                        }"
-                                    />
-                                    <i
-                                        class="expense"
-                                        :class="{ active: bar.active }"
-                                        :style="{
-                                            height: `${bar.expenseHeight}%`,
-                                        }"
-                                    />
-                                </div>
-                                <em class="bar-amount">{{
-                                    bar.salesCompact
-                                }}</em>
-                                <small>{{ bar.label }}</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="chart-empty">
-                        {{ t('No chart data for this period.') }}
-                    </div>
-
-                    <div class="range-track" @pointerdown="onTrackJump">
-                        <span
-                            class="range-fill"
-                            :style="rangeStyle"
-                            @pointerdown="onFillDrag"
-                        />
-                        <button
-                            type="button"
-                            class="range-handle start"
-                            :style="{
-                                left: `${Math.min(rangeStart, rangeEnd)}%`,
-                            }"
-                            aria-label="Range start"
-                            @pointerdown="onHandleStart"
-                        />
-                        <button
-                            type="button"
-                            class="range-handle end"
-                            :style="{
-                                left: `${Math.max(rangeStart, rangeEnd)}%`,
-                            }"
-                            aria-label="Range end"
-                            @pointerdown="onHandleEnd"
-                        />
-                        <i
-                            class="range-mark first"
-                            :style="{
-                                left: `${Math.min(rangeStart, rangeEnd)}%`,
-                            }"
-                        />
-                        <i
-                            class="range-mark second"
-                            :style="{
-                                left: `${Math.max(rangeStart, rangeEnd)}%`,
-                            }"
-                        />
-                    </div>
-                </section>
                 <MisChartCard
                     class="span-2"
                     :title="t('Expenses by currency')"
@@ -1020,18 +835,18 @@ function openProject(id?: number | string) {
                     :labels="currencyChart.labels"
                     :datasets="currencyChart.datasets"
                 />
-            </div>
-
-            <div class="below-grid projects">
                 <MisChartCard
-                    class="span-2"
+                    class="span-3"
                     :title="t('Top projects')"
                     :description="t('Revenue and profit')"
                     type="bar"
                     :labels="projectsChart.labels"
                     :datasets="projectsChart.datasets"
                 />
-                <div class="glass-panel span-3">
+            </div>
+
+            <div class="below-grid projects">
+                <div class="glass-panel span-5">
                     <div class="panel-head">
                         <h2>{{ t('Projects') }}</h2>
                         <Button as-child variant="ghost" size="sm">
@@ -1105,7 +920,7 @@ function openProject(id?: number | string) {
             </div>
 
             <div class="below-grid alerts">
-                <div class="glass-panel">
+                <div class="glass-panel widget-tile">
                     <div class="panel-head">
                         <h2>{{ t('Overdue installments') }}</h2>
                         <Button as-child variant="ghost" size="sm">
@@ -1137,7 +952,7 @@ function openProject(id?: number | string) {
                     </div>
                 </div>
 
-                <div class="glass-panel">
+                <div class="glass-panel widget-tile">
                     <div class="panel-head">
                         <h2>{{ t('Unpaid purchases') }}</h2>
                         <Button as-child variant="ghost" size="sm">
@@ -1167,7 +982,7 @@ function openProject(id?: number | string) {
                     </div>
                 </div>
 
-                <div class="glass-panel">
+                <div class="glass-panel widget-tile">
                     <div class="panel-head">
                         <h2>{{ t('Low stock') }}</h2>
                         <Button as-child variant="ghost" size="sm">
@@ -1198,9 +1013,153 @@ function openProject(id?: number | string) {
                     </div>
                 </div>
             </div>
+
+            <section class="structo-sales-chart sales-chart-end">
+                <div class="chart-header">
+                    <div>
+                        <span>{{ t('Sales vs expenses') }}</span>
+                        <div class="chart-number">
+                            {{ rangeTotals.share }}%
+                            <small
+                                class="up"
+                                :class="{ down: salesTrend.negative }"
+                            >
+                                {{ salesTrend.text }}
+                                <b>{{ salesTrend.negative ? '▼' : '▲' }}</b>
+                            </small>
+                        </div>
+                        <p class="chart-sub">
+                            {{ t('Sales') }}: {{ rangeTotals.salesLabel }}
+                            · {{ t('Expenses') }}:
+                            {{ rangeTotals.expensesLabel }}
+                        </p>
+                    </div>
+                    <div class="chart-actions">
+                        <button type="button" @click="router.visit('/sales')">
+                            <ExternalLink />
+                        </button>
+                        <div class="legend top dual">
+                            <span><i class="sales" /> {{ t('Sales') }}</span>
+                            <span
+                                ><i class="expense" />
+                                {{ t('Expenses') }}</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="visibleBars.length" class="chart-plot">
+                    <div class="y-axis" aria-hidden="true">
+                        <span
+                            v-for="tick in yTicks"
+                            :key="`end-${tick.label}`"
+                            >{{ tick.label }}</span
+                        >
+                    </div>
+                    <div
+                        class="bar-chart structo"
+                        :style="{ '--bar-count': visibleBars.length }"
+                    >
+                        <div
+                            v-for="(bar, index) in visibleBars"
+                            :key="`end-${bar.fullLabel}-${index}`"
+                            class="bar-column"
+                            :class="{
+                                active: bar.active,
+                                hovering: hoverBarIndex === index,
+                            }"
+                            tabindex="0"
+                            @mouseenter="hoverBarIndex = index"
+                            @mouseleave="hoverBarIndex = null"
+                            @focusin="hoverBarIndex = index"
+                            @focusout="hoverBarIndex = null"
+                            @click.stop="
+                                hoverBarIndex =
+                                    hoverBarIndex === index ? null : index
+                            "
+                        >
+                            <div
+                                v-if="hoverBarIndex === index"
+                                class="bar-tooltip"
+                            >
+                                <strong>{{ bar.fullLabel }}</strong>
+                                <span
+                                    >{{ t('Sales') }}:
+                                    {{ bar.salesLabel }}</span
+                                >
+                                <span
+                                    >{{ t('Expenses') }}:
+                                    {{ bar.expensesLabel }}</span
+                                >
+                            </div>
+                            <div class="bar-pair">
+                                <i
+                                    class="sales"
+                                    :class="{ active: bar.active }"
+                                    :style="{
+                                        height: `${bar.salesHeight}%`,
+                                    }"
+                                />
+                                <i
+                                    class="expense"
+                                    :class="{ active: bar.active }"
+                                    :style="{
+                                        height: `${bar.expenseHeight}%`,
+                                    }"
+                                />
+                            </div>
+                            <em class="bar-amount">{{
+                                bar.salesCompact
+                            }}</em>
+                            <small>{{ bar.label }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div v-else class="chart-empty">
+                    {{ t('No chart data for this period.') }}
+                </div>
+
+                <div class="range-track" @pointerdown="onTrackJump">
+                    <span
+                        class="range-fill"
+                        :style="rangeStyle"
+                        @pointerdown="onFillDrag"
+                    />
+                    <button
+                        type="button"
+                        class="range-handle start"
+                        :style="{
+                            left: `${Math.min(rangeStart, rangeEnd)}%`,
+                        }"
+                        aria-label="Range start"
+                        @pointerdown="onHandleStart"
+                    />
+                    <button
+                        type="button"
+                        class="range-handle end"
+                        :style="{
+                            left: `${Math.max(rangeStart, rangeEnd)}%`,
+                        }"
+                        aria-label="Range end"
+                        @pointerdown="onHandleEnd"
+                    />
+                    <i
+                        class="range-mark first"
+                        :style="{
+                            left: `${Math.min(rangeStart, rangeEnd)}%`,
+                        }"
+                    />
+                    <i
+                        class="range-mark second"
+                        :style="{
+                            left: `${Math.max(rangeStart, rangeEnd)}%`,
+                        }"
+                    />
+                </div>
+            </section>
         </section>
 
-        <section v-else class="dashboard-below">
+        <section v-else class="dashboard-below" :dir="dir">
             <div class="glass-panel">
                 <div class="panel-head">
                     <h2>{{ t('Your project shares') }}</h2>
@@ -1246,6 +1205,9 @@ function openProject(id?: number | string) {
     flex-direction: column;
     gap: 16px;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
     padding-bottom: 24px;
 }
 
@@ -1260,6 +1222,8 @@ function openProject(id?: number | string) {
     min-height: 640px;
     overflow: hidden;
     color: #1a1a1a;
+    /* Keep hero/metrics geometry stable; text direction is set on copy panels. */
+    direction: ltr;
     font-family:
         var(--font-sans), 'Plus Jakarta Sans', 'Helvetica Neue', sans-serif;
     border-radius: 28px;
@@ -1321,10 +1285,10 @@ function openProject(id?: number | string) {
 .building-wrap {
     position: absolute;
     z-index: 2;
-    top: 2%;
+    top: 0;
     inset-inline-end: -4%;
     width: 98%;
-    height: 78%;
+    height: 58%;
     overflow: hidden;
     pointer-events: none;
     -webkit-mask-image: radial-gradient(
@@ -1464,19 +1428,23 @@ function openProject(id?: number | string) {
     font-size: 8px;
 }
 
-.chart-panel {
+.apps-panel {
     position: absolute;
     z-index: 7;
     right: 10px;
     bottom: 12px;
     left: 10px;
     height: 46%;
-    padding: 16px 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 22px 18px;
+    overflow: auto;
     border: 1px solid rgb(255 255 255 / 62%);
     border-radius: 26px;
     background: linear-gradient(
         180deg,
-        rgb(255 255 255 / 48%),
+        rgb(255 255 255 / 52%),
         rgb(255 255 255 / 28%)
     );
     box-shadow:
@@ -1484,6 +1452,107 @@ function openProject(id?: number | string) {
         inset 0 1px rgb(255 255 255 / 85%);
     backdrop-filter: blur(28px) saturate(1.3);
     -webkit-backdrop-filter: blur(28px) saturate(1.3);
+}
+
+.apps-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: repeat(2, auto);
+    gap: 18px 20px;
+    width: min(100%, 720px);
+    justify-items: center;
+    align-content: center;
+}
+
+.app-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 108px;
+    text-decoration: none;
+    color: #2a2d2e;
+    transition: transform 0.18s ease;
+}
+
+.app-tile:hover {
+    transform: translateY(-3px);
+}
+
+.app-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    border: 1px solid rgb(255 255 255 / 70%);
+    border-radius: 22px;
+    background:
+        linear-gradient(
+            145deg,
+            rgb(255 255 255 / 78%),
+            rgb(255 255 255 / 42%)
+        );
+    box-shadow:
+        0 12px 28px rgb(55 65 70 / 8%),
+        inset 0 1px rgb(255 255 255 / 95%);
+    transition:
+        box-shadow 0.18s ease,
+        background 0.18s ease,
+        border-color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.app-tile:hover .app-icon {
+    background:
+        linear-gradient(
+            145deg,
+            rgb(255 255 255 / 92%),
+            color-mix(in srgb, var(--tile-accent, #4c7cf3) 10%, white)
+        );
+    border-color: color-mix(in srgb, var(--tile-accent, #4c7cf3) 28%, white);
+    box-shadow:
+        0 14px 30px color-mix(in srgb, var(--tile-accent, #4c7cf3) 16%, transparent),
+        inset 0 1px rgb(255 255 255 / 98%);
+}
+
+.app-icon-svg {
+    width: 34px;
+    height: 34px;
+    color: var(--tile-accent, #4c7cf3);
+    stroke-width: 1.7;
+}
+
+.app-badge {
+    position: absolute;
+    top: -6px;
+    inset-inline-end: -6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ff8a3a;
+    box-shadow: 0 6px 14px rgb(255 138 58 / 35%);
+    color: white;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+}
+
+.app-tile em {
+    max-width: 100%;
+    overflow: hidden;
+    color: #2d3133;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 550;
+    line-height: 1.2;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .chart-header span {
@@ -1817,6 +1886,26 @@ function openProject(id?: number | string) {
     height: 40px;
 }
 
+.sales-chart-end {
+    width: 100%;
+}
+
+.span-5 {
+    grid-column: span 5;
+}
+
+.widget-tile {
+    border-radius: 20px;
+    background: rgb(255 255 255 / 55%);
+    box-shadow:
+        0 10px 28px rgb(55 65 70 / 5%),
+        inset 0 1px rgb(255 255 255 / 90%);
+}
+
+.widget-tile .panel-head {
+    border-bottom-color: rgb(0 0 0 / 5%);
+}
+
 .right-panel {
     z-index: 10;
     grid-column: 2;
@@ -1836,6 +1925,7 @@ function openProject(id?: number | string) {
     flex: 1;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
     padding: 12px 11px 13px;
     border: 1px solid rgb(255 255 255 / 58%);
     border-radius: 28px;
@@ -1858,6 +1948,7 @@ function openProject(id?: number | string) {
     gap: 6px;
     height: 36px;
     margin-bottom: 10px;
+    flex-shrink: 0;
 }
 
 .right-tools button {
@@ -1885,6 +1976,8 @@ function openProject(id?: number | string) {
     display: flex;
     flex-direction: column;
     gap: 7px;
+    flex-shrink: 0;
+    min-width: 0;
 }
 
 .metric-card {
@@ -2229,7 +2322,7 @@ function openProject(id?: number | string) {
     position: absolute;
     z-index: 40;
     top: calc(100% + 6px);
-    right: 0;
+    inset-inline-end: 0;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -2348,6 +2441,9 @@ function openProject(id?: number | string) {
     flex-direction: column;
     gap: 14px;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: clip;
 }
 
 .below-grid {
@@ -2373,6 +2469,8 @@ function openProject(id?: number | string) {
 }
 
 .glass-panel {
+    min-width: 0;
+    max-width: 100%;
     overflow: hidden;
     border: 1px solid rgb(255 255 255 / 55%);
     border-radius: 22px;
@@ -2415,7 +2513,8 @@ function openProject(id?: number | string) {
     }
 
     .span-2,
-    .span-3 {
+    .span-3,
+    .span-5 {
         grid-column: auto;
     }
 }
@@ -2502,15 +2601,32 @@ function openProject(id?: number | string) {
         margin: 0 12px 12px;
     }
 
-    .chart-panel {
+    .apps-panel {
         position: relative;
         right: auto;
         bottom: auto;
         left: auto;
         height: auto;
+        min-height: 240px;
         margin: 0 10px 12px;
-        padding: 14px 14px 12px;
+        padding: 18px 14px 16px;
         border-radius: 20px;
+    }
+
+    .apps-grid {
+        width: 100%;
+        gap: 14px 12px;
+    }
+
+    .app-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+    }
+
+    .app-icon-svg {
+        width: 30px;
+        height: 30px;
     }
 
     .chart-header {
@@ -2666,10 +2782,30 @@ function openProject(id?: number | string) {
         font-size: 24px;
     }
 
-    .chart-panel {
+    .apps-panel {
         margin: 0 8px 10px;
-        padding: 12px 10px 10px;
+        padding: 14px 10px 12px;
         border-radius: 16px;
+        min-height: 200px;
+    }
+
+    .apps-grid {
+        gap: 12px 8px;
+    }
+
+    .app-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+    }
+
+    .app-icon-svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    .app-tile em {
+        font-size: 11px;
     }
 
     .legend.dual {
@@ -2705,6 +2841,20 @@ function openProject(id?: number | string) {
     }
 }
 
+:global(html[dir='rtl']) .dashboard-v2 .hero-copy,
+:global(html[dir='rtl']) .dashboard-v2 .project-float,
+:global(html[dir='rtl']) .dashboard-v2 .apps-panel,
+:global(html[dir='rtl']) .dashboard-v2 .right-panel,
+:global(html[dir='rtl']) .dashboard-below {
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
+:global(html[dir='rtl']) .dashboard-v2 {
+    font-family:
+        var(--font-sans), 'Noto Sans Arabic', 'Plus Jakarta Sans', sans-serif;
+}
+
 :global(html[dir='rtl']) .hero-copy h1 {
     max-width: 14ch;
     letter-spacing: 0;
@@ -2716,37 +2866,23 @@ function openProject(id?: number | string) {
     max-width: 36ch;
 }
 
-:global(html[dir='rtl']) .building {
-    object-position: left center;
-}
-
-:global(html[dir='rtl']) .building-wrap {
-    -webkit-mask-image: radial-gradient(
-        ellipse 68% 62% at 42% 42%,
-        #000 40%,
-        rgb(0 0 0 / 78%) 68%,
-        transparent 100%
-    );
-    mask-image: radial-gradient(
-        ellipse 68% 62% at 42% 42%,
-        #000 40%,
-        rgb(0 0 0 / 78%) 68%,
-        transparent 100%
-    );
-}
-
 :global(html[dir='rtl']) .project-row {
-    text-align: right;
+    text-align: start;
 }
 
 :global(html[dir='rtl']) .alert-chip {
-    align-items: flex-end;
-    text-align: right;
+    align-items: flex-start;
+    text-align: start;
 }
 
 :global(html[dir='rtl']) .legend.dual,
 :global(html[dir='rtl']) .chart-actions {
     align-items: flex-start;
+}
+
+:global(html[dir='rtl']) .chart-number,
+:global(html[dir='rtl']) .metric-value {
+    letter-spacing: 0;
 }
 
 :global(html.dark) .dashboard-page {
@@ -2795,7 +2931,30 @@ function openProject(id?: number | string) {
     );
 }
 
-:global(html.dark) .chart-panel,
+:global(html.dark) .apps-panel {
+    border-color: rgb(255 255 255 / 12%);
+    background: linear-gradient(
+        180deg,
+        rgb(18 26 39 / 72%),
+        rgb(16 24 36 / 52%)
+    );
+    box-shadow:
+        0 16px 40px rgb(0 0 0 / 22%),
+        inset 0 1px rgb(255 255 255 / 8%);
+}
+
+:global(html.dark) .app-icon {
+    border-color: rgb(255 255 255 / 12%);
+    background: rgb(255 255 255 / 6%);
+    box-shadow:
+        0 10px 22px rgb(0 0 0 / 18%),
+        inset 0 1px rgb(255 255 255 / 8%);
+}
+
+:global(html.dark) .app-tile em {
+    color: #e8eaed;
+}
+
 :global(html.dark) .structo-sales-chart,
 :global(html.dark) .right-glass,
 :global(html.dark) .metric-card,

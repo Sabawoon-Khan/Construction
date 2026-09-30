@@ -194,9 +194,11 @@ onBeforeUnmount(() => {
         >
             <div
                 class="app-v2-shell"
+                dir="ltr"
                 :class="{
                     'sidebar-open': sidebarOpen,
                     'no-topbar': isSettingsArea,
+                    'sidebar-end': dir === 'rtl',
                 }"
             >
                 <header
@@ -456,7 +458,7 @@ onBeforeUnmount(() => {
                     </nav>
                 </Teleport>
 
-                <main class="app-v2-content">
+                <main class="app-v2-content" :dir="dir">
                     <OfflineBanner
                         class="print:hidden"
                         :enabled="offlineEnabled"
@@ -499,6 +501,8 @@ onBeforeUnmount(() => {
     --app-v2-active-fg: #ffffff;
     --app-v2-panel-radius: calc(var(--radius, 0.875rem) * 2);
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     height: 100dvh;
     min-height: 100dvh;
     overflow: hidden;
@@ -545,6 +549,50 @@ onBeforeUnmount(() => {
 
 .app-v2-shell.sidebar-open {
     --app-v2-sidebar-width: 220px;
+}
+
+/* RTL: keep shell LTR for grid stability, place sidebar on the end (right). */
+.app-v2-shell.sidebar-end {
+    grid-template-columns: minmax(0, 1fr) var(--app-v2-sidebar-width);
+}
+
+.app-v2-shell.sidebar-end .app-v2-sidebar {
+    grid-column: 2;
+}
+
+.app-v2-shell.sidebar-end .app-v2-content {
+    grid-column: 1;
+    padding: 4px 8px 28px 28px;
+}
+
+.app-v2-shell.sidebar-end .app-v2-content:has(.dashboard-v2) {
+    padding: 8px 4px 16px 16px;
+}
+
+.app-v2-page[dir='rtl'] .app-v2-topbar {
+    /* Reorder via grid — do NOT set direction:rtl here (breaks Floating UI). */
+    grid-template-columns: auto 1fr 240px;
+}
+
+.app-v2-page[dir='rtl'] .app-v2-brand {
+    grid-column: 3;
+    justify-self: end;
+    letter-spacing: 0;
+}
+
+.app-v2-page[dir='rtl'] .app-v2-topnav,
+.app-v2-page[dir='rtl'] .app-v2-topnav-spacer {
+    grid-column: 2;
+}
+
+.app-v2-page[dir='rtl'] .app-v2-top-actions {
+    grid-column: 1;
+    justify-self: start;
+    direction: ltr;
+}
+
+.app-v2-page[dir='rtl'] .app-v2-sidebar-bottom .app-v2-nav-link:first-child svg {
+    transform: scaleX(-1);
 }
 
 .app-v2-shell.no-topbar {
@@ -849,10 +897,6 @@ onBeforeUnmount(() => {
     padding-top: 20px;
 }
 
-.app-v2-page[dir='rtl'] .app-v2-sidebar-bottom .app-v2-nav-link:first-child svg {
-    transform: scaleX(-1);
-}
-
 .app-v2-sidebar-top,
 .app-v2-sidebar-bottom {
     display: flex;
@@ -938,11 +982,43 @@ onBeforeUnmount(() => {
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+    max-width: 100%;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 4px 28px 28px 8px;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--school-navy, #162238) 28%, transparent)
+        transparent;
+}
+
+.app-v2-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.app-v2-content::-webkit-scrollbar-track {
+    margin-block: 12px;
+    background: transparent;
+}
+
+.app-v2-content::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+    background-color: color-mix(
+        in srgb,
+        var(--school-navy, #162238) 22%,
+        transparent
+    );
+}
+
+.app-v2-content::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(
+        in srgb,
+        var(--brand-accent, var(--primary)) 55%,
+        var(--school-navy, #162238)
+    );
 }
 
 .app-v2-shell > .app-v2-sidebar {
@@ -959,7 +1035,8 @@ onBeforeUnmount(() => {
 
 .app-v2-content:has(.dashboard-v2) {
     padding: 8px 16px 16px 4px;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .app-v2-main:has(.dashboard-v2) {
@@ -1007,6 +1084,8 @@ onBeforeUnmount(() => {
     border-inline-start: 1px solid
         color-mix(in srgb, var(--card, #fff) 70%, transparent);
     border-inline-end: 0;
+    box-shadow: -18px 0 48px
+        color-mix(in srgb, var(--school-navy, #0f172a) 24%, transparent);
 }
 
 .app-v2-mobile-drawer-head {
@@ -1315,6 +1394,10 @@ onBeforeUnmount(() => {
 
     .app-v2-content {
         padding: 4px 16px 20px 4px;
+    }
+
+    .app-v2-shell.sidebar-end .app-v2-content {
+        padding: 4px 4px 20px 16px;
     }
 }
 

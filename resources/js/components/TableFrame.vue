@@ -33,7 +33,7 @@ const showChrome = computed(() => hasToolbar.value || hasColumnsToggle.value);
 </script>
 
 <template>
-    <div class="relative">
+    <div class="relative min-w-0 max-w-full">
         <div
             v-if="showChrome"
             class="table-chrome-toolbar flex items-center justify-end gap-1.5 border-b px-2.5 py-1.5"
@@ -49,7 +49,7 @@ const showChrome = computed(() => hasToolbar.value || hasColumnsToggle.value);
         <div
             :class="
                 cn(
-                    'overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]',
+                    'min-w-0 max-w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]',
                     hideClasses,
                     $props.class,
                 )
