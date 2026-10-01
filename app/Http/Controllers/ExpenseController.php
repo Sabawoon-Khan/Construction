@@ -237,7 +237,7 @@ class ExpenseController extends Controller implements HasMiddleware
         ]);
 
         $data = $request->validate([
-            'expense_date' => 'required|date',
+            'expense_date' => 'nullable|date',
             'paid_to' => 'required|string|max:255',
             'item_amount' => 'nullable|numeric|min:0',
             'per_price' => 'nullable|numeric|min:0',

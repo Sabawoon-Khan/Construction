@@ -54,7 +54,7 @@ class FinanceDefaults
         ExpenseCategory::ensureDefaults();
 
         $currency = CurrencyService::normalize($data['currency'] ?? null, self::baseCurrency());
-        $date = isset($data['expense_date']) ? Carbon::parse($data['expense_date']) : now();
+        $date = ! empty($data['expense_date']) ? Carbon::parse($data['expense_date']) : now();
         $exchangeRate = self::exchangeRate($currency, $date);
         $itemAmount = isset($data['item_amount']) ? (float) $data['item_amount'] : null;
         $perPrice = isset($data['per_price']) ? round((float) $data['per_price'], 2) : null;
@@ -77,7 +77,7 @@ class FinanceDefaults
             'expense_category_id' => ! empty($data['expense_category_id'])
                 ? $data['expense_category_id']
                 : FinanceDefaults::generalExpenseCategoryId(),
-            'expense_date' => $data['expense_date'],
+            'expense_date' => $data['expense_date'] ?? null,
             'paid_to' => $data['paid_to'] ?? null,
             'expense_unit_id' => $data['expense_unit_id'] ?? null,
             'item_amount' => $itemAmount,

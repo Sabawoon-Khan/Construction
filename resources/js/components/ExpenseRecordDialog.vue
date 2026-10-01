@@ -185,8 +185,7 @@ watch(
         paymentMethod.value = props.item?.payment_method === 'bank' ? 'bank' : 'cash';
         description.value = props.item?.description ?? '';
         paidTo.value = props.item?.paid_to ?? '';
-        expenseDate.value =
-            props.item?.expense_date?.slice?.(0, 10) ?? new Date().toISOString().slice(0, 10);
+        expenseDate.value = props.item?.expense_date?.slice?.(0, 10) ?? '';
         referenceNo.value = props.item?.reference_no ?? '';
         categoryId.value = props.item?.expense_category_id ? String(props.item.expense_category_id) : '';
         newCategoryName.value = '';
@@ -465,7 +464,6 @@ async function addCategory() {
                                     v-model="expenseDate"
                                     name="expense_date"
                                     type="date"
-                                    required
                                     :aria-invalid="errors.expense_date ? 'true' : undefined"
                                     :aria-describedby="describedBy(errors, 'expense_date')"
                                 />

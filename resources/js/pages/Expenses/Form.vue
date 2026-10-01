@@ -82,8 +82,7 @@ defineOptions({
                                     id="expense_date"
                                     name="expense_date"
                                     type="date"
-                                    required
-                                    :default-value="item?.expense_date?.slice?.(0, 10) ?? new Date().toISOString().slice(0, 10)"
+                                    :default-value="item?.expense_date?.slice?.(0, 10) ?? ''"
                                 />
                                 <InputError :message="errors.expense_date" />
                             </div>
