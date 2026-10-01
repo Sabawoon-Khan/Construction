@@ -67,6 +67,8 @@ export function useModuleTabs() {
             || path.startsWith('/expense-categories/')
             || path === '/expense-units'
             || path.startsWith('/expense-units/')
+            || path === '/material-units'
+            || path.startsWith('/material-units/')
         );
     });
 

@@ -169,6 +169,15 @@ export function useSettingsNavigation() {
             );
         }
 
+        if (can('materials.view')) {
+            items.push({
+                title: t('Material units'),
+                href: '/material-units',
+                icon: Ruler,
+                group: 'data',
+            });
+        }
+
         if (can('storage.view')) {
             items.push({
                 title: t('File Manager'),

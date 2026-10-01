@@ -3,6 +3,7 @@ import { Form, Head, Link } from '@inertiajs/vue3';
 import { Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
+import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import InputError from '@/components/InputError.vue';
 import RecordAttachments from '@/components/RecordAttachments.vue';
 import { V2FormPage } from '@/components/v2';
@@ -74,7 +75,13 @@ defineOptions({
                                 <InputError :message="errors.code" />
                             </div>
                             <div class="v2-field">
-                                <Label for="material_unit_id">{{ t('Unit') }}</Label>
+                                <div class="flex items-center justify-between gap-2">
+                                    <Label for="material_unit_id">{{ t('Unit') }}</Label>
+                                    <RelatedCreateLink
+                                        href="/material-units"
+                                        :label="t('Add unit')"
+                                    />
+                                </div>
                                 <select
                                     id="material_unit_id"
                                     name="material_unit_id"

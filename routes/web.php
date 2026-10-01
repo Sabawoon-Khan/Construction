@@ -22,6 +22,7 @@ use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\MaterialUnitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PaymentController;
@@ -140,6 +141,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('suppliers', SupplierController::class);
     Route::get('materials/export', [MaterialController::class, 'export'])->name('materials.export');
     Route::resource('materials', MaterialController::class)->except(['show']);
+    Route::get('material-units/export', [MaterialUnitController::class, 'export'])->name('material-units.export');
+    Route::resource('material-units', MaterialUnitController::class)->except(['create', 'edit', 'show']);
     Route::get('portfolio/export', [PortfolioProjectController::class, 'export'])->name('portfolio.export');
     Route::resource('portfolio', PortfolioProjectController::class)
         ->parameters(['portfolio' => 'portfolio'])

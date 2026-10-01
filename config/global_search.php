@@ -11,6 +11,7 @@ use App\Models\FieldReport;
 use App\Models\Income;
 use App\Models\InventoryTransaction;
 use App\Models\Material;
+use App\Models\MaterialUnit;
 use App\Models\Partner;
 use App\Models\Payment;
 use App\Models\PortfolioProject;
@@ -99,6 +100,19 @@ return [
         'show_route' => 'partners.show',
         'index_route' => 'partners.index',
         'route_param' => 'partner',
+    ],
+    'material_units' => [
+        'label' => 'Material units',
+        'model' => MaterialUnit::class,
+        'permission' => 'materials',
+        'search' => ['unit_name'],
+        'priority' => ['unit_name'],
+        'title' => 'unit_name',
+        'subtitle' => [],
+        'edit_route' => null,
+        'show_route' => null,
+        'index_route' => 'material-units.index',
+        'route_param' => 'material_unit',
     ],
     'materials' => [
         'label' => 'Materials',

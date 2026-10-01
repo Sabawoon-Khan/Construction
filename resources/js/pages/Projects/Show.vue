@@ -3,14 +3,18 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import {
     Banknote,
     Building2,
+    CalendarDays,
     CircleDollarSign,
+    FileText,
     HandCoins,
     Info,
+    Layers3,
     Paperclip,
     Pencil,
     Receipt,
     Trash2,
     UserRound,
+    Wallet,
     Warehouse,
 } from '@lucide/vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
@@ -20,6 +24,7 @@ import EmployeeAddDialog from '@/components/EmployeeAddDialog.vue';
 import ExpenseRecordDialog from '@/components/ExpenseRecordDialog.vue';
 import {
     MisAlert,
+    MisMoneyStack,
     MisSearchInput,
     MisTabs,
 } from '@/components/mis';
@@ -50,7 +55,7 @@ import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money, moneyByCurrency } from '@/lib/utils';
+import { formatNumber, money, moneyByCurrency, resolveCurrency } from '@/lib/utils';
 import {
     consumePendingTrashUndo,
     expectTrashUndo,
@@ -215,6 +220,37 @@ const tableColumns = computed(() => [
     { key: 'total_cost', label: t('Total') },
 ]);
 const { baseCurrency } = useCurrency();
+
+const expenseTabStats = computed(() => {
+    const byCurrency: Record<string, number> = {};
+    const thisMonthByCurrency: Record<string, number> = {};
+    const categoryKeys = new Set<string>();
+    const now = new Date();
+    const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    for (const expense of props.expenses) {
+        const code = resolveCurrency(expense.currency || baseCurrency.value);
+        const amount = Number(expense.amount ?? 0);
+        byCurrency[code] = (byCurrency[code] ?? 0) + amount;
+
+        const categoryKey = expense.category?.id
+            ? String(expense.category.id)
+            : 'uncategorized';
+        categoryKeys.add(categoryKey);
+
+        if (String(expense.expense_date || '').startsWith(monthPrefix)) {
+            thisMonthByCurrency[code] =
+                (thisMonthByCurrency[code] ?? 0) + amount;
+        }
+    }
+
+    return {
+        count: props.expenses.length,
+        byCurrency,
+        thisMonthByCurrency,
+        categories: categoryKeys.size,
+    };
+});
 
 function openExpense(expense: Record<string, any> | null, edit = false) {
     selectedExpense.value = expense;
@@ -403,7 +439,7 @@ defineOptions({
         <V2DetailHero
             class="print:hidden"
             image="/images/projects-v2-hero-luxury.png"
-            :compact="tab !== 'overview'"
+            :compact="tab !== 'overview' && tab !== 'expenses'"
         >
             <template #eyebrow>{{ t('Projects') }}</template>
             <template #title>{{ item.name }}</template>
@@ -435,45 +471,40 @@ defineOptions({
                     </Button>
                 </Can>
             </template>
-            <template v-if="tab === 'overview'" #stats>
-                <V2StatGrid class="detail-stat-grid">
-                    <V2StatCard
-                        :delay="0"
-                        :title="t('Sales')"
-                        :value="
-                            moneyByCurrency(
-                                stats.sales_by_currency,
-                                stats.sales_total,
-                            )
-                        "
-                    >
+            <template v-if="tab === 'overview' || tab === 'expenses'" #stats>
+                <V2StatGrid v-if="tab === 'overview'" class="detail-stat-grid">
+                    <V2StatCard :delay="0" :title="t('Sales')">
                         <template #icon><Banknote /></template>
+                        <span>{{ t('Sales') }}</span>
+                        <strong class="stat-card-money">
+                            <MisMoneyStack
+                                layout="inline"
+                                :amounts="stats.sales_by_currency"
+                                :fallback="stats.sales_total"
+                            />
+                        </strong>
                     </V2StatCard>
-                    <V2StatCard
-                        :delay="1"
-                        icon-tone="warm"
-                        :title="t('Expenses')"
-                        :value="
-                            moneyByCurrency(
-                                stats.expenses_by_currency,
-                                stats.expenses_total,
-                            )
-                        "
-                    >
+                    <V2StatCard :delay="1" icon-tone="warm" :title="t('Expenses')">
                         <template #icon><Receipt /></template>
+                        <span>{{ t('Expenses') }}</span>
+                        <strong class="stat-card-money">
+                            <MisMoneyStack
+                                layout="inline"
+                                :amounts="stats.expenses_by_currency"
+                                :fallback="stats.expenses_total"
+                            />
+                        </strong>
                     </V2StatCard>
-                    <V2StatCard
-                        :delay="2"
-                        icon-tone="teal"
-                        :title="t('Net profit')"
-                        :value="
-                            moneyByCurrency(
-                                stats.net_profit_by_currency,
-                                stats.net_profit,
-                            )
-                        "
-                    >
+                    <V2StatCard :delay="2" icon-tone="teal" :title="t('Net profit')">
                         <template #icon><CircleDollarSign /></template>
+                        <span>{{ t('Net profit') }}</span>
+                        <strong class="stat-card-money">
+                            <MisMoneyStack
+                                layout="inline"
+                                :amounts="stats.net_profit_by_currency"
+                                :fallback="stats.net_profit"
+                            />
+                        </strong>
                     </V2StatCard>
                     <V2StatCard
                         :delay="3"
@@ -482,6 +513,49 @@ defineOptions({
                         :value="formatNumber(stats.units_count, 0)"
                     >
                         <template #icon><Building2 /></template>
+                    </V2StatCard>
+                </V2StatGrid>
+                <V2StatGrid v-else class="detail-stat-grid">
+                    <V2StatCard
+                        :delay="0"
+                        :title="t('Records')"
+                        :value="formatNumber(expenseTabStats.count, 0)"
+                    >
+                        <template #icon><FileText /></template>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="1"
+                        accent
+                        icon-tone="orange"
+                        :title="t('Total spent')"
+                    >
+                        <template #icon><Wallet /></template>
+                        <span>{{ t('Total spent') }}</span>
+                        <strong class="stat-card-money">
+                            <MisMoneyStack
+                                layout="inline"
+                                :amounts="expenseTabStats.byCurrency"
+                                :fallback="stats.expenses_total"
+                            />
+                        </strong>
+                    </V2StatCard>
+                    <V2StatCard :delay="2" icon-tone="teal" :title="t('This month')">
+                        <template #icon><CalendarDays /></template>
+                        <span>{{ t('This month') }}</span>
+                        <strong class="stat-card-money">
+                            <MisMoneyStack
+                                layout="inline"
+                                :amounts="expenseTabStats.thisMonthByCurrency"
+                            />
+                        </strong>
+                    </V2StatCard>
+                    <V2StatCard
+                        :delay="3"
+                        icon-tone="warm"
+                        :title="t('Categories')"
+                        :value="formatNumber(expenseTabStats.categories, 0)"
+                    >
+                        <template #icon><Layers3 /></template>
                     </V2StatCard>
                 </V2StatGrid>
             </template>

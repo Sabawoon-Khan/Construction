@@ -12,6 +12,7 @@ import {
     LayoutGrid,
     Package,
     Receipt,
+    Ruler,
     Scale,
     Settings,
     Truck,
@@ -167,6 +168,7 @@ export function useAppNavigation() {
                     permission: 'materials.create',
                 }),
             );
+            purchaseAndStock.push(item(t('Material units'), '/material-units', Ruler));
         }
 
         if (can('inventory.view')) {
