@@ -65,6 +65,9 @@ return [
         'field_reports' => [
             'extra' => [],
         ],
+        'archive' => [
+            'extra' => [],
+        ],
         'companies' => [
             'extra' => [],
         ],

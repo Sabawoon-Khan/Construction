@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ArchiveDocument;
 use App\Models\Attendance;
 use App\Models\Customer;
 use App\Models\Employee;
@@ -117,6 +118,11 @@ return [
     */
 
     'attachables' => [
+        'archive' => [
+            'model' => ArchiveDocument::class,
+            'user_scoped' => false,
+            'permissions' => ['archive.create', 'archive.edit'],
+        ],
         'field_reports' => [
             'model' => FieldReport::class,
             'user_scoped' => true,

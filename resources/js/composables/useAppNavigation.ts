@@ -1,4 +1,5 @@
 import {
+    Archive,
     Banknote,
     Boxes,
     Building2,
@@ -240,6 +241,18 @@ export function useAppNavigation() {
 
         if (hr.length) {
             groups.push({ label: t('HR'), items: hr });
+        }
+
+        if (can('archive.view')) {
+            groups.push({
+                label: t('Documents'),
+                items: [
+                    item(t('Archive'), '/archive', Archive, {
+                        href: '/archive/create',
+                        permission: 'archive.create',
+                    }),
+                ],
+            });
         }
 
         if (can('portfolio.view') || can('contact_messages.view')) {

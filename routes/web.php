@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\FieldReportController;
+use App\Http\Controllers\ArchiveDocumentController;
 use App\Http\Controllers\AiAnalyticsController;
 use App\Http\Controllers\AiAssistController;
 use App\Http\Controllers\AiChatController;
@@ -135,6 +136,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('units', UnitController::class);
     Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
     Route::resource('customers', CustomerController::class);
+    Route::resource('archive', ArchiveDocumentController::class)
+        ->parameters(['archive' => 'archiveDocument']);
     Route::get('partners/export', [PartnerController::class, 'export'])->name('partners.export');
     Route::resource('partners', PartnerController::class);
     Route::get('suppliers/export', [SupplierController::class, 'export'])->name('suppliers.export');

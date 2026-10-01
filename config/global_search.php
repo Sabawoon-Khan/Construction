@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ArchiveDocument;
 use App\Models\Attendance;
 use App\Models\ContactMessage;
 use App\Models\Customer;
@@ -86,6 +87,19 @@ return [
         'show_route' => 'suppliers.show',
         'index_route' => 'suppliers.index',
         'route_param' => 'supplier',
+    ],
+    'archive' => [
+        'label' => 'Archive',
+        'model' => ArchiveDocument::class,
+        'permission' => 'archive',
+        'search' => ['title', 'notes'],
+        'priority' => ['title'],
+        'title' => 'title',
+        'subtitle' => ['category_label'],
+        'edit_route' => 'archive.edit',
+        'show_route' => 'archive.show',
+        'index_route' => 'archive.index',
+        'route_param' => 'archiveDocument',
     ],
     'partners' => [
         'label' => 'Shareholders',
