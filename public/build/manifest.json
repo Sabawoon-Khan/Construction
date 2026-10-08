@@ -77,8 +77,8 @@
       "_useTranslations-BGYXbgtx.js"
     ]
   },
-  "_ExpenseRecordDialog-B-IPAHz6.js": {
-    "file": "assets/ExpenseRecordDialog-B-IPAHz6.js",
+  "_ExpenseRecordDialog-DFkcWg3a.js": {
+    "file": "assets/ExpenseRecordDialog-DFkcWg3a.js",
     "name": "ExpenseRecordDialog",
     "imports": [
       "_useTranslations-BGYXbgtx.js",
@@ -230,14 +230,15 @@
       "_useTabPrint-BU5jT0eB.js"
     ]
   },
-  "_ProjectShowExpensesTab-BDjva58O.js": {
-    "file": "assets/ProjectShowExpensesTab-BDjva58O.js",
+  "_ProjectShowExpensesTab-k2sKmGXY.js": {
+    "file": "assets/ProjectShowExpensesTab-k2sKmGXY.js",
     "name": "ProjectShowExpensesTab",
     "imports": [
       "_rolldown-runtime-hePW80VL.js",
       "_useTranslations-BGYXbgtx.js",
       "_TableIndexTh-Caauw0Aw.js",
       "_chevron-right-BzZL07aP.js",
+      "_usePermissions-B_rS1eVx.js",
       "_mis-DcmjYsjU.js",
       "_trash-2-DoqnBTIk.js",
       "_ConfirmActionDialog-DVkUV4Eq.js",
@@ -1504,7 +1505,7 @@
     "isDynamicEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-Bz4VDmcS.css",
+    "file": "assets/app-CHdFdalo.css",
     "name": "app",
     "names": [
       "app.css"
@@ -1513,7 +1514,7 @@
     "isEntry": true
   },
   "resources/js/app.ts": {
-    "file": "assets/app-CunTz-1X.js",
+    "file": "assets/app-CACVjpw4.js",
     "name": "app",
     "src": "resources/js/app.ts",
     "isEntry": true,
@@ -1628,7 +1629,7 @@
       "resources/js/pages/Projects/Show.vue",
       "_ProjectShowAttachmentsTab-BMh6l6_z.js",
       "_ProjectShowEmployeesTab-DCH_lzdB.js",
-      "_ProjectShowExpensesTab-BDjva58O.js",
+      "_ProjectShowExpensesTab-k2sKmGXY.js",
       "_ProjectShowInfoTab-BDIojdy6.js",
       "_ProjectShowLoansTab-CCTUAINp.js",
       "_ProjectShowMoneyInTab-_m_lfbaG.js",
@@ -2147,7 +2148,7 @@
     ]
   },
   "resources/js/pages/Expenses/Index.vue": {
-    "file": "assets/Index-DcWeVkOv.js",
+    "file": "assets/Index-D2XiSV6f.js",
     "name": "Index",
     "src": "resources/js/pages/Expenses/Index.vue",
     "isDynamicEntry": true,
@@ -2155,6 +2156,7 @@
       "_useTranslations-BGYXbgtx.js",
       "_input-DpO-v61I.js",
       "_TableIndexTh-Caauw0Aw.js",
+      "_ExpenseRecordDialog-DFkcWg3a.js",
       "_mis-DcmjYsjU.js",
       "_eye-BNQYoHTD.js",
       "_file-text-BNw1y8C2.js",
@@ -2172,12 +2174,11 @@
       "_useMisPage-v1QuPogG.js",
       "_v2Money-CfG1tWz8.js",
       "_useCurrency-DaHiWPkR.js",
-      "_AttachmentLinks-Dq_ZMIF7.js",
-      "_ExpenseRecordDialog-B-IPAHz6.js"
+      "_AttachmentLinks-Dq_ZMIF7.js"
     ]
   },
   "resources/js/pages/Expenses/Show.vue": {
-    "file": "assets/Show-CQHtTaKO.js",
+    "file": "assets/Show-CQHtTaKO2.js",
     "name": "Show",
     "src": "resources/js/pages/Expenses/Show.vue",
     "isDynamicEntry": true,
@@ -2198,7 +2199,7 @@
     ]
   },
   "resources/js/pages/Incomes/Form.vue": {
-    "file": "assets/Form-CGJ8sKgs2.js",
+    "file": "assets/Form-CGJ8sKgs.js",
     "name": "Form",
     "src": "resources/js/pages/Incomes/Form.vue",
     "isDynamicEntry": true,
@@ -2216,7 +2217,7 @@
     ]
   },
   "resources/js/pages/Incomes/Index.vue": {
-    "file": "assets/Index-CDwYdGX22.js",
+    "file": "assets/Index-CDwYdGX2.js",
     "name": "Index",
     "src": "resources/js/pages/Incomes/Index.vue",
     "isDynamicEntry": true,
@@ -2274,7 +2275,7 @@
     ]
   },
   "resources/js/pages/Inventory/Index.vue": {
-    "file": "assets/Index-ChjN8ORd.js",
+    "file": "assets/Index-ChjN8ORd2.js",
     "name": "Index",
     "src": "resources/js/pages/Inventory/Index.vue",
     "isDynamicEntry": true,
@@ -2335,7 +2336,7 @@
     ]
   },
   "resources/js/pages/Materials/Form.vue": {
-    "file": "assets/Form-D4IbIBdh.js",
+    "file": "assets/Form-D4IbIBdh2.js",
     "name": "Form",
     "src": "resources/js/pages/Materials/Form.vue",
     "isDynamicEntry": true,
@@ -2395,7 +2396,7 @@
     ]
   },
   "resources/js/pages/Partners/Index.vue": {
-    "file": "assets/Index-g0IYKPyz.js",
+    "file": "assets/Index-g0IYKPyz2.js",
     "name": "Index",
     "src": "resources/js/pages/Partners/Index.vue",
     "isDynamicEntry": true,
@@ -2418,7 +2419,7 @@
     ]
   },
   "resources/js/pages/Partners/Show.vue": {
-    "file": "assets/Show-CXsX-spx.js",
+    "file": "assets/Show-CXsX-spx2.js",
     "name": "Show",
     "src": "resources/js/pages/Partners/Show.vue",
     "isDynamicEntry": true,
@@ -2572,7 +2573,7 @@
     ]
   },
   "resources/js/pages/Projects/Index.vue": {
-    "file": "assets/Index-idvSgIyn.js",
+    "file": "assets/Index-idvSgIyn2.js",
     "name": "Index",
     "src": "resources/js/pages/Projects/Index.vue",
     "isDynamicEntry": true,
@@ -2601,7 +2602,7 @@
     ]
   },
   "resources/js/pages/Projects/Show.vue": {
-    "file": "assets/Show-Cn0YLcx1.js",
+    "file": "assets/Show-BEAjUaKQ.js",
     "name": "Show",
     "src": "resources/js/pages/Projects/Show.vue",
     "isDynamicEntry": true,
@@ -2611,10 +2612,12 @@
       "_building-2-eSnu3l3g.js",
       "_input-DpO-v61I.js",
       "_TableIndexTh-Caauw0Aw.js",
+      "_ExpenseRecordDialog-DFkcWg3a.js",
       "_usePermissions-B_rS1eVx.js",
       "_circle-dollar-sign-DpwXWN7L.js",
       "_mis-DcmjYsjU.js",
       "_file-text-BNw1y8C2.js",
+      "_ProjectShowExpensesTab-k2sKmGXY.js",
       "_layers-BC6EzV7D.js",
       "_paperclip-CB_iDrQG.js",
       "_pencil-BpVQ43Lj.js",
@@ -2638,10 +2641,8 @@
       "_StatusBadge-CyC11Kkd.js",
       "_CurrencySelect-D2Ce2Ydw.js",
       "_useCurrency-DaHiWPkR.js",
-      "_ExpenseRecordDialog-B-IPAHz6.js",
       "_ProjectShowAttachmentsTab-BMh6l6_z.js",
       "_ProjectShowEmployeesTab-DCH_lzdB.js",
-      "_ProjectShowExpensesTab-BDjva58O.js",
       "_ProjectShowInfoTab-BDIojdy6.js",
       "_ProjectShowLoansTab-CCTUAINp.js",
       "_ProjectShowMoneyInTab-_m_lfbaG.js",
