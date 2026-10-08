@@ -478,14 +478,14 @@ class ProjectController extends Controller implements HasMiddleware
             'expense_unit_id' => 'nullable|exists:expense_units,id',
             'payment_method' => 'nullable|in:cash,bank',
             'reference_no' => 'nullable|string|max:100',
-            'place_at' => 'nullable|in:first,last',
+            'sort_position' => 'nullable|integer|min:1|max:999999',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',
         ], [
             'expense_category_id.not_in' => 'Materials must be recorded as a purchase so stock and remaining balance are tracked.',
         ]);
-        $placeAt = $data['place_at'] ?? 'last';
-        unset($data['documents'], $data['place_at']);
+        $sortPosition = isset($data['sort_position']) ? (int) $data['sort_position'] : null;
+        unset($data['documents'], $data['sort_position']);
 
         if (! empty($data['item_amount']) && isset($data['per_price'])) {
             $data['amount'] = FinanceDefaults::totalCost($data);
@@ -493,8 +493,8 @@ class ProjectController extends Controller implements HasMiddleware
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
 
-        if ($placeAt === 'first') {
-            $expense->moveToFirst();
+        if ($sortPosition !== null) {
+            $expense->moveToPosition($sortPosition);
         }
 
         $this->storeRecordAttachments($request, $expense);

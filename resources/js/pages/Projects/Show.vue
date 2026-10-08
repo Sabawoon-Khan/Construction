@@ -780,6 +780,7 @@ defineOptions({
         v-model:open="expenseDialogOpen"
         :item="selectedExpense"
         :project-id="item.id"
+        :expense-count="expenses?.length ?? 0"
         :start-editing="expenseStartEditing"
         :categories="expense_categories"
         :units="expense_units"

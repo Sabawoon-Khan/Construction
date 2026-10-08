@@ -122,6 +122,31 @@ class Expense extends Model
     }
 
     /**
+     * Place this expense at a 1-based position among project siblings.
+     */
+    public function moveToPosition(int $position): void
+    {
+        $ids = $this->siblingsQuery()
+            ->ordered()
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        $expenseId = (int) $this->id;
+        $from = array_search($expenseId, $ids, true);
+        if ($from === false) {
+            return;
+        }
+
+        array_splice($ids, $from, 1);
+
+        $insertAt = max(0, min($position - 1, count($ids)));
+        $beforeId = $ids[$insertAt] ?? null;
+
+        $this->moveBefore($beforeId);
+    }
+
+    /**
      * Place this expense before another sibling (or at the end when $beforeId is null).
      */
     public function moveBefore(?int $beforeId): void

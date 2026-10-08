@@ -35,6 +35,7 @@ const props = defineProps<{
     open: boolean;
     item: Record<string, any> | null;
     projectId?: number | null;
+    expenseCount?: number;
     categories?: { id: number; name: string; code: string }[];
     units?: { id: number; unit_name: string }[];
     startEditing?: boolean;
@@ -70,8 +71,11 @@ const showNewCategory = ref(false);
 const confirmDeleteOpen = ref(false);
 const deleting = ref(false);
 const moving = ref(false);
-const placeAt = ref<'first' | 'last'>('last');
+const sortPosition = ref(1);
 const restoringDraft = ref(false);
+
+const defaultSortPosition = computed(() => Math.max(1, (props.expenseCount ?? 0) + 1));
+const maxSortPosition = computed(() => Math.max(1, (props.expenseCount ?? 0) + 1));
 const discardOpen = ref(false);
 const baseline = ref<string | null>(null);
 
@@ -201,7 +205,7 @@ watch(
         newCategoryName.value = '';
         categoryError.value = null;
         showNewCategory.value = false;
-        placeAt.value = 'last';
+        sortPosition.value = defaultSortPosition.value;
 
         if (props.open && isCreate.value) {
             restoringDraft.value = true;
@@ -669,16 +673,24 @@ async function addCategory() {
                         {{ t('Order') }}
                     </h4>
                     <div class="grid gap-2 sm:max-w-xs">
-                        <Label for="place_at">{{ t('Place in list') }}</Label>
-                        <select
-                            id="place_at"
-                            v-model="placeAt"
-                            name="place_at"
-                            class="h-10 rounded-md border border-input bg-transparent px-3 text-sm"
-                        >
-                            <option value="last">{{ t('At the end') }}</option>
-                            <option value="first">{{ t('At the beginning') }}</option>
-                        </select>
+                        <Label for="sort_position">{{ t('Position') }}</Label>
+                        <Input
+                            id="sort_position"
+                            v-model.number="sortPosition"
+                            name="sort_position"
+                            type="number"
+                            :min="1"
+                            :max="maxSortPosition"
+                            step="1"
+                            required
+                        />
+                        <p class="text-xs text-muted-foreground">
+                            {{
+                                t('1 = first, :max = last', {
+                                    max: maxSortPosition,
+                                })
+                            }}
+                        </p>
                     </div>
                 </section>
 
