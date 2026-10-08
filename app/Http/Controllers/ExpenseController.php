@@ -228,6 +228,36 @@ class ExpenseController extends Controller implements HasMiddleware
         return redirect()->route('expenses.index');
     }
 
+    public function move(Request $request, Expense $expense): RedirectResponse
+    {
+        $data = $request->validate([
+            'position' => 'nullable|required_without:before_id|in:first,last',
+            'before_id' => [
+                'nullable',
+                'required_without:position',
+                'integer',
+                'exists:expenses,id',
+                'different:'.$expense->getKey(),
+            ],
+        ]);
+
+        if (($data['position'] ?? null) === 'first') {
+            $expense->moveToFirst();
+        } elseif (($data['position'] ?? null) === 'last') {
+            $expense->moveToLast();
+        } else {
+            $expense->moveBefore((int) $data['before_id']);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense order updated.']);
+
+        if ($expense->project_id) {
+            return redirect()->to(route('projects.show', $expense->project_id).'#expenses');
+        }
+
+        return redirect()->route('expenses.index');
+    }
+
     /** @return array<string, mixed> */
     private function validated(Request $request): array
     {

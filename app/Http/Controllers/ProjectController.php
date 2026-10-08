@@ -389,7 +389,7 @@ class ProjectController extends Controller implements HasMiddleware
                 ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at', 'created_at']),
             'expenses' => $expensesQuery
                 ->with(['expenseUnit:id,unit_name', 'category:id,name', 'attachments'])
-                ->oldest()
+                ->ordered()
                 ->get([
                     'id',
                     'expense_no',
@@ -407,6 +407,7 @@ class ProjectController extends Controller implements HasMiddleware
                     'payment_method',
                     'expense_unit_id',
                     'expense_category_id',
+                    'sort_order',
                     'created_at',
                 ]),
             'expense_categories' => $this->expenseCategories(),
@@ -477,18 +478,25 @@ class ProjectController extends Controller implements HasMiddleware
             'expense_unit_id' => 'nullable|exists:expense_units,id',
             'payment_method' => 'nullable|in:cash,bank',
             'reference_no' => 'nullable|string|max:100',
+            'place_at' => 'nullable|in:first,last',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',
         ], [
             'expense_category_id.not_in' => 'Materials must be recorded as a purchase so stock and remaining balance are tracked.',
         ]);
-        unset($data['documents']);
+        $placeAt = $data['place_at'] ?? 'last';
+        unset($data['documents'], $data['place_at']);
 
         if (! empty($data['item_amount']) && isset($data['per_price'])) {
             $data['amount'] = FinanceDefaults::totalCost($data);
         }
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
+
+        if ($placeAt === 'first') {
+            $expense->moveToFirst();
+        }
+
         $this->storeRecordAttachments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Project expense recorded.']);
@@ -633,8 +641,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         $expenses = (clone $expensesQuery)
             ->with(['category:id,name', 'expenseUnit:id,unit_name'])
-            ->orderBy('expense_date')
-            ->orderBy('id')
+            ->ordered()
             ->get([
                 'id',
                 'expense_no',
@@ -649,6 +656,7 @@ class ProjectController extends Controller implements HasMiddleware
                 'payment_method',
                 'expense_category_id',
                 'expense_unit_id',
+                'sort_order',
                 'created_at',
             ]);
 

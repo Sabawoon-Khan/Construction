@@ -162,6 +162,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['inventory' => 'inventoryTransaction']);
     Route::get('expenses/export', [ExpenseController::class, 'export'])->name('expenses.export');
+    Route::patch('expenses/{expense}/move', [ExpenseController::class, 'move'])->name('expenses.move');
     Route::resource('expenses', ExpenseController::class);
     Route::get('expense-categories/export', [ExpenseCategoryController::class, 'export'])->name('expense-categories.export');
     Route::resource('expense-categories', ExpenseCategoryController::class)->except(['create', 'edit', 'show']);

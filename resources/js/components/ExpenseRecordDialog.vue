@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { Form, Link, router } from '@inertiajs/vue3';
-import { LoaderCircle, Pencil, Plus, Printer, Trash2 } from '@lucide/vue';
+import {
+    ChevronsDown,
+    ChevronsUp,
+    LoaderCircle,
+    Pencil,
+    Plus,
+    Printer,
+    Trash2,
+} from '@lucide/vue';
 import { computed, nextTick, ref, watch } from 'vue';
 import Can from '@/components/Can.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
@@ -61,6 +69,8 @@ const categoryError = ref<string | null>(null);
 const showNewCategory = ref(false);
 const confirmDeleteOpen = ref(false);
 const deleting = ref(false);
+const moving = ref(false);
+const placeAt = ref<'first' | 'last'>('last');
 const restoringDraft = ref(false);
 const discardOpen = ref(false);
 const baseline = ref<string | null>(null);
@@ -191,6 +201,7 @@ watch(
         newCategoryName.value = '';
         categoryError.value = null;
         showNewCategory.value = false;
+        placeAt.value = 'last';
 
         if (props.open && isCreate.value) {
             restoringDraft.value = true;
@@ -353,6 +364,27 @@ function removeExpense() {
             emit('update:open', false);
         },
     });
+}
+
+function moveExpense(position: 'first' | 'last') {
+    if (!props.item?.id) {
+        return;
+    }
+
+    moving.value = true;
+    router.patch(
+        `/expenses/${props.item.id}/move`,
+        { position },
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                moving.value = false;
+            },
+            onSuccess: () => {
+                emit('update:open', false);
+            },
+        },
+    );
 }
 
 async function addCategory() {
@@ -632,6 +664,24 @@ async function addCategory() {
                     />
                 </section>
 
+                <section v-if="isCreate && isProjectExpense" class="grid gap-3">
+                    <h4 class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                        {{ t('Order') }}
+                    </h4>
+                    <div class="grid gap-2 sm:max-w-xs">
+                        <Label for="place_at">{{ t('Place in list') }}</Label>
+                        <select
+                            id="place_at"
+                            v-model="placeAt"
+                            name="place_at"
+                            class="h-10 rounded-md border border-input bg-transparent px-3 text-sm"
+                        >
+                            <option value="last">{{ t('At the end') }}</option>
+                            <option value="first">{{ t('At the beginning') }}</option>
+                        </select>
+                    </div>
+                </section>
+
                 <DialogFooter class="gap-2 sm:justify-between">
                     <Can permission="expenses.delete">
                         <Button v-if="item && !isPurchaseLinked" type="button" variant="destructive" class="w-full sm:w-auto" @click="confirmDeleteOpen = true">
@@ -699,6 +749,26 @@ async function addCategory() {
                         </Button>
                     </Can>
                     <div class="flex w-full flex-wrap gap-2 sm:ms-auto sm:w-auto">
+                        <Can permission="expenses.edit">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="flex-1 sm:flex-none"
+                                :disabled="moving"
+                                @click="moveExpense('first')"
+                            >
+                                <ChevronsUp class="size-4" /> {{ t('Move to first') }}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="flex-1 sm:flex-none"
+                                :disabled="moving"
+                                @click="moveExpense('last')"
+                            >
+                                <ChevronsDown class="size-4" /> {{ t('Move to last') }}
+                            </Button>
+                        </Can>
                         <Button as-child variant="outline" class="flex-1 sm:flex-none">
                             <Link :href="`/expenses/${item.id}`" target="_blank">
                                 <Printer class="size-4" /> {{ t('Print') }}
