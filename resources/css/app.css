@@ -3450,6 +3450,15 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         color: var(--print-accent-deep);
     }
 
+    .a4-table tfoot .total-amount {
+        white-space: nowrap;
+    }
+
+    .a4-table tfoot .total-amount + .total-amount {
+        margin-top: 0.15rem;
+        color: var(--print-brand-ink);
+    }
+
     .ev-sheet {
         color: #111827 !important;
         --ev-ink: #134e4a;

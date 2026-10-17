@@ -4,7 +4,13 @@ import MisPrintFooter from '@/components/mis/MisPrintFooter.vue';
 import MisPrintLetterhead from '@/components/mis/MisPrintLetterhead.vue';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money, moneyByCurrency, resolveCurrency } from '@/lib/utils';
+import {
+    currencyAmountLines,
+    formatNumber,
+    money,
+    moneyByCurrency,
+    resolveCurrency,
+} from '@/lib/utils';
 
 export type ExpensePrintRow = {
     id: number;
@@ -34,11 +40,21 @@ const formatDate = (value: string | null | undefined) =>
 
 const totalsByCurrency = computed(() => {
     const byCurrency: Record<string, number> = {};
+
     for (const row of props.rows) {
         const code = resolveCurrency(row.currency || props.baseCurrency);
         byCurrency[code] = (byCurrency[code] ?? 0) + Number(row.amount ?? 0);
     }
+
     return byCurrency;
+});
+
+const totalLines = computed(() => {
+    const codes = Object.keys(totalsByCurrency.value);
+
+    return currencyAmountLines(totalsByCurrency.value).filter(
+        (line) => codes.length > 1 || codes.includes(line.code),
+    );
 });
 
 const subtitle = computed(() =>
@@ -115,7 +131,13 @@ const subtitle = computed(() =>
                         </span>
                     </td>
                     <td class="col-amt">
-                        {{ moneyByCurrency(totalsByCurrency) }}
+                        <div
+                            v-for="line in totalLines"
+                            :key="line.code"
+                            class="total-amount"
+                        >
+                            {{ line.text }}
+                        </div>
                     </td>
                 </tr>
             </tfoot>
