@@ -106,6 +106,19 @@ const subtitle = computed(() =>
                     <td colspan="9" class="empty">{{ t('No expenses yet') }}</td>
                 </tr>
             </tbody>
+            <tfoot v-if="rows.length">
+                <tr>
+                    <td colspan="8" class="total-label">
+                        {{ t('Total') }}
+                        <span class="total-count">
+                            ({{ formatNumber(rows.length, 0) }} {{ t('records') }})
+                        </span>
+                    </td>
+                    <td class="col-amt">
+                        {{ moneyByCurrency(totalsByCurrency) }}
+                    </td>
+                </tr>
+            </tfoot>
         </table>
 
         <MisPrintFooter />

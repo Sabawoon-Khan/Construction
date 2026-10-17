@@ -3425,6 +3425,31 @@ label:has(+ div.relative > button[aria-required='true'])::after {
         padding: 1.25rem 0.5rem;
     }
 
+    .a4-table tfoot td {
+        border-top: 2px solid var(--print-brand-ink);
+        border-bottom: 2px solid var(--print-brand-ink);
+        font-weight: 700;
+        background: var(--print-brand-panel) !important;
+    }
+
+    .a4-table tfoot .total-label {
+        color: var(--print-brand-ink);
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        font-size: 8pt;
+    }
+
+    .a4-table tfoot .total-count {
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        color: #6b7280;
+    }
+
+    .a4-table tfoot .col-amt {
+        color: var(--print-accent-deep);
+    }
+
     .ev-sheet {
         color: #111827 !important;
         --ev-ink: #134e4a;
