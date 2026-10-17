@@ -73,7 +73,7 @@ class ExpenseController extends Controller implements HasMiddleware
             ->with(['expenseUnit:id,unit_name', 'creator:id,name'])
             ->orderBy('id')
             ->lazyById(500)
-            ->map(fn (Expense $expense) => [
+            ->map(fn(Expense $expense) => [
                 $expense->expense_date?->toDateString(),
                 $expense->paid_to,
                 $expense->description,
@@ -172,7 +172,7 @@ class ExpenseController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
 
         if ($projectId) {
-            return redirect()->to(route('projects.show', $projectId).'#expenses');
+            return redirect()->to(route('projects.show', $projectId) . '#expenses');
         }
 
         return redirect()->route('expenses.index');
@@ -222,7 +222,7 @@ class ExpenseController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense deleted.']);
 
         if ($projectId) {
-            return redirect()->to(route('projects.show', $projectId).'#expenses');
+            return redirect()->to(route('projects.show', $projectId) . '#expenses');
         }
 
         return redirect()->route('expenses.index');
@@ -237,7 +237,7 @@ class ExpenseController extends Controller implements HasMiddleware
                 'required_without:position',
                 'integer',
                 'exists:expenses,id',
-                'different:'.$expense->getKey(),
+                'different:' . $expense->getKey(),
             ],
         ]);
 
@@ -252,7 +252,7 @@ class ExpenseController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense order updated.']);
 
         if ($expense->project_id) {
-            return redirect()->to(route('projects.show', $expense->project_id).'#expenses');
+            return redirect()->to(route('projects.show', $expense->project_id) . '#expenses');
         }
 
         return redirect()->route('expenses.index');
@@ -268,7 +268,7 @@ class ExpenseController extends Controller implements HasMiddleware
 
         $data = $request->validate([
             'expense_date' => 'nullable|date',
-            'paid_to' => 'required|string|max:255',
+            'paid_to' => 'nullable|string|max:255',
             'item_amount' => 'nullable|numeric|min:0',
             'per_price' => 'nullable|numeric|min:0',
             'amount' => 'nullable|numeric|min:0',
@@ -339,7 +339,7 @@ class ExpenseController extends Controller implements HasMiddleware
         }
 
         return array_values(array_map(
-            static fn (array $bucket) => [
+            static fn(array $bucket) => [
                 'key' => $bucket['key'],
                 'label' => $bucket['label'],
                 'by_currency' => [
