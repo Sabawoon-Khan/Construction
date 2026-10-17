@@ -69,6 +69,11 @@ type IssueRow = {
     unit_name?: string;
     quantity: number;
     transaction_date?: string | null;
+    type?: string | null;
+    transfer_from_id?: number | null;
+    transfer_from_name?: string | null;
+    transfer_to_id?: number | null;
+    transfer_to_name?: string | null;
 };
 
 const props = defineProps<{
@@ -651,13 +656,22 @@ function issueRowActions(issue: IssueRow): RowActionItem[] {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr
-                            v-for="(issue, index) in sortedIssues"
-                            :key="issue.id"
-                            :style="{ '--i': index }"
-                        >
+                                        <tr
+                                            v-for="(issue, index) in sortedIssues"
+                                            :key="issue.id"
+                                            :style="{ '--i': index }"
+                                        >
                             <TableIndexTd :index="index" />
-                            <td>{{ issue.project_name || '—' }}</td>
+                                            <td>
+                                                <template v-if="issue.type === 'transfer_in' || issue.type === 'transfer_out'">
+                                                    {{ issue.transfer_from_name || issue.project_name || '—' }}
+                                                    <span class="muted">→</span>
+                                                    {{ issue.transfer_to_name || issue.project_name || '—' }}
+                                                </template>
+                                                <template v-else>
+                                                    {{ issue.project_name || '—' }}
+                                                </template>
+                                            </td>
                             <td>
                                 <div class="name-cell">
                                     <b>{{ issue.material_name || '—' }}</b>

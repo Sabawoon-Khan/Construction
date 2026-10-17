@@ -51,7 +51,7 @@ class PurchaseService
                         'total_cost_base' => round($totalCost * $exchangeRate, 2),
                     ];
                 })
-                ->filter(fn (array $row) => $row['quantity'] > 0)
+                ->filter(fn(array $row) => $row['quantity'] > 0)
                 ->values();
 
             if ($items->isEmpty()) {
@@ -76,7 +76,7 @@ class PurchaseService
             $purchase = Purchase::query()->create([
                 'project_id' => $data['project_id'],
                 'supplier_id' => $supplier->id,
-                'purchase_no' => 'PUR-'.Str::upper(Str::random(8)),
+                'purchase_no' => 'PUR-' . Str::upper(Str::random(8)),
                 'purchase_date' => $data['purchase_date'],
                 'total_amount' => $total,
                 'total_amount_base' => $totalBase,
@@ -177,7 +177,7 @@ class PurchaseService
 
             if ($amount > $remaining) {
                 throw ValidationException::withMessages([
-                    'amount' => 'Payment cannot exceed the remaining balance of '.$remaining.'.',
+                    'amount' => 'Payment cannot exceed the remaining balance of ' . $remaining . '.',
                 ]);
             }
 
@@ -186,7 +186,7 @@ class PurchaseService
                 'purchase_id' => $purchase->id,
                 'supplier_id' => $purchase->supplier_id,
                 'bank_account_id' => null,
-                'payment_no' => 'PAY-'.Str::upper(Str::random(8)),
+                'payment_no' => 'PAY-' . Str::upper(Str::random(8)),
                 'type' => 'disbursement',
                 'amount' => $amount,
                 'amount_base' => $amountBase,
@@ -223,7 +223,7 @@ class PurchaseService
 
             if ($quantity > $onHand) {
                 throw ValidationException::withMessages([
-                    'quantity' => 'Cannot issue more than the '.$onHand.' currently in stock for this project.',
+                    'quantity' => 'Cannot issue more than the ' . $onHand . ' currently in stock for this project.',
                 ]);
             }
 
@@ -253,6 +253,84 @@ class PurchaseService
     }
 
     /**
+     * Transfer stock from one project to another.
+     * Returns an array with two InventoryTransaction instances: [issueFrom, purchaseTo]
+     *
+     * @param array{transaction_date?: mixed, reference_no?: string|null, notes?: string|null} $meta
+     * @return InventoryTransaction[]
+     */
+    public static function transfer(int $fromProjectId, int $toProjectId, int $materialId, float $quantity, array $meta = []): array
+    {
+        return DB::transaction(function () use ($fromProjectId, $toProjectId, $materialId, $quantity, $meta) {
+            $quantity = round($quantity, 3);
+
+            if ($quantity <= 0) {
+                throw ValidationException::withMessages([
+                    'quantity' => 'Transfer quantity must be greater than zero.',
+                ]);
+            }
+
+            $onHand = InventoryTransaction::onHand($fromProjectId, $materialId);
+
+            if ($quantity > $onHand) {
+                throw ValidationException::withMessages([
+                    'quantity' => 'Cannot transfer more than the ' . $onHand . ' currently in stock for the source project.',
+                ]);
+            }
+
+            // Determine unit cost from source project's average
+            $unitCostBase = self::averageUnitCostBase($fromProjectId, $materialId);
+            $totalCostBase = round($quantity * $unitCostBase, 2);
+            $baseCurrency = CurrencyService::baseCurrency();
+
+
+            // Create a transfer out transaction on the source project
+            $issue = InventoryTransaction::query()->create([
+                'project_id' => $fromProjectId,
+                'material_id' => $materialId,
+                'supplier_id' => null,
+                'expense_id' => null,
+                'purchase_id' => null,
+                'type' => InventoryTransaction::TYPE_TRANSFER_OUT,
+                'quantity' => $quantity,
+                'unit_cost' => $unitCostBase,
+                'unit_cost_base' => $unitCostBase,
+                'total_cost' => $totalCostBase,
+                'total_cost_base' => $totalCostBase,
+                'currency' => $baseCurrency,
+                'exchange_rate' => 1,
+                'transaction_date' => $meta['transaction_date'] ?? now(),
+                'reference_no' => $meta['reference_no'] ?? null,
+                'notes' => $meta['notes'] ?? 'Transfer out to project '.$toProjectId,
+                'to_project_id' => $toProjectId,
+            ]);
+
+            // Create a transfer in transaction on the destination project
+            $purchase = InventoryTransaction::query()->create([
+                'project_id' => $toProjectId,
+                'material_id' => $materialId,
+                'supplier_id' => null,
+                'expense_id' => null,
+                'purchase_id' => null,
+                'type' => InventoryTransaction::TYPE_TRANSFER_IN,
+                'quantity' => $quantity,
+                'unit_cost' => $unitCostBase,
+                'unit_cost_base' => $unitCostBase,
+                'total_cost' => $totalCostBase,
+                'total_cost_base' => $totalCostBase,
+                'currency' => $baseCurrency,
+                'exchange_rate' => 1,
+                'transaction_date' => $meta['transaction_date'] ?? now(),
+                'reference_no' => $meta['reference_no'] ?? null,
+                'notes' => $meta['notes'] ?? 'Transfer in from project '.$fromProjectId,
+                'from_project_id' => $fromProjectId,
+            ]);
+
+            return [$issue, $purchase];
+        });
+    }
+
+    /**
      * @param  array{quantity: float|int|string, transaction_date?: mixed, reference_no?: string|null, notes?: string|null}  $data
      */
     public static function updateIssue(InventoryTransaction $transaction, array $data): InventoryTransaction
@@ -277,7 +355,7 @@ class PurchaseService
 
             if ($quantity > $maxQuantity + 0.0001) {
                 throw ValidationException::withMessages([
-                    'quantity' => 'Cannot issue more than the '.$maxQuantity.' currently available for this project.',
+                    'quantity' => 'Cannot issue more than the ' . $maxQuantity . ' currently available for this project.',
                 ]);
             }
 
@@ -354,14 +432,14 @@ class PurchaseService
     private static function expenseDescription(Purchase $purchase): string
     {
         $names = $purchase->items
-            ->map(fn (PurchaseItem $item) => $item->material?->name)
+            ->map(fn(PurchaseItem $item) => $item->material?->name)
             ->filter()
             ->unique()
             ->values();
 
         $list = $names->isNotEmpty() ? $names->implode(', ') : 'materials';
 
-        return 'Purchase '.$purchase->purchase_no.': '.$list;
+        return 'Purchase ' . $purchase->purchase_no . ': ' . $list;
     }
 
     private static function averageUnitCostBase(int $projectId, int $materialId): float

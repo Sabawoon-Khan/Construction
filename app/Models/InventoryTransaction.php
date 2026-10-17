@@ -14,10 +14,15 @@ class InventoryTransaction extends Model
     public const TYPE_PURCHASE = 'purchase';
 
     public const TYPE_ISSUE = 'issue';
+    
+    public const TYPE_TRANSFER_IN = 'transfer_in';
+    public const TYPE_TRANSFER_OUT = 'transfer_out';
 
     protected $fillable = [
         'user_id',
         'project_id',
+        'from_project_id',
+        'to_project_id',
         'material_id',
         'supplier_id',
         'expense_id',
@@ -56,6 +61,16 @@ class InventoryTransaction extends Model
         return $this->belongsTo(Project::class);
     }
 
+    public function fromProject(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'from_project_id');
+    }
+
+    public function toProject(): BelongsTo
+    {
+        return $this->belongsTo(Project::class, 'to_project_id');
+    }
+
     public function material(): BelongsTo
     {
         return $this->belongsTo(Material::class);
@@ -81,10 +96,15 @@ class InventoryTransaction extends Model
         $row = static::query()
             ->where('project_id', $projectId)
             ->where('material_id', $materialId)
-            ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN quantity WHEN type = ? THEN -quantity ELSE 0 END), 0) as on_hand', [
-                self::TYPE_PURCHASE,
-                self::TYPE_ISSUE,
-            ])
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN type IN (?, ?) THEN quantity WHEN type IN (?, ?) THEN -quantity ELSE 0 END), 0) as on_hand',
+                [
+                    self::TYPE_PURCHASE,
+                    self::TYPE_TRANSFER_IN,
+                    self::TYPE_ISSUE,
+                    self::TYPE_TRANSFER_OUT,
+                ],
+            )
             ->first();
 
         return round((float) ($row?->on_hand ?? 0), 3);
@@ -100,13 +120,24 @@ class InventoryTransaction extends Model
                 'project_id',
                 'material_id',
             ])
-            ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN quantity ELSE 0 END), 0) as purchased', [self::TYPE_PURCHASE])
-            ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN quantity ELSE 0 END), 0) as issued', [self::TYPE_ISSUE])
-            ->selectRaw('COALESCE(SUM(CASE WHEN type = ? THEN quantity WHEN type = ? THEN -quantity ELSE 0 END), 0) as on_hand', [
-                self::TYPE_PURCHASE,
-                self::TYPE_ISSUE,
-            ])
-            ->selectRaw('MAX(CASE WHEN type = ? THEN transaction_date ELSE NULL END) as last_issue_at', [self::TYPE_ISSUE])
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN type IN (?, ?) THEN quantity ELSE 0 END), 0) as purchased',
+                [self::TYPE_PURCHASE, self::TYPE_TRANSFER_IN],
+            )
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN type IN (?, ?) THEN quantity ELSE 0 END), 0) as issued',
+                [self::TYPE_ISSUE, self::TYPE_TRANSFER_OUT],
+            )
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN type IN (?, ?) THEN quantity WHEN type IN (?, ?) THEN -quantity ELSE 0 END), 0) as on_hand',
+                [
+                    self::TYPE_PURCHASE,
+                    self::TYPE_TRANSFER_IN,
+                    self::TYPE_ISSUE,
+                    self::TYPE_TRANSFER_OUT,
+                ],
+            )
+            ->selectRaw('MAX(CASE WHEN type IN (?, ?) THEN transaction_date ELSE NULL END) as last_issue_at', [self::TYPE_ISSUE, self::TYPE_TRANSFER_OUT])
             ->groupBy('project_id', 'material_id')
             ->orderBy('project_id')
             ->orderBy('material_id');

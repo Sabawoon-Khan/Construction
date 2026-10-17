@@ -37,21 +37,31 @@ class InventoryController extends Controller implements HasMiddleware
         $issuesQuery = InventoryTransaction::query()
             ->with([
                 'project:id,name',
+                'fromProject:id,name',
+                'toProject:id,name',
                 'material:id,name,code',
                 'material.unit:id,unit_name',
             ])
-            ->where('type', InventoryTransaction::TYPE_ISSUE)
+            ->whereIn('type', [
+                InventoryTransaction::TYPE_ISSUE,
+                InventoryTransaction::TYPE_TRANSFER_IN,
+                InventoryTransaction::TYPE_TRANSFER_OUT,
+            ])
             ->oldest()
             ->oldest();
 
         if ($projectId) {
-            $issuesQuery->where('project_id', $projectId);
+            $issuesQuery->where(function ($q) use ($projectId) {
+                $q->where('project_id', $projectId)
+                    ->orWhere('from_project_id', $projectId)
+                    ->orWhere('to_project_id', $projectId);
+            });
         }
 
         if ($search !== '') {
             $needle = mb_strtolower($search);
             $issuesQuery->where(function ($query) use ($needle) {
-                $query->whereHas('project', fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$needle}%"]))
+                $query->whereHas('project', fn($q) => $q->whereRaw('LOWER(name) LIKE ?', ["%{$needle}%"]))
                     ->orWhereHas('material', function ($q) use ($needle) {
                         $q->whereRaw('LOWER(name) LIKE ?', ["%{$needle}%"])
                             ->orWhereRaw('LOWER(code) LIKE ?', ["%{$needle}%"]);
@@ -63,6 +73,11 @@ class InventoryController extends Controller implements HasMiddleware
             'id' => $issue->id,
             'project_id' => (int) $issue->project_id,
             'project_name' => $issue->project?->name,
+            'type' => $issue->type,
+            'transfer_from_id' => $issue->from_project_id ? (int) $issue->from_project_id : null,
+            'transfer_from_name' => $issue->fromProject?->name ?? null,
+            'transfer_to_id' => $issue->to_project_id ? (int) $issue->to_project_id : null,
+            'transfer_to_name' => $issue->toProject?->name ?? null,
             'material_id' => (int) $issue->material_id,
             'material_name' => $issue->material?->name,
             'material_code' => $issue->material?->code,
@@ -72,6 +87,42 @@ class InventoryController extends Controller implements HasMiddleware
             'reference_no' => $issue->reference_no,
             'notes' => $issue->notes,
         ])->values();
+
+        $issueRowsByTransferKey = [];
+        foreach ($issues as $issueRow) {
+            if (! in_array($issueRow['type'], [InventoryTransaction::TYPE_TRANSFER_IN, InventoryTransaction::TYPE_TRANSFER_OUT], true)) {
+                $issueRowsByTransferKey[] = $issueRow;
+                continue;
+            }
+
+            $fromProjectId = (int) ($issueRow['transfer_from_id'] ?? $issueRow['project_id']);
+            $toProjectId = (int) ($issueRow['transfer_to_id'] ?? $issueRow['project_id']);
+
+            if ($fromProjectId === 0 || $toProjectId === 0 || $fromProjectId === $toProjectId) {
+                $issueRowsByTransferKey[] = $issueRow;
+                continue;
+            }
+
+            $transferKey = implode('|', [
+                (string) $issueRow['material_id'],
+                (string) $issueRow['transaction_date'],
+                number_format((float) $issueRow['quantity'], 3, '.', ''),
+                (string) min($fromProjectId, $toProjectId),
+                (string) max($fromProjectId, $toProjectId),
+            ]);
+
+            if (! isset($issueRowsByTransferKey[$transferKey])) {
+                $issueRowsByTransferKey[$transferKey] = [
+                    ...$issueRow,
+                    'transfer_from_id' => $fromProjectId,
+                    'transfer_from_name' => $issueRow['transfer_from_name'] ?? $issueRow['project_name'],
+                    'transfer_to_id' => $toProjectId,
+                    'transfer_to_name' => $issueRow['transfer_to_name'] ?? $issueRow['project_name'],
+                ];
+            }
+        }
+
+        $issues = array_values($issueRowsByTransferKey);
 
         $lowStockRows = $items->filter(function (array $row) {
             $minimum = (float) ($row['minimum_stock'] ?? 0);
@@ -86,10 +137,10 @@ class InventoryController extends Controller implements HasMiddleware
 
         $purchaseQuery = InventoryTransaction::query()
             ->where('type', InventoryTransaction::TYPE_PURCHASE)
-            ->when($projectId, fn ($q) => $q->where('project_id', $projectId));
+            ->when($projectId, fn($q) => $q->where('project_id', $projectId));
         $issueQuery = InventoryTransaction::query()
             ->where('type', InventoryTransaction::TYPE_ISSUE)
-            ->when($projectId, fn ($q) => $q->where('project_id', $projectId));
+            ->when($projectId, fn($q) => $q->where('project_id', $projectId));
 
         return Inertia::render('Inventory/Index', [
             'items' => $items,
@@ -125,7 +176,7 @@ class InventoryController extends Controller implements HasMiddleware
         abort_unless(config('kit.features.exports'), 404);
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
-            ->map(fn (array $row) => [
+            ->map(fn(array $row) => [
                 $row['project_name'],
                 $row['material_name'],
                 $row['material_code'],
@@ -140,8 +191,15 @@ class InventoryController extends Controller implements HasMiddleware
         return $this->streamExport(
             'inventory',
             [
-                'project', 'material', 'code', 'unit', 'purchased', 'issued',
-                'on_hand', 'minimum_stock', 'stock_value',
+                'project',
+                'material',
+                'code',
+                'unit',
+                'purchased',
+                'issued',
+                'on_hand',
+                'minimum_stock',
+                'stock_value',
             ],
             $rows,
             $this->exportFormat($request),
@@ -196,15 +254,15 @@ class InventoryController extends Controller implements HasMiddleware
 
         $latestIssues = InventoryTransaction::query()
             ->where('type', InventoryTransaction::TYPE_ISSUE)
-            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->when($projectId, fn($q) => $q->where('project_id', $projectId))
             ->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->get(['id', 'project_id', 'material_id', 'quantity', 'transaction_date'])
-            ->unique(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id)
-            ->keyBy(fn (InventoryTransaction $issue) => $issue->project_id.'-'.$issue->material_id);
+            ->unique(fn(InventoryTransaction $issue) => $issue->project_id . '-' . $issue->material_id)
+            ->keyBy(fn(InventoryTransaction $issue) => $issue->project_id . '-' . $issue->material_id);
 
         return $items->map(function (array $row) use ($latestIssues) {
-            $latest = $latestIssues->get($row['project_id'].'-'.$row['material_id']);
+            $latest = $latestIssues->get($row['project_id'] . '-' . $row['material_id']);
 
             $row['latest_issue'] = $latest ? [
                 'id' => $latest->id,
@@ -222,21 +280,40 @@ class InventoryController extends Controller implements HasMiddleware
             'project_id' => 'required|exists:projects,id',
             'material_id' => 'required|exists:materials,id',
             'quantity' => 'required|numeric|min:0.001',
+            'to_project_id' => 'nullable|exists:projects,id',
             'transaction_date' => 'nullable|date',
             'reference_no' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
         ]);
 
-        PurchaseService::issue(
-            (int) $data['project_id'],
-            (int) $data['material_id'],
-            (float) $data['quantity'],
-            [
-                'transaction_date' => $data['transaction_date'] ?? now(),
-                'reference_no' => $data['reference_no'] ?? null,
-                'notes' => $data['notes'] ?? null,
-            ],
-        );
+        // If a destination project is provided that's different from the selected project,
+        // perform a transfer from the selected project to the destination. Otherwise perform a normal issue.
+        $toProjectId = $request->input('to_project_id');
+
+        if ($toProjectId && is_numeric($toProjectId) && (int) $toProjectId !== (int) $data['project_id']) {
+            PurchaseService::transfer(
+                (int) $data['project_id'],
+                (int) $toProjectId,
+                (int) $data['material_id'],
+                (float) $data['quantity'],
+                [
+                    'transaction_date' => $data['transaction_date'] ?? now(),
+                    'reference_no' => $data['reference_no'] ?? null,
+                    'notes' => $data['notes'] ?? null,
+                ],
+            );
+        } else {
+            PurchaseService::issue(
+                (int) $data['project_id'],
+                (int) $data['material_id'],
+                (float) $data['quantity'],
+                [
+                    'transaction_date' => $data['transaction_date'] ?? now(),
+                    'reference_no' => $data['reference_no'] ?? null,
+                    'notes' => $data['notes'] ?? null,
+                ],
+            );
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Stock issued. Quantity reduced; project expense was already recorded at purchase.']);
 
@@ -304,7 +381,7 @@ class InventoryController extends Controller implements HasMiddleware
 
         $rows = InventoryTransaction::query()
             ->where('type', InventoryTransaction::TYPE_ISSUE)
-            ->when($projectId, fn ($q) => $q->where('project_id', $projectId))
+            ->when($projectId, fn($q) => $q->where('project_id', $projectId))
             ->whereDate('transaction_date', '>=', $from->toDateString())
             ->whereDate('transaction_date', '<=', $to->toDateString())
             ->get(['transaction_date']);
