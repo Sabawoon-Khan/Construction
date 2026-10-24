@@ -10,7 +10,7 @@ trait HasStatusChangeLogs
 {
     public function statusChangeLogs(): MorphMany
     {
-        return $this->morphMany(StatusChangeLog::class, 'subject')->latest();
+        return $this->morphMany(StatusChangeLog::class, 'subject')->oldest();
     }
 
     public function logStatusChange(string $toStatus, ?string $fromStatus = null, ?User $by = null): ?StatusChangeLog

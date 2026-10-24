@@ -1053,6 +1053,7 @@
     "People you buy materials from. Remaining is money you still owe.": "افرادی که مواد را از آن‌ها می‌خرید. باقی‌مانده پولی است که هنوز بدهکار هستید.",
     "Per page": "در هر صفحه",
     "Per price": "قیمت هر واحد",
+    "Period": "دوره",
     "Period expenses": "مصارف دوره",
     "Period sales": "فروش دوره",
     "Permanently delete everything in trash? This cannot be undone.": "همه چیز در سطل زباله برای همیشه حذف شود؟ این کار برگشت‌ناپذیر است.",
@@ -2381,5 +2382,19 @@
     "Avg progress": "میانگین پیشرفت",
     "Outstanding balance": "مانده بدهی",
     "No chart data for this period.": "داده‌ای برای این دوره نیست.",
-    "Sales − expenses": "فروش − هزینه‌ها"
+    "Sales − expenses": "فروش − هزینه‌ها",
+    "Archive": "بایگانی",
+    "Documents": "اسناد",
+    "Store contracts and other files.": "قراردادها و سایر فایل‌ها را ذخیره کنید.",
+    "Document date": "تاریخ سند",
+    "Add archive document": "افزودن سند بایگانی",
+    "Edit archive document": "ویرایش سند بایگانی",
+    "Archive document saved.": "سند بایگانی ذخیره شد.",
+    "Archive document updated.": "سند بایگانی به‌روزرسانی شد.",
+    "Archive document deleted.": "سند بایگانی حذف شد.",
+    "No archive documents yet": "هنوز سندی در بایگانی نیست",
+    "Delete archive document": "حذف سند بایگانی",
+    "Are you sure you want to delete this archive document?": "آیا از حذف این سند بایگانی مطمئن هستید؟",
+    "Legal": "حقوقی",
+    "Correspondence": "مکاتبات"
 }

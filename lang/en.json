@@ -2267,5 +2267,19 @@
     "Avg progress": "Avg progress",
     "Outstanding balance": "Outstanding balance",
     "No chart data for this period.": "No chart data for this period.",
-    "Sales − expenses": "Sales − expenses"
+    "Sales − expenses": "Sales − expenses",
+    "Archive": "Archive",
+    "Documents": "Documents",
+    "Store contracts and other files.": "Store contracts and other files.",
+    "Document date": "Document date",
+    "Add archive document": "Add archive document",
+    "Edit archive document": "Edit archive document",
+    "Archive document saved.": "Archive document saved.",
+    "Archive document updated.": "Archive document updated.",
+    "Archive document deleted.": "Archive document deleted.",
+    "No archive documents yet": "No archive documents yet",
+    "Delete archive document": "Delete archive document",
+    "Are you sure you want to delete this archive document?": "Are you sure you want to delete this archive document?",
+    "Legal": "Legal",
+    "Correspondence": "Correspondence"
 }

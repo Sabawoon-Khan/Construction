@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, toValue } from 'vue';
 import Can from '@/components/Can.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
-import { MisTableActions } from '@/components/mis';
+import { MisTableActions, TabPrintHost } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
+import { useTabPrint } from '@/composables/useTabPrint';
 import RelatedCreateLink from '@/components/RelatedCreateLink.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import TableFrame from '@/components/TableFrame.vue';
@@ -152,6 +153,49 @@ const issueExportRows = computed(() =>
 const issueFilteredExportRows = computed(() =>
     issueSort.sortedRows.map(mapIssueExportRow),
 );
+
+const projectSubtitle = () =>
+    [props.item.name, props.item.code].filter(Boolean).join(' · ');
+
+const stockPrint = useTabPrint({
+    title: () => t('Stock on hand'),
+    subtitle: projectSubtitle,
+    columns: () => [t('Material'), t('Unit'), t('On hand')],
+    source: () => toValue(stockSort.sortedRows),
+    emptyLabel: () => t('No stock yet'),
+    option: (row) => ({
+        key: String(row.material_id),
+        title: materialName(row.material_id),
+        subtitle: materialUnit(row.material_id) || '—',
+        amount: formatNumber(row.on_hand, 3),
+    }),
+    cells: (row) => [
+        materialName(row.material_id),
+        materialUnit(row.material_id) || '—',
+        formatNumber(row.on_hand, 3),
+    ],
+});
+
+const issuesPrint = useTabPrint({
+    title: () => t('Stock issue dates'),
+    subtitle: projectSubtitle,
+    columns: () => [t('Material'), t('Issued qty'), t('Issue date')],
+    source: () => toValue(issueSort.sortedRows),
+    emptyLabel: () => t('No issues yet'),
+    option: (row) => ({
+        key: String(row.id),
+        title: row.material?.name || materialName(row.material_id),
+        subtitle: row.transaction_date
+            ? formatDate(row.transaction_date)
+            : '—',
+        amount: formatNumber(row.quantity, 3),
+    }),
+    cells: (row) => [
+        row.material?.name || materialName(row.material_id),
+        formatNumber(row.quantity, 3),
+        row.transaction_date ? formatDate(row.transaction_date) : '—',
+    ],
+});
 </script>
 
 <template>
@@ -224,6 +268,7 @@ const issueFilteredExportRows = computed(() =>
                         :headers="stockExportHeaders"
                         :rows="stockExportRows"
                         :filtered-rows="stockFilteredExportRows"
+                        :on-print="stockPrint.openPicker"
                     />
                 </template>
                 <TableFrame table-id="project-stock-on-hand" :columns="tableColumnsStock">
@@ -295,6 +340,7 @@ const issueFilteredExportRows = computed(() =>
                         :headers="issueExportHeaders"
                         :rows="issueExportRows"
                         :filtered-rows="issueFilteredExportRows"
+                        :on-print="issuesPrint.openPicker"
                     />
                 </template>
                 <TableFrame table-id="project-stock-issues" :columns="tableColumnsIssues">
@@ -380,5 +426,8 @@ const issueFilteredExportRows = computed(() =>
             :processing="issueForm.processing"
             @confirm="confirmIssue"
         />
+
+        <TabPrintHost :state="stockPrint" />
+        <TabPrintHost :state="issuesPrint" />
     </div>
 </template>

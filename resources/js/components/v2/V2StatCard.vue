@@ -32,7 +32,7 @@ withDefaults(
         >
             <slot name="icon" />
         </div>
-        <div>
+        <div class="stat-card-body">
             <slot>
                 <span v-if="title">{{ title }}</span>
                 <strong v-if="value != null">{{ value }}</strong>

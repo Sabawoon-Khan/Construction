@@ -42,7 +42,7 @@ class AttendanceController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Attendance/Index', [
-            'items' => $query->latest('date')->paginate(20)->withQueryString(),
+            'items' => $query->oldest()->paginate(20)->withQueryString(),
             'filters' => [
                 'search' => $search,
                 'employee_id' => $employeeId ?: null,
@@ -59,7 +59,7 @@ class AttendanceController extends Controller implements HasMiddleware
         abort_unless(config('kit.features.exports'), 404);
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
-            ->latest('date')
+            ->oldest()
             ->lazyById(500)
             ->map(fn (Attendance $attendance) => [
                 $attendance->date?->toDateString(),

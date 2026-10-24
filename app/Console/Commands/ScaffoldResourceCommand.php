@@ -491,8 +491,8 @@ PHP;
 
         $var = Str::camel($name);
         $query = $userScoped
-            ? "{$name}::query()\n            ->where('user_id', \$request->user()->id)\n            ->latest()\n            ->paginate(20)\n            ->withQueryString();"
-            : "{$name}::query()->latest()->paginate(20)->withQueryString();";
+            ? "{$name}::query()\n            ->where('user_id', \$request->user()->id)\n            ->oldest()\n            ->paginate(20)\n            ->withQueryString();"
+            : "{$name}::query()->oldest()->paginate(20)->withQueryString();";
 
         $ownership = $userScoped
             ? "\n        abort_unless(\${$var}->user_id === \$request->user()->id, 404);\n"

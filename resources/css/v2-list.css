@@ -242,6 +242,26 @@
     unicode-bidi: isolate;
 }
 
+.v2-list-page[dir='rtl'] .stat-card-body {
+    text-align: start;
+}
+
+.v2-list-page[dir='rtl'] .stat-card strong {
+    text-align: end;
+    font-size: clamp(12px, 1.5vw, 17px);
+    letter-spacing: -0.35px;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.v2-list-page[dir='rtl'] .stat-card strong.stat-card-money {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
+}
+
 .hero-body {
     position: relative;
     z-index: 1;
@@ -746,6 +766,11 @@
     height: 16px;
 }
 
+.stat-card-body {
+    min-width: 0;
+    flex: 1;
+}
+
 .stat-card span {
     display: block;
     color: var(--v2-hero-muted);
@@ -763,6 +788,41 @@
     letter-spacing: -0.7px;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.stat-money-inline {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.35em;
+}
+
+.stat-money-pair {
+    white-space: nowrap;
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+.stat-card strong.stat-card-money,
+.stat-card .stat-money-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    overflow: visible;
+    max-width: 100%;
+    font-size: clamp(12px, 1.25vw, 15px);
+    font-weight: 550;
+    letter-spacing: -0.35px;
+    line-height: 1.3;
+    white-space: normal;
+    text-overflow: unset;
+}
+
+.stat-card strong.stat-card-money .stat-money-inline {
+    display: flex;
+    flex-wrap: wrap;
+    min-width: 0;
+    font-size: inherit;
 }
 
 .table-panel {
@@ -2056,8 +2116,10 @@
 }
 
 .v2-list-page .detail-stat-grid {
-    padding-inline: 0;
-    padding-bottom: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding-inline: 22px;
+    padding-bottom: 14px;
 }
 
 .v2-list-page[dir='rtl'] .detail-hero-side,

@@ -23,7 +23,7 @@ trait BuildsSecuritySettingsProps
                 ? $request->user()
                     ->passkeys()
                     ->select(['id', 'name', 'credential', 'created_at', 'last_used_at'])
-                    ->latest()
+                    ->oldest()
                     ->get()
                     ->map(fn ($passkey) => [
                         'id' => $passkey->id,

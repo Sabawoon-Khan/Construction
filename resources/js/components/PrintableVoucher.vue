@@ -35,13 +35,47 @@ const props = withDefaults(
     },
 );
 
+type PublicCompany = {
+    name?: string | null;
+    name_primary?: string | null;
+    name_en?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    address?: string | null;
+};
+
 const page = usePage();
 const { t } = useTranslations();
 const calendar = useCalendar();
-const company = computed(() => page.props.company);
-const companyName = computed(
-    () => company.value?.legal_name || company.value?.name || page.props.name || t('Company'),
+const company = computed(() => page.props.company as PublicCompany | null);
+const publicCompany = computed(
+    () => (page.props.publicCompany as PublicCompany | null) ?? null,
 );
+const isEnglish = computed(() => ((page.props.locale as string) || 'en') === 'en');
+const companyName = computed(() => {
+    if (isEnglish.value) {
+        return (
+            publicCompany.value?.name_en?.trim() ||
+            (page.props.name as string | undefined) ||
+            t('Company')
+        );
+    }
+
+    return (
+        publicCompany.value?.name_primary?.trim() ||
+        (page.props.name as string | undefined) ||
+        t('Company')
+    );
+});
+const companyNameEn = computed(() => {
+    if (isEnglish.value) {
+        return null;
+    }
+
+    const english = publicCompany.value?.name_en?.trim();
+
+    return english && english !== companyName.value ? english : null;
+});
 const printedAt = computed(() => calendar.formatDateTime(new Date()) || '—');
 const displayDate = computed(() => calendar.format(props.date) || '—');
 
@@ -78,13 +112,14 @@ const showDetailsColumn = computed(() => props.lines?.some((line) => line.meta))
 </script>
 
 <template>
-    <article class="voucher-sheet mx-auto w-full max-w-2xl bg-white text-neutral-900">
+    <article class="voucher-sheet print-target mx-auto w-full max-w-2xl bg-white text-neutral-900">
         <!-- Header -->
         <header class="border-b border-neutral-200 px-8 py-7 text-center print:px-0 print:py-5">
             <p class="text-[11px] font-medium tracking-[0.15em] text-neutral-400 uppercase">
                 {{ kindLabel }}
             </p>
             <h1 class="mt-2 text-xl font-semibold tracking-tight">{{ companyName }}</h1>
+            <p v-if="companyNameEn" class="mt-1 text-sm text-neutral-500">{{ companyNameEn }}</p>
             <p v-if="company?.address || company?.phone || company?.email" class="mt-1.5 text-sm text-neutral-500">
                 <span v-if="company?.address">{{ company.address }}</span>
                 <template v-if="company?.address && (company?.phone || company?.email)"> · </template>
@@ -138,7 +173,7 @@ const showDetailsColumn = computed(() => props.lines?.some((line) => line.meta))
                         <tr class="border-b border-neutral-200 text-neutral-400">
                             <th class="pb-2 text-start font-normal">{{ t('Description') }}</th>
                             <th v-if="showDetailsColumn" class="pb-2 text-start font-normal">{{ t('Details') }}</th>
-                            <th class="pb-2 text-end font-normal">{{ t('Amount') }}</th>
+                            <th class="pb-2 text-start font-normal">{{ t('Amount') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -149,7 +184,7 @@ const showDetailsColumn = computed(() => props.lines?.some((line) => line.meta))
                         >
                             <td class="py-2.5">{{ line.description }}</td>
                             <td v-if="showDetailsColumn" class="py-2.5 text-neutral-500">{{ line.meta || '—' }}</td>
-                            <td class="py-2.5 text-end tabular-nums">
+                            <td class="py-2.5 text-start tabular-nums">
                                 {{ line.amount == null ? '—' : money(line.amount, currency) }}
                             </td>
                         </tr>

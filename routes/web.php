@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\FieldReportController;
+use App\Http\Controllers\ArchiveDocumentController;
 use App\Http\Controllers\AiAnalyticsController;
 use App\Http\Controllers\AiAssistController;
 use App\Http\Controllers\AiChatController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\MaterialUnitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PaymentController;
@@ -134,12 +136,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('units', UnitController::class);
     Route::get('customers/export', [CustomerController::class, 'export'])->name('customers.export');
     Route::resource('customers', CustomerController::class);
+    Route::resource('archive', ArchiveDocumentController::class)
+        ->parameters(['archive' => 'archiveDocument']);
     Route::get('partners/export', [PartnerController::class, 'export'])->name('partners.export');
     Route::resource('partners', PartnerController::class);
     Route::get('suppliers/export', [SupplierController::class, 'export'])->name('suppliers.export');
     Route::resource('suppliers', SupplierController::class);
     Route::get('materials/export', [MaterialController::class, 'export'])->name('materials.export');
     Route::resource('materials', MaterialController::class)->except(['show']);
+    Route::get('material-units/export', [MaterialUnitController::class, 'export'])->name('material-units.export');
+    Route::resource('material-units', MaterialUnitController::class)->except(['create', 'edit', 'show']);
     Route::get('portfolio/export', [PortfolioProjectController::class, 'export'])->name('portfolio.export');
     Route::resource('portfolio', PortfolioProjectController::class)
         ->parameters(['portfolio' => 'portfolio'])
@@ -156,6 +162,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['inventory' => 'inventoryTransaction']);
     Route::get('expenses/export', [ExpenseController::class, 'export'])->name('expenses.export');
+    Route::patch('expenses/{expense}/move', [ExpenseController::class, 'move'])->name('expenses.move');
     Route::resource('expenses', ExpenseController::class);
     Route::get('expense-categories/export', [ExpenseCategoryController::class, 'export'])->name('expense-categories.export');
     Route::resource('expense-categories', ExpenseCategoryController::class)->except(['create', 'edit', 'show']);

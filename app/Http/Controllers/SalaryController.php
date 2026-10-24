@@ -63,7 +63,7 @@ class SalaryController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Salaries/Index', [
-            'items' => $query->latest('year')->latest('month')->paginate(15)->withQueryString(),
+            'items' => $query->oldest()->paginate(15)->withQueryString(),
             'filters' => [
                 'search' => $search,
                 'employee_id' => $employeeId ?: null,
@@ -81,8 +81,7 @@ class SalaryController extends Controller implements HasMiddleware
         abort_unless(config('kit.features.exports'), 404);
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
-            ->latest('year')
-            ->latest('month')
+            ->oldest()
             ->lazyById(500)
             ->map(fn (Salary $salary) => [
                 $salary->employee?->name,
@@ -219,7 +218,7 @@ class SalaryController extends Controller implements HasMiddleware
     {
         $salary->load([
             'attachments',
-            'employee:id,name,employee_no,department,designation,salary_payment_method',
+            'employee:id,name,father_name,takhallus,employee_no,department,designation,salary_payment_method',
             'creator:id,name',
         ]);
 

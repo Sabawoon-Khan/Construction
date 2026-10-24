@@ -71,8 +71,14 @@ const inlineText = computed(() =>
     </div>
     <span
         v-else
-        :class="cn('tabular-nums tracking-tight', props.class)"
+        :class="cn('stat-money-inline tabular-nums tracking-tight', props.class)"
+        :title="inlineText"
     >
-        {{ inlineText }}
+        <template v-for="(line, index) in lines" :key="line.code">
+            <span v-if="index" class="stat-money-sep" aria-hidden="true">·</span>
+            <span class="stat-money-pair" dir="ltr"
+                >{{ line.code }} {{ line.amountLabel }}</span
+            >
+        </template>
     </span>
 </template>

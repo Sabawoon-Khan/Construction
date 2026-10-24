@@ -33,13 +33,13 @@ function onSort(): void {
 
 function alignClass(): string {
     if (props.align === 'center') {
-        return 'text-center';
+        return 'justify-center text-center';
     }
     if (props.align === 'end') {
-        return 'text-end';
+        return 'justify-end text-end';
     }
 
-    return 'text-start';
+    return 'justify-start text-start';
 }
 </script>
 
@@ -59,14 +59,15 @@ function alignClass(): string {
         <button
             v-if="canSort"
             type="button"
-            class="inline-flex items-center gap-1 text-inherit hover:text-foreground data-[active=true]:text-[var(--brand-accent,var(--primary))]"
+            class="inline-flex w-full items-center gap-1 text-inherit hover:text-foreground data-[active=true]:text-[var(--brand-accent,var(--primary))] print:inline print:w-auto"
+            :class="alignClass()"
             :data-active="canSort && active ? 'true' : undefined"
             @click="onSort"
         >
             <slot />
-            <ChevronUp v-if="active && sortDir === 'asc'" class="size-3.5 shrink-0" />
-            <ChevronDown v-else-if="active && sortDir === 'desc'" class="size-3.5 shrink-0" />
-            <ChevronsUpDown v-else class="size-3.5 shrink-0 opacity-70" />
+            <ChevronUp v-if="active && sortDir === 'asc'" class="size-3.5 shrink-0 print:hidden" />
+            <ChevronDown v-else-if="active && sortDir === 'desc'" class="size-3.5 shrink-0 print:hidden" />
+            <ChevronsUpDown v-else class="size-3.5 shrink-0 opacity-70 print:hidden" />
         </button>
         <slot v-else />
     </th>

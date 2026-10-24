@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import EmptyState from '@/components/EmptyState.vue';
-import { MisTableActions } from '@/components/mis';
+import { MisTableActions, TabPrintHost } from '@/components/mis';
+import { useTabPrint } from '@/composables/useTabPrint';
 import SortableTh from '@/components/SortableTh.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
@@ -41,6 +42,7 @@ type Item = Record<string, any>;
 
 const props = defineProps<{
     items: { data: Item[]; links: any[]; meta?: any };
+    printItems?: Item[];
     filters: { status?: string };
     totals: {
         count: number;
@@ -185,6 +187,50 @@ function creatorInitial(name?: string | null): string {
 function openProject(item: Item) {
     router.visit(`/projects/${item.id}`);
 }
+
+const printSource = computed(() =>
+    (props.printItems?.length ? props.printItems : sortedRows.value) as Item[],
+);
+
+const projectsPrint = useTabPrint({
+    title: () => t('Projects'),
+    columns: () => [
+        t('Code'),
+        t('Name'),
+        t('Location'),
+        t('Status'),
+        t('Progress'),
+        t('Units'),
+        t('Added by'),
+        t('Created at'),
+    ],
+    source: printSource,
+    emptyLabel: () => t('No projects yet'),
+    option: (item) => ({
+        key: String(item.id),
+        title: item.name || t('Project'),
+        subtitle: [
+            item.code,
+            item.location,
+            statusLabel(item.status),
+            item.units_count != null
+                ? `${formatNumber(item.units_count, 0)} ${t('Units')}`
+                : null,
+        ]
+            .filter((value) => value != null && String(value).trim() !== '')
+            .join(' · '),
+    }),
+    cells: (item) => [
+        item.code || '—',
+        item.name || '—',
+        item.location || '—',
+        statusLabel(item.status),
+        `${formatNumber(item.progress_percent, 0)}%`,
+        formatNumber(item.units_count, 0),
+        item.creator_name || item.creator?.name || '—',
+        formatDate(item.created_at),
+    ],
+});
 
 function rowActions(item: Item): RowActionItem[] {
     return [
@@ -394,7 +440,11 @@ function rowActions(item: Item): RowActionItem[] {
                         </option>
                     </V2SelectFilter>
                     <template #columns>
-                        <MisTableActions export-url="/projects/export" :filters="filters">
+                        <MisTableActions
+                            export-url="/projects/export"
+                            :filters="filters"
+                            :on-print="projectsPrint.openPicker"
+                        >
                             <CreateButton href="/projects/create" permission="projects.create">{{ t('Create') }}</CreateButton>
                         </MisTableActions>
                         <TableToolbar />
@@ -438,6 +488,7 @@ function rowActions(item: Item): RowActionItem[] {
                         <tr
                             v-for="(item, index) in sortedRows"
                             :key="item.id"
+                            :data-print-key="String(item.id)"
                             :style="{ '--i': index }"
                             @click="openProject(item)"
                         >
@@ -521,5 +572,7 @@ function rowActions(item: Item): RowActionItem[] {
                 <V2Pager :items="items" :only="onlyKeys" />
             </template>
         </V2TablePanel>
+
+        <TabPrintHost :state="projectsPrint" />
     </V2ListPage>
 </template>

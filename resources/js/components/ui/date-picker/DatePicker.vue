@@ -53,6 +53,7 @@ const { t } = useTranslations();
 const page = usePage();
 
 const open = ref(false);
+const invalid = ref(false);
 const rootEl = ref<HTMLElement | null>(null);
 const triggerEl = ref<HTMLButtonElement | null>(null);
 const panelEl = ref<HTMLElement | null>(null);
@@ -150,9 +151,16 @@ const displayValue = computed(() => {
 const viewYear = ref(today.value.year);
 const viewMonth = ref(today.value.month);
 
+function hasValue(): boolean {
+    return Boolean(String(props.modelValue ?? '').trim());
+}
+
 watch(
     () => [props.modelValue, system.value] as const,
     () => {
+        if (hasValue()) {
+            invalid.value = false;
+        }
         const parts = selectedParts.value ?? today.value;
         viewYear.value = parts.year;
         viewMonth.value = parts.month;
@@ -229,6 +237,7 @@ function pickDay(cell: Cell): void {
         system.value,
     );
     if (!greg) return;
+    invalid.value = false;
     emit('update:modelValue', greg);
     open.value = false;
 }
@@ -259,6 +268,7 @@ function pickToday(): void {
     const t = today.value;
     if (maxParts.value && compareParts(t, maxParts.value) > 0) return;
     if (minParts.value && compareParts(t, minParts.value) < 0) return;
+    invalid.value = false;
     emit('update:modelValue', todayGregorianString());
     viewYear.value = t.year;
     viewMonth.value = t.month;
@@ -297,11 +307,22 @@ function onReposition(): void {
     if (open.value) placePanel();
 }
 
+function onAncestorSubmit(event: Event): void {
+    if (props.disabled || !props.required || hasValue()) {
+        return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    invalid.value = true;
+    triggerEl.value?.focus();
+}
+
 onMounted(() => {
     document.addEventListener('mousedown', onClickAway);
     document.addEventListener('keydown', onKeydown);
     window.addEventListener('resize', onReposition);
     window.addEventListener('scroll', onReposition, true);
+    rootEl.value?.closest('form')?.addEventListener('submit', onAncestorSubmit, true);
 });
 
 onBeforeUnmount(() => {
@@ -309,6 +330,7 @@ onBeforeUnmount(() => {
     document.removeEventListener('keydown', onKeydown);
     window.removeEventListener('resize', onReposition);
     window.removeEventListener('scroll', onReposition, true);
+    rootEl.value?.closest('form')?.removeEventListener('submit', onAncestorSubmit, true);
 });
 </script>
 
@@ -322,11 +344,14 @@ onBeforeUnmount(() => {
             :aria-haspopup="'dialog'"
             :aria-expanded="open"
             :aria-required="required || undefined"
+            :aria-invalid="invalid || undefined"
             :class="
                 cn(
                     'border-input bg-background dark:bg-input/30 flex h-9 w-full min-w-0 items-center gap-2 rounded-md border px-3 text-sm shadow-xs transition-[color,box-shadow] outline-none',
                     'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
                     'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
+                    invalid &&
+                        'border-destructive ring-destructive/20 dark:ring-destructive/40 ring-[3px]',
                     props.class,
                 )
             "
@@ -357,6 +382,9 @@ onBeforeUnmount(() => {
                 <X class="size-3.5" />
             </button>
         </button>
+        <p v-if="invalid" class="text-destructive mt-1 text-sm">
+            {{ t('Select date') }}
+        </p>
 
         <Teleport :to="portalTarget">
             <Transition

@@ -67,7 +67,7 @@ class MaterialController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Materials/Index', [
-            'items' => $query->latest()->paginate(15)->withQueryString(),
+            'items' => $query->oldest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'units' => MaterialUnit::options(),
             'totals' => $totals,
@@ -80,7 +80,7 @@ class MaterialController extends Controller implements HasMiddleware
         abort_unless(config('kit.features.exports'), 404);
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
-            ->latest()
+            ->oldest()
             ->lazyById(500)
             ->map(fn (Material $material) => [
                 $material->code,

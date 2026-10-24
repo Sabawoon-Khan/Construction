@@ -55,6 +55,7 @@ const projectId = ref('');
 const materialId = ref('');
 const quantity = ref('');
 const transactionDate = ref('');
+const toProjectId = ref('');
 
 const isEdit = computed(() => !!props.editing?.id);
 const formAction = computed(() =>
@@ -81,20 +82,25 @@ watch(
               : '';
         quantity.value = props.editing ? String(props.editing.quantity) : '';
         transactionDate.value =
-            props.editing?.transaction_date?.slice?.(0, 10)
-            ?? new Date().toISOString().slice(0, 10);
+            props.editing?.transaction_date?.slice?.(0, 10) ??
+            new Date().toISOString().slice(0, 10);
+        toProjectId.value = '';
     },
     { immediate: true },
 );
 
 const availableMaterials = computed(() => {
     if (isEdit.value) {
-        return props.materials.filter((material) => String(material.id) === materialId.value);
+        return props.materials.filter(
+            (material) => String(material.id) === materialId.value,
+        );
     }
 
     if (!projectId.value) {
         const ids = new Set(
-            props.stockRows.filter((row) => row.on_hand > 0).map((row) => row.material_id),
+            props.stockRows
+                .filter((row) => row.on_hand > 0)
+                .map((row) => row.material_id),
         );
 
         return props.materials.filter((material) => ids.has(material.id));
@@ -102,7 +108,11 @@ const availableMaterials = computed(() => {
 
     const ids = new Set(
         props.stockRows
-            .filter((row) => String(row.project_id) === projectId.value && row.on_hand > 0)
+            .filter(
+                (row) =>
+                    String(row.project_id) === projectId.value &&
+                    row.on_hand > 0,
+            )
             .map((row) => row.material_id),
     );
 
@@ -146,8 +156,12 @@ function close() {
                 <DialogDescription>
                     {{
                         isEdit
-                            ? t('Update the issued quantity or date. Stock on hand will be recalculated.')
-                            : t('Reduce on-hand quantity for a project. Expense was recorded at purchase.')
+                            ? t(
+                                  'Update the issued quantity or date. Stock on hand will be recalculated.',
+                              )
+                            : t(
+                                  'Reduce on-hand quantity for a project. Expense was recorded at purchase.',
+                              )
                     }}
                 </DialogDescription>
             </DialogHeader>
@@ -162,7 +176,11 @@ function close() {
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between gap-2">
                         <Label>{{ t('Project') }}</Label>
-                        <RelatedCreateLink v-if="!isEdit" href="/projects/create" :label="t('Add project')" />
+                        <RelatedCreateLink
+                            v-if="!isEdit"
+                            href="/projects/create"
+                            :label="t('Add project')"
+                        />
                     </div>
                     <select
                         v-model="projectId"
@@ -171,8 +189,14 @@ function close() {
                         class="h-9 rounded-md border border-input bg-background px-3 text-sm"
                         :disabled="isEdit"
                     >
-                        <option value="" disabled>{{ t('Select project') }}</option>
-                        <option v-for="project in projects" :key="project.id" :value="String(project.id)">
+                        <option value="" disabled>
+                            {{ t('Select project') }}
+                        </option>
+                        <option
+                            v-for="project in projects"
+                            :key="project.id"
+                            :value="String(project.id)"
+                        >
                             {{ project.name }}
                         </option>
                     </select>
@@ -182,7 +206,11 @@ function close() {
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between gap-2">
                         <Label>{{ t('Material') }}</Label>
-                        <RelatedCreateLink v-if="!isEdit" href="/materials/create" :label="t('Add material')" />
+                        <RelatedCreateLink
+                            v-if="!isEdit"
+                            href="/materials/create"
+                            :label="t('Add material')"
+                        />
                     </div>
                     <select
                         v-model="materialId"
@@ -191,13 +219,27 @@ function close() {
                         class="h-9 rounded-md border border-input bg-background px-3 text-sm"
                         :disabled="isEdit || !projectId"
                     >
-                        <option value="" disabled>{{ t('Select material') }}</option>
-                        <option v-for="material in availableMaterials" :key="material.id" :value="String(material.id)">
-                            {{ material.name }}{{ material.unit?.unit_name ? ` (${material.unit.unit_name})` : '' }}
+                        <option value="" disabled>
+                            {{ t('Select material') }}
+                        </option>
+                        <option
+                            v-for="material in availableMaterials"
+                            :key="material.id"
+                            :value="String(material.id)"
+                        >
+                            {{ material.name
+                            }}{{
+                                material.unit?.unit_name
+                                    ? ` (${material.unit.unit_name})`
+                                    : ''
+                            }}
                         </option>
                     </select>
                     <InputError :message="errors.material_id" />
-                    <p v-if="onHandForSelection != null" class="text-xs text-muted-foreground">
+                    <p
+                        v-if="onHandForSelection != null"
+                        class="text-xs text-muted-foreground"
+                    >
                         {{ t('On hand') }}: {{ onHandForSelection }}
                         <span v-if="isEdit && maxQuantity != null">
                             · {{ t('Max issue qty') }}: {{ maxQuantity }}
@@ -230,12 +272,46 @@ function close() {
                     </div>
                 </div>
 
+                <div class="grid gap-2">
+                    <Label>{{ t('Transfer to (optional)') }}</Label>
+                    <select
+                        v-model="toProjectId"
+                        name="to_project_id"
+                        class="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                    >
+                        <option value="">{{ t('No transfer') }}</option>
+                        <option
+                            v-for="project in projects"
+                            :key="project.id"
+                            :value="String(project.id)"
+                        >
+                            {{ project.name }}
+                        </option>
+                    </select>
+                    <p class="text-xs text-muted-foreground">
+                        {{
+                            t(
+                                'If set, stock will be moved from the selected project to this project.',
+                            )
+                        }}
+                    </p>
+                </div>
+
                 <DialogFooter class="gap-2 sm:gap-0">
                     <Button type="button" variant="outline" @click="close">
                         {{ t('Cancel') }}
                     </Button>
-                    <Button type="submit" :disabled="processing || !projectId || !materialId">
-                        {{ processing ? t('Saving…') : isEdit ? t('Save changes') : t('Issue from stock') }}
+                    <Button
+                        type="submit"
+                        :disabled="processing || !projectId || !materialId"
+                    >
+                        {{
+                            processing
+                                ? t('Saving…')
+                                : isEdit
+                                  ? t('Save changes')
+                                  : t('Issue from stock')
+                        }}
                     </Button>
                 </DialogFooter>
             </Form>

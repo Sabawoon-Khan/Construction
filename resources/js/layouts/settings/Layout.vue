@@ -117,6 +117,9 @@ const pageTitle = computed(() => {
     if (component.includes('ExpenseUnits') || path.startsWith('/expense-units')) {
         return t('Expense units');
     }
+    if (component.includes('MaterialUnits') || path.startsWith('/material-units')) {
+        return t('Material units');
+    }
     if (component.includes('Backups')) return t('Backups');
     if (component.includes('FileManager')) return t('File Manager');
     if (component.includes('Trash')) return t('Trash');
@@ -168,6 +171,7 @@ const pageDescription = computed(() => {
         [t('Lookups')]: t('Shared lists used across modules.'),
         [t('Expense categories')]: t('Categories for project expenses.'),
         [t('Expense units')]: t('Units used when recording expenses.'),
+        [t('Material units')]: t('Units used when recording materials.'),
     };
 
     return map[title] ?? t('Configure this area of your workspace.');

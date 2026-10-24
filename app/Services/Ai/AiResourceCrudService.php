@@ -301,7 +301,7 @@ class AiResourceCrudService
     {
         $order = $resource['default_order'] ?? null;
         if (! is_array($order) || count($order) < 1) {
-            $query->latest('id');
+            $query->oldest('id');
 
             return;
         }

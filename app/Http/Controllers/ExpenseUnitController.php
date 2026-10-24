@@ -80,7 +80,7 @@ class ExpenseUnitController extends Controller implements HasMiddleware
         $query = ExpenseUnit::query()
             ->with('creator:id,name')
             ->withCount('expenses')
-            ->latest();
+            ->oldest();
 
         if ($applyFilters && ($search = $request->string('search')->toString()) !== '') {
             $query->where('unit_name', 'like', "%{$search}%");

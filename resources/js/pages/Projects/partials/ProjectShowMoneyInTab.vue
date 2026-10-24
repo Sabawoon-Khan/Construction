@@ -8,8 +8,9 @@ import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
 import { indexTableColumn } from '@/composables/useTableColumns';
-import { MisTableActions, MisSearchInput } from '@/components/mis';
+import { MisSearchInput, MisTableActions, TabPrintHost } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
+import { useTabPrint } from '@/composables/useTabPrint';
 import { Button } from '@/components/ui/button';
 import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
@@ -143,6 +144,26 @@ const moneyInExportRows = computed(() =>
 const moneyInFilteredExportRows = computed(() =>
     sortedRows.value.map(mapMoneyInExportRow),
 );
+
+const moneyInPrint = useTabPrint({
+    title: () => t('Money in'),
+    subtitle: () => [props.item.name, props.item.code].filter(Boolean).join(' · '),
+    columns: () => [t('Date'), t('Shareholder'), t('Amount'), t('Created at')],
+    source: () => sortedRows.value,
+    emptyLabel: () => t('No money in yet'),
+    option: (row) => ({
+        key: String(row.id),
+        title: row.partner?.name || t('Money in'),
+        subtitle: formatDate(row.invested_at),
+        amount: money(row.amount, row.currency || baseCurrency.value),
+    }),
+    cells: (row) => [
+        formatDate(row.invested_at),
+        row.partner?.name || '—',
+        money(row.amount, row.currency || baseCurrency.value),
+        formatDate(row.created_at),
+    ],
+});
 </script>
 
 <template>
@@ -161,6 +182,7 @@ const moneyInFilteredExportRows = computed(() =>
                 :rows="moneyInExportRows"
                 :filtered-rows="moneyInFilteredExportRows"
                 :filters="{ search: search }"
+                :on-print="moneyInPrint.openPicker"
             >
                 <CreateButton
                 permission="partners.create"
@@ -287,4 +309,6 @@ const moneyInFilteredExportRows = computed(() =>
             </div>
         </div>
     </V2Panel>
+
+    <TabPrintHost :state="moneyInPrint" />
 </template>

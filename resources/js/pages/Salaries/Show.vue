@@ -35,6 +35,18 @@ const periodLabel = computed(() => {
     return `${monthLabel} ${calendar.digits(props.item.year)}`;
 });
 
+const employeeName = computed(() => {
+    const employee = props.item.employee;
+    if (!employee) {
+        return '';
+    }
+
+    return [employee.name, employee.father_name, employee.takhallus]
+        .map((part) => String(part ?? '').trim())
+        .filter(Boolean)
+        .join(' ');
+});
+
 const documentNo = computed(() => {
     const employeeNo = props.item.employee?.employee_no || 'EMP';
     const month = String(props.item.month).padStart(2, '0');
@@ -93,7 +105,7 @@ defineOptions({
         <div class="voucher-print-page flex flex-col gap-4 print:gap-0">
             <V2DetailHero class="print:hidden" image="/images/dashboard-v2-building.png">
                 <template #eyebrow>{{ t('Salaries') }}</template>
-                <template #title>{{ item.employee?.name || t('Salary record') }}</template>
+                <template #title>{{ employeeName || t('Salary record') }}</template>
                 <template #description>{{ periodLabel }}</template>
                 <template #actions>
                     <StatusBadge :status="item.status" />
@@ -122,7 +134,7 @@ defineOptions({
             <V2Panel class="print:hidden" :title="t('Salary details')">
                 <MisDetailGrid
                     :items="[
-                        { label: t('Employee'), value: item.employee?.name },
+                        { label: t('Employee'), value: employeeName },
                         { label: t('Period'), value: periodLabel },
                         { label: t('Payment Date'), value: formatDate(item.payment_date) },
                         { label: t('Basic Salary'), value: money(item.basic_salary, item.currency) },
@@ -149,7 +161,7 @@ defineOptions({
                 :document-no="documentNo"
                 :date="item.payment_date"
                 :party-label="t('Paid to')"
-                :party-name="item.employee?.name"
+                :party-name="employeeName"
                 :amount="item.net_salary"
                 :currency="item.currency"
                 :payment-method="item.employee?.salary_payment_method"

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, toValue } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import TableFrame from '@/components/TableFrame.vue';
 import TableIndexTd from '@/components/TableIndexTd.vue';
 import TableIndexTh from '@/components/TableIndexTh.vue';
-import { MisTableActions } from '@/components/mis';
+import { MisTableActions, TabPrintHost } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
+import { useTabPrint } from '@/composables/useTabPrint';
+import { translateStatus } from '@/lib/translateStatus';
 import { CreateButton } from '@/components/ui/create-button';
 import { V2Panel } from '@/components/v2';
 import { indexTableColumn } from '@/composables/useTableColumns';
@@ -93,6 +95,48 @@ const unitsExportRows = computed(() =>
 const unitsFilteredExportRows = computed(() =>
     unitsSort.sortedRows.map(mapUnitExportRow),
 );
+
+const projectSubtitle = () =>
+    [props.item.name, props.item.code].filter(Boolean).join(' · ');
+
+const salesPrint = useTabPrint({
+    title: () => t('Recent sales'),
+    subtitle: projectSubtitle,
+    columns: () => [t('Sale'), t('Customer'), t('Amount'), t('Created at')],
+    source: () => toValue(salesSort.sortedRows),
+    emptyLabel: () => t('No sales yet'),
+    option: (sale) => ({
+        key: String(sale.id),
+        title: sale.sale_no || t('Sale'),
+        subtitle: sale.customer?.name || '—',
+        amount: money(saleAmount(sale), sale.currency),
+    }),
+    cells: (sale) => [
+        sale.sale_no || '—',
+        sale.customer?.name || '—',
+        money(saleAmount(sale), sale.currency),
+        formatDate(sale.created_at),
+    ],
+});
+
+const unitsPrint = useTabPrint({
+    title: () => t('Project units'),
+    subtitle: projectSubtitle,
+    columns: () => [t('Unit'), t('Status'), t('List price')],
+    source: () => toValue(unitsSort.sortedRows),
+    emptyLabel: () => t('No units yet'),
+    option: (unit) => ({
+        key: String(unit.id),
+        title: String(unit.unit_no || unit.code || unit.id),
+        subtitle: translateStatus(unit.status, t),
+        amount: money(unit.list_price, unit.currency),
+    }),
+    cells: (unit) => [
+        unit.unit_no || unit.code || String(unit.id),
+        translateStatus(unit.status, t),
+        money(unit.list_price, unit.currency),
+    ],
+});
 </script>
 
 <template>
@@ -105,6 +149,7 @@ const unitsFilteredExportRows = computed(() =>
                     :headers="salesExportHeaders"
                     :rows="salesExportRows"
                     :filtered-rows="salesFilteredExportRows"
+                    :on-print="salesPrint.openPicker"
                 >
                 <CreateButton
                     permission="sales.create"
@@ -208,6 +253,7 @@ const unitsFilteredExportRows = computed(() =>
                     :headers="unitsExportHeaders"
                     :rows="unitsExportRows"
                     :filtered-rows="unitsFilteredExportRows"
+                    :on-print="unitsPrint.openPicker"
                 >
                 <CreateButton
                     permission="units.create"
@@ -286,5 +332,8 @@ const unitsFilteredExportRows = computed(() =>
                 </table>
             </TableFrame>
         </V2Panel>
+
+        <TabPrintHost :state="salesPrint" />
+        <TabPrintHost :state="unitsPrint" />
     </div>
 </template>

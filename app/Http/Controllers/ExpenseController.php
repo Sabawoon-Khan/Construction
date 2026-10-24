@@ -54,7 +54,7 @@ class ExpenseController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Expenses/Index', [
-            'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name', 'attachments'])->latest('expense_date')->paginate(15)->withQueryString(),
+            'items' => $query->with(['expenseUnit:id,unit_name', 'creator:id,name', 'attachments'])->oldest()->paginate(15)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'moneyChart' => $this->expensesByMonth(clone $query),
@@ -73,7 +73,7 @@ class ExpenseController extends Controller implements HasMiddleware
             ->with(['expenseUnit:id,unit_name', 'creator:id,name'])
             ->orderBy('id')
             ->lazyById(500)
-            ->map(fn (Expense $expense) => [
+            ->map(fn(Expense $expense) => [
                 $expense->expense_date?->toDateString(),
                 $expense->paid_to,
                 $expense->description,
@@ -172,7 +172,7 @@ class ExpenseController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense updated.']);
 
         if ($projectId) {
-            return redirect()->to(route('projects.show', $projectId).'#expenses');
+            return redirect()->to(route('projects.show', $projectId) . '#expenses');
         }
 
         return redirect()->route('expenses.index');
@@ -222,7 +222,37 @@ class ExpenseController extends Controller implements HasMiddleware
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense deleted.']);
 
         if ($projectId) {
-            return redirect()->to(route('projects.show', $projectId).'#expenses');
+            return redirect()->to(route('projects.show', $projectId) . '#expenses');
+        }
+
+        return redirect()->route('expenses.index');
+    }
+
+    public function move(Request $request, Expense $expense): RedirectResponse
+    {
+        $data = $request->validate([
+            'position' => 'nullable|required_without:before_id|in:first,last',
+            'before_id' => [
+                'nullable',
+                'required_without:position',
+                'integer',
+                'exists:expenses,id',
+                'different:' . $expense->getKey(),
+            ],
+        ]);
+
+        if (($data['position'] ?? null) === 'first') {
+            $expense->moveToFirst();
+        } elseif (($data['position'] ?? null) === 'last') {
+            $expense->moveToLast();
+        } else {
+            $expense->moveBefore((int) $data['before_id']);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => 'Expense order updated.']);
+
+        if ($expense->project_id) {
+            return redirect()->to(route('projects.show', $expense->project_id) . '#expenses');
         }
 
         return redirect()->route('expenses.index');
@@ -237,8 +267,8 @@ class ExpenseController extends Controller implements HasMiddleware
         ]);
 
         $data = $request->validate([
-            'expense_date' => 'required|date',
-            'paid_to' => 'required|string|max:255',
+            'expense_date' => 'nullable|date',
+            'paid_to' => 'nullable|string|max:255',
             'item_amount' => 'nullable|numeric|min:0',
             'per_price' => 'nullable|numeric|min:0',
             'amount' => 'nullable|numeric|min:0',
@@ -309,7 +339,7 @@ class ExpenseController extends Controller implements HasMiddleware
         }
 
         return array_values(array_map(
-            static fn (array $bucket) => [
+            static fn(array $bucket) => [
                 'key' => $bucket['key'],
                 'label' => $bucket['label'],
                 'by_currency' => [

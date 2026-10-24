@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, ref, toValue } from 'vue';
 import Can from '@/components/Can.vue';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import CurrencySelect from '@/components/CurrencySelect.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import InputError from '@/components/InputError.vue';
-import { MisTableActions } from '@/components/mis';
+import { MisTableActions, TabPrintHost } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
+import { useTabPrint } from '@/composables/useTabPrint';
+import { translateStatus } from '@/lib/translateStatus';
 import SortableTh from '@/components/SortableTh.vue';
 import StatusBadge from '@/components/StatusBadge.vue';
 import TableFrame from '@/components/TableFrame.vue';
@@ -211,6 +213,37 @@ const loanExportRows = computed(() => (props.loans ?? []).map(mapLoanExportRow))
 const loanFilteredExportRows = computed(() =>
     loanSort.sortedRows.map(mapLoanExportRow),
 );
+
+const loansPrint = useTabPrint({
+    title: () => t('Loans'),
+    subtitle: () => [props.item.name, props.item.code].filter(Boolean).join(' · '),
+    columns: () => [
+        t('Loan'),
+        t('Lender'),
+        t('Date'),
+        t('Principal'),
+        t('Paid'),
+        t('Remaining'),
+        t('Status'),
+    ],
+    source: () => toValue(loanSort.sortedRows),
+    emptyLabel: () => t('No loans yet'),
+    option: (row) => ({
+        key: String(row.id),
+        title: row.loan_no,
+        subtitle: row.lender_name,
+        amount: money(row.principal, row.currency || baseCurrency.value),
+    }),
+    cells: (row) => [
+        row.loan_no,
+        row.lender_name,
+        formatDate(row.loan_date),
+        money(row.principal, row.currency || baseCurrency.value),
+        money(row.paid_amount, row.currency || baseCurrency.value),
+        money(remainingOf(row), row.currency || baseCurrency.value),
+        translateStatus(row.status, t),
+    ],
+});
 </script>
 
 <template>
@@ -226,6 +259,7 @@ const loanFilteredExportRows = computed(() =>
                 :headers="loanExportHeaders"
                 :rows="loanExportRows"
                 :filtered-rows="loanFilteredExportRows"
+                :on-print="loansPrint.openPicker"
             >
                 <CreateButton permission="loans.create" @click="openCreate">
                 {{ t('Add loan') }}
@@ -566,4 +600,6 @@ const loanFilteredExportRows = computed(() =>
             @confirm="confirmPay"
         />
     </V2Panel>
+
+    <TabPrintHost :state="loansPrint" />
 </template>

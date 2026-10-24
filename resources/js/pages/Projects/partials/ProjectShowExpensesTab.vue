@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, Printer, Trash2 } from '@lucide/vue';
+import {
+    ChevronLeft,
+    ChevronRight,
+    GripVertical,
+    Printer,
+    Trash2,
+} from '@lucide/vue';
 import { computed, ref, watch } from 'vue';
 import AttachmentLinks from '@/components/AttachmentLinks.vue';
 import Can from '@/components/Can.vue';
@@ -16,6 +22,7 @@ import {
     ExpenseVoucherPrintSheet,
     MisSearchInput,
     MisTableActions,
+    PrintRecordsDialog,
 } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
 import type { MisSelectOption } from '@/components/mis/MisSelectField.vue';
@@ -25,32 +32,38 @@ import { V2Panel } from '@/components/v2';
 import { useA4Print } from '@/composables/useA4Print';
 import { useCalendar } from '@/composables/useCalendar';
 import { useCurrency } from '@/composables/useCurrency';
+import { usePermissions } from '@/composables/usePermissions';
 import { provideTableSort } from '@/composables/useTableSort';
 import { useTranslations } from '@/composables/useTranslations';
+import type { PrintRecordOption } from '@/lib/printRecords';
 import { formatNumber, money, resolveCurrency } from '@/lib/utils';
+
+type ExpenseRow = {
+    id: number;
+    expense_no: string;
+    expense_date: string;
+    paid_to?: string;
+    description: string;
+    amount: number;
+    currency?: string;
+    expense_category_id?: number | null;
+    category?: { id: number; name: string } | null;
+    expense_unit?: { id: number; unit_name: string } | null;
+    purchase_id?: number | null;
+    reference_no?: string | null;
+    payment_method?: string | null;
+    sort_order?: number;
+    attachments?: Array<{
+        id: number;
+        original_filename?: string;
+        title?: string;
+        download_url?: string;
+    }>;
+};
 
 const props = defineProps<{
     item: Record<string, any>;
-    expenses: {
-        id: number;
-        expense_no: string;
-        expense_date: string;
-        paid_to?: string;
-        description: string;
-        amount: number;
-        currency?: string;
-        expense_category_id?: number | null;
-        category?: { id: number; name: string } | null;
-        purchase_id?: number | null;
-        reference_no?: string | null;
-        payment_method?: string | null;
-        attachments?: Array<{
-            id: number;
-            original_filename?: string;
-            title?: string;
-            download_url?: string;
-        }>;
-    }[];
+    expenses: ExpenseRow[];
 }>();
 
 const emit = defineEmits<{
@@ -58,13 +71,16 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useTranslations();
+const { can } = usePermissions();
 const tableColumns = computed(() => [
+    { key: 'drag', label: '', locked: true },
     indexTableColumn(),
     { key: 'expense_date', label: t('Date') },
     { key: 'reference_no', label: t('Bill number') },
     { key: 'paid_to', label: t('Paid to') },
     { key: 'category.name', label: t('Category') },
     { key: 'description', label: t('Description') },
+    { key: 'expense_unit.unit_name', label: t('Unit') },
     { key: 'payment_method', label: t('Paying type') },
     { key: 'amount', label: t('Amount') },
     { key: 'attachments', label: t('Attachments') },
@@ -80,24 +96,55 @@ const categoryFilter = ref<string>('all');
 const currentPage = ref(1);
 const perPage = 12;
 const deletingId = ref<number | null>(null);
-const pendingDelete = ref<(typeof props.expenses)[number] | null>(null);
+const movingId = ref<number | null>(null);
+const dragExpenseId = ref<number | null>(null);
+const dropTargetId = ref<number | null>(null);
+const draftOrderIds = ref<number[] | null>(null);
+const pendingDelete = ref<ExpenseRow | null>(null);
 const confirmDeleteOpen = ref(false);
-const printSingle = ref<(typeof props.expenses)[number] | null>(null);
+const printSingle = ref<ExpenseRow | null>(null);
+const printListRows = ref<ExpenseRow[]>([]);
+const printPickerOpen = ref(false);
+const selectedPrintKeys = ref<string[]>([]);
 const { printA4 } = useA4Print();
+const canReorder = computed(() => can('expenses.edit'));
 
-function printExpenseList() {
+function openPrintPicker() {
+    selectedPrintKeys.value = printRecordOptions.value.map((record) => record.key);
+    printPickerOpen.value = true;
+}
+
+function confirmPrintSelection(keys: string[]) {
+    const selected = new Set(keys.map(String));
+    const rows = sortedRows.value.filter((expense) =>
+        selected.has(String(expense.id)),
+    );
+
+    if (!rows.length) {
+        return;
+    }
+
+    printPickerOpen.value = false;
     void printA4(() => {
+        if (rows.length === 1) {
+            printSingle.value = rows[0];
+            printListRows.value = [];
+            return;
+        }
+
         printSingle.value = null;
+        printListRows.value = rows;
     });
 }
 
-function printExpenseOne(expense: (typeof props.expenses)[number]) {
+function printExpenseOne(expense: ExpenseRow) {
     void printA4(() => {
         printSingle.value = expense;
+        printListRows.value = [];
     });
 }
 
-function requestDeleteExpense(expense: (typeof props.expenses)[number]) {
+function requestDeleteExpense(expense: ExpenseRow) {
     pendingDelete.value = expense;
     confirmDeleteOpen.value = true;
 }
@@ -124,6 +171,108 @@ function deleteExpense() {
         },
     });
 }
+
+function orderedSourceExpenses(): ExpenseRow[] {
+    if (draftOrderIds.value) {
+        const byId = new Map(props.expenses.map((expense) => [expense.id, expense]));
+
+        return draftOrderIds.value
+            .map((id) => byId.get(id))
+            .filter((expense): expense is ExpenseRow => Boolean(expense));
+    }
+
+    return [...props.expenses].sort((a, b) => {
+        const orderDiff = (a.sort_order ?? 0) - (b.sort_order ?? 0);
+
+        return orderDiff !== 0 ? orderDiff : a.id - b.id;
+    });
+}
+
+function onDragStart(event: DragEvent, expense: ExpenseRow) {
+    if (!canReorder.value || movingId.value) {
+        event.preventDefault();
+        return;
+    }
+
+    dragExpenseId.value = expense.id;
+    event.dataTransfer?.setData('text/plain', String(expense.id));
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+    }
+}
+
+function onDragOver(event: DragEvent, expense: ExpenseRow) {
+    if (!canReorder.value || dragExpenseId.value == null) {
+        return;
+    }
+
+    event.preventDefault();
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+    }
+    dropTargetId.value = expense.id;
+}
+
+function onDragLeave(expense: ExpenseRow) {
+    if (dropTargetId.value === expense.id) {
+        dropTargetId.value = null;
+    }
+}
+
+function onDragEnd() {
+    dragExpenseId.value = null;
+    dropTargetId.value = null;
+}
+
+function onDrop(event: DragEvent, target: ExpenseRow) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const sourceId = dragExpenseId.value;
+    dragExpenseId.value = null;
+    dropTargetId.value = null;
+
+    if (!canReorder.value || sourceId == null || sourceId === target.id || movingId.value) {
+        return;
+    }
+
+    const order = orderedSourceExpenses();
+    const from = order.findIndex((expense) => expense.id === sourceId);
+    const to = order.findIndex((expense) => expense.id === target.id);
+
+    if (from < 0 || to < 0) {
+        return;
+    }
+
+    const next = [...order];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+
+    draftOrderIds.value = next.map((expense) => expense.id);
+
+    const newIndex = next.findIndex((expense) => expense.id === sourceId);
+    const beforeId = next[newIndex + 1]?.id ?? null;
+    const payload =
+        beforeId == null ? { position: 'last' as const } : { before_id: beforeId };
+
+    movingId.value = sourceId;
+    router.patch(`/expenses/${sourceId}/move`, payload, {
+        preserveScroll: true,
+        onFinish: () => {
+            movingId.value = null;
+        },
+        onError: () => {
+            draftOrderIds.value = null;
+        },
+    });
+}
+
+watch(
+    () => props.expenses,
+    () => {
+        draftOrderIds.value = null;
+    },
+);
 
 const categorySummaries = computed(() => {
     const groups = new Map<
@@ -170,7 +319,7 @@ const headerSummary = computed(() => {
 });
 
 const filteredExpenses = computed(() => {
-    let rows = props.expenses;
+    let rows = orderedSourceExpenses();
 
     if (categoryFilter.value !== 'all') {
         rows = rows.filter((expense) => {
@@ -198,6 +347,7 @@ const filteredExpenses = computed(() => {
             expense.paid_to,
             expense.category?.name,
             expense.description,
+            expense.expense_unit?.unit_name,
             expense.payment_method,
             method,
             expense.amount,
@@ -211,7 +361,32 @@ const filteredExpenses = computed(() => {
     });
 });
 
-const { sortedRows } = provideTableSort(filteredExpenses);
+const { sortedRows, sortKey, sortDir } = provideTableSort(filteredExpenses, {
+    defaultKey: 'sort_order',
+    defaultDir: 'asc',
+});
+
+const dragEnabled = computed(
+    () =>
+        canReorder.value &&
+        sortKey.value === 'sort_order' &&
+        sortDir.value === 'asc' &&
+        !expenseSearch.value.trim() &&
+        categoryFilter.value === 'all',
+);
+
+const printRecordOptions = computed<PrintRecordOption[]>(() =>
+    sortedRows.value.map((expense) => ({
+        key: String(expense.id),
+        title: expense.paid_to || t('Expense'),
+        subtitle: [
+            formatDate(expense.expense_date),
+            expense.reference_no || expense.expense_no || '—',
+            expense.category?.name || t('General'),
+        ].join(' · '),
+        amount: money(expense.amount, expense.currency || baseCurrency.value),
+    })),
+);
 
 const categoryOptions = computed<MisSelectOption[]>(() => [
     { value: 'all', label: t('All categories') },
@@ -255,19 +430,19 @@ const expenseExportHeaders = computed(() => [
     t('Paid to'),
     t('Category'),
     t('Description'),
+    t('Unit'),
     t('Paying type'),
     t('Amount'),
 ]);
 
-function mapExpenseExportRow(
-    expense: (typeof props.expenses)[number],
-): ExportCell[] {
+function mapExpenseExportRow(expense: ExpenseRow): ExportCell[] {
     return [
         formatDate(expense.expense_date),
         expense.reference_no || null,
         expense.paid_to || null,
         expense.category?.name || t('General'),
         expense.description || null,
+        expense.expense_unit?.unit_name || null,
         expense.payment_method === 'bank' ? t('Bank') : t('Cash'),
         money(expense.amount, expense.currency || baseCurrency.value),
     ];
@@ -311,7 +486,7 @@ const printCategoryLabel = computed(() => {
                     category:
                         categoryFilter !== 'all' ? categoryFilter : '',
                 }"
-                :on-print="printExpenseList"
+                :on-print="openPrintPicker"
             >
                 <CreateButton
                     :href="`/purchases/create?project_id=${item.id}`"
@@ -354,12 +529,14 @@ const printCategoryLabel = computed(() => {
             <table class="project-expenses-table min-w-full text-sm">
                 <thead class="table-chrome-head text-start text-muted-foreground">
                     <tr>
+                        <th class="w-8 px-1 font-medium" aria-label="Reorder" />
                         <TableIndexTh />
                         <SortableTh column="expense_date">{{ t('Date') }}</SortableTh>
                         <SortableTh column="reference_no">{{ t('Bill number') }}</SortableTh>
                         <SortableTh column="paid_to">{{ t('Paid to') }}</SortableTh>
                         <SortableTh column="category.name">{{ t('Category') }}</SortableTh>
                         <SortableTh column="description">{{ t('Description') }}</SortableTh>
+                        <SortableTh column="expense_unit.unit_name">{{ t('Unit') }}</SortableTh>
                         <SortableTh column="payment_method">{{ t('Paying type') }}</SortableTh>
                         <SortableTh column="amount">{{ t('Amount') }}</SortableTh>
                         <SortableTh column="attachments">{{ t('Attachments') }}</SortableTh>
@@ -371,8 +548,42 @@ const printCategoryLabel = computed(() => {
                         v-for="(expense, index) in paginatedRows"
                         :key="expense.id"
                         class="cursor-pointer border-t hover:bg-muted/30"
+                        :class="{
+                            'opacity-50': dragExpenseId === expense.id,
+                            'bg-muted/50 ring-1 ring-inset ring-primary/40':
+                                dropTargetId === expense.id &&
+                                dragExpenseId !== expense.id,
+                        }"
                         @click="emit('open-expense', expense)"
+                        @dragover="onDragOver($event, expense)"
+                        @dragleave="onDragLeave(expense)"
+                        @drop="onDrop($event, expense)"
                     >
+                        <td class="w-8 px-1" @click.stop>
+                            <button
+                                v-if="dragEnabled"
+                                type="button"
+                                class="inline-flex size-7 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground active:cursor-grabbing"
+                                :title="t('Drag to reorder')"
+                                :disabled="movingId === expense.id"
+                                draggable="true"
+                                @dragstart="onDragStart($event, expense)"
+                                @dragend="onDragEnd"
+                            >
+                                <GripVertical class="size-3.5" />
+                            </button>
+                            <span
+                                v-else
+                                class="inline-flex size-7 items-center justify-center text-muted-foreground/40"
+                                :title="
+                                    canReorder
+                                        ? t('Clear filters and sort by order to drag')
+                                        : undefined
+                                "
+                            >
+                                <GripVertical class="size-3.5" />
+                            </span>
+                        </td>
                         <TableIndexTd :index="index" :from="paginationFrom" />
                         <td class="whitespace-nowrap">
                             {{ formatDate(expense.expense_date) }}
@@ -390,6 +601,9 @@ const printCategoryLabel = computed(() => {
                         </td>
                         <td class="max-w-[14rem] truncate">
                             {{ expense.description || '—' }}
+                        </td>
+                        <td class="whitespace-nowrap">
+                            {{ expense.expense_unit?.unit_name || '—' }}
                         </td>
                         <td class="whitespace-nowrap capitalize">
                             {{
@@ -464,7 +678,7 @@ const printCategoryLabel = computed(() => {
                     </tr>
                     <EmptyState
                         v-if="!filteredExpenses.length"
-                        :colspan="10"
+                        :colspan="12"
                         :title="
                             expenseSearch.trim() || categoryFilter !== 'all'
                                 ? t('No matching expenses')
@@ -515,23 +729,24 @@ const printCategoryLabel = computed(() => {
             </div>
         </div>
 
-        <!-- A4 print sheets (screen-hidden; isolated while printing) -->
-        <div class="a4-print-host">
-            <ExpenseVoucherPrintSheet
-                v-if="printSingle"
-                :expense="printSingle"
-                :project-name="item.name"
-                :project-code="item.code"
-            />
-            <ExpenseListPrintSheet
-                v-else
-                :project-name="item.name"
-                :project-code="item.code"
-                :category-label="printCategoryLabel"
-                :rows="sortedRows"
-                :base-currency="baseCurrency"
-            />
-        </div>
+        <Teleport to="body">
+            <div class="a4-print-host">
+                <ExpenseVoucherPrintSheet
+                    v-if="printSingle"
+                    :expense="printSingle"
+                    :project-name="item.name"
+                    :project-code="item.code"
+                />
+                <ExpenseListPrintSheet
+                    v-else-if="printListRows.length"
+                    :project-name="item.name"
+                    :project-code="item.code"
+                    :category-label="printCategoryLabel"
+                    :rows="printListRows"
+                    :base-currency="baseCurrency"
+                />
+            </div>
+        </Teleport>
     </V2Panel>
 
     <ConfirmActionDialog
@@ -541,5 +756,14 @@ const printCategoryLabel = computed(() => {
         :confirm-label="t('Delete')"
         :processing="deletingId !== null"
         @confirm="deleteExpense"
+    />
+
+    <PrintRecordsDialog
+        v-model:open="printPickerOpen"
+        v-model:selected-keys="selectedPrintKeys"
+        :records="printRecordOptions"
+        :title="t('Print expenses')"
+        :empty-label="t('No expenses yet')"
+        @confirm="confirmPrintSelection"
     />
 </template>

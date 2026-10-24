@@ -4,7 +4,13 @@ import MisPrintFooter from '@/components/mis/MisPrintFooter.vue';
 import MisPrintLetterhead from '@/components/mis/MisPrintLetterhead.vue';
 import { useCalendar } from '@/composables/useCalendar';
 import { useTranslations } from '@/composables/useTranslations';
-import { formatNumber, money, moneyByCurrency, resolveCurrency } from '@/lib/utils';
+import {
+    currencyAmountLines,
+    formatNumber,
+    money,
+    moneyByCurrency,
+    resolveCurrency,
+} from '@/lib/utils';
 
 export type ExpensePrintRow = {
     id: number;
@@ -16,6 +22,7 @@ export type ExpensePrintRow = {
     currency?: string | null;
     payment_method?: string | null;
     category?: { id?: number; name?: string } | null;
+    expense_unit?: { id?: number; unit_name?: string } | null;
 };
 
 const props = defineProps<{
@@ -33,11 +40,21 @@ const formatDate = (value: string | null | undefined) =>
 
 const totalsByCurrency = computed(() => {
     const byCurrency: Record<string, number> = {};
+
     for (const row of props.rows) {
         const code = resolveCurrency(row.currency || props.baseCurrency);
         byCurrency[code] = (byCurrency[code] ?? 0) + Number(row.amount ?? 0);
     }
+
     return byCurrency;
+});
+
+const totalLines = computed(() => {
+    const codes = Object.keys(totalsByCurrency.value);
+
+    return currencyAmountLines(totalsByCurrency.value).filter(
+        (line) => codes.length > 1 || codes.includes(line.code),
+    );
 });
 
 const subtitle = computed(() =>
@@ -52,7 +69,7 @@ const subtitle = computed(() =>
 </script>
 
 <template>
-    <article class="expense-a4-sheet a4-print-sheet">
+    <article class="expense-a4-sheet a4-print-sheet print-target">
         <MisPrintLetterhead
             :title="t('Project expenses')"
             :subtitle="subtitle"
@@ -78,6 +95,7 @@ const subtitle = computed(() =>
                     <th>{{ t('Paid to') }}</th>
                     <th>{{ t('Category') }}</th>
                     <th>{{ t('Description') }}</th>
+                    <th>{{ t('Unit') }}</th>
                     <th>{{ t('Paying type') }}</th>
                     <th class="col-amt">{{ t('Amount') }}</th>
                 </tr>
@@ -90,6 +108,7 @@ const subtitle = computed(() =>
                     <td>{{ row.paid_to || '—' }}</td>
                     <td>{{ row.category?.name || t('General') }}</td>
                     <td>{{ row.description || '—' }}</td>
+                    <td>{{ row.expense_unit?.unit_name || '—' }}</td>
                     <td>
                         {{
                             row.payment_method === 'bank' ? t('Bank') : t('Cash')
@@ -100,9 +119,28 @@ const subtitle = computed(() =>
                     </td>
                 </tr>
                 <tr v-if="!rows.length">
-                    <td colspan="8" class="empty">{{ t('No expenses yet') }}</td>
+                    <td colspan="9" class="empty">{{ t('No expenses yet') }}</td>
                 </tr>
             </tbody>
+            <tfoot v-if="rows.length">
+                <tr>
+                    <td colspan="8" class="total-label">
+                        {{ t('Total') }}
+                        <span class="total-count">
+                            ({{ formatNumber(rows.length, 0) }} {{ t('records') }})
+                        </span>
+                    </td>
+                    <td class="col-amt">
+                        <div
+                            v-for="line in totalLines"
+                            :key="line.code"
+                            class="total-amount"
+                        >
+                            {{ line.text }}
+                        </div>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
 
         <MisPrintFooter />

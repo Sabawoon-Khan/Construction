@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AiConversation;
+use App\Models\ArchiveDocument;
 use App\Models\AiUsageLog;
 use App\Models\Attachment;
 use App\Models\AuthenticationLog;
@@ -189,6 +190,11 @@ return [
             'model' => Income::class,
             'label' => 'Income',
             'title' => 'income_no',
+        ],
+        'archive_documents' => [
+            'model' => ArchiveDocument::class,
+            'label' => 'Archive document',
+            'title' => 'title',
         ],
     ],
 

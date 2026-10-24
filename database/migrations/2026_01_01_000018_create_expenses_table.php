@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('project_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('expense_category_id')->constrained()->restrictOnDelete();
             $table->string('expense_no')->unique();
-            $table->date('expense_date');
+            $table->date('expense_date')->nullable();
             $table->string('paid_to')->nullable();
             $table->decimal('amount', 18, 2);
             $table->string('currency', 3)->default('USD');

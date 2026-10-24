@@ -96,7 +96,22 @@ class ProjectController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Projects/Index', [
-            'items' => $query->with('creator:id,name')->latest()->paginate(10)->withQueryString(),
+            'items' => $query->with('creator:id,name')->oldest()->paginate(10)->withQueryString(),
+            'printItems' => (clone $query)
+                ->with('creator:id,name')
+                ->oldest()
+                ->get()
+                ->map(fn(Project $project) => [
+                    'id' => $project->id,
+                    'code' => $project->code,
+                    'name' => $project->name,
+                    'location' => $project->location,
+                    'status' => $project->status,
+                    'progress_percent' => $project->progress_percent,
+                    'units_count' => $project->units_count,
+                    'creator_name' => $project->creator?->name,
+                    'created_at' => $project->created_at?->toDateTimeString(),
+                ]),
             'filters' => [
                 'search' => $search,
                 'status' => $status,
@@ -112,9 +127,9 @@ class ProjectController extends Controller implements HasMiddleware
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
             ->with('creator:id,name')
-            ->latest()
+            ->oldest()
             ->lazyById(500)
-            ->map(fn (Project $project) => [
+            ->map(fn(Project $project) => [
                 $project->code,
                 $project->name,
                 $project->location,
@@ -128,8 +143,14 @@ class ProjectController extends Controller implements HasMiddleware
         return $this->streamExport(
             'projects',
             [
-                'code', 'name', 'location', 'status', 'progress_percent',
-                'units', 'added_by', 'created_at',
+                'code',
+                'name',
+                'location',
+                'status',
+                'progress_percent',
+                'units',
+                'added_by',
+                'created_at',
             ],
             $rows,
             $this->exportFormat($request),
@@ -214,8 +235,8 @@ class ProjectController extends Controller implements HasMiddleware
         $project->loadCount(['units', 'sales', 'expenses', 'incomes']);
         $project->load([
             'attachments',
-            'units' => fn ($q) => $q->latest()->limit(8),
-            'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest()->limit(8),
+            'units' => fn($q) => $q->oldest()->limit(8),
+            'sales' => fn($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->oldest()->limit(8),
         ]);
 
         $expensesQuery = Expense::query()
@@ -246,7 +267,7 @@ class ProjectController extends Controller implements HasMiddleware
             ->where('project_id', $project->id)
             ->where('type', InventoryTransaction::TYPE_ISSUE)
             ->with('material:id,name,material_unit_id')
-            ->latest('transaction_date')
+            ->oldest()
             ->get(['id', 'material_id', 'quantity', 'transaction_date']);
 
         $unitStatusCounts = Unit::query()
@@ -293,7 +314,7 @@ class ProjectController extends Controller implements HasMiddleware
                 'employees.currency',
                 'employees.status',
             ])
-            ->map(fn (Employee $employee) => [
+            ->map(fn(Employee $employee) => [
                 'id' => $employee->id,
                 'created_at' => $employee->created_at,
                 'employee_no' => $employee->employee_no,
@@ -358,23 +379,23 @@ class ProjectController extends Controller implements HasMiddleware
             'shareholders' => $shareholders,
             'available_shareholders' => Partner::query()
                 ->orderBy('name')
-                ->when($assignedIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $assignedIds))
+                ->when($assignedIds->isNotEmpty(), fn($q) => $q->whereNotIn('id', $assignedIds))
                 ->get(['id', 'name', 'phone']),
             'employees' => $projectEmployees,
             'available_employees' => Employee::query()
                 ->where('status', 'active')
                 ->orderBy('name')
-                ->when($assignedEmployeeIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $assignedEmployeeIds))
+                ->when($assignedEmployeeIds->isNotEmpty(), fn($q) => $q->whereNotIn('id', $assignedEmployeeIds))
                 ->get(['id', 'name', 'employee_no', 'department', 'designation', 'working_hours', 'phone']),
             'contributions' => PartnerInvestment::query()
                 ->where('project_id', $project->id)
                 ->with('partner:id,name')
-                ->latest('invested_at')
+                ->oldest()
                 ->limit(50)
                 ->get(['id', 'partner_id', 'amount', 'amount_base', 'currency', 'invested_at', 'created_at']),
             'expenses' => $expensesQuery
                 ->with(['expenseUnit:id,unit_name', 'category:id,name', 'attachments'])
-                ->latest('expense_date')
+                ->ordered()
                 ->get([
                     'id',
                     'expense_no',
@@ -392,12 +413,14 @@ class ProjectController extends Controller implements HasMiddleware
                     'payment_method',
                     'expense_unit_id',
                     'expense_category_id',
+                    'sort_order',
                     'created_at',
                 ]),
             'expense_categories' => $this->expenseCategories(),
+            'expense_units' => \App\Models\ExpenseUnit::options(),
             'purchases' => $purchasesQuery
                 ->with('supplier:id,name')
-                ->latest('purchase_date')
+                ->oldest()
                 ->limit(50)
                 ->get(['id', 'purchase_no', 'purchase_date', 'supplier_id', 'total_amount', 'total_amount_base', 'paid_amount', 'paid_amount_base', 'currency', 'status', 'created_at']),
             'purchase_materials' => $this->purchaseMaterialsForProject($project),
@@ -417,8 +440,8 @@ class ProjectController extends Controller implements HasMiddleware
             'stock_issues' => $stockIssues,
             'loans' => Loan::query()
                 ->where('project_id', $project->id)
-                ->with(['payments' => fn ($q) => $q->latest('paid_at')->limit(20)])
-                ->latest('loan_date')
+                ->with(['payments' => fn($q) => $q->oldest()->limit(20)])
+                ->oldest()
                 ->get([
                     'id',
                     'loan_no',
@@ -442,12 +465,15 @@ class ProjectController extends Controller implements HasMiddleware
     {
         $request->merge([
             'expense_category_id' => $request->filled('expense_category_id') ? $request->input('expense_category_id') : null,
+            'expense_unit_id' => $request->filled('expense_unit_id') ? $request->input('expense_unit_id') : null,
         ]);
 
         $data = $request->validate([
-            'expense_date' => 'required|date',
-            'paid_to' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0.01',
+            'expense_date' => 'nullable|date',
+            'paid_to' => 'nullable|string|max:255',
+            'item_amount' => 'nullable|numeric|min:0',
+            'per_price' => 'nullable|numeric|min:0',
+            'amount' => 'nullable|numeric|min:0',
             'currency' => 'nullable|string|size:3',
             'description' => 'required|string|max:1000',
             'expense_category_id' => [
@@ -455,21 +481,33 @@ class ProjectController extends Controller implements HasMiddleware
                 'exists:expense_categories,id',
                 Rule::notIn(ExpenseCategory::materialIds()),
             ],
+            'expense_unit_id' => 'nullable|exists:expense_units,id',
             'payment_method' => 'nullable|in:cash,bank',
             'reference_no' => 'nullable|string|max:100',
+            'sort_position' => 'nullable|integer|min:1|max:999999',
             'documents' => 'nullable|array',
             'documents.*' => 'nullable|file|max:20480',
         ], [
             'expense_category_id.not_in' => 'Materials must be recorded as a purchase so stock and remaining balance are tracked.',
         ]);
-        unset($data['documents']);
+        $sortPosition = isset($data['sort_position']) ? (int) $data['sort_position'] : null;
+        unset($data['documents'], $data['sort_position']);
+
+        if (! empty($data['item_amount']) && isset($data['per_price'])) {
+            $data['amount'] = FinanceDefaults::totalCost($data);
+        }
 
         $expense = Expense::create(FinanceDefaults::expenseAttributes($data, $project->id));
+
+        if ($sortPosition !== null) {
+            $expense->moveToPosition($sortPosition);
+        }
+
         $this->storeRecordAttachments($request, $expense);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Project expense recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#expenses');
+        return redirect()->to(route('projects.show', $project) . '#expenses');
     }
 
     public function storeShareholder(Request $request, Project $project): RedirectResponse
@@ -489,7 +527,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Shareholder added to project.']);
 
-        return redirect()->to(route('projects.show', $project).'#shareholders');
+        return redirect()->to(route('projects.show', $project) . '#shareholders');
     }
 
     public function storeEmployee(Request $request, Project $project): RedirectResponse
@@ -517,7 +555,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Employee added to project.']);
 
-        return redirect()->to(route('projects.show', $project).'#employees');
+        return redirect()->to(route('projects.show', $project) . '#employees');
     }
 
     public function destroyEmployee(Project $project, Employee $employee): RedirectResponse
@@ -528,7 +566,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Employee removed from project.']);
 
-        return redirect()->to(route('projects.show', $project).'#employees');
+        return redirect()->to(route('projects.show', $project) . '#employees');
     }
 
     public function storeShareholderContribution(Request $request, Project $project, Partner $partner): RedirectResponse
@@ -564,7 +602,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Contribution recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#money-in');
+        return redirect()->to(route('projects.show', $project) . '#money-in');
     }
 
     public function showContribution(Project $project, PartnerInvestment $investment): Response
@@ -609,8 +647,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         $expenses = (clone $expensesQuery)
             ->with(['category:id,name', 'expenseUnit:id,unit_name'])
-            ->orderBy('expense_date')
-            ->orderBy('id')
+            ->ordered()
             ->get([
                 'id',
                 'expense_no',
@@ -625,6 +662,7 @@ class ProjectController extends Controller implements HasMiddleware
                 'payment_method',
                 'expense_category_id',
                 'expense_unit_id',
+                'sort_order',
                 'created_at',
             ]);
 
@@ -671,7 +709,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Payout recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#shareholders');
+        return redirect()->to(route('projects.show', $project) . '#shareholders');
     }
 
     public function payPurchaseRemaining(Request $request, Project $project, Purchase $purchase): RedirectResponse
@@ -719,7 +757,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Loan recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#loans');
+        return redirect()->to(route('projects.show', $project) . '#loans');
     }
 
     public function payLoan(Request $request, Project $project, Loan $loan): RedirectResponse
@@ -743,7 +781,7 @@ class ProjectController extends Controller implements HasMiddleware
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Loan payout recorded.']);
 
-        return redirect()->to(route('projects.show', $project).'#loans');
+        return redirect()->to(route('projects.show', $project) . '#loans');
     }
 
     public function edit(Request $request, Project $project): Response
@@ -823,8 +861,8 @@ class ProjectController extends Controller implements HasMiddleware
     {
         $max = Project::withTrashed()
             ->pluck('code')
-            ->map(fn (string $code): ?int => is_numeric($code) ? (int) $code : null)
-            ->filter(fn (?int $code): bool => $code !== null && $code > 0)
+            ->map(fn(string $code): ?int => is_numeric($code) ? (int) $code : null)
+            ->filter(fn(?int $code): bool => $code !== null && $code > 0)
             ->max();
 
         return (string) (($max ?? 0) + 1);
@@ -1025,8 +1063,8 @@ class ProjectController extends Controller implements HasMiddleware
             ->get();
 
         return [
-            'labels' => $rows->map(fn ($row) => (string) $row->category_name)->all(),
-            'amounts' => $rows->map(fn ($row) => round((float) $row->total, 2))->all(),
+            'labels' => $rows->map(fn($row) => (string) $row->category_name)->all(),
+            'amounts' => $rows->map(fn($row) => round((float) $row->total, 2))->all(),
         ];
     }
 
@@ -1065,7 +1103,7 @@ class ProjectController extends Controller implements HasMiddleware
             ->map(function (Collection $lines) {
                 $material = $lines->first()?->material;
                 $byCurrency = CurrencyAmounts::fromRows(
-                    $lines->map(fn (PurchaseItem $line) => (object) [
+                    $lines->map(fn(PurchaseItem $line) => (object) [
                         'code' => $line->purchase?->currency,
                         'total' => $line->total_cost,
                     ]),
@@ -1080,7 +1118,7 @@ class ProjectController extends Controller implements HasMiddleware
                     'quantity' => round((float) $lines->sum('quantity'), 3),
                     'total_cost_base' => round((float) $lines->sum('total_cost_base'), 2),
                     'total_cost_by_currency' => $byCurrency,
-                    'lines' => $lines->map(fn (PurchaseItem $line) => [
+                    'lines' => $lines->map(fn(PurchaseItem $line) => [
                         'id' => $line->id,
                         'purchase_id' => $line->purchase_id,
                         'purchase_no' => $line->purchase?->purchase_no,
@@ -1150,7 +1188,7 @@ class ProjectController extends Controller implements HasMiddleware
         }
 
         return array_values(array_map(
-            static fn (array $bucket) => [
+            static fn(array $bucket) => [
                 'key' => $bucket['key'],
                 'label' => $bucket['label'],
                 'by_currency' => [

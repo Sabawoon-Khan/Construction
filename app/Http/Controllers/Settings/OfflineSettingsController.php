@@ -24,7 +24,7 @@ class OfflineSettingsController extends Controller
             'stats' => OfflineSettings::stats(),
             'devices' => SyncDevice::query()
                 ->with('user:id,name,email')
-                ->latest('last_seen_at')
+                ->oldest()
                 ->limit(50)
                 ->get()
                 ->map(fn (SyncDevice $device): array => [

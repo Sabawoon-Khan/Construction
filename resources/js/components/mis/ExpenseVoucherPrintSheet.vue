@@ -137,7 +137,7 @@ const itemTitle = computed(
 </script>
 
 <template>
-    <article class="ev-sheet a4-print-sheet expense-voucher-sheet expense-a4-sheet">
+    <article class="ev-sheet a4-print-sheet expense-voucher-sheet expense-a4-sheet print-target">
         <header class="ev-header">
             <div class="ev-brand-block">
                 <p class="ev-doc-label">{{ t('Expense voucher') }}</p>

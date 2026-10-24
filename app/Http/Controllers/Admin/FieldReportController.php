@@ -41,7 +41,7 @@ class FieldReportController extends Controller
         $base = FieldReport::query()->where('user_id', $request->user()->id);
 
         $items = (clone $query)
-            ->latest()
+            ->oldest()
             ->paginate(20)
             ->withQueryString();
 

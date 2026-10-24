@@ -1,4 +1,5 @@
 import {
+    Archive,
     Banknote,
     Boxes,
     Building2,
@@ -12,6 +13,7 @@ import {
     LayoutGrid,
     Package,
     Receipt,
+    Ruler,
     Scale,
     Settings,
     Truck,
@@ -167,6 +169,7 @@ export function useAppNavigation() {
                     permission: 'materials.create',
                 }),
             );
+            purchaseAndStock.push(item(t('Material units'), '/material-units', Ruler));
         }
 
         if (can('inventory.view')) {
@@ -238,6 +241,18 @@ export function useAppNavigation() {
 
         if (hr.length) {
             groups.push({ label: t('HR'), items: hr });
+        }
+
+        if (can('archive.view')) {
+            groups.push({
+                label: t('Documents'),
+                items: [
+                    item(t('Archive'), '/archive', Archive, {
+                        href: '/archive/create',
+                        permission: 'archive.create',
+                    }),
+                ],
+            });
         }
 
         if (can('portfolio.view') || can('contact_messages.view')) {

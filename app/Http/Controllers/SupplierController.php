@@ -53,7 +53,7 @@ class SupplierController extends Controller implements HasMiddleware
         ];
 
         return Inertia::render('Suppliers/Index', [
-            'items' => $query->with('creator:id,name')->withCount('purchases')->latest()->paginate(12)->withQueryString(),
+            'items' => $query->with('creator:id,name')->withCount('purchases')->oldest()->paginate(12)->withQueryString(),
             'filters' => ['search' => $search],
             'totals' => $totals,
             'moneyChart' => $this->purchasesByMonth(clone $purchasesQuery),
@@ -67,7 +67,7 @@ class SupplierController extends Controller implements HasMiddleware
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
             ->with('creator:id,name')
             ->withCount('purchases')
-            ->latest()
+            ->oldest()
             ->lazyById(500)
             ->map(fn (Supplier $supplier) => [
                 $supplier->supplier_no,
@@ -130,7 +130,7 @@ class SupplierController extends Controller implements HasMiddleware
     {
         $supplier->load([
             'attachments',
-            'purchases' => fn ($q) => $q->with('project:id,name')->latest('purchase_date')->limit(20),
+            'purchases' => fn ($q) => $q->with('project:id,name')->oldest()->limit(20),
         ]);
 
         $purchases = Purchase::query()->where('supplier_id', $supplier->id);

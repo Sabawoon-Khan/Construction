@@ -57,7 +57,7 @@ class UnitController extends Controller implements HasMiddleware
             ->where('status', '!=', 'cancelled');
 
         return Inertia::render('Units/Index', [
-            'items' => $query->latest()->paginate(20)->withQueryString(),
+            'items' => $query->oldest()->paginate(20)->withQueryString(),
             'filters' => $request->only(['search', 'project_id', 'status']),
             'projects' => Project::query()->orderBy('name')->get(['id', 'name']),
             'totals' => $totals,
@@ -70,7 +70,7 @@ class UnitController extends Controller implements HasMiddleware
         abort_unless(config('kit.features.exports'), 404);
 
         $rows = $this->indexQuery($request, $this->exportAppliesFilters($request))
-            ->latest()
+            ->oldest()
             ->lazyById(500)
             ->map(function (Unit $unit) {
                 $sale = $unit->sales->first();
@@ -111,7 +111,7 @@ class UnitController extends Controller implements HasMiddleware
                 'sales' => fn ($q) => $q
                     ->where('status', '!=', 'cancelled')
                     ->with('customer:id,name')
-                    ->latest('contract_date'),
+                    ->oldest(),
             ]);
 
         if ($request->user()?->isRestrictedShareholder()) {
@@ -201,7 +201,7 @@ class UnitController extends Controller implements HasMiddleware
         $unit->load([
             'attachments',
             'project:id,name,code',
-            'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->latest(),
+            'sales' => fn ($q) => $q->with(['customer:id,name', 'unit:id,list_price,currency'])->oldest(),
         ]);
 
         abort_if(

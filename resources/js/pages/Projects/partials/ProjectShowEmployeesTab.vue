@@ -3,8 +3,10 @@ import { Link, router } from '@inertiajs/vue3';
 import { Eye, Trash2 } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import Can from '@/components/Can.vue';
-import { MisTableActions } from '@/components/mis';
+import { MisTableActions, TabPrintHost } from '@/components/mis';
 import type { ExportCell } from '@/composables/useTableExport';
+import { useTabPrint } from '@/composables/useTabPrint';
+import { translateStatus } from '@/lib/translateStatus';
 import ConfirmActionDialog from '@/components/ConfirmActionDialog.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import SortableTh from '@/components/SortableTh.vue';
@@ -134,6 +136,43 @@ const employeeExportRows = computed(() =>
 const employeeFilteredExportRows = computed(() =>
     sortedRows.value.map(mapEmployeeExportRow),
 );
+
+const employeesPrint = useTabPrint({
+    title: () => t('Employees'),
+    subtitle: () => [props.item.name, props.item.code].filter(Boolean).join(' · '),
+    columns: () => [
+        t('Employee No'),
+        t('Name'),
+        t('Role on project'),
+        t('Started on project'),
+        t('Working hours'),
+        t('Department'),
+        t('Basic Salary'),
+        t('Status'),
+        t('Notes'),
+        t('Created at'),
+    ],
+    source: () => sortedRows.value,
+    emptyLabel: () => t('No employees yet'),
+    option: (row) => ({
+        key: String(row.id),
+        title: row.name,
+        subtitle: row.employee_no || row.role_on_project || '—',
+        amount: money(row.basic_salary, row.currency || baseCurrency.value),
+    }),
+    cells: (row) => [
+        row.employee_no || '—',
+        row.name,
+        row.role_on_project || '—',
+        formatDate(row.started_at),
+        row.working_hours || '—',
+        row.department || '—',
+        money(row.basic_salary, row.currency || baseCurrency.value),
+        translateStatus(row.status, t),
+        row.notes || '—',
+        formatDate(row.created_at),
+    ],
+});
 </script>
 
 <template>
@@ -149,6 +188,7 @@ const employeeFilteredExportRows = computed(() =>
                 :headers="employeeExportHeaders"
                 :rows="employeeExportRows"
                 :filtered-rows="employeeFilteredExportRows"
+                :on-print="employeesPrint.openPicker"
             >
                 <CreateButton
                 permission="employees.edit"
@@ -308,4 +348,6 @@ const employeeFilteredExportRows = computed(() =>
         :processing="removingId !== null"
         @confirm="removeEmployee"
     />
+
+    <TabPrintHost :state="employeesPrint" />
 </template>
