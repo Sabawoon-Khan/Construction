@@ -1,14 +1,5 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
-
-    # Hostinger WAF blocks bare "/". Send it to /start (reachable landing).
-    RewriteRule ^$ public/start [L]
-
-    RewriteRule ^public/ - [L]
-
-    RewriteCond %{REQUEST_FILENAME} -f
-    RewriteRule ^ - [L]
-
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
