@@ -42,8 +42,8 @@ use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
-// Hostinger WAF blocks bare "/" on this host; use /landing-page as the public entry URL.
-Route::get('/landing-page', HomeController::class)->name('landing');
+// Hostinger WAF blocks bare "/" on this host; /site-home is the public entry URL.
+Route::get('/site-home', HomeController::class)->name('landing');
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:8,1')
     ->name('contact.store');

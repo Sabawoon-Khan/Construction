@@ -86,10 +86,33 @@ return [
     |
     */
 
-    // Hostinger Imunify/WAF blocks /login, /register, and /auth/* before PHP.
-    'prefix' => 'account',
+    'prefix' => '',
 
     'domain' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Paths
+    |--------------------------------------------------------------------------
+    |
+    | Hostinger Imunify/WAF on this deploy blocks /login and /register before
+    | PHP runs. Keep named routes (login/register) but serve safe URLs.
+    |
+    */
+    'paths' => [
+        'login' => '/signin',
+        'logout' => '/signout',
+        'register' => '/signup',
+        'password.request' => '/forgot-password',
+        'password.reset' => '/reset-password/{token}',
+        'password.email' => '/forgot-password',
+        'password.update' => '/reset-password',
+        'password.confirm' => '/user/confirm-password',
+        'password.confirmation' => '/user/confirmed-password-status',
+        'two-factor.login' => '/two-factor-challenge',
+        'passkey.login-options' => '/passkeys/options',
+        'passkey.login' => '/passkeys/authenticate',
+    ],
 
     /*
     |--------------------------------------------------------------------------
