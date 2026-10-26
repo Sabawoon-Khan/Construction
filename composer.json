@@ -9,7 +9,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4.1",
         "axyr/laravel-langfuse": "^0.2.0",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/ai": "^0.10.1",
@@ -118,6 +118,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.4.1"
         },
         "process-timeout": 2000
     },
