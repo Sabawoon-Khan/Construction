@@ -1,0 +1,11 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Prevent rewrite loop
+    RewriteCond %{REQUEST_URI} !^/con/public/
+
+    # Send everything to Laravel public/
+    RewriteRule ^(.*)$ con/public/$1 [L,QSA]
+</IfModule>
+
