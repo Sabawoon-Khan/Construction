@@ -2,10 +2,8 @@
     RewriteEngine On
     RewriteBase /
 
-    # Prevent rewrite loop
+    # Use this ONLY if the Laravel app lives in public_html/con/
+    # Prefer setting document root to .../public instead.
     RewriteCond %{REQUEST_URI} !^/con/public/
-
-    # Send everything to Laravel public/
     RewriteRule ^(.*)$ con/public/$1 [L,QSA]
 </IfModule>
-
