@@ -134,9 +134,8 @@
             data-warm="{{ \App\Support\OfflineSettings::warmCache() ? '1' : '0' }}"
         >
 
-        @fonts
-
-        @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
+        {{-- Avoid @fonts and per-page @vite entries: oversized Link preloads crash LiteSpeed/Imunify on Hostinger. --}}
+        @vite(['resources/css/app.css', 'resources/js/app.ts'])
         <x-inertia::head>
             <title>{{ \App\Models\OrgSetting::appName() }}</title>
         </x-inertia::head>

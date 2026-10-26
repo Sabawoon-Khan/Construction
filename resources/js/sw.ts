@@ -10,7 +10,7 @@ cleanupOutdatedCaches();
 
 registerRoute(
     new NavigationRoute(createHandlerBoundToURL('/offline.html'), {
-        denylist: [/^\/api\//, /^\/signin/, /^\/signup/, /^\/login/, /^\/register/, /^\/sanctum\//],
+        denylist: [/^\/api\//, /^\/login/, /^\/register/, /^\/sanctum\//],
     }),
 );
 

@@ -95,14 +95,11 @@ return [
     | Custom Paths
     |--------------------------------------------------------------------------
     |
-    | Hostinger Imunify/WAF on this deploy blocks /login and /register before
-    | PHP runs. Keep named routes (login/register) but serve safe URLs.
-    |
     */
     'paths' => [
-        'login' => '/signin',
-        'logout' => '/signout',
-        'register' => '/signup',
+        'login' => '/login',
+        'logout' => '/logout',
+        'register' => '/register',
         'password.request' => '/forgot-password',
         'password.reset' => '/reset-password/{token}',
         'password.email' => '/forgot-password',
