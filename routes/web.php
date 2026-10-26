@@ -42,6 +42,8 @@ use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+// Hostinger WAF blocks bare "/" for this domain; /start is the reachable landing URL.
+Route::get('/start', HomeController::class)->name('start');
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware('throttle:8,1')
     ->name('contact.store');

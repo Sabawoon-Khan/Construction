@@ -2,8 +2,13 @@
     RewriteEngine On
     RewriteBase /
 
-    # If domain document root is the project root (public_html),
-    # send all traffic into Laravel's public/ folder.
-    RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ public/$1 [L,QSA]
+    # Hostinger WAF blocks bare "/". Send it to /start (reachable landing).
+    RewriteRule ^$ public/start [L]
+
+    RewriteRule ^public/ - [L]
+
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+
+    RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>

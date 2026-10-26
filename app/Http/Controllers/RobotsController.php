@@ -11,6 +11,7 @@ class RobotsController extends Controller
         $lines = [
             'User-agent: *',
             'Disallow: /dashboard',
+            'Disallow: /auth/',
             'Disallow: /login',
             'Disallow: /register',
             'Disallow: /forgot-password',

@@ -86,7 +86,8 @@ return [
     |
     */
 
-    'prefix' => '',
+    // Hostinger Imunify/WAF blocks bare /login and /register before PHP.
+    'prefix' => 'auth',
 
     'domain' => null,
 
